@@ -1,0 +1,4 @@
+make: Entering directory 'c:/Users/Seyram/Desktop/projects/asinyo-api'
+go run cmd/main.go
+make: Leaving directory 'c:/Users/Seyram/Desktop/projects/asinyo-api'
+ 
