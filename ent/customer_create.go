@@ -48,9 +48,9 @@ func (cc *CustomerCreate) SetNillableUpdatedAt(t *time.Time) *CustomerCreate {
 	return cc
 }
 
-// SetEmail sets the "email" field.
-func (cc *CustomerCreate) SetEmail(s string) *CustomerCreate {
-	cc.mutation.SetEmail(s)
+// SetUsername sets the "username" field.
+func (cc *CustomerCreate) SetUsername(s string) *CustomerCreate {
+	cc.mutation.SetUsername(s)
 	return cc
 }
 
@@ -181,12 +181,12 @@ func (cc *CustomerCreate) check() error {
 	if _, ok := cc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Customer.updated_at"`)}
 	}
-	if _, ok := cc.mutation.Email(); !ok {
-		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "Customer.email"`)}
+	if _, ok := cc.mutation.Username(); !ok {
+		return &ValidationError{Name: "username", err: errors.New(`ent: missing required field "Customer.username"`)}
 	}
-	if v, ok := cc.mutation.Email(); ok {
-		if err := customer.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "Customer.email": %w`, err)}
+	if v, ok := cc.mutation.Username(); ok {
+		if err := customer.UsernameValidator(v); err != nil {
+			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "Customer.username": %w`, err)}
 		}
 	}
 	if _, ok := cc.mutation.Password(); !ok {
@@ -264,13 +264,13 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 		})
 		_node.UpdatedAt = value
 	}
-	if value, ok := cc.mutation.Email(); ok {
+	if value, ok := cc.mutation.Username(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: customer.FieldEmail,
+			Column: customer.FieldUsername,
 		})
-		_node.Email = value
+		_node.Username = value
 	}
 	if value, ok := cc.mutation.Password(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

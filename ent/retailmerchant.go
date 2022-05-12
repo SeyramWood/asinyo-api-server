@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/retailmerchant"
 )
 
@@ -20,10 +22,6 @@ type RetailMerchant struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// Username holds the value of the "username" field.
-	Username string `json:"username,omitempty"`
-	// Password holds the value of the "password" field.
-	Password []byte `json:"-"`
 	// GhanaCard holds the value of the "ghana_card" field.
 	GhanaCard string `json:"ghana_card,omitempty"`
 	// LastName holds the value of the "last_name" field.
@@ -38,6 +36,50 @@ type RetailMerchant struct {
 	Address string `json:"address,omitempty"`
 	// DigitalAddress holds the value of the "digital_address" field.
 	DigitalAddress string `json:"digital_address,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the RetailMerchantQuery when eager-loading is set.
+	Edges                    RetailMerchantEdges `json:"edges"`
+	merchant_retailer        *int
+	retail_merchant_products *int
+}
+
+// RetailMerchantEdges holds the relations/edges for other nodes in the graph.
+type RetailMerchantEdges struct {
+	// Products holds the value of the products edge.
+	Products *Product `json:"products,omitempty"`
+	// Merchant holds the value of the merchant edge.
+	Merchant *Merchant `json:"merchant,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// ProductsOrErr returns the Products value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RetailMerchantEdges) ProductsOrErr() (*Product, error) {
+	if e.loadedTypes[0] {
+		if e.Products == nil {
+			// The edge products was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: product.Label}
+		}
+		return e.Products, nil
+	}
+	return nil, &NotLoadedError{edge: "products"}
+}
+
+// MerchantOrErr returns the Merchant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RetailMerchantEdges) MerchantOrErr() (*Merchant, error) {
+	if e.loadedTypes[1] {
+		if e.Merchant == nil {
+			// The edge merchant was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: merchant.Label}
+		}
+		return e.Merchant, nil
+	}
+	return nil, &NotLoadedError{edge: "merchant"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -45,14 +87,16 @@ func (*RetailMerchant) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case retailmerchant.FieldPassword:
-			values[i] = new([]byte)
 		case retailmerchant.FieldID:
 			values[i] = new(sql.NullInt64)
-		case retailmerchant.FieldUsername, retailmerchant.FieldGhanaCard, retailmerchant.FieldLastName, retailmerchant.FieldOtherName, retailmerchant.FieldPhone, retailmerchant.FieldOtherPhone, retailmerchant.FieldAddress, retailmerchant.FieldDigitalAddress:
+		case retailmerchant.FieldGhanaCard, retailmerchant.FieldLastName, retailmerchant.FieldOtherName, retailmerchant.FieldPhone, retailmerchant.FieldOtherPhone, retailmerchant.FieldAddress, retailmerchant.FieldDigitalAddress:
 			values[i] = new(sql.NullString)
 		case retailmerchant.FieldCreatedAt, retailmerchant.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case retailmerchant.ForeignKeys[0]: // merchant_retailer
+			values[i] = new(sql.NullInt64)
+		case retailmerchant.ForeignKeys[1]: // retail_merchant_products
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type RetailMerchant", columns[i])
 		}
@@ -85,18 +129,6 @@ func (rm *RetailMerchant) assignValues(columns []string, values []interface{}) e
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				rm.UpdatedAt = value.Time
-			}
-		case retailmerchant.FieldUsername:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field username", values[i])
-			} else if value.Valid {
-				rm.Username = value.String
-			}
-		case retailmerchant.FieldPassword:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field password", values[i])
-			} else if value != nil {
-				rm.Password = *value
 			}
 		case retailmerchant.FieldGhanaCard:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -141,9 +173,33 @@ func (rm *RetailMerchant) assignValues(columns []string, values []interface{}) e
 			} else if value.Valid {
 				rm.DigitalAddress = value.String
 			}
+		case retailmerchant.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field merchant_retailer", value)
+			} else if value.Valid {
+				rm.merchant_retailer = new(int)
+				*rm.merchant_retailer = int(value.Int64)
+			}
+		case retailmerchant.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field retail_merchant_products", value)
+			} else if value.Valid {
+				rm.retail_merchant_products = new(int)
+				*rm.retail_merchant_products = int(value.Int64)
+			}
 		}
 	}
 	return nil
+}
+
+// QueryProducts queries the "products" edge of the RetailMerchant entity.
+func (rm *RetailMerchant) QueryProducts() *ProductQuery {
+	return (&RetailMerchantClient{config: rm.config}).QueryProducts(rm)
+}
+
+// QueryMerchant queries the "merchant" edge of the RetailMerchant entity.
+func (rm *RetailMerchant) QueryMerchant() *MerchantQuery {
+	return (&RetailMerchantClient{config: rm.config}).QueryMerchant(rm)
 }
 
 // Update returns a builder for updating this RetailMerchant.
@@ -173,9 +229,6 @@ func (rm *RetailMerchant) String() string {
 	builder.WriteString(rm.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", updated_at=")
 	builder.WriteString(rm.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", username=")
-	builder.WriteString(rm.Username)
-	builder.WriteString(", password=<sensitive>")
 	builder.WriteString(", ghana_card=")
 	builder.WriteString(rm.GhanaCard)
 	builder.WriteString(", last_name=")

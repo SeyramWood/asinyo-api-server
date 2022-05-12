@@ -15,8 +15,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldEmail holds the string denoting the email field in the database.
-	FieldEmail = "email"
+	// FieldUsername holds the string denoting the username field in the database.
+	FieldUsername = "username"
 	// FieldPassword holds the string denoting the password field in the database.
 	FieldPassword = "password"
 	// FieldFirstName holds the string denoting the first_name field in the database.
@@ -36,7 +36,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldEmail,
+	FieldUsername,
 	FieldPassword,
 	FieldFirstName,
 	FieldLastName,
@@ -61,8 +61,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	EmailValidator func(string) error
+	// UsernameValidator is a validator for the "username" field. It is called by the builders before save.
+	UsernameValidator func(string) error
 	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	PasswordValidator func([]byte) error
 	// FirstNameValidator is a validator for the "first_name" field. It is called by the builders before save.

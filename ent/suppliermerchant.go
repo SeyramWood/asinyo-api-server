@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/suppliermerchant"
 )
 
@@ -20,10 +22,6 @@ type SupplierMerchant struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// Username holds the value of the "username" field.
-	Username string `json:"username,omitempty"`
-	// Password holds the value of the "password" field.
-	Password []byte `json:"-"`
 	// GhanaCard holds the value of the "ghana_card" field.
 	GhanaCard string `json:"ghana_card,omitempty"`
 	// LastName holds the value of the "last_name" field.
@@ -38,6 +36,50 @@ type SupplierMerchant struct {
 	Address string `json:"address,omitempty"`
 	// DigitalAddress holds the value of the "digital_address" field.
 	DigitalAddress string `json:"digital_address,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the SupplierMerchantQuery when eager-loading is set.
+	Edges                      SupplierMerchantEdges `json:"edges"`
+	merchant_supplier          *int
+	supplier_merchant_products *int
+}
+
+// SupplierMerchantEdges holds the relations/edges for other nodes in the graph.
+type SupplierMerchantEdges struct {
+	// Products holds the value of the products edge.
+	Products *Product `json:"products,omitempty"`
+	// Merchant holds the value of the merchant edge.
+	Merchant *Merchant `json:"merchant,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// ProductsOrErr returns the Products value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SupplierMerchantEdges) ProductsOrErr() (*Product, error) {
+	if e.loadedTypes[0] {
+		if e.Products == nil {
+			// The edge products was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: product.Label}
+		}
+		return e.Products, nil
+	}
+	return nil, &NotLoadedError{edge: "products"}
+}
+
+// MerchantOrErr returns the Merchant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SupplierMerchantEdges) MerchantOrErr() (*Merchant, error) {
+	if e.loadedTypes[1] {
+		if e.Merchant == nil {
+			// The edge merchant was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: merchant.Label}
+		}
+		return e.Merchant, nil
+	}
+	return nil, &NotLoadedError{edge: "merchant"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -45,14 +87,16 @@ func (*SupplierMerchant) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case suppliermerchant.FieldPassword:
-			values[i] = new([]byte)
 		case suppliermerchant.FieldID:
 			values[i] = new(sql.NullInt64)
-		case suppliermerchant.FieldUsername, suppliermerchant.FieldGhanaCard, suppliermerchant.FieldLastName, suppliermerchant.FieldOtherName, suppliermerchant.FieldPhone, suppliermerchant.FieldOtherPhone, suppliermerchant.FieldAddress, suppliermerchant.FieldDigitalAddress:
+		case suppliermerchant.FieldGhanaCard, suppliermerchant.FieldLastName, suppliermerchant.FieldOtherName, suppliermerchant.FieldPhone, suppliermerchant.FieldOtherPhone, suppliermerchant.FieldAddress, suppliermerchant.FieldDigitalAddress:
 			values[i] = new(sql.NullString)
 		case suppliermerchant.FieldCreatedAt, suppliermerchant.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case suppliermerchant.ForeignKeys[0]: // merchant_supplier
+			values[i] = new(sql.NullInt64)
+		case suppliermerchant.ForeignKeys[1]: // supplier_merchant_products
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type SupplierMerchant", columns[i])
 		}
@@ -85,18 +129,6 @@ func (sm *SupplierMerchant) assignValues(columns []string, values []interface{})
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				sm.UpdatedAt = value.Time
-			}
-		case suppliermerchant.FieldUsername:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field username", values[i])
-			} else if value.Valid {
-				sm.Username = value.String
-			}
-		case suppliermerchant.FieldPassword:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field password", values[i])
-			} else if value != nil {
-				sm.Password = *value
 			}
 		case suppliermerchant.FieldGhanaCard:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -141,9 +173,33 @@ func (sm *SupplierMerchant) assignValues(columns []string, values []interface{})
 			} else if value.Valid {
 				sm.DigitalAddress = value.String
 			}
+		case suppliermerchant.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field merchant_supplier", value)
+			} else if value.Valid {
+				sm.merchant_supplier = new(int)
+				*sm.merchant_supplier = int(value.Int64)
+			}
+		case suppliermerchant.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field supplier_merchant_products", value)
+			} else if value.Valid {
+				sm.supplier_merchant_products = new(int)
+				*sm.supplier_merchant_products = int(value.Int64)
+			}
 		}
 	}
 	return nil
+}
+
+// QueryProducts queries the "products" edge of the SupplierMerchant entity.
+func (sm *SupplierMerchant) QueryProducts() *ProductQuery {
+	return (&SupplierMerchantClient{config: sm.config}).QueryProducts(sm)
+}
+
+// QueryMerchant queries the "merchant" edge of the SupplierMerchant entity.
+func (sm *SupplierMerchant) QueryMerchant() *MerchantQuery {
+	return (&SupplierMerchantClient{config: sm.config}).QueryMerchant(sm)
 }
 
 // Update returns a builder for updating this SupplierMerchant.
@@ -173,9 +229,6 @@ func (sm *SupplierMerchant) String() string {
 	builder.WriteString(sm.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", updated_at=")
 	builder.WriteString(sm.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", username=")
-	builder.WriteString(sm.Username)
-	builder.WriteString(", password=<sensitive>")
 	builder.WriteString(", ghana_card=")
 	builder.WriteString(sm.GhanaCard)
 	builder.WriteString(", last_name=")

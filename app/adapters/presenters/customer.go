@@ -1,6 +1,7 @@
 package presenters
 
 import (
+	"sync"
 	"time"
 
 	"github.com/SeyramWood/ent"
@@ -12,7 +13,7 @@ type (
 		ID        int       `json:"id"`
 		FirstName string    `json:"firstName"`
 		LastName  string    `json:"lastName"`
-		Email     string    `json:"email"`
+		Username  string    `json:"username"`
 		Phone     string    `json:"phone"`
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
@@ -24,7 +25,7 @@ func CustomerSuccessResponse(data *ent.Customer) *fiber.Map {
 		ID:        data.ID,
 		FirstName: data.FirstName,
 		LastName:  data.LastName,
-		Email:     data.Email,
+		Username:  data.Username,
 		Phone:     data.Phone,
 		CreatedAt: data.CreatedAt,
 		UpdatedAt: data.UpdatedAt,
@@ -32,20 +33,25 @@ func CustomerSuccessResponse(data *ent.Customer) *fiber.Map {
 }
 func CustomersSuccessResponse(data []*ent.Customer) *fiber.Map {
 	var response []Customer
-	// wg := sync.WaitGroup{}
-	// for _, v := range data {
-	// 	wg.Add(1)
-	// 	go func(v *ent.Customer) {
-	// 		defer wg.Done()
-	// 		response = append(response, User{
-	// 			ID:        v.ID,
-	// 			Username:  v.Username,
-	// 			CreatedAt: v.CreatedAt,
-	// 			UpdatedAt: v.UpdatedAt,
-	// 		})
-	// 	}(v)
-	// }
-	// wg.Wait()
+	wg := sync.WaitGroup{}
+
+	for _, v := range data {
+		wg.Add(1)
+		go func(v *ent.Customer) {
+			defer wg.Done()
+			response = append(response, Customer{
+				ID:        v.ID,
+				FirstName: v.FirstName,
+				LastName:  v.LastName,
+				Username:  v.Username,
+				Phone:     v.Phone,
+				CreatedAt: v.CreatedAt,
+				UpdatedAt: v.UpdatedAt,
+			})
+		}(v)
+	}
+
+	wg.Wait()
 	return successResponse(response)
 }
 

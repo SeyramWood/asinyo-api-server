@@ -12,12 +12,16 @@ import (
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/product"
+	"github.com/SeyramWood/ent/productcategorymajor"
+	"github.com/SeyramWood/ent/productcategoryminor"
 	"github.com/SeyramWood/ent/retailmerchant"
 	"github.com/SeyramWood/ent/suppliermerchant"
-	"github.com/SeyramWood/ent/user"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -31,12 +35,18 @@ type Client struct {
 	Agent *AgentClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
+	// Merchant is the client for interacting with the Merchant builders.
+	Merchant *MerchantClient
+	// Product is the client for interacting with the Product builders.
+	Product *ProductClient
+	// ProductCategoryMajor is the client for interacting with the ProductCategoryMajor builders.
+	ProductCategoryMajor *ProductCategoryMajorClient
+	// ProductCategoryMinor is the client for interacting with the ProductCategoryMinor builders.
+	ProductCategoryMinor *ProductCategoryMinorClient
 	// RetailMerchant is the client for interacting with the RetailMerchant builders.
 	RetailMerchant *RetailMerchantClient
 	// SupplierMerchant is the client for interacting with the SupplierMerchant builders.
 	SupplierMerchant *SupplierMerchantClient
-	// User is the client for interacting with the User builders.
-	User *UserClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -53,9 +63,12 @@ func (c *Client) init() {
 	c.Admin = NewAdminClient(c.config)
 	c.Agent = NewAgentClient(c.config)
 	c.Customer = NewCustomerClient(c.config)
+	c.Merchant = NewMerchantClient(c.config)
+	c.Product = NewProductClient(c.config)
+	c.ProductCategoryMajor = NewProductCategoryMajorClient(c.config)
+	c.ProductCategoryMinor = NewProductCategoryMinorClient(c.config)
 	c.RetailMerchant = NewRetailMerchantClient(c.config)
 	c.SupplierMerchant = NewSupplierMerchantClient(c.config)
-	c.User = NewUserClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -87,14 +100,17 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		Admin:            NewAdminClient(cfg),
-		Agent:            NewAgentClient(cfg),
-		Customer:         NewCustomerClient(cfg),
-		RetailMerchant:   NewRetailMerchantClient(cfg),
-		SupplierMerchant: NewSupplierMerchantClient(cfg),
-		User:             NewUserClient(cfg),
+		ctx:                  ctx,
+		config:               cfg,
+		Admin:                NewAdminClient(cfg),
+		Agent:                NewAgentClient(cfg),
+		Customer:             NewCustomerClient(cfg),
+		Merchant:             NewMerchantClient(cfg),
+		Product:              NewProductClient(cfg),
+		ProductCategoryMajor: NewProductCategoryMajorClient(cfg),
+		ProductCategoryMinor: NewProductCategoryMinorClient(cfg),
+		RetailMerchant:       NewRetailMerchantClient(cfg),
+		SupplierMerchant:     NewSupplierMerchantClient(cfg),
 	}, nil
 }
 
@@ -112,14 +128,17 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		Admin:            NewAdminClient(cfg),
-		Agent:            NewAgentClient(cfg),
-		Customer:         NewCustomerClient(cfg),
-		RetailMerchant:   NewRetailMerchantClient(cfg),
-		SupplierMerchant: NewSupplierMerchantClient(cfg),
-		User:             NewUserClient(cfg),
+		ctx:                  ctx,
+		config:               cfg,
+		Admin:                NewAdminClient(cfg),
+		Agent:                NewAgentClient(cfg),
+		Customer:             NewCustomerClient(cfg),
+		Merchant:             NewMerchantClient(cfg),
+		Product:              NewProductClient(cfg),
+		ProductCategoryMajor: NewProductCategoryMajorClient(cfg),
+		ProductCategoryMinor: NewProductCategoryMinorClient(cfg),
+		RetailMerchant:       NewRetailMerchantClient(cfg),
+		SupplierMerchant:     NewSupplierMerchantClient(cfg),
 	}, nil
 }
 
@@ -152,9 +171,12 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Admin.Use(hooks...)
 	c.Agent.Use(hooks...)
 	c.Customer.Use(hooks...)
+	c.Merchant.Use(hooks...)
+	c.Product.Use(hooks...)
+	c.ProductCategoryMajor.Use(hooks...)
+	c.ProductCategoryMinor.Use(hooks...)
 	c.RetailMerchant.Use(hooks...)
 	c.SupplierMerchant.Use(hooks...)
-	c.User.Use(hooks...)
 }
 
 // AdminClient is a client for the Admin schema.
@@ -427,6 +449,558 @@ func (c *CustomerClient) Hooks() []Hook {
 	return c.hooks.Customer
 }
 
+// MerchantClient is a client for the Merchant schema.
+type MerchantClient struct {
+	config
+}
+
+// NewMerchantClient returns a client for the Merchant from the given config.
+func NewMerchantClient(c config) *MerchantClient {
+	return &MerchantClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `merchant.Hooks(f(g(h())))`.
+func (c *MerchantClient) Use(hooks ...Hook) {
+	c.hooks.Merchant = append(c.hooks.Merchant, hooks...)
+}
+
+// Create returns a create builder for Merchant.
+func (c *MerchantClient) Create() *MerchantCreate {
+	mutation := newMerchantMutation(c.config, OpCreate)
+	return &MerchantCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Merchant entities.
+func (c *MerchantClient) CreateBulk(builders ...*MerchantCreate) *MerchantCreateBulk {
+	return &MerchantCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Merchant.
+func (c *MerchantClient) Update() *MerchantUpdate {
+	mutation := newMerchantMutation(c.config, OpUpdate)
+	return &MerchantUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MerchantClient) UpdateOne(m *Merchant) *MerchantUpdateOne {
+	mutation := newMerchantMutation(c.config, OpUpdateOne, withMerchant(m))
+	return &MerchantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MerchantClient) UpdateOneID(id int) *MerchantUpdateOne {
+	mutation := newMerchantMutation(c.config, OpUpdateOne, withMerchantID(id))
+	return &MerchantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Merchant.
+func (c *MerchantClient) Delete() *MerchantDelete {
+	mutation := newMerchantMutation(c.config, OpDelete)
+	return &MerchantDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *MerchantClient) DeleteOne(m *Merchant) *MerchantDeleteOne {
+	return c.DeleteOneID(m.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *MerchantClient) DeleteOneID(id int) *MerchantDeleteOne {
+	builder := c.Delete().Where(merchant.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MerchantDeleteOne{builder}
+}
+
+// Query returns a query builder for Merchant.
+func (c *MerchantClient) Query() *MerchantQuery {
+	return &MerchantQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Merchant entity by its id.
+func (c *MerchantClient) Get(ctx context.Context, id int) (*Merchant, error) {
+	return c.Query().Where(merchant.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MerchantClient) GetX(ctx context.Context, id int) *Merchant {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySupplier queries the supplier edge of a Merchant.
+func (c *MerchantClient) QuerySupplier(m *Merchant) *SupplierMerchantQuery {
+	query := &SupplierMerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, id),
+			sqlgraph.To(suppliermerchant.Table, suppliermerchant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, merchant.SupplierTable, merchant.SupplierColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRetailer queries the retailer edge of a Merchant.
+func (c *MerchantClient) QueryRetailer(m *Merchant) *RetailMerchantQuery {
+	query := &RetailMerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, id),
+			sqlgraph.To(retailmerchant.Table, retailmerchant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, merchant.RetailerTable, merchant.RetailerColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProducts queries the products edge of a Merchant.
+func (c *MerchantClient) QueryProducts(m *Merchant) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, merchant.ProductsTable, merchant.ProductsColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *MerchantClient) Hooks() []Hook {
+	return c.hooks.Merchant
+}
+
+// ProductClient is a client for the Product schema.
+type ProductClient struct {
+	config
+}
+
+// NewProductClient returns a client for the Product from the given config.
+func NewProductClient(c config) *ProductClient {
+	return &ProductClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `product.Hooks(f(g(h())))`.
+func (c *ProductClient) Use(hooks ...Hook) {
+	c.hooks.Product = append(c.hooks.Product, hooks...)
+}
+
+// Create returns a create builder for Product.
+func (c *ProductClient) Create() *ProductCreate {
+	mutation := newProductMutation(c.config, OpCreate)
+	return &ProductCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Product entities.
+func (c *ProductClient) CreateBulk(builders ...*ProductCreate) *ProductCreateBulk {
+	return &ProductCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Product.
+func (c *ProductClient) Update() *ProductUpdate {
+	mutation := newProductMutation(c.config, OpUpdate)
+	return &ProductUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProductClient) UpdateOne(pr *Product) *ProductUpdateOne {
+	mutation := newProductMutation(c.config, OpUpdateOne, withProduct(pr))
+	return &ProductUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProductClient) UpdateOneID(id int) *ProductUpdateOne {
+	mutation := newProductMutation(c.config, OpUpdateOne, withProductID(id))
+	return &ProductUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Product.
+func (c *ProductClient) Delete() *ProductDelete {
+	mutation := newProductMutation(c.config, OpDelete)
+	return &ProductDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ProductClient) DeleteOne(pr *Product) *ProductDeleteOne {
+	return c.DeleteOneID(pr.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ProductClient) DeleteOneID(id int) *ProductDeleteOne {
+	builder := c.Delete().Where(product.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProductDeleteOne{builder}
+}
+
+// Query returns a query builder for Product.
+func (c *ProductClient) Query() *ProductQuery {
+	return &ProductQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Product entity by its id.
+func (c *ProductClient) Get(ctx context.Context, id int) (*Product, error) {
+	return c.Query().Where(product.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProductClient) GetX(ctx context.Context, id int) *Product {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMajor queries the major edge of a Product.
+func (c *ProductClient) QueryMajor(pr *Product) *ProductCategoryMajorQuery {
+	query := &ProductCategoryMajorQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(productcategorymajor.Table, productcategorymajor.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, product.MajorTable, product.MajorPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMinor queries the minor edge of a Product.
+func (c *ProductClient) QueryMinor(pr *Product) *ProductCategoryMinorQuery {
+	query := &ProductCategoryMinorQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(productcategoryminor.Table, productcategoryminor.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, product.MinorTable, product.MinorPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMechant queries the mechant edge of a Product.
+func (c *ProductClient) QueryMechant(pr *Product) *MerchantQuery {
+	query := &MerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, product.MechantTable, product.MechantColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySupplier queries the supplier edge of a Product.
+func (c *ProductClient) QuerySupplier(pr *Product) *SupplierMerchantQuery {
+	query := &SupplierMerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(suppliermerchant.Table, suppliermerchant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, product.SupplierTable, product.SupplierColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRetailer queries the retailer edge of a Product.
+func (c *ProductClient) QueryRetailer(pr *Product) *RetailMerchantQuery {
+	query := &RetailMerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(retailmerchant.Table, retailmerchant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, product.RetailerTable, product.RetailerColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProductClient) Hooks() []Hook {
+	return c.hooks.Product
+}
+
+// ProductCategoryMajorClient is a client for the ProductCategoryMajor schema.
+type ProductCategoryMajorClient struct {
+	config
+}
+
+// NewProductCategoryMajorClient returns a client for the ProductCategoryMajor from the given config.
+func NewProductCategoryMajorClient(c config) *ProductCategoryMajorClient {
+	return &ProductCategoryMajorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `productcategorymajor.Hooks(f(g(h())))`.
+func (c *ProductCategoryMajorClient) Use(hooks ...Hook) {
+	c.hooks.ProductCategoryMajor = append(c.hooks.ProductCategoryMajor, hooks...)
+}
+
+// Create returns a create builder for ProductCategoryMajor.
+func (c *ProductCategoryMajorClient) Create() *ProductCategoryMajorCreate {
+	mutation := newProductCategoryMajorMutation(c.config, OpCreate)
+	return &ProductCategoryMajorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProductCategoryMajor entities.
+func (c *ProductCategoryMajorClient) CreateBulk(builders ...*ProductCategoryMajorCreate) *ProductCategoryMajorCreateBulk {
+	return &ProductCategoryMajorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProductCategoryMajor.
+func (c *ProductCategoryMajorClient) Update() *ProductCategoryMajorUpdate {
+	mutation := newProductCategoryMajorMutation(c.config, OpUpdate)
+	return &ProductCategoryMajorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProductCategoryMajorClient) UpdateOne(pcm *ProductCategoryMajor) *ProductCategoryMajorUpdateOne {
+	mutation := newProductCategoryMajorMutation(c.config, OpUpdateOne, withProductCategoryMajor(pcm))
+	return &ProductCategoryMajorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProductCategoryMajorClient) UpdateOneID(id int) *ProductCategoryMajorUpdateOne {
+	mutation := newProductCategoryMajorMutation(c.config, OpUpdateOne, withProductCategoryMajorID(id))
+	return &ProductCategoryMajorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProductCategoryMajor.
+func (c *ProductCategoryMajorClient) Delete() *ProductCategoryMajorDelete {
+	mutation := newProductCategoryMajorMutation(c.config, OpDelete)
+	return &ProductCategoryMajorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ProductCategoryMajorClient) DeleteOne(pcm *ProductCategoryMajor) *ProductCategoryMajorDeleteOne {
+	return c.DeleteOneID(pcm.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ProductCategoryMajorClient) DeleteOneID(id int) *ProductCategoryMajorDeleteOne {
+	builder := c.Delete().Where(productcategorymajor.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProductCategoryMajorDeleteOne{builder}
+}
+
+// Query returns a query builder for ProductCategoryMajor.
+func (c *ProductCategoryMajorClient) Query() *ProductCategoryMajorQuery {
+	return &ProductCategoryMajorQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a ProductCategoryMajor entity by its id.
+func (c *ProductCategoryMajorClient) Get(ctx context.Context, id int) (*ProductCategoryMajor, error) {
+	return c.Query().Where(productcategorymajor.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProductCategoryMajorClient) GetX(ctx context.Context, id int) *ProductCategoryMajor {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMinors queries the minors edge of a ProductCategoryMajor.
+func (c *ProductCategoryMajorClient) QueryMinors(pcm *ProductCategoryMajor) *ProductCategoryMinorQuery {
+	query := &ProductCategoryMinorQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pcm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(productcategorymajor.Table, productcategorymajor.FieldID, id),
+			sqlgraph.To(productcategoryminor.Table, productcategoryminor.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, productcategorymajor.MinorsTable, productcategorymajor.MinorsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pcm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProducts queries the products edge of a ProductCategoryMajor.
+func (c *ProductCategoryMajorClient) QueryProducts(pcm *ProductCategoryMajor) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pcm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(productcategorymajor.Table, productcategorymajor.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, productcategorymajor.ProductsTable, productcategorymajor.ProductsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pcm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProductCategoryMajorClient) Hooks() []Hook {
+	return c.hooks.ProductCategoryMajor
+}
+
+// ProductCategoryMinorClient is a client for the ProductCategoryMinor schema.
+type ProductCategoryMinorClient struct {
+	config
+}
+
+// NewProductCategoryMinorClient returns a client for the ProductCategoryMinor from the given config.
+func NewProductCategoryMinorClient(c config) *ProductCategoryMinorClient {
+	return &ProductCategoryMinorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `productcategoryminor.Hooks(f(g(h())))`.
+func (c *ProductCategoryMinorClient) Use(hooks ...Hook) {
+	c.hooks.ProductCategoryMinor = append(c.hooks.ProductCategoryMinor, hooks...)
+}
+
+// Create returns a create builder for ProductCategoryMinor.
+func (c *ProductCategoryMinorClient) Create() *ProductCategoryMinorCreate {
+	mutation := newProductCategoryMinorMutation(c.config, OpCreate)
+	return &ProductCategoryMinorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProductCategoryMinor entities.
+func (c *ProductCategoryMinorClient) CreateBulk(builders ...*ProductCategoryMinorCreate) *ProductCategoryMinorCreateBulk {
+	return &ProductCategoryMinorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProductCategoryMinor.
+func (c *ProductCategoryMinorClient) Update() *ProductCategoryMinorUpdate {
+	mutation := newProductCategoryMinorMutation(c.config, OpUpdate)
+	return &ProductCategoryMinorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProductCategoryMinorClient) UpdateOne(pcm *ProductCategoryMinor) *ProductCategoryMinorUpdateOne {
+	mutation := newProductCategoryMinorMutation(c.config, OpUpdateOne, withProductCategoryMinor(pcm))
+	return &ProductCategoryMinorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProductCategoryMinorClient) UpdateOneID(id int) *ProductCategoryMinorUpdateOne {
+	mutation := newProductCategoryMinorMutation(c.config, OpUpdateOne, withProductCategoryMinorID(id))
+	return &ProductCategoryMinorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProductCategoryMinor.
+func (c *ProductCategoryMinorClient) Delete() *ProductCategoryMinorDelete {
+	mutation := newProductCategoryMinorMutation(c.config, OpDelete)
+	return &ProductCategoryMinorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ProductCategoryMinorClient) DeleteOne(pcm *ProductCategoryMinor) *ProductCategoryMinorDeleteOne {
+	return c.DeleteOneID(pcm.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ProductCategoryMinorClient) DeleteOneID(id int) *ProductCategoryMinorDeleteOne {
+	builder := c.Delete().Where(productcategoryminor.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProductCategoryMinorDeleteOne{builder}
+}
+
+// Query returns a query builder for ProductCategoryMinor.
+func (c *ProductCategoryMinorClient) Query() *ProductCategoryMinorQuery {
+	return &ProductCategoryMinorQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a ProductCategoryMinor entity by its id.
+func (c *ProductCategoryMinorClient) Get(ctx context.Context, id int) (*ProductCategoryMinor, error) {
+	return c.Query().Where(productcategoryminor.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProductCategoryMinorClient) GetX(ctx context.Context, id int) *ProductCategoryMinor {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryProducts queries the products edge of a ProductCategoryMinor.
+func (c *ProductCategoryMinorClient) QueryProducts(pcm *ProductCategoryMinor) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pcm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(productcategoryminor.Table, productcategoryminor.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, productcategoryminor.ProductsTable, productcategoryminor.ProductsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pcm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMajor queries the major edge of a ProductCategoryMinor.
+func (c *ProductCategoryMinorClient) QueryMajor(pcm *ProductCategoryMinor) *ProductCategoryMajorQuery {
+	query := &ProductCategoryMajorQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pcm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(productcategoryminor.Table, productcategoryminor.FieldID, id),
+			sqlgraph.To(productcategorymajor.Table, productcategorymajor.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, productcategoryminor.MajorTable, productcategoryminor.MajorPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pcm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProductCategoryMinorClient) Hooks() []Hook {
+	return c.hooks.ProductCategoryMinor
+}
+
 // RetailMerchantClient is a client for the RetailMerchant schema.
 type RetailMerchantClient struct {
 	config
@@ -510,6 +1084,38 @@ func (c *RetailMerchantClient) GetX(ctx context.Context, id int) *RetailMerchant
 		panic(err)
 	}
 	return obj
+}
+
+// QueryProducts queries the products edge of a RetailMerchant.
+func (c *RetailMerchantClient) QueryProducts(rm *RetailMerchant) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := rm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(retailmerchant.Table, retailmerchant.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, retailmerchant.ProductsTable, retailmerchant.ProductsColumn),
+		)
+		fromV = sqlgraph.Neighbors(rm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMerchant queries the merchant edge of a RetailMerchant.
+func (c *RetailMerchantClient) QueryMerchant(rm *RetailMerchant) *MerchantQuery {
+	query := &MerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := rm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(retailmerchant.Table, retailmerchant.FieldID, id),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, retailmerchant.MerchantTable, retailmerchant.MerchantColumn),
+		)
+		fromV = sqlgraph.Neighbors(rm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -602,97 +1208,39 @@ func (c *SupplierMerchantClient) GetX(ctx context.Context, id int) *SupplierMerc
 	return obj
 }
 
+// QueryProducts queries the products edge of a SupplierMerchant.
+func (c *SupplierMerchantClient) QueryProducts(sm *SupplierMerchant) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := sm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(suppliermerchant.Table, suppliermerchant.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, suppliermerchant.ProductsTable, suppliermerchant.ProductsColumn),
+		)
+		fromV = sqlgraph.Neighbors(sm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMerchant queries the merchant edge of a SupplierMerchant.
+func (c *SupplierMerchantClient) QueryMerchant(sm *SupplierMerchant) *MerchantQuery {
+	query := &MerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := sm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(suppliermerchant.Table, suppliermerchant.FieldID, id),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, suppliermerchant.MerchantTable, suppliermerchant.MerchantColumn),
+		)
+		fromV = sqlgraph.Neighbors(sm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SupplierMerchantClient) Hooks() []Hook {
 	return c.hooks.SupplierMerchant
-}
-
-// UserClient is a client for the User schema.
-type UserClient struct {
-	config
-}
-
-// NewUserClient returns a client for the User from the given config.
-func NewUserClient(c config) *UserClient {
-	return &UserClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `user.Hooks(f(g(h())))`.
-func (c *UserClient) Use(hooks ...Hook) {
-	c.hooks.User = append(c.hooks.User, hooks...)
-}
-
-// Create returns a create builder for User.
-func (c *UserClient) Create() *UserCreate {
-	mutation := newUserMutation(c.config, OpCreate)
-	return &UserCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of User entities.
-func (c *UserClient) CreateBulk(builders ...*UserCreate) *UserCreateBulk {
-	return &UserCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for User.
-func (c *UserClient) Update() *UserUpdate {
-	mutation := newUserMutation(c.config, OpUpdate)
-	return &UserUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *UserClient) UpdateOne(u *User) *UserUpdateOne {
-	mutation := newUserMutation(c.config, OpUpdateOne, withUser(u))
-	return &UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *UserClient) UpdateOneID(id int) *UserUpdateOne {
-	mutation := newUserMutation(c.config, OpUpdateOne, withUserID(id))
-	return &UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for User.
-func (c *UserClient) Delete() *UserDelete {
-	mutation := newUserMutation(c.config, OpDelete)
-	return &UserDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a delete builder for the given entity.
-func (c *UserClient) DeleteOne(u *User) *UserDeleteOne {
-	return c.DeleteOneID(u.ID)
-}
-
-// DeleteOneID returns a delete builder for the given id.
-func (c *UserClient) DeleteOneID(id int) *UserDeleteOne {
-	builder := c.Delete().Where(user.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &UserDeleteOne{builder}
-}
-
-// Query returns a query builder for User.
-func (c *UserClient) Query() *UserQuery {
-	return &UserQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a User entity by its id.
-func (c *UserClient) Get(ctx context.Context, id int) (*User, error) {
-	return c.Query().Where(user.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *UserClient) GetX(ctx context.Context, id int) *User {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *UserClient) Hooks() []Hook {
-	return c.hooks.User
 }

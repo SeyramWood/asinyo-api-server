@@ -12,10 +12,13 @@ import (
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/predicate"
+	"github.com/SeyramWood/ent/product"
+	"github.com/SeyramWood/ent/productcategorymajor"
+	"github.com/SeyramWood/ent/productcategoryminor"
 	"github.com/SeyramWood/ent/retailmerchant"
 	"github.com/SeyramWood/ent/suppliermerchant"
-	"github.com/SeyramWood/ent/user"
 
 	"entgo.io/ent"
 )
@@ -29,12 +32,15 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAdmin            = "Admin"
-	TypeAgent            = "Agent"
-	TypeCustomer         = "Customer"
-	TypeRetailMerchant   = "RetailMerchant"
-	TypeSupplierMerchant = "SupplierMerchant"
-	TypeUser             = "User"
+	TypeAdmin                = "Admin"
+	TypeAgent                = "Agent"
+	TypeCustomer             = "Customer"
+	TypeMerchant             = "Merchant"
+	TypeProduct              = "Product"
+	TypeProductCategoryMajor = "ProductCategoryMajor"
+	TypeProductCategoryMinor = "ProductCategoryMinor"
+	TypeRetailMerchant       = "RetailMerchant"
+	TypeSupplierMerchant     = "SupplierMerchant"
 )
 
 // AdminMutation represents an operation that mutates the Admin nodes in the graph.
@@ -1391,7 +1397,7 @@ type CustomerMutation struct {
 	id            *int
 	created_at    *time.Time
 	updated_at    *time.Time
-	email         *string
+	username      *string
 	password      *[]byte
 	first_name    *string
 	last_name     *string
@@ -1573,40 +1579,40 @@ func (m *CustomerMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
-// SetEmail sets the "email" field.
-func (m *CustomerMutation) SetEmail(s string) {
-	m.email = &s
+// SetUsername sets the "username" field.
+func (m *CustomerMutation) SetUsername(s string) {
+	m.username = &s
 }
 
-// Email returns the value of the "email" field in the mutation.
-func (m *CustomerMutation) Email() (r string, exists bool) {
-	v := m.email
+// Username returns the value of the "username" field in the mutation.
+func (m *CustomerMutation) Username() (r string, exists bool) {
+	v := m.username
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldEmail returns the old "email" field's value of the Customer entity.
+// OldUsername returns the old "username" field's value of the Customer entity.
 // If the Customer object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *CustomerMutation) OldEmail(ctx context.Context) (v string, err error) {
+func (m *CustomerMutation) OldUsername(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEmail is only allowed on UpdateOne operations")
+		return v, errors.New("OldUsername is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEmail requires an ID field in the mutation")
+		return v, errors.New("OldUsername requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEmail: %w", err)
+		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
 	}
-	return oldValue.Email, nil
+	return oldValue.Username, nil
 }
 
-// ResetEmail resets all changes to the "email" field.
-func (m *CustomerMutation) ResetEmail() {
-	m.email = nil
+// ResetUsername resets all changes to the "username" field.
+func (m *CustomerMutation) ResetUsername() {
+	m.username = nil
 }
 
 // SetPassword sets the "password" field.
@@ -1828,8 +1834,8 @@ func (m *CustomerMutation) Fields() []string {
 	if m.updated_at != nil {
 		fields = append(fields, customer.FieldUpdatedAt)
 	}
-	if m.email != nil {
-		fields = append(fields, customer.FieldEmail)
+	if m.username != nil {
+		fields = append(fields, customer.FieldUsername)
 	}
 	if m.password != nil {
 		fields = append(fields, customer.FieldPassword)
@@ -1858,8 +1864,8 @@ func (m *CustomerMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case customer.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case customer.FieldEmail:
-		return m.Email()
+	case customer.FieldUsername:
+		return m.Username()
 	case customer.FieldPassword:
 		return m.Password()
 	case customer.FieldFirstName:
@@ -1883,8 +1889,8 @@ func (m *CustomerMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldCreatedAt(ctx)
 	case customer.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case customer.FieldEmail:
-		return m.OldEmail(ctx)
+	case customer.FieldUsername:
+		return m.OldUsername(ctx)
 	case customer.FieldPassword:
 		return m.OldPassword(ctx)
 	case customer.FieldFirstName:
@@ -1918,12 +1924,12 @@ func (m *CustomerMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
-	case customer.FieldEmail:
+	case customer.FieldUsername:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetEmail(v)
+		m.SetUsername(v)
 		return nil
 	case customer.FieldPassword:
 		v, ok := value.([]byte)
@@ -2024,8 +2030,8 @@ func (m *CustomerMutation) ResetField(name string) error {
 	case customer.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
-	case customer.FieldEmail:
-		m.ResetEmail()
+	case customer.FieldUsername:
+		m.ResetUsername()
 		return nil
 	case customer.FieldPassword:
 		m.ResetPassword()
@@ -2094,8 +2100,8 @@ func (m *CustomerMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Customer edge %s", name)
 }
 
-// RetailMerchantMutation represents an operation that mutates the RetailMerchant nodes in the graph.
-type RetailMerchantMutation struct {
+// MerchantMutation represents an operation that mutates the Merchant nodes in the graph.
+type MerchantMutation struct {
 	config
 	op              Op
 	typ             string
@@ -2104,6 +2110,2983 @@ type RetailMerchantMutation struct {
 	updated_at      *time.Time
 	username        *string
 	password        *[]byte
+	clearedFields   map[string]struct{}
+	supplier        *int
+	clearedsupplier bool
+	retailer        *int
+	clearedretailer bool
+	products        *int
+	clearedproducts bool
+	done            bool
+	oldValue        func(context.Context) (*Merchant, error)
+	predicates      []predicate.Merchant
+}
+
+var _ ent.Mutation = (*MerchantMutation)(nil)
+
+// merchantOption allows management of the mutation configuration using functional options.
+type merchantOption func(*MerchantMutation)
+
+// newMerchantMutation creates new mutation for the Merchant entity.
+func newMerchantMutation(c config, op Op, opts ...merchantOption) *MerchantMutation {
+	m := &MerchantMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeMerchant,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withMerchantID sets the ID field of the mutation.
+func withMerchantID(id int) merchantOption {
+	return func(m *MerchantMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Merchant
+		)
+		m.oldValue = func(ctx context.Context) (*Merchant, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Merchant.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withMerchant sets the old Merchant of the mutation.
+func withMerchant(node *Merchant) merchantOption {
+	return func(m *MerchantMutation) {
+		m.oldValue = func(context.Context) (*Merchant, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m MerchantMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m MerchantMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *MerchantMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *MerchantMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Merchant.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *MerchantMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *MerchantMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Merchant entity.
+// If the Merchant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MerchantMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *MerchantMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *MerchantMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *MerchantMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Merchant entity.
+// If the Merchant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MerchantMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *MerchantMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetUsername sets the "username" field.
+func (m *MerchantMutation) SetUsername(s string) {
+	m.username = &s
+}
+
+// Username returns the value of the "username" field in the mutation.
+func (m *MerchantMutation) Username() (r string, exists bool) {
+	v := m.username
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsername returns the old "username" field's value of the Merchant entity.
+// If the Merchant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MerchantMutation) OldUsername(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsername is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsername requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
+	}
+	return oldValue.Username, nil
+}
+
+// ResetUsername resets all changes to the "username" field.
+func (m *MerchantMutation) ResetUsername() {
+	m.username = nil
+}
+
+// SetPassword sets the "password" field.
+func (m *MerchantMutation) SetPassword(b []byte) {
+	m.password = &b
+}
+
+// Password returns the value of the "password" field in the mutation.
+func (m *MerchantMutation) Password() (r []byte, exists bool) {
+	v := m.password
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPassword returns the old "password" field's value of the Merchant entity.
+// If the Merchant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MerchantMutation) OldPassword(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPassword is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPassword requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPassword: %w", err)
+	}
+	return oldValue.Password, nil
+}
+
+// ResetPassword resets all changes to the "password" field.
+func (m *MerchantMutation) ResetPassword() {
+	m.password = nil
+}
+
+// SetSupplierID sets the "supplier" edge to the SupplierMerchant entity by id.
+func (m *MerchantMutation) SetSupplierID(id int) {
+	m.supplier = &id
+}
+
+// ClearSupplier clears the "supplier" edge to the SupplierMerchant entity.
+func (m *MerchantMutation) ClearSupplier() {
+	m.clearedsupplier = true
+}
+
+// SupplierCleared reports if the "supplier" edge to the SupplierMerchant entity was cleared.
+func (m *MerchantMutation) SupplierCleared() bool {
+	return m.clearedsupplier
+}
+
+// SupplierID returns the "supplier" edge ID in the mutation.
+func (m *MerchantMutation) SupplierID() (id int, exists bool) {
+	if m.supplier != nil {
+		return *m.supplier, true
+	}
+	return
+}
+
+// SupplierIDs returns the "supplier" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SupplierID instead. It exists only for internal usage by the builders.
+func (m *MerchantMutation) SupplierIDs() (ids []int) {
+	if id := m.supplier; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSupplier resets all changes to the "supplier" edge.
+func (m *MerchantMutation) ResetSupplier() {
+	m.supplier = nil
+	m.clearedsupplier = false
+}
+
+// SetRetailerID sets the "retailer" edge to the RetailMerchant entity by id.
+func (m *MerchantMutation) SetRetailerID(id int) {
+	m.retailer = &id
+}
+
+// ClearRetailer clears the "retailer" edge to the RetailMerchant entity.
+func (m *MerchantMutation) ClearRetailer() {
+	m.clearedretailer = true
+}
+
+// RetailerCleared reports if the "retailer" edge to the RetailMerchant entity was cleared.
+func (m *MerchantMutation) RetailerCleared() bool {
+	return m.clearedretailer
+}
+
+// RetailerID returns the "retailer" edge ID in the mutation.
+func (m *MerchantMutation) RetailerID() (id int, exists bool) {
+	if m.retailer != nil {
+		return *m.retailer, true
+	}
+	return
+}
+
+// RetailerIDs returns the "retailer" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RetailerID instead. It exists only for internal usage by the builders.
+func (m *MerchantMutation) RetailerIDs() (ids []int) {
+	if id := m.retailer; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRetailer resets all changes to the "retailer" edge.
+func (m *MerchantMutation) ResetRetailer() {
+	m.retailer = nil
+	m.clearedretailer = false
+}
+
+// SetProductsID sets the "products" edge to the Product entity by id.
+func (m *MerchantMutation) SetProductsID(id int) {
+	m.products = &id
+}
+
+// ClearProducts clears the "products" edge to the Product entity.
+func (m *MerchantMutation) ClearProducts() {
+	m.clearedproducts = true
+}
+
+// ProductsCleared reports if the "products" edge to the Product entity was cleared.
+func (m *MerchantMutation) ProductsCleared() bool {
+	return m.clearedproducts
+}
+
+// ProductsID returns the "products" edge ID in the mutation.
+func (m *MerchantMutation) ProductsID() (id int, exists bool) {
+	if m.products != nil {
+		return *m.products, true
+	}
+	return
+}
+
+// ProductsIDs returns the "products" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProductsID instead. It exists only for internal usage by the builders.
+func (m *MerchantMutation) ProductsIDs() (ids []int) {
+	if id := m.products; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProducts resets all changes to the "products" edge.
+func (m *MerchantMutation) ResetProducts() {
+	m.products = nil
+	m.clearedproducts = false
+}
+
+// Where appends a list predicates to the MerchantMutation builder.
+func (m *MerchantMutation) Where(ps ...predicate.Merchant) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *MerchantMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Merchant).
+func (m *MerchantMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *MerchantMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, merchant.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, merchant.FieldUpdatedAt)
+	}
+	if m.username != nil {
+		fields = append(fields, merchant.FieldUsername)
+	}
+	if m.password != nil {
+		fields = append(fields, merchant.FieldPassword)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *MerchantMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case merchant.FieldCreatedAt:
+		return m.CreatedAt()
+	case merchant.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case merchant.FieldUsername:
+		return m.Username()
+	case merchant.FieldPassword:
+		return m.Password()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *MerchantMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case merchant.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case merchant.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case merchant.FieldUsername:
+		return m.OldUsername(ctx)
+	case merchant.FieldPassword:
+		return m.OldPassword(ctx)
+	}
+	return nil, fmt.Errorf("unknown Merchant field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *MerchantMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case merchant.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case merchant.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case merchant.FieldUsername:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsername(v)
+		return nil
+	case merchant.FieldPassword:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPassword(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Merchant field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *MerchantMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *MerchantMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *MerchantMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Merchant numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *MerchantMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *MerchantMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *MerchantMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Merchant nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *MerchantMutation) ResetField(name string) error {
+	switch name {
+	case merchant.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case merchant.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case merchant.FieldUsername:
+		m.ResetUsername()
+		return nil
+	case merchant.FieldPassword:
+		m.ResetPassword()
+		return nil
+	}
+	return fmt.Errorf("unknown Merchant field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *MerchantMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.supplier != nil {
+		edges = append(edges, merchant.EdgeSupplier)
+	}
+	if m.retailer != nil {
+		edges = append(edges, merchant.EdgeRetailer)
+	}
+	if m.products != nil {
+		edges = append(edges, merchant.EdgeProducts)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *MerchantMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case merchant.EdgeSupplier:
+		if id := m.supplier; id != nil {
+			return []ent.Value{*id}
+		}
+	case merchant.EdgeRetailer:
+		if id := m.retailer; id != nil {
+			return []ent.Value{*id}
+		}
+	case merchant.EdgeProducts:
+		if id := m.products; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *MerchantMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *MerchantMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *MerchantMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedsupplier {
+		edges = append(edges, merchant.EdgeSupplier)
+	}
+	if m.clearedretailer {
+		edges = append(edges, merchant.EdgeRetailer)
+	}
+	if m.clearedproducts {
+		edges = append(edges, merchant.EdgeProducts)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *MerchantMutation) EdgeCleared(name string) bool {
+	switch name {
+	case merchant.EdgeSupplier:
+		return m.clearedsupplier
+	case merchant.EdgeRetailer:
+		return m.clearedretailer
+	case merchant.EdgeProducts:
+		return m.clearedproducts
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *MerchantMutation) ClearEdge(name string) error {
+	switch name {
+	case merchant.EdgeSupplier:
+		m.ClearSupplier()
+		return nil
+	case merchant.EdgeRetailer:
+		m.ClearRetailer()
+		return nil
+	case merchant.EdgeProducts:
+		m.ClearProducts()
+		return nil
+	}
+	return fmt.Errorf("unknown Merchant unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *MerchantMutation) ResetEdge(name string) error {
+	switch name {
+	case merchant.EdgeSupplier:
+		m.ResetSupplier()
+		return nil
+	case merchant.EdgeRetailer:
+		m.ResetRetailer()
+		return nil
+	case merchant.EdgeProducts:
+		m.ResetProducts()
+		return nil
+	}
+	return fmt.Errorf("unknown Merchant edge %s", name)
+}
+
+// ProductMutation represents an operation that mutates the Product nodes in the graph.
+type ProductMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int
+	created_at      *time.Time
+	updated_at      *time.Time
+	_Name           *string
+	_Price          *float64
+	add_Price       *float64
+	_PromoPrice     *float64
+	add_PromoPrice  *float64
+	_Description    *string
+	_Image          *string
+	clearedFields   map[string]struct{}
+	major           map[int]struct{}
+	removedmajor    map[int]struct{}
+	clearedmajor    bool
+	minor           map[int]struct{}
+	removedminor    map[int]struct{}
+	clearedminor    bool
+	mechant         map[int]struct{}
+	removedmechant  map[int]struct{}
+	clearedmechant  bool
+	supplier        map[int]struct{}
+	removedsupplier map[int]struct{}
+	clearedsupplier bool
+	retailer        map[int]struct{}
+	removedretailer map[int]struct{}
+	clearedretailer bool
+	done            bool
+	oldValue        func(context.Context) (*Product, error)
+	predicates      []predicate.Product
+}
+
+var _ ent.Mutation = (*ProductMutation)(nil)
+
+// productOption allows management of the mutation configuration using functional options.
+type productOption func(*ProductMutation)
+
+// newProductMutation creates new mutation for the Product entity.
+func newProductMutation(c config, op Op, opts ...productOption) *ProductMutation {
+	m := &ProductMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProduct,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProductID sets the ID field of the mutation.
+func withProductID(id int) productOption {
+	return func(m *ProductMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Product
+		)
+		m.oldValue = func(ctx context.Context) (*Product, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Product.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProduct sets the old Product of the mutation.
+func withProduct(node *Product) productOption {
+	return func(m *ProductMutation) {
+		m.oldValue = func(context.Context) (*Product, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProductMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProductMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ProductMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ProductMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Product.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ProductMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ProductMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ProductMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ProductMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ProductMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ProductMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetName sets the "Name" field.
+func (m *ProductMutation) SetName(s string) {
+	m._Name = &s
+}
+
+// Name returns the value of the "Name" field in the mutation.
+func (m *ProductMutation) Name() (r string, exists bool) {
+	v := m._Name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "Name" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "Name" field.
+func (m *ProductMutation) ResetName() {
+	m._Name = nil
+}
+
+// SetPrice sets the "Price" field.
+func (m *ProductMutation) SetPrice(f float64) {
+	m._Price = &f
+	m.add_Price = nil
+}
+
+// Price returns the value of the "Price" field in the mutation.
+func (m *ProductMutation) Price() (r float64, exists bool) {
+	v := m._Price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrice returns the old "Price" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldPrice(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrice: %w", err)
+	}
+	return oldValue.Price, nil
+}
+
+// AddPrice adds f to the "Price" field.
+func (m *ProductMutation) AddPrice(f float64) {
+	if m.add_Price != nil {
+		*m.add_Price += f
+	} else {
+		m.add_Price = &f
+	}
+}
+
+// AddedPrice returns the value that was added to the "Price" field in this mutation.
+func (m *ProductMutation) AddedPrice() (r float64, exists bool) {
+	v := m.add_Price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPrice resets all changes to the "Price" field.
+func (m *ProductMutation) ResetPrice() {
+	m._Price = nil
+	m.add_Price = nil
+}
+
+// SetPromoPrice sets the "PromoPrice" field.
+func (m *ProductMutation) SetPromoPrice(f float64) {
+	m._PromoPrice = &f
+	m.add_PromoPrice = nil
+}
+
+// PromoPrice returns the value of the "PromoPrice" field in the mutation.
+func (m *ProductMutation) PromoPrice() (r float64, exists bool) {
+	v := m._PromoPrice
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPromoPrice returns the old "PromoPrice" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldPromoPrice(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPromoPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPromoPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPromoPrice: %w", err)
+	}
+	return oldValue.PromoPrice, nil
+}
+
+// AddPromoPrice adds f to the "PromoPrice" field.
+func (m *ProductMutation) AddPromoPrice(f float64) {
+	if m.add_PromoPrice != nil {
+		*m.add_PromoPrice += f
+	} else {
+		m.add_PromoPrice = &f
+	}
+}
+
+// AddedPromoPrice returns the value that was added to the "PromoPrice" field in this mutation.
+func (m *ProductMutation) AddedPromoPrice() (r float64, exists bool) {
+	v := m.add_PromoPrice
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPromoPrice resets all changes to the "PromoPrice" field.
+func (m *ProductMutation) ResetPromoPrice() {
+	m._PromoPrice = nil
+	m.add_PromoPrice = nil
+}
+
+// SetDescription sets the "Description" field.
+func (m *ProductMutation) SetDescription(s string) {
+	m._Description = &s
+}
+
+// Description returns the value of the "Description" field in the mutation.
+func (m *ProductMutation) Description() (r string, exists bool) {
+	v := m._Description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "Description" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription resets all changes to the "Description" field.
+func (m *ProductMutation) ResetDescription() {
+	m._Description = nil
+}
+
+// SetImage sets the "Image" field.
+func (m *ProductMutation) SetImage(s string) {
+	m._Image = &s
+}
+
+// Image returns the value of the "Image" field in the mutation.
+func (m *ProductMutation) Image() (r string, exists bool) {
+	v := m._Image
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImage returns the old "Image" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldImage(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImage: %w", err)
+	}
+	return oldValue.Image, nil
+}
+
+// ResetImage resets all changes to the "Image" field.
+func (m *ProductMutation) ResetImage() {
+	m._Image = nil
+}
+
+// AddMajorIDs adds the "major" edge to the ProductCategoryMajor entity by ids.
+func (m *ProductMutation) AddMajorIDs(ids ...int) {
+	if m.major == nil {
+		m.major = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.major[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMajor clears the "major" edge to the ProductCategoryMajor entity.
+func (m *ProductMutation) ClearMajor() {
+	m.clearedmajor = true
+}
+
+// MajorCleared reports if the "major" edge to the ProductCategoryMajor entity was cleared.
+func (m *ProductMutation) MajorCleared() bool {
+	return m.clearedmajor
+}
+
+// RemoveMajorIDs removes the "major" edge to the ProductCategoryMajor entity by IDs.
+func (m *ProductMutation) RemoveMajorIDs(ids ...int) {
+	if m.removedmajor == nil {
+		m.removedmajor = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.major, ids[i])
+		m.removedmajor[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMajor returns the removed IDs of the "major" edge to the ProductCategoryMajor entity.
+func (m *ProductMutation) RemovedMajorIDs() (ids []int) {
+	for id := range m.removedmajor {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MajorIDs returns the "major" edge IDs in the mutation.
+func (m *ProductMutation) MajorIDs() (ids []int) {
+	for id := range m.major {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMajor resets all changes to the "major" edge.
+func (m *ProductMutation) ResetMajor() {
+	m.major = nil
+	m.clearedmajor = false
+	m.removedmajor = nil
+}
+
+// AddMinorIDs adds the "minor" edge to the ProductCategoryMinor entity by ids.
+func (m *ProductMutation) AddMinorIDs(ids ...int) {
+	if m.minor == nil {
+		m.minor = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.minor[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMinor clears the "minor" edge to the ProductCategoryMinor entity.
+func (m *ProductMutation) ClearMinor() {
+	m.clearedminor = true
+}
+
+// MinorCleared reports if the "minor" edge to the ProductCategoryMinor entity was cleared.
+func (m *ProductMutation) MinorCleared() bool {
+	return m.clearedminor
+}
+
+// RemoveMinorIDs removes the "minor" edge to the ProductCategoryMinor entity by IDs.
+func (m *ProductMutation) RemoveMinorIDs(ids ...int) {
+	if m.removedminor == nil {
+		m.removedminor = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.minor, ids[i])
+		m.removedminor[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMinor returns the removed IDs of the "minor" edge to the ProductCategoryMinor entity.
+func (m *ProductMutation) RemovedMinorIDs() (ids []int) {
+	for id := range m.removedminor {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MinorIDs returns the "minor" edge IDs in the mutation.
+func (m *ProductMutation) MinorIDs() (ids []int) {
+	for id := range m.minor {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMinor resets all changes to the "minor" edge.
+func (m *ProductMutation) ResetMinor() {
+	m.minor = nil
+	m.clearedminor = false
+	m.removedminor = nil
+}
+
+// AddMechantIDs adds the "mechant" edge to the Merchant entity by ids.
+func (m *ProductMutation) AddMechantIDs(ids ...int) {
+	if m.mechant == nil {
+		m.mechant = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.mechant[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMechant clears the "mechant" edge to the Merchant entity.
+func (m *ProductMutation) ClearMechant() {
+	m.clearedmechant = true
+}
+
+// MechantCleared reports if the "mechant" edge to the Merchant entity was cleared.
+func (m *ProductMutation) MechantCleared() bool {
+	return m.clearedmechant
+}
+
+// RemoveMechantIDs removes the "mechant" edge to the Merchant entity by IDs.
+func (m *ProductMutation) RemoveMechantIDs(ids ...int) {
+	if m.removedmechant == nil {
+		m.removedmechant = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.mechant, ids[i])
+		m.removedmechant[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMechant returns the removed IDs of the "mechant" edge to the Merchant entity.
+func (m *ProductMutation) RemovedMechantIDs() (ids []int) {
+	for id := range m.removedmechant {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MechantIDs returns the "mechant" edge IDs in the mutation.
+func (m *ProductMutation) MechantIDs() (ids []int) {
+	for id := range m.mechant {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMechant resets all changes to the "mechant" edge.
+func (m *ProductMutation) ResetMechant() {
+	m.mechant = nil
+	m.clearedmechant = false
+	m.removedmechant = nil
+}
+
+// AddSupplierIDs adds the "supplier" edge to the SupplierMerchant entity by ids.
+func (m *ProductMutation) AddSupplierIDs(ids ...int) {
+	if m.supplier == nil {
+		m.supplier = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.supplier[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSupplier clears the "supplier" edge to the SupplierMerchant entity.
+func (m *ProductMutation) ClearSupplier() {
+	m.clearedsupplier = true
+}
+
+// SupplierCleared reports if the "supplier" edge to the SupplierMerchant entity was cleared.
+func (m *ProductMutation) SupplierCleared() bool {
+	return m.clearedsupplier
+}
+
+// RemoveSupplierIDs removes the "supplier" edge to the SupplierMerchant entity by IDs.
+func (m *ProductMutation) RemoveSupplierIDs(ids ...int) {
+	if m.removedsupplier == nil {
+		m.removedsupplier = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.supplier, ids[i])
+		m.removedsupplier[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSupplier returns the removed IDs of the "supplier" edge to the SupplierMerchant entity.
+func (m *ProductMutation) RemovedSupplierIDs() (ids []int) {
+	for id := range m.removedsupplier {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SupplierIDs returns the "supplier" edge IDs in the mutation.
+func (m *ProductMutation) SupplierIDs() (ids []int) {
+	for id := range m.supplier {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSupplier resets all changes to the "supplier" edge.
+func (m *ProductMutation) ResetSupplier() {
+	m.supplier = nil
+	m.clearedsupplier = false
+	m.removedsupplier = nil
+}
+
+// AddRetailerIDs adds the "retailer" edge to the RetailMerchant entity by ids.
+func (m *ProductMutation) AddRetailerIDs(ids ...int) {
+	if m.retailer == nil {
+		m.retailer = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.retailer[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRetailer clears the "retailer" edge to the RetailMerchant entity.
+func (m *ProductMutation) ClearRetailer() {
+	m.clearedretailer = true
+}
+
+// RetailerCleared reports if the "retailer" edge to the RetailMerchant entity was cleared.
+func (m *ProductMutation) RetailerCleared() bool {
+	return m.clearedretailer
+}
+
+// RemoveRetailerIDs removes the "retailer" edge to the RetailMerchant entity by IDs.
+func (m *ProductMutation) RemoveRetailerIDs(ids ...int) {
+	if m.removedretailer == nil {
+		m.removedretailer = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.retailer, ids[i])
+		m.removedretailer[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRetailer returns the removed IDs of the "retailer" edge to the RetailMerchant entity.
+func (m *ProductMutation) RemovedRetailerIDs() (ids []int) {
+	for id := range m.removedretailer {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RetailerIDs returns the "retailer" edge IDs in the mutation.
+func (m *ProductMutation) RetailerIDs() (ids []int) {
+	for id := range m.retailer {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRetailer resets all changes to the "retailer" edge.
+func (m *ProductMutation) ResetRetailer() {
+	m.retailer = nil
+	m.clearedretailer = false
+	m.removedretailer = nil
+}
+
+// Where appends a list predicates to the ProductMutation builder.
+func (m *ProductMutation) Where(ps ...predicate.Product) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *ProductMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Product).
+func (m *ProductMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ProductMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, product.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, product.FieldUpdatedAt)
+	}
+	if m._Name != nil {
+		fields = append(fields, product.FieldName)
+	}
+	if m._Price != nil {
+		fields = append(fields, product.FieldPrice)
+	}
+	if m._PromoPrice != nil {
+		fields = append(fields, product.FieldPromoPrice)
+	}
+	if m._Description != nil {
+		fields = append(fields, product.FieldDescription)
+	}
+	if m._Image != nil {
+		fields = append(fields, product.FieldImage)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ProductMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case product.FieldCreatedAt:
+		return m.CreatedAt()
+	case product.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case product.FieldName:
+		return m.Name()
+	case product.FieldPrice:
+		return m.Price()
+	case product.FieldPromoPrice:
+		return m.PromoPrice()
+	case product.FieldDescription:
+		return m.Description()
+	case product.FieldImage:
+		return m.Image()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case product.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case product.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case product.FieldName:
+		return m.OldName(ctx)
+	case product.FieldPrice:
+		return m.OldPrice(ctx)
+	case product.FieldPromoPrice:
+		return m.OldPromoPrice(ctx)
+	case product.FieldDescription:
+		return m.OldDescription(ctx)
+	case product.FieldImage:
+		return m.OldImage(ctx)
+	}
+	return nil, fmt.Errorf("unknown Product field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProductMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case product.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case product.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case product.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case product.FieldPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrice(v)
+		return nil
+	case product.FieldPromoPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPromoPrice(v)
+		return nil
+	case product.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case product.FieldImage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImage(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Product field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ProductMutation) AddedFields() []string {
+	var fields []string
+	if m.add_Price != nil {
+		fields = append(fields, product.FieldPrice)
+	}
+	if m.add_PromoPrice != nil {
+		fields = append(fields, product.FieldPromoPrice)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ProductMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case product.FieldPrice:
+		return m.AddedPrice()
+	case product.FieldPromoPrice:
+		return m.AddedPromoPrice()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProductMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case product.FieldPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPrice(v)
+		return nil
+	case product.FieldPromoPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPromoPrice(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Product numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ProductMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ProductMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProductMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Product nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ProductMutation) ResetField(name string) error {
+	switch name {
+	case product.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case product.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case product.FieldName:
+		m.ResetName()
+		return nil
+	case product.FieldPrice:
+		m.ResetPrice()
+		return nil
+	case product.FieldPromoPrice:
+		m.ResetPromoPrice()
+		return nil
+	case product.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case product.FieldImage:
+		m.ResetImage()
+		return nil
+	}
+	return fmt.Errorf("unknown Product field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ProductMutation) AddedEdges() []string {
+	edges := make([]string, 0, 5)
+	if m.major != nil {
+		edges = append(edges, product.EdgeMajor)
+	}
+	if m.minor != nil {
+		edges = append(edges, product.EdgeMinor)
+	}
+	if m.mechant != nil {
+		edges = append(edges, product.EdgeMechant)
+	}
+	if m.supplier != nil {
+		edges = append(edges, product.EdgeSupplier)
+	}
+	if m.retailer != nil {
+		edges = append(edges, product.EdgeRetailer)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ProductMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case product.EdgeMajor:
+		ids := make([]ent.Value, 0, len(m.major))
+		for id := range m.major {
+			ids = append(ids, id)
+		}
+		return ids
+	case product.EdgeMinor:
+		ids := make([]ent.Value, 0, len(m.minor))
+		for id := range m.minor {
+			ids = append(ids, id)
+		}
+		return ids
+	case product.EdgeMechant:
+		ids := make([]ent.Value, 0, len(m.mechant))
+		for id := range m.mechant {
+			ids = append(ids, id)
+		}
+		return ids
+	case product.EdgeSupplier:
+		ids := make([]ent.Value, 0, len(m.supplier))
+		for id := range m.supplier {
+			ids = append(ids, id)
+		}
+		return ids
+	case product.EdgeRetailer:
+		ids := make([]ent.Value, 0, len(m.retailer))
+		for id := range m.retailer {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ProductMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 5)
+	if m.removedmajor != nil {
+		edges = append(edges, product.EdgeMajor)
+	}
+	if m.removedminor != nil {
+		edges = append(edges, product.EdgeMinor)
+	}
+	if m.removedmechant != nil {
+		edges = append(edges, product.EdgeMechant)
+	}
+	if m.removedsupplier != nil {
+		edges = append(edges, product.EdgeSupplier)
+	}
+	if m.removedretailer != nil {
+		edges = append(edges, product.EdgeRetailer)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ProductMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case product.EdgeMajor:
+		ids := make([]ent.Value, 0, len(m.removedmajor))
+		for id := range m.removedmajor {
+			ids = append(ids, id)
+		}
+		return ids
+	case product.EdgeMinor:
+		ids := make([]ent.Value, 0, len(m.removedminor))
+		for id := range m.removedminor {
+			ids = append(ids, id)
+		}
+		return ids
+	case product.EdgeMechant:
+		ids := make([]ent.Value, 0, len(m.removedmechant))
+		for id := range m.removedmechant {
+			ids = append(ids, id)
+		}
+		return ids
+	case product.EdgeSupplier:
+		ids := make([]ent.Value, 0, len(m.removedsupplier))
+		for id := range m.removedsupplier {
+			ids = append(ids, id)
+		}
+		return ids
+	case product.EdgeRetailer:
+		ids := make([]ent.Value, 0, len(m.removedretailer))
+		for id := range m.removedretailer {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ProductMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 5)
+	if m.clearedmajor {
+		edges = append(edges, product.EdgeMajor)
+	}
+	if m.clearedminor {
+		edges = append(edges, product.EdgeMinor)
+	}
+	if m.clearedmechant {
+		edges = append(edges, product.EdgeMechant)
+	}
+	if m.clearedsupplier {
+		edges = append(edges, product.EdgeSupplier)
+	}
+	if m.clearedretailer {
+		edges = append(edges, product.EdgeRetailer)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ProductMutation) EdgeCleared(name string) bool {
+	switch name {
+	case product.EdgeMajor:
+		return m.clearedmajor
+	case product.EdgeMinor:
+		return m.clearedminor
+	case product.EdgeMechant:
+		return m.clearedmechant
+	case product.EdgeSupplier:
+		return m.clearedsupplier
+	case product.EdgeRetailer:
+		return m.clearedretailer
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ProductMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Product unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ProductMutation) ResetEdge(name string) error {
+	switch name {
+	case product.EdgeMajor:
+		m.ResetMajor()
+		return nil
+	case product.EdgeMinor:
+		m.ResetMinor()
+		return nil
+	case product.EdgeMechant:
+		m.ResetMechant()
+		return nil
+	case product.EdgeSupplier:
+		m.ResetSupplier()
+		return nil
+	case product.EdgeRetailer:
+		m.ResetRetailer()
+		return nil
+	}
+	return fmt.Errorf("unknown Product edge %s", name)
+}
+
+// ProductCategoryMajorMutation represents an operation that mutates the ProductCategoryMajor nodes in the graph.
+type ProductCategoryMajorMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int
+	created_at      *time.Time
+	updated_at      *time.Time
+	category        *string
+	clearedFields   map[string]struct{}
+	minors          map[int]struct{}
+	removedminors   map[int]struct{}
+	clearedminors   bool
+	products        map[int]struct{}
+	removedproducts map[int]struct{}
+	clearedproducts bool
+	done            bool
+	oldValue        func(context.Context) (*ProductCategoryMajor, error)
+	predicates      []predicate.ProductCategoryMajor
+}
+
+var _ ent.Mutation = (*ProductCategoryMajorMutation)(nil)
+
+// productcategorymajorOption allows management of the mutation configuration using functional options.
+type productcategorymajorOption func(*ProductCategoryMajorMutation)
+
+// newProductCategoryMajorMutation creates new mutation for the ProductCategoryMajor entity.
+func newProductCategoryMajorMutation(c config, op Op, opts ...productcategorymajorOption) *ProductCategoryMajorMutation {
+	m := &ProductCategoryMajorMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProductCategoryMajor,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProductCategoryMajorID sets the ID field of the mutation.
+func withProductCategoryMajorID(id int) productcategorymajorOption {
+	return func(m *ProductCategoryMajorMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ProductCategoryMajor
+		)
+		m.oldValue = func(ctx context.Context) (*ProductCategoryMajor, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ProductCategoryMajor.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProductCategoryMajor sets the old ProductCategoryMajor of the mutation.
+func withProductCategoryMajor(node *ProductCategoryMajor) productcategorymajorOption {
+	return func(m *ProductCategoryMajorMutation) {
+		m.oldValue = func(context.Context) (*ProductCategoryMajor, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProductCategoryMajorMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProductCategoryMajorMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ProductCategoryMajorMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ProductCategoryMajorMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ProductCategoryMajor.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ProductCategoryMajorMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ProductCategoryMajorMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ProductCategoryMajor entity.
+// If the ProductCategoryMajor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductCategoryMajorMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ProductCategoryMajorMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ProductCategoryMajorMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ProductCategoryMajorMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ProductCategoryMajor entity.
+// If the ProductCategoryMajor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductCategoryMajorMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ProductCategoryMajorMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCategory sets the "category" field.
+func (m *ProductCategoryMajorMutation) SetCategory(s string) {
+	m.category = &s
+}
+
+// Category returns the value of the "category" field in the mutation.
+func (m *ProductCategoryMajorMutation) Category() (r string, exists bool) {
+	v := m.category
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategory returns the old "category" field's value of the ProductCategoryMajor entity.
+// If the ProductCategoryMajor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductCategoryMajorMutation) OldCategory(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCategory is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCategory requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategory: %w", err)
+	}
+	return oldValue.Category, nil
+}
+
+// ResetCategory resets all changes to the "category" field.
+func (m *ProductCategoryMajorMutation) ResetCategory() {
+	m.category = nil
+}
+
+// AddMinorIDs adds the "minors" edge to the ProductCategoryMinor entity by ids.
+func (m *ProductCategoryMajorMutation) AddMinorIDs(ids ...int) {
+	if m.minors == nil {
+		m.minors = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.minors[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMinors clears the "minors" edge to the ProductCategoryMinor entity.
+func (m *ProductCategoryMajorMutation) ClearMinors() {
+	m.clearedminors = true
+}
+
+// MinorsCleared reports if the "minors" edge to the ProductCategoryMinor entity was cleared.
+func (m *ProductCategoryMajorMutation) MinorsCleared() bool {
+	return m.clearedminors
+}
+
+// RemoveMinorIDs removes the "minors" edge to the ProductCategoryMinor entity by IDs.
+func (m *ProductCategoryMajorMutation) RemoveMinorIDs(ids ...int) {
+	if m.removedminors == nil {
+		m.removedminors = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.minors, ids[i])
+		m.removedminors[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMinors returns the removed IDs of the "minors" edge to the ProductCategoryMinor entity.
+func (m *ProductCategoryMajorMutation) RemovedMinorsIDs() (ids []int) {
+	for id := range m.removedminors {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MinorsIDs returns the "minors" edge IDs in the mutation.
+func (m *ProductCategoryMajorMutation) MinorsIDs() (ids []int) {
+	for id := range m.minors {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMinors resets all changes to the "minors" edge.
+func (m *ProductCategoryMajorMutation) ResetMinors() {
+	m.minors = nil
+	m.clearedminors = false
+	m.removedminors = nil
+}
+
+// AddProductIDs adds the "products" edge to the Product entity by ids.
+func (m *ProductCategoryMajorMutation) AddProductIDs(ids ...int) {
+	if m.products == nil {
+		m.products = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.products[ids[i]] = struct{}{}
+	}
+}
+
+// ClearProducts clears the "products" edge to the Product entity.
+func (m *ProductCategoryMajorMutation) ClearProducts() {
+	m.clearedproducts = true
+}
+
+// ProductsCleared reports if the "products" edge to the Product entity was cleared.
+func (m *ProductCategoryMajorMutation) ProductsCleared() bool {
+	return m.clearedproducts
+}
+
+// RemoveProductIDs removes the "products" edge to the Product entity by IDs.
+func (m *ProductCategoryMajorMutation) RemoveProductIDs(ids ...int) {
+	if m.removedproducts == nil {
+		m.removedproducts = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.products, ids[i])
+		m.removedproducts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProducts returns the removed IDs of the "products" edge to the Product entity.
+func (m *ProductCategoryMajorMutation) RemovedProductsIDs() (ids []int) {
+	for id := range m.removedproducts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProductsIDs returns the "products" edge IDs in the mutation.
+func (m *ProductCategoryMajorMutation) ProductsIDs() (ids []int) {
+	for id := range m.products {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProducts resets all changes to the "products" edge.
+func (m *ProductCategoryMajorMutation) ResetProducts() {
+	m.products = nil
+	m.clearedproducts = false
+	m.removedproducts = nil
+}
+
+// Where appends a list predicates to the ProductCategoryMajorMutation builder.
+func (m *ProductCategoryMajorMutation) Where(ps ...predicate.ProductCategoryMajor) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *ProductCategoryMajorMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (ProductCategoryMajor).
+func (m *ProductCategoryMajorMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ProductCategoryMajorMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.created_at != nil {
+		fields = append(fields, productcategorymajor.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, productcategorymajor.FieldUpdatedAt)
+	}
+	if m.category != nil {
+		fields = append(fields, productcategorymajor.FieldCategory)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ProductCategoryMajorMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case productcategorymajor.FieldCreatedAt:
+		return m.CreatedAt()
+	case productcategorymajor.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case productcategorymajor.FieldCategory:
+		return m.Category()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ProductCategoryMajorMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case productcategorymajor.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case productcategorymajor.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case productcategorymajor.FieldCategory:
+		return m.OldCategory(ctx)
+	}
+	return nil, fmt.Errorf("unknown ProductCategoryMajor field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProductCategoryMajorMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case productcategorymajor.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case productcategorymajor.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case productcategorymajor.FieldCategory:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategory(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProductCategoryMajor field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ProductCategoryMajorMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ProductCategoryMajorMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProductCategoryMajorMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ProductCategoryMajor numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ProductCategoryMajorMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ProductCategoryMajorMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProductCategoryMajorMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ProductCategoryMajor nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ProductCategoryMajorMutation) ResetField(name string) error {
+	switch name {
+	case productcategorymajor.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case productcategorymajor.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case productcategorymajor.FieldCategory:
+		m.ResetCategory()
+		return nil
+	}
+	return fmt.Errorf("unknown ProductCategoryMajor field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ProductCategoryMajorMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.minors != nil {
+		edges = append(edges, productcategorymajor.EdgeMinors)
+	}
+	if m.products != nil {
+		edges = append(edges, productcategorymajor.EdgeProducts)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ProductCategoryMajorMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case productcategorymajor.EdgeMinors:
+		ids := make([]ent.Value, 0, len(m.minors))
+		for id := range m.minors {
+			ids = append(ids, id)
+		}
+		return ids
+	case productcategorymajor.EdgeProducts:
+		ids := make([]ent.Value, 0, len(m.products))
+		for id := range m.products {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ProductCategoryMajorMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedminors != nil {
+		edges = append(edges, productcategorymajor.EdgeMinors)
+	}
+	if m.removedproducts != nil {
+		edges = append(edges, productcategorymajor.EdgeProducts)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ProductCategoryMajorMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case productcategorymajor.EdgeMinors:
+		ids := make([]ent.Value, 0, len(m.removedminors))
+		for id := range m.removedminors {
+			ids = append(ids, id)
+		}
+		return ids
+	case productcategorymajor.EdgeProducts:
+		ids := make([]ent.Value, 0, len(m.removedproducts))
+		for id := range m.removedproducts {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ProductCategoryMajorMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedminors {
+		edges = append(edges, productcategorymajor.EdgeMinors)
+	}
+	if m.clearedproducts {
+		edges = append(edges, productcategorymajor.EdgeProducts)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ProductCategoryMajorMutation) EdgeCleared(name string) bool {
+	switch name {
+	case productcategorymajor.EdgeMinors:
+		return m.clearedminors
+	case productcategorymajor.EdgeProducts:
+		return m.clearedproducts
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ProductCategoryMajorMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ProductCategoryMajor unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ProductCategoryMajorMutation) ResetEdge(name string) error {
+	switch name {
+	case productcategorymajor.EdgeMinors:
+		m.ResetMinors()
+		return nil
+	case productcategorymajor.EdgeProducts:
+		m.ResetProducts()
+		return nil
+	}
+	return fmt.Errorf("unknown ProductCategoryMajor edge %s", name)
+}
+
+// ProductCategoryMinorMutation represents an operation that mutates the ProductCategoryMinor nodes in the graph.
+type ProductCategoryMinorMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int
+	created_at      *time.Time
+	updated_at      *time.Time
+	category        *string
+	clearedFields   map[string]struct{}
+	products        map[int]struct{}
+	removedproducts map[int]struct{}
+	clearedproducts bool
+	major           map[int]struct{}
+	removedmajor    map[int]struct{}
+	clearedmajor    bool
+	done            bool
+	oldValue        func(context.Context) (*ProductCategoryMinor, error)
+	predicates      []predicate.ProductCategoryMinor
+}
+
+var _ ent.Mutation = (*ProductCategoryMinorMutation)(nil)
+
+// productcategoryminorOption allows management of the mutation configuration using functional options.
+type productcategoryminorOption func(*ProductCategoryMinorMutation)
+
+// newProductCategoryMinorMutation creates new mutation for the ProductCategoryMinor entity.
+func newProductCategoryMinorMutation(c config, op Op, opts ...productcategoryminorOption) *ProductCategoryMinorMutation {
+	m := &ProductCategoryMinorMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProductCategoryMinor,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProductCategoryMinorID sets the ID field of the mutation.
+func withProductCategoryMinorID(id int) productcategoryminorOption {
+	return func(m *ProductCategoryMinorMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ProductCategoryMinor
+		)
+		m.oldValue = func(ctx context.Context) (*ProductCategoryMinor, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ProductCategoryMinor.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProductCategoryMinor sets the old ProductCategoryMinor of the mutation.
+func withProductCategoryMinor(node *ProductCategoryMinor) productcategoryminorOption {
+	return func(m *ProductCategoryMinorMutation) {
+		m.oldValue = func(context.Context) (*ProductCategoryMinor, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProductCategoryMinorMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProductCategoryMinorMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ProductCategoryMinorMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ProductCategoryMinorMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ProductCategoryMinor.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ProductCategoryMinorMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ProductCategoryMinorMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ProductCategoryMinor entity.
+// If the ProductCategoryMinor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductCategoryMinorMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ProductCategoryMinorMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ProductCategoryMinorMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ProductCategoryMinorMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ProductCategoryMinor entity.
+// If the ProductCategoryMinor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductCategoryMinorMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ProductCategoryMinorMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCategory sets the "category" field.
+func (m *ProductCategoryMinorMutation) SetCategory(s string) {
+	m.category = &s
+}
+
+// Category returns the value of the "category" field in the mutation.
+func (m *ProductCategoryMinorMutation) Category() (r string, exists bool) {
+	v := m.category
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategory returns the old "category" field's value of the ProductCategoryMinor entity.
+// If the ProductCategoryMinor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductCategoryMinorMutation) OldCategory(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCategory is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCategory requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategory: %w", err)
+	}
+	return oldValue.Category, nil
+}
+
+// ResetCategory resets all changes to the "category" field.
+func (m *ProductCategoryMinorMutation) ResetCategory() {
+	m.category = nil
+}
+
+// AddProductIDs adds the "products" edge to the Product entity by ids.
+func (m *ProductCategoryMinorMutation) AddProductIDs(ids ...int) {
+	if m.products == nil {
+		m.products = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.products[ids[i]] = struct{}{}
+	}
+}
+
+// ClearProducts clears the "products" edge to the Product entity.
+func (m *ProductCategoryMinorMutation) ClearProducts() {
+	m.clearedproducts = true
+}
+
+// ProductsCleared reports if the "products" edge to the Product entity was cleared.
+func (m *ProductCategoryMinorMutation) ProductsCleared() bool {
+	return m.clearedproducts
+}
+
+// RemoveProductIDs removes the "products" edge to the Product entity by IDs.
+func (m *ProductCategoryMinorMutation) RemoveProductIDs(ids ...int) {
+	if m.removedproducts == nil {
+		m.removedproducts = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.products, ids[i])
+		m.removedproducts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProducts returns the removed IDs of the "products" edge to the Product entity.
+func (m *ProductCategoryMinorMutation) RemovedProductsIDs() (ids []int) {
+	for id := range m.removedproducts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProductsIDs returns the "products" edge IDs in the mutation.
+func (m *ProductCategoryMinorMutation) ProductsIDs() (ids []int) {
+	for id := range m.products {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProducts resets all changes to the "products" edge.
+func (m *ProductCategoryMinorMutation) ResetProducts() {
+	m.products = nil
+	m.clearedproducts = false
+	m.removedproducts = nil
+}
+
+// AddMajorIDs adds the "major" edge to the ProductCategoryMajor entity by ids.
+func (m *ProductCategoryMinorMutation) AddMajorIDs(ids ...int) {
+	if m.major == nil {
+		m.major = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.major[ids[i]] = struct{}{}
+	}
+}
+
+// ClearMajor clears the "major" edge to the ProductCategoryMajor entity.
+func (m *ProductCategoryMinorMutation) ClearMajor() {
+	m.clearedmajor = true
+}
+
+// MajorCleared reports if the "major" edge to the ProductCategoryMajor entity was cleared.
+func (m *ProductCategoryMinorMutation) MajorCleared() bool {
+	return m.clearedmajor
+}
+
+// RemoveMajorIDs removes the "major" edge to the ProductCategoryMajor entity by IDs.
+func (m *ProductCategoryMinorMutation) RemoveMajorIDs(ids ...int) {
+	if m.removedmajor == nil {
+		m.removedmajor = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.major, ids[i])
+		m.removedmajor[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedMajor returns the removed IDs of the "major" edge to the ProductCategoryMajor entity.
+func (m *ProductCategoryMinorMutation) RemovedMajorIDs() (ids []int) {
+	for id := range m.removedmajor {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// MajorIDs returns the "major" edge IDs in the mutation.
+func (m *ProductCategoryMinorMutation) MajorIDs() (ids []int) {
+	for id := range m.major {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetMajor resets all changes to the "major" edge.
+func (m *ProductCategoryMinorMutation) ResetMajor() {
+	m.major = nil
+	m.clearedmajor = false
+	m.removedmajor = nil
+}
+
+// Where appends a list predicates to the ProductCategoryMinorMutation builder.
+func (m *ProductCategoryMinorMutation) Where(ps ...predicate.ProductCategoryMinor) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *ProductCategoryMinorMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (ProductCategoryMinor).
+func (m *ProductCategoryMinorMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ProductCategoryMinorMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.created_at != nil {
+		fields = append(fields, productcategoryminor.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, productcategoryminor.FieldUpdatedAt)
+	}
+	if m.category != nil {
+		fields = append(fields, productcategoryminor.FieldCategory)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ProductCategoryMinorMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case productcategoryminor.FieldCreatedAt:
+		return m.CreatedAt()
+	case productcategoryminor.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case productcategoryminor.FieldCategory:
+		return m.Category()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ProductCategoryMinorMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case productcategoryminor.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case productcategoryminor.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case productcategoryminor.FieldCategory:
+		return m.OldCategory(ctx)
+	}
+	return nil, fmt.Errorf("unknown ProductCategoryMinor field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProductCategoryMinorMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case productcategoryminor.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case productcategoryminor.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case productcategoryminor.FieldCategory:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategory(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProductCategoryMinor field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ProductCategoryMinorMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ProductCategoryMinorMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProductCategoryMinorMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ProductCategoryMinor numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ProductCategoryMinorMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ProductCategoryMinorMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProductCategoryMinorMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ProductCategoryMinor nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ProductCategoryMinorMutation) ResetField(name string) error {
+	switch name {
+	case productcategoryminor.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case productcategoryminor.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case productcategoryminor.FieldCategory:
+		m.ResetCategory()
+		return nil
+	}
+	return fmt.Errorf("unknown ProductCategoryMinor field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ProductCategoryMinorMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.products != nil {
+		edges = append(edges, productcategoryminor.EdgeProducts)
+	}
+	if m.major != nil {
+		edges = append(edges, productcategoryminor.EdgeMajor)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ProductCategoryMinorMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case productcategoryminor.EdgeProducts:
+		ids := make([]ent.Value, 0, len(m.products))
+		for id := range m.products {
+			ids = append(ids, id)
+		}
+		return ids
+	case productcategoryminor.EdgeMajor:
+		ids := make([]ent.Value, 0, len(m.major))
+		for id := range m.major {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ProductCategoryMinorMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedproducts != nil {
+		edges = append(edges, productcategoryminor.EdgeProducts)
+	}
+	if m.removedmajor != nil {
+		edges = append(edges, productcategoryminor.EdgeMajor)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ProductCategoryMinorMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case productcategoryminor.EdgeProducts:
+		ids := make([]ent.Value, 0, len(m.removedproducts))
+		for id := range m.removedproducts {
+			ids = append(ids, id)
+		}
+		return ids
+	case productcategoryminor.EdgeMajor:
+		ids := make([]ent.Value, 0, len(m.removedmajor))
+		for id := range m.removedmajor {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ProductCategoryMinorMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedproducts {
+		edges = append(edges, productcategoryminor.EdgeProducts)
+	}
+	if m.clearedmajor {
+		edges = append(edges, productcategoryminor.EdgeMajor)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ProductCategoryMinorMutation) EdgeCleared(name string) bool {
+	switch name {
+	case productcategoryminor.EdgeProducts:
+		return m.clearedproducts
+	case productcategoryminor.EdgeMajor:
+		return m.clearedmajor
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ProductCategoryMinorMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ProductCategoryMinor unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ProductCategoryMinorMutation) ResetEdge(name string) error {
+	switch name {
+	case productcategoryminor.EdgeProducts:
+		m.ResetProducts()
+		return nil
+	case productcategoryminor.EdgeMajor:
+		m.ResetMajor()
+		return nil
+	}
+	return fmt.Errorf("unknown ProductCategoryMinor edge %s", name)
+}
+
+// RetailMerchantMutation represents an operation that mutates the RetailMerchant nodes in the graph.
+type RetailMerchantMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int
+	created_at      *time.Time
+	updated_at      *time.Time
 	ghana_card      *string
 	last_name       *string
 	other_name      *string
@@ -2112,6 +5095,10 @@ type RetailMerchantMutation struct {
 	address         *string
 	digital_address *string
 	clearedFields   map[string]struct{}
+	products        *int
+	clearedproducts bool
+	merchant        *int
+	clearedmerchant bool
 	done            bool
 	oldValue        func(context.Context) (*RetailMerchant, error)
 	predicates      []predicate.RetailMerchant
@@ -2285,78 +5272,6 @@ func (m *RetailMerchantMutation) OldUpdatedAt(ctx context.Context) (v time.Time,
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *RetailMerchantMutation) ResetUpdatedAt() {
 	m.updated_at = nil
-}
-
-// SetUsername sets the "username" field.
-func (m *RetailMerchantMutation) SetUsername(s string) {
-	m.username = &s
-}
-
-// Username returns the value of the "username" field in the mutation.
-func (m *RetailMerchantMutation) Username() (r string, exists bool) {
-	v := m.username
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUsername returns the old "username" field's value of the RetailMerchant entity.
-// If the RetailMerchant object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RetailMerchantMutation) OldUsername(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUsername is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUsername requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
-	}
-	return oldValue.Username, nil
-}
-
-// ResetUsername resets all changes to the "username" field.
-func (m *RetailMerchantMutation) ResetUsername() {
-	m.username = nil
-}
-
-// SetPassword sets the "password" field.
-func (m *RetailMerchantMutation) SetPassword(b []byte) {
-	m.password = &b
-}
-
-// Password returns the value of the "password" field in the mutation.
-func (m *RetailMerchantMutation) Password() (r []byte, exists bool) {
-	v := m.password
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPassword returns the old "password" field's value of the RetailMerchant entity.
-// If the RetailMerchant object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RetailMerchantMutation) OldPassword(ctx context.Context) (v []byte, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPassword is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPassword requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPassword: %w", err)
-	}
-	return oldValue.Password, nil
-}
-
-// ResetPassword resets all changes to the "password" field.
-func (m *RetailMerchantMutation) ResetPassword() {
-	m.password = nil
 }
 
 // SetGhanaCard sets the "ghana_card" field.
@@ -2624,6 +5539,84 @@ func (m *RetailMerchantMutation) ResetDigitalAddress() {
 	m.digital_address = nil
 }
 
+// SetProductsID sets the "products" edge to the Product entity by id.
+func (m *RetailMerchantMutation) SetProductsID(id int) {
+	m.products = &id
+}
+
+// ClearProducts clears the "products" edge to the Product entity.
+func (m *RetailMerchantMutation) ClearProducts() {
+	m.clearedproducts = true
+}
+
+// ProductsCleared reports if the "products" edge to the Product entity was cleared.
+func (m *RetailMerchantMutation) ProductsCleared() bool {
+	return m.clearedproducts
+}
+
+// ProductsID returns the "products" edge ID in the mutation.
+func (m *RetailMerchantMutation) ProductsID() (id int, exists bool) {
+	if m.products != nil {
+		return *m.products, true
+	}
+	return
+}
+
+// ProductsIDs returns the "products" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProductsID instead. It exists only for internal usage by the builders.
+func (m *RetailMerchantMutation) ProductsIDs() (ids []int) {
+	if id := m.products; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProducts resets all changes to the "products" edge.
+func (m *RetailMerchantMutation) ResetProducts() {
+	m.products = nil
+	m.clearedproducts = false
+}
+
+// SetMerchantID sets the "merchant" edge to the Merchant entity by id.
+func (m *RetailMerchantMutation) SetMerchantID(id int) {
+	m.merchant = &id
+}
+
+// ClearMerchant clears the "merchant" edge to the Merchant entity.
+func (m *RetailMerchantMutation) ClearMerchant() {
+	m.clearedmerchant = true
+}
+
+// MerchantCleared reports if the "merchant" edge to the Merchant entity was cleared.
+func (m *RetailMerchantMutation) MerchantCleared() bool {
+	return m.clearedmerchant
+}
+
+// MerchantID returns the "merchant" edge ID in the mutation.
+func (m *RetailMerchantMutation) MerchantID() (id int, exists bool) {
+	if m.merchant != nil {
+		return *m.merchant, true
+	}
+	return
+}
+
+// MerchantIDs returns the "merchant" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// MerchantID instead. It exists only for internal usage by the builders.
+func (m *RetailMerchantMutation) MerchantIDs() (ids []int) {
+	if id := m.merchant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetMerchant resets all changes to the "merchant" edge.
+func (m *RetailMerchantMutation) ResetMerchant() {
+	m.merchant = nil
+	m.clearedmerchant = false
+}
+
 // Where appends a list predicates to the RetailMerchantMutation builder.
 func (m *RetailMerchantMutation) Where(ps ...predicate.RetailMerchant) {
 	m.predicates = append(m.predicates, ps...)
@@ -2643,18 +5636,12 @@ func (m *RetailMerchantMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RetailMerchantMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, retailmerchant.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, retailmerchant.FieldUpdatedAt)
-	}
-	if m.username != nil {
-		fields = append(fields, retailmerchant.FieldUsername)
-	}
-	if m.password != nil {
-		fields = append(fields, retailmerchant.FieldPassword)
 	}
 	if m.ghana_card != nil {
 		fields = append(fields, retailmerchant.FieldGhanaCard)
@@ -2689,10 +5676,6 @@ func (m *RetailMerchantMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case retailmerchant.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case retailmerchant.FieldUsername:
-		return m.Username()
-	case retailmerchant.FieldPassword:
-		return m.Password()
 	case retailmerchant.FieldGhanaCard:
 		return m.GhanaCard()
 	case retailmerchant.FieldLastName:
@@ -2720,10 +5703,6 @@ func (m *RetailMerchantMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldCreatedAt(ctx)
 	case retailmerchant.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case retailmerchant.FieldUsername:
-		return m.OldUsername(ctx)
-	case retailmerchant.FieldPassword:
-		return m.OldPassword(ctx)
 	case retailmerchant.FieldGhanaCard:
 		return m.OldGhanaCard(ctx)
 	case retailmerchant.FieldLastName:
@@ -2760,20 +5739,6 @@ func (m *RetailMerchantMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
-		return nil
-	case retailmerchant.FieldUsername:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUsername(v)
-		return nil
-	case retailmerchant.FieldPassword:
-		v, ok := value.([]byte)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPassword(v)
 		return nil
 	case retailmerchant.FieldGhanaCard:
 		v, ok := value.(string)
@@ -2888,12 +5853,6 @@ func (m *RetailMerchantMutation) ResetField(name string) error {
 	case retailmerchant.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
-	case retailmerchant.FieldUsername:
-		m.ResetUsername()
-		return nil
-	case retailmerchant.FieldPassword:
-		m.ResetPassword()
-		return nil
 	case retailmerchant.FieldGhanaCard:
 		m.ResetGhanaCard()
 		return nil
@@ -2921,49 +5880,95 @@ func (m *RetailMerchantMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RetailMerchantMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.products != nil {
+		edges = append(edges, retailmerchant.EdgeProducts)
+	}
+	if m.merchant != nil {
+		edges = append(edges, retailmerchant.EdgeMerchant)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *RetailMerchantMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case retailmerchant.EdgeProducts:
+		if id := m.products; id != nil {
+			return []ent.Value{*id}
+		}
+	case retailmerchant.EdgeMerchant:
+		if id := m.merchant; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RetailMerchantMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *RetailMerchantMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RetailMerchantMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.clearedproducts {
+		edges = append(edges, retailmerchant.EdgeProducts)
+	}
+	if m.clearedmerchant {
+		edges = append(edges, retailmerchant.EdgeMerchant)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *RetailMerchantMutation) EdgeCleared(name string) bool {
+	switch name {
+	case retailmerchant.EdgeProducts:
+		return m.clearedproducts
+	case retailmerchant.EdgeMerchant:
+		return m.clearedmerchant
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *RetailMerchantMutation) ClearEdge(name string) error {
+	switch name {
+	case retailmerchant.EdgeProducts:
+		m.ClearProducts()
+		return nil
+	case retailmerchant.EdgeMerchant:
+		m.ClearMerchant()
+		return nil
+	}
 	return fmt.Errorf("unknown RetailMerchant unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *RetailMerchantMutation) ResetEdge(name string) error {
+	switch name {
+	case retailmerchant.EdgeProducts:
+		m.ResetProducts()
+		return nil
+	case retailmerchant.EdgeMerchant:
+		m.ResetMerchant()
+		return nil
+	}
 	return fmt.Errorf("unknown RetailMerchant edge %s", name)
 }
 
@@ -2975,8 +5980,6 @@ type SupplierMerchantMutation struct {
 	id              *int
 	created_at      *time.Time
 	updated_at      *time.Time
-	username        *string
-	password        *[]byte
 	ghana_card      *string
 	last_name       *string
 	other_name      *string
@@ -2985,6 +5988,10 @@ type SupplierMerchantMutation struct {
 	address         *string
 	digital_address *string
 	clearedFields   map[string]struct{}
+	products        *int
+	clearedproducts bool
+	merchant        *int
+	clearedmerchant bool
 	done            bool
 	oldValue        func(context.Context) (*SupplierMerchant, error)
 	predicates      []predicate.SupplierMerchant
@@ -3158,78 +6165,6 @@ func (m *SupplierMerchantMutation) OldUpdatedAt(ctx context.Context) (v time.Tim
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *SupplierMerchantMutation) ResetUpdatedAt() {
 	m.updated_at = nil
-}
-
-// SetUsername sets the "username" field.
-func (m *SupplierMerchantMutation) SetUsername(s string) {
-	m.username = &s
-}
-
-// Username returns the value of the "username" field in the mutation.
-func (m *SupplierMerchantMutation) Username() (r string, exists bool) {
-	v := m.username
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUsername returns the old "username" field's value of the SupplierMerchant entity.
-// If the SupplierMerchant object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SupplierMerchantMutation) OldUsername(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUsername is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUsername requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
-	}
-	return oldValue.Username, nil
-}
-
-// ResetUsername resets all changes to the "username" field.
-func (m *SupplierMerchantMutation) ResetUsername() {
-	m.username = nil
-}
-
-// SetPassword sets the "password" field.
-func (m *SupplierMerchantMutation) SetPassword(b []byte) {
-	m.password = &b
-}
-
-// Password returns the value of the "password" field in the mutation.
-func (m *SupplierMerchantMutation) Password() (r []byte, exists bool) {
-	v := m.password
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPassword returns the old "password" field's value of the SupplierMerchant entity.
-// If the SupplierMerchant object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SupplierMerchantMutation) OldPassword(ctx context.Context) (v []byte, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPassword is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPassword requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPassword: %w", err)
-	}
-	return oldValue.Password, nil
-}
-
-// ResetPassword resets all changes to the "password" field.
-func (m *SupplierMerchantMutation) ResetPassword() {
-	m.password = nil
 }
 
 // SetGhanaCard sets the "ghana_card" field.
@@ -3497,6 +6432,84 @@ func (m *SupplierMerchantMutation) ResetDigitalAddress() {
 	m.digital_address = nil
 }
 
+// SetProductsID sets the "products" edge to the Product entity by id.
+func (m *SupplierMerchantMutation) SetProductsID(id int) {
+	m.products = &id
+}
+
+// ClearProducts clears the "products" edge to the Product entity.
+func (m *SupplierMerchantMutation) ClearProducts() {
+	m.clearedproducts = true
+}
+
+// ProductsCleared reports if the "products" edge to the Product entity was cleared.
+func (m *SupplierMerchantMutation) ProductsCleared() bool {
+	return m.clearedproducts
+}
+
+// ProductsID returns the "products" edge ID in the mutation.
+func (m *SupplierMerchantMutation) ProductsID() (id int, exists bool) {
+	if m.products != nil {
+		return *m.products, true
+	}
+	return
+}
+
+// ProductsIDs returns the "products" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProductsID instead. It exists only for internal usage by the builders.
+func (m *SupplierMerchantMutation) ProductsIDs() (ids []int) {
+	if id := m.products; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProducts resets all changes to the "products" edge.
+func (m *SupplierMerchantMutation) ResetProducts() {
+	m.products = nil
+	m.clearedproducts = false
+}
+
+// SetMerchantID sets the "merchant" edge to the Merchant entity by id.
+func (m *SupplierMerchantMutation) SetMerchantID(id int) {
+	m.merchant = &id
+}
+
+// ClearMerchant clears the "merchant" edge to the Merchant entity.
+func (m *SupplierMerchantMutation) ClearMerchant() {
+	m.clearedmerchant = true
+}
+
+// MerchantCleared reports if the "merchant" edge to the Merchant entity was cleared.
+func (m *SupplierMerchantMutation) MerchantCleared() bool {
+	return m.clearedmerchant
+}
+
+// MerchantID returns the "merchant" edge ID in the mutation.
+func (m *SupplierMerchantMutation) MerchantID() (id int, exists bool) {
+	if m.merchant != nil {
+		return *m.merchant, true
+	}
+	return
+}
+
+// MerchantIDs returns the "merchant" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// MerchantID instead. It exists only for internal usage by the builders.
+func (m *SupplierMerchantMutation) MerchantIDs() (ids []int) {
+	if id := m.merchant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetMerchant resets all changes to the "merchant" edge.
+func (m *SupplierMerchantMutation) ResetMerchant() {
+	m.merchant = nil
+	m.clearedmerchant = false
+}
+
 // Where appends a list predicates to the SupplierMerchantMutation builder.
 func (m *SupplierMerchantMutation) Where(ps ...predicate.SupplierMerchant) {
 	m.predicates = append(m.predicates, ps...)
@@ -3516,18 +6529,12 @@ func (m *SupplierMerchantMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplierMerchantMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, suppliermerchant.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, suppliermerchant.FieldUpdatedAt)
-	}
-	if m.username != nil {
-		fields = append(fields, suppliermerchant.FieldUsername)
-	}
-	if m.password != nil {
-		fields = append(fields, suppliermerchant.FieldPassword)
 	}
 	if m.ghana_card != nil {
 		fields = append(fields, suppliermerchant.FieldGhanaCard)
@@ -3562,10 +6569,6 @@ func (m *SupplierMerchantMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case suppliermerchant.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case suppliermerchant.FieldUsername:
-		return m.Username()
-	case suppliermerchant.FieldPassword:
-		return m.Password()
 	case suppliermerchant.FieldGhanaCard:
 		return m.GhanaCard()
 	case suppliermerchant.FieldLastName:
@@ -3593,10 +6596,6 @@ func (m *SupplierMerchantMutation) OldField(ctx context.Context, name string) (e
 		return m.OldCreatedAt(ctx)
 	case suppliermerchant.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case suppliermerchant.FieldUsername:
-		return m.OldUsername(ctx)
-	case suppliermerchant.FieldPassword:
-		return m.OldPassword(ctx)
 	case suppliermerchant.FieldGhanaCard:
 		return m.OldGhanaCard(ctx)
 	case suppliermerchant.FieldLastName:
@@ -3633,20 +6632,6 @@ func (m *SupplierMerchantMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
-		return nil
-	case suppliermerchant.FieldUsername:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUsername(v)
-		return nil
-	case suppliermerchant.FieldPassword:
-		v, ok := value.([]byte)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPassword(v)
 		return nil
 	case suppliermerchant.FieldGhanaCard:
 		v, ok := value.(string)
@@ -3761,12 +6746,6 @@ func (m *SupplierMerchantMutation) ResetField(name string) error {
 	case suppliermerchant.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
-	case suppliermerchant.FieldUsername:
-		m.ResetUsername()
-		return nil
-	case suppliermerchant.FieldPassword:
-		m.ResetPassword()
-		return nil
 	case suppliermerchant.FieldGhanaCard:
 		m.ResetGhanaCard()
 		return nil
@@ -3794,521 +6773,94 @@ func (m *SupplierMerchantMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SupplierMerchantMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.products != nil {
+		edges = append(edges, suppliermerchant.EdgeProducts)
+	}
+	if m.merchant != nil {
+		edges = append(edges, suppliermerchant.EdgeMerchant)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *SupplierMerchantMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case suppliermerchant.EdgeProducts:
+		if id := m.products; id != nil {
+			return []ent.Value{*id}
+		}
+	case suppliermerchant.EdgeMerchant:
+		if id := m.merchant; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SupplierMerchantMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *SupplierMerchantMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SupplierMerchantMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.clearedproducts {
+		edges = append(edges, suppliermerchant.EdgeProducts)
+	}
+	if m.clearedmerchant {
+		edges = append(edges, suppliermerchant.EdgeMerchant)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *SupplierMerchantMutation) EdgeCleared(name string) bool {
+	switch name {
+	case suppliermerchant.EdgeProducts:
+		return m.clearedproducts
+	case suppliermerchant.EdgeMerchant:
+		return m.clearedmerchant
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *SupplierMerchantMutation) ClearEdge(name string) error {
+	switch name {
+	case suppliermerchant.EdgeProducts:
+		m.ClearProducts()
+		return nil
+	case suppliermerchant.EdgeMerchant:
+		m.ClearMerchant()
+		return nil
+	}
 	return fmt.Errorf("unknown SupplierMerchant unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *SupplierMerchantMutation) ResetEdge(name string) error {
+	switch name {
+	case suppliermerchant.EdgeProducts:
+		m.ResetProducts()
+		return nil
+	case suppliermerchant.EdgeMerchant:
+		m.ResetMerchant()
+		return nil
+	}
 	return fmt.Errorf("unknown SupplierMerchant edge %s", name)
-}
-
-// UserMutation represents an operation that mutates the User nodes in the graph.
-type UserMutation struct {
-	config
-	op            Op
-	typ           string
-	id            *int
-	created_at    *time.Time
-	updated_at    *time.Time
-	username      *string
-	password      *[]byte
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*User, error)
-	predicates    []predicate.User
-}
-
-var _ ent.Mutation = (*UserMutation)(nil)
-
-// userOption allows management of the mutation configuration using functional options.
-type userOption func(*UserMutation)
-
-// newUserMutation creates new mutation for the User entity.
-func newUserMutation(c config, op Op, opts ...userOption) *UserMutation {
-	m := &UserMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeUser,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withUserID sets the ID field of the mutation.
-func withUserID(id int) userOption {
-	return func(m *UserMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *User
-		)
-		m.oldValue = func(ctx context.Context) (*User, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().User.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withUser sets the old User of the mutation.
-func withUser(node *User) userOption {
-	return func(m *UserMutation) {
-		m.oldValue = func(context.Context) (*User, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m UserMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m UserMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, errors.New("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *UserMutation) ID() (id int, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *UserMutation) IDs(ctx context.Context) ([]int, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []int{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().User.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (m *UserMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *UserMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *UserMutation) ResetCreatedAt() {
-	m.created_at = nil
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (m *UserMutation) SetUpdatedAt(t time.Time) {
-	m.updated_at = &t
-}
-
-// UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *UserMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updated_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUpdatedAt returns the old "updated_at" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
-	}
-	return oldValue.UpdatedAt, nil
-}
-
-// ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *UserMutation) ResetUpdatedAt() {
-	m.updated_at = nil
-}
-
-// SetUsername sets the "username" field.
-func (m *UserMutation) SetUsername(s string) {
-	m.username = &s
-}
-
-// Username returns the value of the "username" field in the mutation.
-func (m *UserMutation) Username() (r string, exists bool) {
-	v := m.username
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUsername returns the old "username" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldUsername(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUsername is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUsername requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
-	}
-	return oldValue.Username, nil
-}
-
-// ResetUsername resets all changes to the "username" field.
-func (m *UserMutation) ResetUsername() {
-	m.username = nil
-}
-
-// SetPassword sets the "password" field.
-func (m *UserMutation) SetPassword(b []byte) {
-	m.password = &b
-}
-
-// Password returns the value of the "password" field in the mutation.
-func (m *UserMutation) Password() (r []byte, exists bool) {
-	v := m.password
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPassword returns the old "password" field's value of the User entity.
-// If the User object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldPassword(ctx context.Context) (v []byte, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPassword is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPassword requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPassword: %w", err)
-	}
-	return oldValue.Password, nil
-}
-
-// ResetPassword resets all changes to the "password" field.
-func (m *UserMutation) ResetPassword() {
-	m.password = nil
-}
-
-// Where appends a list predicates to the UserMutation builder.
-func (m *UserMutation) Where(ps ...predicate.User) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// Op returns the operation name.
-func (m *UserMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (User).
-func (m *UserMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 4)
-	if m.created_at != nil {
-		fields = append(fields, user.FieldCreatedAt)
-	}
-	if m.updated_at != nil {
-		fields = append(fields, user.FieldUpdatedAt)
-	}
-	if m.username != nil {
-		fields = append(fields, user.FieldUsername)
-	}
-	if m.password != nil {
-		fields = append(fields, user.FieldPassword)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *UserMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case user.FieldCreatedAt:
-		return m.CreatedAt()
-	case user.FieldUpdatedAt:
-		return m.UpdatedAt()
-	case user.FieldUsername:
-		return m.Username()
-	case user.FieldPassword:
-		return m.Password()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case user.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case user.FieldUpdatedAt:
-		return m.OldUpdatedAt(ctx)
-	case user.FieldUsername:
-		return m.OldUsername(ctx)
-	case user.FieldPassword:
-		return m.OldPassword(ctx)
-	}
-	return nil, fmt.Errorf("unknown User field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *UserMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case user.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case user.FieldUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUpdatedAt(v)
-		return nil
-	case user.FieldUsername:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUsername(v)
-		return nil
-	case user.FieldPassword:
-		v, ok := value.([]byte)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPassword(v)
-		return nil
-	}
-	return fmt.Errorf("unknown User field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *UserMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *UserMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown User numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *UserMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *UserMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *UserMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown User nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *UserMutation) ResetField(name string) error {
-	switch name {
-	case user.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case user.FieldUpdatedAt:
-		m.ResetUpdatedAt()
-		return nil
-	case user.FieldUsername:
-		m.ResetUsername()
-		return nil
-	case user.FieldPassword:
-		m.ResetPassword()
-		return nil
-	}
-	return fmt.Errorf("unknown User field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *UserMutation) AddedIDs(name string) []ent.Value {
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *UserMutation) RemovedIDs(name string) []ent.Value {
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *UserMutation) EdgeCleared(name string) bool {
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *UserMutation) ClearEdge(name string) error {
-	return fmt.Errorf("unknown User unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *UserMutation) ResetEdge(name string) error {
-	return fmt.Errorf("unknown User edge %s", name)
 }

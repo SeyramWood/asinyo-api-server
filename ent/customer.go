@@ -20,8 +20,8 @@ type Customer struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// Email holds the value of the "email" field.
-	Email string `json:"email,omitempty"`
+	// Username holds the value of the "username" field.
+	Username string `json:"username,omitempty"`
 	// Password holds the value of the "password" field.
 	Password []byte `json:"-"`
 	// FirstName holds the value of the "first_name" field.
@@ -43,7 +43,7 @@ func (*Customer) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new([]byte)
 		case customer.FieldID:
 			values[i] = new(sql.NullInt64)
-		case customer.FieldEmail, customer.FieldFirstName, customer.FieldLastName, customer.FieldPhone, customer.FieldOtherPhone:
+		case customer.FieldUsername, customer.FieldFirstName, customer.FieldLastName, customer.FieldPhone, customer.FieldOtherPhone:
 			values[i] = new(sql.NullString)
 		case customer.FieldCreatedAt, customer.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -80,11 +80,11 @@ func (c *Customer) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				c.UpdatedAt = value.Time
 			}
-		case customer.FieldEmail:
+		case customer.FieldUsername:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field email", values[i])
+				return fmt.Errorf("unexpected type %T for field username", values[i])
 			} else if value.Valid {
-				c.Email = value.String
+				c.Username = value.String
 			}
 		case customer.FieldPassword:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -149,8 +149,8 @@ func (c *Customer) String() string {
 	builder.WriteString(c.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", updated_at=")
 	builder.WriteString(c.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", email=")
-	builder.WriteString(c.Email)
+	builder.WriteString(", username=")
+	builder.WriteString(c.Username)
 	builder.WriteString(", password=<sensitive>")
 	builder.WriteString(", first_name=")
 	builder.WriteString(c.FirstName)

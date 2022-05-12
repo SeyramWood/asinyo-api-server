@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/predicate"
+	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/suppliermerchant"
 )
 
@@ -31,18 +33,6 @@ func (smu *SupplierMerchantUpdate) Where(ps ...predicate.SupplierMerchant) *Supp
 // SetUpdatedAt sets the "updated_at" field.
 func (smu *SupplierMerchantUpdate) SetUpdatedAt(t time.Time) *SupplierMerchantUpdate {
 	smu.mutation.SetUpdatedAt(t)
-	return smu
-}
-
-// SetUsername sets the "username" field.
-func (smu *SupplierMerchantUpdate) SetUsername(s string) *SupplierMerchantUpdate {
-	smu.mutation.SetUsername(s)
-	return smu
-}
-
-// SetPassword sets the "password" field.
-func (smu *SupplierMerchantUpdate) SetPassword(b []byte) *SupplierMerchantUpdate {
-	smu.mutation.SetPassword(b)
 	return smu
 }
 
@@ -102,9 +92,51 @@ func (smu *SupplierMerchantUpdate) SetDigitalAddress(s string) *SupplierMerchant
 	return smu
 }
 
+// SetProductsID sets the "products" edge to the Product entity by ID.
+func (smu *SupplierMerchantUpdate) SetProductsID(id int) *SupplierMerchantUpdate {
+	smu.mutation.SetProductsID(id)
+	return smu
+}
+
+// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
+func (smu *SupplierMerchantUpdate) SetNillableProductsID(id *int) *SupplierMerchantUpdate {
+	if id != nil {
+		smu = smu.SetProductsID(*id)
+	}
+	return smu
+}
+
+// SetProducts sets the "products" edge to the Product entity.
+func (smu *SupplierMerchantUpdate) SetProducts(p *Product) *SupplierMerchantUpdate {
+	return smu.SetProductsID(p.ID)
+}
+
+// SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
+func (smu *SupplierMerchantUpdate) SetMerchantID(id int) *SupplierMerchantUpdate {
+	smu.mutation.SetMerchantID(id)
+	return smu
+}
+
+// SetMerchant sets the "merchant" edge to the Merchant entity.
+func (smu *SupplierMerchantUpdate) SetMerchant(m *Merchant) *SupplierMerchantUpdate {
+	return smu.SetMerchantID(m.ID)
+}
+
 // Mutation returns the SupplierMerchantMutation object of the builder.
 func (smu *SupplierMerchantUpdate) Mutation() *SupplierMerchantMutation {
 	return smu.mutation
+}
+
+// ClearProducts clears the "products" edge to the Product entity.
+func (smu *SupplierMerchantUpdate) ClearProducts() *SupplierMerchantUpdate {
+	smu.mutation.ClearProducts()
+	return smu
+}
+
+// ClearMerchant clears the "merchant" edge to the Merchant entity.
+func (smu *SupplierMerchantUpdate) ClearMerchant() *SupplierMerchantUpdate {
+	smu.mutation.ClearMerchant()
+	return smu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -178,16 +210,6 @@ func (smu *SupplierMerchantUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (smu *SupplierMerchantUpdate) check() error {
-	if v, ok := smu.mutation.Username(); ok {
-		if err := suppliermerchant.UsernameValidator(v); err != nil {
-			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.username": %w`, err)}
-		}
-	}
-	if v, ok := smu.mutation.Password(); ok {
-		if err := suppliermerchant.PasswordValidator(v); err != nil {
-			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.password": %w`, err)}
-		}
-	}
 	if v, ok := smu.mutation.GhanaCard(); ok {
 		if err := suppliermerchant.GhanaCardValidator(v); err != nil {
 			return &ValidationError{Name: "ghana_card", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.ghana_card": %w`, err)}
@@ -218,6 +240,9 @@ func (smu *SupplierMerchantUpdate) check() error {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.digital_address": %w`, err)}
 		}
 	}
+	if _, ok := smu.mutation.MerchantID(); smu.mutation.MerchantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "SupplierMerchant.merchant"`)
+	}
 	return nil
 }
 
@@ -244,20 +269,6 @@ func (smu *SupplierMerchantUpdate) sqlSave(ctx context.Context) (n int, err erro
 			Type:   field.TypeTime,
 			Value:  value,
 			Column: suppliermerchant.FieldUpdatedAt,
-		})
-	}
-	if value, ok := smu.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldUsername,
-		})
-	}
-	if value, ok := smu.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: suppliermerchant.FieldPassword,
 		})
 	}
 	if value, ok := smu.mutation.GhanaCard(); ok {
@@ -315,6 +326,76 @@ func (smu *SupplierMerchantUpdate) sqlSave(ctx context.Context) (n int, err erro
 			Column: suppliermerchant.FieldDigitalAddress,
 		})
 	}
+	if smu.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   suppliermerchant.ProductsTable,
+			Columns: []string{suppliermerchant.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := smu.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   suppliermerchant.ProductsTable,
+			Columns: []string{suppliermerchant.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if smu.mutation.MerchantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   suppliermerchant.MerchantTable,
+			Columns: []string{suppliermerchant.MerchantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := smu.mutation.MerchantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   suppliermerchant.MerchantTable,
+			Columns: []string{suppliermerchant.MerchantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, smu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{suppliermerchant.Label}
@@ -337,18 +418,6 @@ type SupplierMerchantUpdateOne struct {
 // SetUpdatedAt sets the "updated_at" field.
 func (smuo *SupplierMerchantUpdateOne) SetUpdatedAt(t time.Time) *SupplierMerchantUpdateOne {
 	smuo.mutation.SetUpdatedAt(t)
-	return smuo
-}
-
-// SetUsername sets the "username" field.
-func (smuo *SupplierMerchantUpdateOne) SetUsername(s string) *SupplierMerchantUpdateOne {
-	smuo.mutation.SetUsername(s)
-	return smuo
-}
-
-// SetPassword sets the "password" field.
-func (smuo *SupplierMerchantUpdateOne) SetPassword(b []byte) *SupplierMerchantUpdateOne {
-	smuo.mutation.SetPassword(b)
 	return smuo
 }
 
@@ -408,9 +477,51 @@ func (smuo *SupplierMerchantUpdateOne) SetDigitalAddress(s string) *SupplierMerc
 	return smuo
 }
 
+// SetProductsID sets the "products" edge to the Product entity by ID.
+func (smuo *SupplierMerchantUpdateOne) SetProductsID(id int) *SupplierMerchantUpdateOne {
+	smuo.mutation.SetProductsID(id)
+	return smuo
+}
+
+// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
+func (smuo *SupplierMerchantUpdateOne) SetNillableProductsID(id *int) *SupplierMerchantUpdateOne {
+	if id != nil {
+		smuo = smuo.SetProductsID(*id)
+	}
+	return smuo
+}
+
+// SetProducts sets the "products" edge to the Product entity.
+func (smuo *SupplierMerchantUpdateOne) SetProducts(p *Product) *SupplierMerchantUpdateOne {
+	return smuo.SetProductsID(p.ID)
+}
+
+// SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
+func (smuo *SupplierMerchantUpdateOne) SetMerchantID(id int) *SupplierMerchantUpdateOne {
+	smuo.mutation.SetMerchantID(id)
+	return smuo
+}
+
+// SetMerchant sets the "merchant" edge to the Merchant entity.
+func (smuo *SupplierMerchantUpdateOne) SetMerchant(m *Merchant) *SupplierMerchantUpdateOne {
+	return smuo.SetMerchantID(m.ID)
+}
+
 // Mutation returns the SupplierMerchantMutation object of the builder.
 func (smuo *SupplierMerchantUpdateOne) Mutation() *SupplierMerchantMutation {
 	return smuo.mutation
+}
+
+// ClearProducts clears the "products" edge to the Product entity.
+func (smuo *SupplierMerchantUpdateOne) ClearProducts() *SupplierMerchantUpdateOne {
+	smuo.mutation.ClearProducts()
+	return smuo
+}
+
+// ClearMerchant clears the "merchant" edge to the Merchant entity.
+func (smuo *SupplierMerchantUpdateOne) ClearMerchant() *SupplierMerchantUpdateOne {
+	smuo.mutation.ClearMerchant()
+	return smuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -491,16 +602,6 @@ func (smuo *SupplierMerchantUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (smuo *SupplierMerchantUpdateOne) check() error {
-	if v, ok := smuo.mutation.Username(); ok {
-		if err := suppliermerchant.UsernameValidator(v); err != nil {
-			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.username": %w`, err)}
-		}
-	}
-	if v, ok := smuo.mutation.Password(); ok {
-		if err := suppliermerchant.PasswordValidator(v); err != nil {
-			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.password": %w`, err)}
-		}
-	}
 	if v, ok := smuo.mutation.GhanaCard(); ok {
 		if err := suppliermerchant.GhanaCardValidator(v); err != nil {
 			return &ValidationError{Name: "ghana_card", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.ghana_card": %w`, err)}
@@ -530,6 +631,9 @@ func (smuo *SupplierMerchantUpdateOne) check() error {
 		if err := suppliermerchant.DigitalAddressValidator(v); err != nil {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.digital_address": %w`, err)}
 		}
+	}
+	if _, ok := smuo.mutation.MerchantID(); smuo.mutation.MerchantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "SupplierMerchant.merchant"`)
 	}
 	return nil
 }
@@ -574,20 +678,6 @@ func (smuo *SupplierMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Supp
 			Type:   field.TypeTime,
 			Value:  value,
 			Column: suppliermerchant.FieldUpdatedAt,
-		})
-	}
-	if value, ok := smuo.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldUsername,
-		})
-	}
-	if value, ok := smuo.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: suppliermerchant.FieldPassword,
 		})
 	}
 	if value, ok := smuo.mutation.GhanaCard(); ok {
@@ -644,6 +734,76 @@ func (smuo *SupplierMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Supp
 			Value:  value,
 			Column: suppliermerchant.FieldDigitalAddress,
 		})
+	}
+	if smuo.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   suppliermerchant.ProductsTable,
+			Columns: []string{suppliermerchant.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := smuo.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   suppliermerchant.ProductsTable,
+			Columns: []string{suppliermerchant.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if smuo.mutation.MerchantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   suppliermerchant.MerchantTable,
+			Columns: []string{suppliermerchant.MerchantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := smuo.mutation.MerchantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   suppliermerchant.MerchantTable,
+			Columns: []string{suppliermerchant.MerchantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &SupplierMerchant{config: smuo.config}
 	_spec.Assign = _node.assignValues

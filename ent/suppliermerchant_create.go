@@ -10,6 +10,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/suppliermerchant"
 )
 
@@ -45,18 +47,6 @@ func (smc *SupplierMerchantCreate) SetNillableUpdatedAt(t *time.Time) *SupplierM
 	if t != nil {
 		smc.SetUpdatedAt(*t)
 	}
-	return smc
-}
-
-// SetUsername sets the "username" field.
-func (smc *SupplierMerchantCreate) SetUsername(s string) *SupplierMerchantCreate {
-	smc.mutation.SetUsername(s)
-	return smc
-}
-
-// SetPassword sets the "password" field.
-func (smc *SupplierMerchantCreate) SetPassword(b []byte) *SupplierMerchantCreate {
-	smc.mutation.SetPassword(b)
 	return smc
 }
 
@@ -108,6 +98,36 @@ func (smc *SupplierMerchantCreate) SetAddress(s string) *SupplierMerchantCreate 
 func (smc *SupplierMerchantCreate) SetDigitalAddress(s string) *SupplierMerchantCreate {
 	smc.mutation.SetDigitalAddress(s)
 	return smc
+}
+
+// SetProductsID sets the "products" edge to the Product entity by ID.
+func (smc *SupplierMerchantCreate) SetProductsID(id int) *SupplierMerchantCreate {
+	smc.mutation.SetProductsID(id)
+	return smc
+}
+
+// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
+func (smc *SupplierMerchantCreate) SetNillableProductsID(id *int) *SupplierMerchantCreate {
+	if id != nil {
+		smc = smc.SetProductsID(*id)
+	}
+	return smc
+}
+
+// SetProducts sets the "products" edge to the Product entity.
+func (smc *SupplierMerchantCreate) SetProducts(p *Product) *SupplierMerchantCreate {
+	return smc.SetProductsID(p.ID)
+}
+
+// SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
+func (smc *SupplierMerchantCreate) SetMerchantID(id int) *SupplierMerchantCreate {
+	smc.mutation.SetMerchantID(id)
+	return smc
+}
+
+// SetMerchant sets the "merchant" edge to the Merchant entity.
+func (smc *SupplierMerchantCreate) SetMerchant(m *Merchant) *SupplierMerchantCreate {
+	return smc.SetMerchantID(m.ID)
 }
 
 // Mutation returns the SupplierMerchantMutation object of the builder.
@@ -199,22 +219,6 @@ func (smc *SupplierMerchantCreate) check() error {
 	if _, ok := smc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "SupplierMerchant.updated_at"`)}
 	}
-	if _, ok := smc.mutation.Username(); !ok {
-		return &ValidationError{Name: "username", err: errors.New(`ent: missing required field "SupplierMerchant.username"`)}
-	}
-	if v, ok := smc.mutation.Username(); ok {
-		if err := suppliermerchant.UsernameValidator(v); err != nil {
-			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.username": %w`, err)}
-		}
-	}
-	if _, ok := smc.mutation.Password(); !ok {
-		return &ValidationError{Name: "password", err: errors.New(`ent: missing required field "SupplierMerchant.password"`)}
-	}
-	if v, ok := smc.mutation.Password(); ok {
-		if err := suppliermerchant.PasswordValidator(v); err != nil {
-			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.password": %w`, err)}
-		}
-	}
 	if _, ok := smc.mutation.GhanaCard(); !ok {
 		return &ValidationError{Name: "ghana_card", err: errors.New(`ent: missing required field "SupplierMerchant.ghana_card"`)}
 	}
@@ -263,6 +267,9 @@ func (smc *SupplierMerchantCreate) check() error {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.digital_address": %w`, err)}
 		}
 	}
+	if _, ok := smc.mutation.MerchantID(); !ok {
+		return &ValidationError{Name: "merchant", err: errors.New(`ent: missing required edge "SupplierMerchant.merchant"`)}
+	}
 	return nil
 }
 
@@ -305,22 +312,6 @@ func (smc *SupplierMerchantCreate) createSpec() (*SupplierMerchant, *sqlgraph.Cr
 			Column: suppliermerchant.FieldUpdatedAt,
 		})
 		_node.UpdatedAt = value
-	}
-	if value, ok := smc.mutation.Username(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldUsername,
-		})
-		_node.Username = value
-	}
-	if value, ok := smc.mutation.Password(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: suppliermerchant.FieldPassword,
-		})
-		_node.Password = value
 	}
 	if value, ok := smc.mutation.GhanaCard(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -377,6 +368,46 @@ func (smc *SupplierMerchantCreate) createSpec() (*SupplierMerchant, *sqlgraph.Cr
 			Column: suppliermerchant.FieldDigitalAddress,
 		})
 		_node.DigitalAddress = value
+	}
+	if nodes := smc.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   suppliermerchant.ProductsTable,
+			Columns: []string{suppliermerchant.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.supplier_merchant_products = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := smc.mutation.MerchantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   suppliermerchant.MerchantTable,
+			Columns: []string{suppliermerchant.MerchantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.merchant_supplier = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

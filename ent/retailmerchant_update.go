@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/predicate"
+	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/retailmerchant"
 )
 
@@ -31,18 +33,6 @@ func (rmu *RetailMerchantUpdate) Where(ps ...predicate.RetailMerchant) *RetailMe
 // SetUpdatedAt sets the "updated_at" field.
 func (rmu *RetailMerchantUpdate) SetUpdatedAt(t time.Time) *RetailMerchantUpdate {
 	rmu.mutation.SetUpdatedAt(t)
-	return rmu
-}
-
-// SetUsername sets the "username" field.
-func (rmu *RetailMerchantUpdate) SetUsername(s string) *RetailMerchantUpdate {
-	rmu.mutation.SetUsername(s)
-	return rmu
-}
-
-// SetPassword sets the "password" field.
-func (rmu *RetailMerchantUpdate) SetPassword(b []byte) *RetailMerchantUpdate {
-	rmu.mutation.SetPassword(b)
 	return rmu
 }
 
@@ -102,9 +92,51 @@ func (rmu *RetailMerchantUpdate) SetDigitalAddress(s string) *RetailMerchantUpda
 	return rmu
 }
 
+// SetProductsID sets the "products" edge to the Product entity by ID.
+func (rmu *RetailMerchantUpdate) SetProductsID(id int) *RetailMerchantUpdate {
+	rmu.mutation.SetProductsID(id)
+	return rmu
+}
+
+// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
+func (rmu *RetailMerchantUpdate) SetNillableProductsID(id *int) *RetailMerchantUpdate {
+	if id != nil {
+		rmu = rmu.SetProductsID(*id)
+	}
+	return rmu
+}
+
+// SetProducts sets the "products" edge to the Product entity.
+func (rmu *RetailMerchantUpdate) SetProducts(p *Product) *RetailMerchantUpdate {
+	return rmu.SetProductsID(p.ID)
+}
+
+// SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
+func (rmu *RetailMerchantUpdate) SetMerchantID(id int) *RetailMerchantUpdate {
+	rmu.mutation.SetMerchantID(id)
+	return rmu
+}
+
+// SetMerchant sets the "merchant" edge to the Merchant entity.
+func (rmu *RetailMerchantUpdate) SetMerchant(m *Merchant) *RetailMerchantUpdate {
+	return rmu.SetMerchantID(m.ID)
+}
+
 // Mutation returns the RetailMerchantMutation object of the builder.
 func (rmu *RetailMerchantUpdate) Mutation() *RetailMerchantMutation {
 	return rmu.mutation
+}
+
+// ClearProducts clears the "products" edge to the Product entity.
+func (rmu *RetailMerchantUpdate) ClearProducts() *RetailMerchantUpdate {
+	rmu.mutation.ClearProducts()
+	return rmu
+}
+
+// ClearMerchant clears the "merchant" edge to the Merchant entity.
+func (rmu *RetailMerchantUpdate) ClearMerchant() *RetailMerchantUpdate {
+	rmu.mutation.ClearMerchant()
+	return rmu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -178,16 +210,6 @@ func (rmu *RetailMerchantUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (rmu *RetailMerchantUpdate) check() error {
-	if v, ok := rmu.mutation.Username(); ok {
-		if err := retailmerchant.UsernameValidator(v); err != nil {
-			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.username": %w`, err)}
-		}
-	}
-	if v, ok := rmu.mutation.Password(); ok {
-		if err := retailmerchant.PasswordValidator(v); err != nil {
-			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.password": %w`, err)}
-		}
-	}
 	if v, ok := rmu.mutation.GhanaCard(); ok {
 		if err := retailmerchant.GhanaCardValidator(v); err != nil {
 			return &ValidationError{Name: "ghana_card", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.ghana_card": %w`, err)}
@@ -218,6 +240,9 @@ func (rmu *RetailMerchantUpdate) check() error {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.digital_address": %w`, err)}
 		}
 	}
+	if _, ok := rmu.mutation.MerchantID(); rmu.mutation.MerchantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "RetailMerchant.merchant"`)
+	}
 	return nil
 }
 
@@ -244,20 +269,6 @@ func (rmu *RetailMerchantUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Type:   field.TypeTime,
 			Value:  value,
 			Column: retailmerchant.FieldUpdatedAt,
-		})
-	}
-	if value, ok := rmu.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldUsername,
-		})
-	}
-	if value, ok := rmu.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: retailmerchant.FieldPassword,
 		})
 	}
 	if value, ok := rmu.mutation.GhanaCard(); ok {
@@ -315,6 +326,76 @@ func (rmu *RetailMerchantUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Column: retailmerchant.FieldDigitalAddress,
 		})
 	}
+	if rmu.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   retailmerchant.ProductsTable,
+			Columns: []string{retailmerchant.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := rmu.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   retailmerchant.ProductsTable,
+			Columns: []string{retailmerchant.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if rmu.mutation.MerchantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   retailmerchant.MerchantTable,
+			Columns: []string{retailmerchant.MerchantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := rmu.mutation.MerchantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   retailmerchant.MerchantTable,
+			Columns: []string{retailmerchant.MerchantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, rmu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{retailmerchant.Label}
@@ -337,18 +418,6 @@ type RetailMerchantUpdateOne struct {
 // SetUpdatedAt sets the "updated_at" field.
 func (rmuo *RetailMerchantUpdateOne) SetUpdatedAt(t time.Time) *RetailMerchantUpdateOne {
 	rmuo.mutation.SetUpdatedAt(t)
-	return rmuo
-}
-
-// SetUsername sets the "username" field.
-func (rmuo *RetailMerchantUpdateOne) SetUsername(s string) *RetailMerchantUpdateOne {
-	rmuo.mutation.SetUsername(s)
-	return rmuo
-}
-
-// SetPassword sets the "password" field.
-func (rmuo *RetailMerchantUpdateOne) SetPassword(b []byte) *RetailMerchantUpdateOne {
-	rmuo.mutation.SetPassword(b)
 	return rmuo
 }
 
@@ -408,9 +477,51 @@ func (rmuo *RetailMerchantUpdateOne) SetDigitalAddress(s string) *RetailMerchant
 	return rmuo
 }
 
+// SetProductsID sets the "products" edge to the Product entity by ID.
+func (rmuo *RetailMerchantUpdateOne) SetProductsID(id int) *RetailMerchantUpdateOne {
+	rmuo.mutation.SetProductsID(id)
+	return rmuo
+}
+
+// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
+func (rmuo *RetailMerchantUpdateOne) SetNillableProductsID(id *int) *RetailMerchantUpdateOne {
+	if id != nil {
+		rmuo = rmuo.SetProductsID(*id)
+	}
+	return rmuo
+}
+
+// SetProducts sets the "products" edge to the Product entity.
+func (rmuo *RetailMerchantUpdateOne) SetProducts(p *Product) *RetailMerchantUpdateOne {
+	return rmuo.SetProductsID(p.ID)
+}
+
+// SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
+func (rmuo *RetailMerchantUpdateOne) SetMerchantID(id int) *RetailMerchantUpdateOne {
+	rmuo.mutation.SetMerchantID(id)
+	return rmuo
+}
+
+// SetMerchant sets the "merchant" edge to the Merchant entity.
+func (rmuo *RetailMerchantUpdateOne) SetMerchant(m *Merchant) *RetailMerchantUpdateOne {
+	return rmuo.SetMerchantID(m.ID)
+}
+
 // Mutation returns the RetailMerchantMutation object of the builder.
 func (rmuo *RetailMerchantUpdateOne) Mutation() *RetailMerchantMutation {
 	return rmuo.mutation
+}
+
+// ClearProducts clears the "products" edge to the Product entity.
+func (rmuo *RetailMerchantUpdateOne) ClearProducts() *RetailMerchantUpdateOne {
+	rmuo.mutation.ClearProducts()
+	return rmuo
+}
+
+// ClearMerchant clears the "merchant" edge to the Merchant entity.
+func (rmuo *RetailMerchantUpdateOne) ClearMerchant() *RetailMerchantUpdateOne {
+	rmuo.mutation.ClearMerchant()
+	return rmuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -491,16 +602,6 @@ func (rmuo *RetailMerchantUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (rmuo *RetailMerchantUpdateOne) check() error {
-	if v, ok := rmuo.mutation.Username(); ok {
-		if err := retailmerchant.UsernameValidator(v); err != nil {
-			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.username": %w`, err)}
-		}
-	}
-	if v, ok := rmuo.mutation.Password(); ok {
-		if err := retailmerchant.PasswordValidator(v); err != nil {
-			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.password": %w`, err)}
-		}
-	}
 	if v, ok := rmuo.mutation.GhanaCard(); ok {
 		if err := retailmerchant.GhanaCardValidator(v); err != nil {
 			return &ValidationError{Name: "ghana_card", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.ghana_card": %w`, err)}
@@ -530,6 +631,9 @@ func (rmuo *RetailMerchantUpdateOne) check() error {
 		if err := retailmerchant.DigitalAddressValidator(v); err != nil {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.digital_address": %w`, err)}
 		}
+	}
+	if _, ok := rmuo.mutation.MerchantID(); rmuo.mutation.MerchantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "RetailMerchant.merchant"`)
 	}
 	return nil
 }
@@ -574,20 +678,6 @@ func (rmuo *RetailMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Retail
 			Type:   field.TypeTime,
 			Value:  value,
 			Column: retailmerchant.FieldUpdatedAt,
-		})
-	}
-	if value, ok := rmuo.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldUsername,
-		})
-	}
-	if value, ok := rmuo.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: retailmerchant.FieldPassword,
 		})
 	}
 	if value, ok := rmuo.mutation.GhanaCard(); ok {
@@ -644,6 +734,76 @@ func (rmuo *RetailMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Retail
 			Value:  value,
 			Column: retailmerchant.FieldDigitalAddress,
 		})
+	}
+	if rmuo.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   retailmerchant.ProductsTable,
+			Columns: []string{retailmerchant.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := rmuo.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   retailmerchant.ProductsTable,
+			Columns: []string{retailmerchant.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if rmuo.mutation.MerchantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   retailmerchant.MerchantTable,
+			Columns: []string{retailmerchant.MerchantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := rmuo.mutation.MerchantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   retailmerchant.MerchantTable,
+			Columns: []string{retailmerchant.MerchantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &RetailMerchant{config: rmuo.config}
 	_spec.Assign = _node.assignValues

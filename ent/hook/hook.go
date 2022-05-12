@@ -48,6 +48,58 @@ func (f CustomerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return f(ctx, mv)
 }
 
+// The MerchantFunc type is an adapter to allow the use of ordinary
+// function as Merchant mutator.
+type MerchantFunc func(context.Context, *ent.MerchantMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MerchantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.MerchantMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MerchantMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The ProductFunc type is an adapter to allow the use of ordinary
+// function as Product mutator.
+type ProductFunc func(context.Context, *ent.ProductMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProductFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ProductMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProductMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The ProductCategoryMajorFunc type is an adapter to allow the use of ordinary
+// function as ProductCategoryMajor mutator.
+type ProductCategoryMajorFunc func(context.Context, *ent.ProductCategoryMajorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProductCategoryMajorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ProductCategoryMajorMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProductCategoryMajorMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The ProductCategoryMinorFunc type is an adapter to allow the use of ordinary
+// function as ProductCategoryMinor mutator.
+type ProductCategoryMinorFunc func(context.Context, *ent.ProductCategoryMinorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProductCategoryMinorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ProductCategoryMinorMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProductCategoryMinorMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The RetailMerchantFunc type is an adapter to allow the use of ordinary
 // function as RetailMerchant mutator.
 type RetailMerchantFunc func(context.Context, *ent.RetailMerchantMutation) (ent.Value, error)
@@ -70,19 +122,6 @@ func (f SupplierMerchantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	mv, ok := m.(*ent.SupplierMerchantMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SupplierMerchantMutation", m)
-	}
-	return f(ctx, mv)
-}
-
-// The UserFunc type is an adapter to allow the use of ordinary
-// function as User mutator.
-type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.UserMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
 	}
 	return f(ctx, mv)
 }

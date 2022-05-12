@@ -16,9 +16,9 @@ func NewAgentService(repo gateways.AgentRepo) gateways.AgentService {
 	}
 }
 
-func (s *service) Create(customer *models.Agent) (*ent.Agent, error) {
+func (s *service) Create(agent *models.AgentRequest) (*ent.Agent, error) {
 
-	return s.repo.Insert(customer)
+	return s.repo.Insert(agent)
 }
 
 func (s *service) Fetch(id int) (*ent.Agent, error) {

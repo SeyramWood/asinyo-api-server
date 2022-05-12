@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/SeyramWood/app/adapters"
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/application/auth"
 	"github.com/SeyramWood/app/framework/database"
@@ -12,7 +11,7 @@ type authHandler struct {
 	service gateways.AuthService
 }
 
-func NewAuthHandler(db *database.Adapter) adapters.AuthHandler {
+func NewAuthHandler(db *database.Adapter) *authHandler {
 	repo := auth.NewAuthRepo(db)
 	service := auth.NewAuthService(repo)
 
@@ -30,5 +29,10 @@ func (auth *authHandler) Login() fiber.Handler {
 func (auth *authHandler) Logout() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return auth.service.Logout(c)
+	}
+}
+func (auth *authHandler) FetcAuthUser() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		return auth.service.FetcAuthUser(c)
 	}
 }

@@ -27,7 +27,7 @@ func (r *repository) Insert(customer *models.Customer) (*ent.Customer, error) {
 		SetFirstName(customer.FirstName).
 		SetLastName(customer.LastName).
 		SetPhone(customer.Phone).
-		SetEmail(customer.Email).
+		SetUsername(customer.Username).
 		SetPassword(hashPassword).
 		Save(context.Background())
 
@@ -49,12 +49,14 @@ func (r *repository) Read(id int) (*ent.Customer, error) {
 
 func (r *repository) ReadAll() ([]*ent.Customer, error) {
 
-	// b, err := r.db.User.Query().
-	// 	All(context.Background())
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+	results, err := r.db.Customer.
+		Query().
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 func (a *repository) Update(i *models.Customer) (*models.Customer, error) {

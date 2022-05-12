@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/agent"
@@ -50,22 +53,21 @@ func (h *AgentHandler) Fetch() fiber.Handler {
 func (h *AgentHandler) Create() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		var request models.Agent
+		var request models.AgentRequest
 
 		err := c.BodyParser(&request)
 
 		if err != nil {
-			c.Status(fiber.StatusBadRequest)
-			return c.JSON(presenters.UserErrorResponse(err))
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
 		}
 
-		result, err := h.service.Create(&request)
+		_, err = h.service.Create(&request)
 
 		if err != nil {
-			c.Status(fiber.StatusInternalServerError)
-			return c.JSON(presenters.AgentErrorResponse(err))
+			fmt.Println(err)
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.AgentErrorResponse(errors.New("error creating agent")))
 		}
-		return c.JSON(presenters.AgentSuccessResponse(result))
+		return c.JSON(presenters.EmptySuccessResponse())
 	}
 }
 

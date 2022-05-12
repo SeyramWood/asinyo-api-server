@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/supplier_merchant"
@@ -50,22 +52,29 @@ func (h *SupplierMerchantHandler) Fetch() fiber.Handler {
 func (h *SupplierMerchantHandler) Create() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		var request models.SupplierMerchant
+		var request models.MerchantRequest
 
 		err := c.BodyParser(&request)
 
 		if err != nil {
-			c.Status(fiber.StatusBadRequest)
-			return c.JSON(presenters.UserErrorResponse(err))
-		}
 
-		result, err := h.service.Create(&request)
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.SupplierMerchantErrorResponse(err))
+		}
+		_, err = h.service.Create(&models.SupplierMerchant{
+			GhanaCard:      request.Info.GhanaCard,
+			LastName:       request.Info.LastName,
+			OtherName:      request.Info.OtherName,
+			Phone:          request.Info.Phone,
+			OtherPhone:     request.Info.OtherPhone,
+			Address:        request.Info.Address,
+			DigitalAddress: request.Info.DigitalAddress,
+		})
 
 		if err != nil {
-			c.Status(fiber.StatusInternalServerError)
-			return c.JSON(presenters.SupplierMerchantErrorResponse(err))
+
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.SupplierMerchantErrorResponse(errors.New("error creating agent")))
 		}
-		return c.JSON(presenters.SupplierMerchantSuccessResponse(result))
+		return c.JSON(presenters.EmptySuccessResponse())
 	}
 }
 

@@ -16,14 +16,15 @@ func NewRetailMerchantService(repo gateways.RetailMerchantRepo) gateways.RetailM
 	}
 }
 
-func (s *service) Create(customer *models.RetailMerchant) (*ent.RetailMerchant, error) {
+func (s *service) Create(merchant *models.RetailMerchant) (*ent.RetailMerchant, error) {
 
-	return s.repo.Insert(customer)
+	return s.repo.Insert(merchant)
 }
 
 func (s *service) Fetch(id int) (*ent.RetailMerchant, error) {
 
 	return s.repo.Read(id)
+
 }
 
 func (s *service) FetchAll() ([]*ent.RetailMerchant, error) {

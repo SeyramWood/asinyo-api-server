@@ -18,12 +18,18 @@ type Tx struct {
 	Agent *AgentClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
+	// Merchant is the client for interacting with the Merchant builders.
+	Merchant *MerchantClient
+	// Product is the client for interacting with the Product builders.
+	Product *ProductClient
+	// ProductCategoryMajor is the client for interacting with the ProductCategoryMajor builders.
+	ProductCategoryMajor *ProductCategoryMajorClient
+	// ProductCategoryMinor is the client for interacting with the ProductCategoryMinor builders.
+	ProductCategoryMinor *ProductCategoryMinorClient
 	// RetailMerchant is the client for interacting with the RetailMerchant builders.
 	RetailMerchant *RetailMerchantClient
 	// SupplierMerchant is the client for interacting with the SupplierMerchant builders.
 	SupplierMerchant *SupplierMerchantClient
-	// User is the client for interacting with the User builders.
-	User *UserClient
 
 	// lazily loaded.
 	client     *Client
@@ -162,9 +168,12 @@ func (tx *Tx) init() {
 	tx.Admin = NewAdminClient(tx.config)
 	tx.Agent = NewAgentClient(tx.config)
 	tx.Customer = NewCustomerClient(tx.config)
+	tx.Merchant = NewMerchantClient(tx.config)
+	tx.Product = NewProductClient(tx.config)
+	tx.ProductCategoryMajor = NewProductCategoryMajorClient(tx.config)
+	tx.ProductCategoryMinor = NewProductCategoryMinorClient(tx.config)
 	tx.RetailMerchant = NewRetailMerchantClient(tx.config)
 	tx.SupplierMerchant = NewSupplierMerchantClient(tx.config)
-	tx.User = NewUserClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

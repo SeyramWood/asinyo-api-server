@@ -11,9 +11,12 @@ import (
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/product"
+	"github.com/SeyramWood/ent/productcategorymajor"
+	"github.com/SeyramWood/ent/productcategoryminor"
 	"github.com/SeyramWood/ent/retailmerchant"
 	"github.com/SeyramWood/ent/suppliermerchant"
-	"github.com/SeyramWood/ent/user"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -34,12 +37,15 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		admin.Table:            admin.ValidColumn,
-		agent.Table:            agent.ValidColumn,
-		customer.Table:         customer.ValidColumn,
-		retailmerchant.Table:   retailmerchant.ValidColumn,
-		suppliermerchant.Table: suppliermerchant.ValidColumn,
-		user.Table:             user.ValidColumn,
+		admin.Table:                admin.ValidColumn,
+		agent.Table:                agent.ValidColumn,
+		customer.Table:             customer.ValidColumn,
+		merchant.Table:             merchant.ValidColumn,
+		product.Table:              product.ValidColumn,
+		productcategorymajor.Table: productcategorymajor.ValidColumn,
+		productcategoryminor.Table: productcategoryminor.ValidColumn,
+		retailmerchant.Table:       retailmerchant.ValidColumn,
+		suppliermerchant.Table:     suppliermerchant.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

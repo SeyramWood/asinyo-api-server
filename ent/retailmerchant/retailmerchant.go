@@ -15,10 +15,6 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldUsername holds the string denoting the username field in the database.
-	FieldUsername = "username"
-	// FieldPassword holds the string denoting the password field in the database.
-	FieldPassword = "password"
 	// FieldGhanaCard holds the string denoting the ghana_card field in the database.
 	FieldGhanaCard = "ghana_card"
 	// FieldLastName holds the string denoting the last_name field in the database.
@@ -33,8 +29,26 @@ const (
 	FieldAddress = "address"
 	// FieldDigitalAddress holds the string denoting the digital_address field in the database.
 	FieldDigitalAddress = "digital_address"
+	// EdgeProducts holds the string denoting the products edge name in mutations.
+	EdgeProducts = "products"
+	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
+	EdgeMerchant = "merchant"
 	// Table holds the table name of the retailmerchant in the database.
 	Table = "retail_merchants"
+	// ProductsTable is the table that holds the products relation/edge.
+	ProductsTable = "retail_merchants"
+	// ProductsInverseTable is the table name for the Product entity.
+	// It exists in this package in order to avoid circular dependency with the "product" package.
+	ProductsInverseTable = "products"
+	// ProductsColumn is the table column denoting the products relation/edge.
+	ProductsColumn = "retail_merchant_products"
+	// MerchantTable is the table that holds the merchant relation/edge.
+	MerchantTable = "retail_merchants"
+	// MerchantInverseTable is the table name for the Merchant entity.
+	// It exists in this package in order to avoid circular dependency with the "merchant" package.
+	MerchantInverseTable = "merchants"
+	// MerchantColumn is the table column denoting the merchant relation/edge.
+	MerchantColumn = "merchant_retailer"
 )
 
 // Columns holds all SQL columns for retailmerchant fields.
@@ -42,8 +56,6 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldUsername,
-	FieldPassword,
 	FieldGhanaCard,
 	FieldLastName,
 	FieldOtherName,
@@ -53,10 +65,22 @@ var Columns = []string{
 	FieldDigitalAddress,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "retail_merchants"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"merchant_retailer",
+	"retail_merchant_products",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -70,10 +94,6 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// UsernameValidator is a validator for the "username" field. It is called by the builders before save.
-	UsernameValidator func(string) error
-	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
-	PasswordValidator func([]byte) error
 	// GhanaCardValidator is a validator for the "ghana_card" field. It is called by the builders before save.
 	GhanaCardValidator func(string) error
 	// LastNameValidator is a validator for the "last_name" field. It is called by the builders before save.

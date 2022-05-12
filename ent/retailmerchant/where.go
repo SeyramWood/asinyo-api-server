@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/SeyramWood/ent/predicate"
 )
 
@@ -103,20 +104,6 @@ func CreatedAt(v time.Time) predicate.RetailMerchant {
 func UpdatedAt(v time.Time) predicate.RetailMerchant {
 	return predicate.RetailMerchant(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
-	})
-}
-
-// Username applies equality check predicate on the "username" field. It's identical to UsernameEQ.
-func Username(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUsername), v))
-	})
-}
-
-// Password applies equality check predicate on the "password" field. It's identical to PasswordEQ.
-func Password(v []byte) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPassword), v))
 	})
 }
 
@@ -318,193 +305,6 @@ func UpdatedAtLT(v time.Time) predicate.RetailMerchant {
 func UpdatedAtLTE(v time.Time) predicate.RetailMerchant {
 	return predicate.RetailMerchant(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
-	})
-}
-
-// UsernameEQ applies the EQ predicate on the "username" field.
-func UsernameEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUsername), v))
-	})
-}
-
-// UsernameNEQ applies the NEQ predicate on the "username" field.
-func UsernameNEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldUsername), v))
-	})
-}
-
-// UsernameIn applies the In predicate on the "username" field.
-func UsernameIn(vs ...string) predicate.RetailMerchant {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.In(s.C(FieldUsername), v...))
-	})
-}
-
-// UsernameNotIn applies the NotIn predicate on the "username" field.
-func UsernameNotIn(vs ...string) predicate.RetailMerchant {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.NotIn(s.C(FieldUsername), v...))
-	})
-}
-
-// UsernameGT applies the GT predicate on the "username" field.
-func UsernameGT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldUsername), v))
-	})
-}
-
-// UsernameGTE applies the GTE predicate on the "username" field.
-func UsernameGTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldUsername), v))
-	})
-}
-
-// UsernameLT applies the LT predicate on the "username" field.
-func UsernameLT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldUsername), v))
-	})
-}
-
-// UsernameLTE applies the LTE predicate on the "username" field.
-func UsernameLTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldUsername), v))
-	})
-}
-
-// UsernameContains applies the Contains predicate on the "username" field.
-func UsernameContains(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldUsername), v))
-	})
-}
-
-// UsernameHasPrefix applies the HasPrefix predicate on the "username" field.
-func UsernameHasPrefix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldUsername), v))
-	})
-}
-
-// UsernameHasSuffix applies the HasSuffix predicate on the "username" field.
-func UsernameHasSuffix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldUsername), v))
-	})
-}
-
-// UsernameEqualFold applies the EqualFold predicate on the "username" field.
-func UsernameEqualFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldUsername), v))
-	})
-}
-
-// UsernameContainsFold applies the ContainsFold predicate on the "username" field.
-func UsernameContainsFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldUsername), v))
-	})
-}
-
-// PasswordEQ applies the EQ predicate on the "password" field.
-func PasswordEQ(v []byte) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPassword), v))
-	})
-}
-
-// PasswordNEQ applies the NEQ predicate on the "password" field.
-func PasswordNEQ(v []byte) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldPassword), v))
-	})
-}
-
-// PasswordIn applies the In predicate on the "password" field.
-func PasswordIn(vs ...[]byte) predicate.RetailMerchant {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.In(s.C(FieldPassword), v...))
-	})
-}
-
-// PasswordNotIn applies the NotIn predicate on the "password" field.
-func PasswordNotIn(vs ...[]byte) predicate.RetailMerchant {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.NotIn(s.C(FieldPassword), v...))
-	})
-}
-
-// PasswordGT applies the GT predicate on the "password" field.
-func PasswordGT(v []byte) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldPassword), v))
-	})
-}
-
-// PasswordGTE applies the GTE predicate on the "password" field.
-func PasswordGTE(v []byte) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldPassword), v))
-	})
-}
-
-// PasswordLT applies the LT predicate on the "password" field.
-func PasswordLT(v []byte) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldPassword), v))
-	})
-}
-
-// PasswordLTE applies the LTE predicate on the "password" field.
-func PasswordLTE(v []byte) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldPassword), v))
 	})
 }
 
@@ -1296,6 +1096,62 @@ func DigitalAddressEqualFold(v string) predicate.RetailMerchant {
 func DigitalAddressContainsFold(v string) predicate.RetailMerchant {
 	return predicate.RetailMerchant(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldDigitalAddress), v))
+	})
+}
+
+// HasProducts applies the HasEdge predicate on the "products" edge.
+func HasProducts() predicate.RetailMerchant {
+	return predicate.RetailMerchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ProductsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProductsTable, ProductsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProductsWith applies the HasEdge predicate on the "products" edge with a given conditions (other predicates).
+func HasProductsWith(preds ...predicate.Product) predicate.RetailMerchant {
+	return predicate.RetailMerchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ProductsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProductsTable, ProductsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasMerchant applies the HasEdge predicate on the "merchant" edge.
+func HasMerchant() predicate.RetailMerchant {
+	return predicate.RetailMerchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(MerchantTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, MerchantTable, MerchantColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasMerchantWith applies the HasEdge predicate on the "merchant" edge with a given conditions (other predicates).
+func HasMerchantWith(preds ...predicate.Merchant) predicate.RetailMerchant {
+	return predicate.RetailMerchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(MerchantInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, MerchantTable, MerchantColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

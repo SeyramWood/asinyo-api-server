@@ -21,12 +21,13 @@ func App() *server.HTTP {
 
 	app := server.NewHTTPServer()
 
-	app.Server.Server().MaxConnsPerIP = 1
-
 	app.Server.Use(cors.New(cors.Config{
 		AllowCredentials: true,
+		AllowOrigins:     "http://localhost:3000, http://localhost:3001",
 	}))
+
 	app.Server.Use(recover.New())
+
 	app.Server.Use(logger.New())
 
 	app.Server.Get("/dashboard", monitor.New())

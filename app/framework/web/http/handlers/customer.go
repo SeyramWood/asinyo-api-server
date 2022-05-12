@@ -40,7 +40,6 @@ func (h *CustomerHandler) Fetch() fiber.Handler {
 		result, err := h.service.FetchAll()
 
 		if err != nil {
-
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.CustomerErrorResponse(err))
 		}
 		return c.JSON(presenters.CustomersSuccessResponse(result))

@@ -14,3 +14,15 @@ func successResponse(data interface{}) *fiber.Map {
 		"data":   data,
 	}
 }
+func EmptySuccessResponse() *fiber.Map {
+	return &fiber.Map{
+		"status": true,
+		"data":   nil,
+	}
+}
+func EmptySuccessResponseMany() *fiber.Map {
+	return &fiber.Map{
+		"status": true,
+		"data":   []string{},
+	}
+}

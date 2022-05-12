@@ -17,7 +17,6 @@ type (
 		OtherPhone     *string   `json:"otherPhone"`
 		Address        string    `json:"address"`
 		DigitalAddress string    `json:"digitalAddress"`
-		Username       string    `json:"terms"`
 		CreatedAt      time.Time `json:"created_at"`
 		UpdatedAt      time.Time `json:"updated_at"`
 	}
@@ -33,7 +32,6 @@ func RetailMerchantSuccessResponse(data *ent.RetailMerchant) *fiber.Map {
 		OtherPhone:     data.OtherPhone,
 		Address:        data.Address,
 		DigitalAddress: data.DigitalAddress,
-		Username:       data.Username,
 		CreatedAt:      data.CreatedAt,
 		UpdatedAt:      data.UpdatedAt,
 	})

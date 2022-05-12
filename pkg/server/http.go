@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/SeyramWood/config"
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 )
@@ -26,6 +27,8 @@ func NewHTTPServer() *HTTP {
 			StrictRouting: config.Server().StrictRouting,
 			ServerHeader:  config.Server().ServerHeader,
 			AppName:       config.App().Name,
+			JSONEncoder:   json.Marshal,
+			JSONDecoder:   json.Unmarshal,
 		}),
 		Logger: logger,
 	}

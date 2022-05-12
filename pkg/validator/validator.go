@@ -61,91 +61,92 @@ func Validate(i interface{}) interface{} {
 func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 	rules := strings.Split(t.Field(index).Tag.Get("validate"), "|")
 	field := t.Field(index).Name
+	fieldType := t.Field(index).Type.String()
 	value := v.Field(index)
 	formattedField := formatFieldName(field)
 
 	for _, rule := range rules {
-		switch rule {
-		case "required":
-			if t.Field(index).Type.String() == "string" && value.Len() == 0 {
-				return fmt.Sprintf("The %s field is required", formattedField)
-			}
-			if t.Field(index).Type.String() == "bool" && !value.Bool() {
-				return fmt.Sprintf("The %s field is required", formattedField)
-			}
-		case "string":
-			r, _ := regexp.Compile("^[0-9a-zA-Z-+ ]+$")
-			if !r.MatchString(value.String()) {
-				return fmt.Sprintf("The %s must be a string.", formattedField)
-			}
-		case "email":
-			if _, err := mail.ParseAddress(value.String()); err != nil {
-				return fmt.Sprintf("The %s must be a valid email address.", formattedField)
-			}
-		case "email_phone":
-			email, _ := regexp.Compile(`^[A-Za-z]+$`)
-			phone, _ := regexp.Compile(`^0\d{9}$`)
-
-			if email.MatchString(value.String()) || strings.Contains(value.String(), "@") {
+		if rule == "required" && fieldType == "string" && value.Len() == 0 {
+			return fmt.Sprintf("The %s field is required", formattedField)
+		} else if rule == "required" && fieldType == "bool" && !value.Bool() {
+			return fmt.Sprintf("The %s field is required", formattedField)
+		} else if fieldType == "string" && value.Len() != 0 {
+			switch rule {
+			case "string":
+				r, _ := regexp.Compile("^[0-9a-zA-Z-+ ]+$")
+				if !r.MatchString(value.String()) {
+					return fmt.Sprintf("The %s must be a string.", formattedField)
+				}
+			case "email":
 				if _, err := mail.ParseAddress(value.String()); err != nil {
 					return fmt.Sprintf("The %s must be a valid email address.", formattedField)
 				}
-			} else {
-				if phone.MatchString(value.String()) {
-					if !phone.MatchString(value.String()) {
-						return fmt.Sprintf("The %s field must be a valid phone number.", formattedField)
-					}
-				}
-				return fmt.Sprintf("The %s field must be a valid phone number.", formattedField)
-			}
+			case "email_phone":
+				email, _ := regexp.Compile(`^[A-Za-z]+$`)
+				phone, _ := regexp.Compile(`^0\d{9}$`)
 
-		case "id_card":
-			r, _ := regexp.Compile(`^GHA-\d{9}-\d{1}$`)
-			if !r.MatchString(value.String()) {
-				return "The The ID field must be a valid Ghana Card."
-			}
-		case "digital_address":
-			r, _ := regexp.Compile(`[A-Z]{2}-\d{4}-\d{4}$`)
-			if !r.MatchString(value.String()) {
-				return "The address field must be a valid digital address."
-			}
-
-		default:
-			if strings.Contains(rule, ":") {
-				r := strings.Split(rule, ":")
-				switch string(r[0]) {
-				case "max":
-					val, _ := strconv.Atoi(r[1])
-					if value.Len() > val {
-						return fmt.Sprintf("The %s must not be greater than %v characters", formattedField, val)
+				if email.MatchString(value.String()) || strings.Contains(value.String(), "@") {
+					if _, err := mail.ParseAddress(value.String()); err != nil {
+						return fmt.Sprintf("The %s must be a valid email address.", formattedField)
 					}
-				case "min":
-					val, _ := strconv.Atoi(r[1])
-					if value.Len() < val {
-						return fmt.Sprintf("The %s must be at least %v characters", formattedField, val)
-					}
-				case "match":
-					var val reflect.Value
-					f := strings.ToUpper(string([]byte{r[1][0]})) + strings.ToLower(r[1][1:])
-					for i := 0; i < t.NumField(); i++ {
-						if t.Field(i).Name == f {
-							val = v.Field(i)
-							break
+				} else {
+					if phone.MatchString(value.String()) {
+						if !phone.MatchString(value.String()) {
+							return fmt.Sprintf("The %s field must be a valid phone number.", formattedField)
 						}
 					}
-					if value.String() != val.String() {
-						return fmt.Sprintf("The %s does not matched", "passwords")
+					return fmt.Sprintf("The %s field must be a valid phone number.", formattedField)
+				}
+
+			case "id_card":
+				r, _ := regexp.Compile(`^GHA-\d{9}-\d{1}$`)
+				if !r.MatchString(value.String()) {
+					return "The The ID field must be a valid Ghana Card."
+				}
+			case "digital_address":
+				r, _ := regexp.Compile(`[A-Z]{2}-\d{4}-\d{4}$`)
+				if !r.MatchString(value.String()) {
+					return "The address field must be a valid digital address."
+				}
+
+			default:
+				if strings.Contains(rule, ":") {
+					r := strings.Split(rule, ":")
+					switch string(r[0]) {
+					case "max":
+						val, _ := strconv.Atoi(r[1])
+						if value.Len() > val {
+							return fmt.Sprintf("The %s must not be greater than %v characters", formattedField, val)
+						}
+					case "min":
+						val, _ := strconv.Atoi(r[1])
+						if value.Len() < val {
+							return fmt.Sprintf("The %s must be at least %v characters", formattedField, val)
+						}
+					case "match":
+						var val reflect.Value
+						f := strings.ToUpper(string([]byte{r[1][0]})) + strings.ToLower(r[1][1:])
+						for i := 0; i < t.NumField(); i++ {
+							if t.Field(i).Name == f {
+								val = v.Field(i)
+								break
+							}
+						}
+						if value.String() != val.String() {
+							return fmt.Sprintf("The %s does not matched", "passwords")
+						}
+					case "unique":
+						table := r[1]
+						if r := isUsernameExist(value.String(), field, table); r != nil {
+							return r
+						}
 					}
-				case "unique":
-					table := r[1]
-					if r := isUsernameExist(value.String(), field, table); r != nil {
-						return r
-					}
+
 				}
 
 			}
-
 		}
+
 	}
 
 	return ""

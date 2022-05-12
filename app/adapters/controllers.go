@@ -12,8 +12,4 @@ type (
 		Update() fiber.Handler
 		Delete() fiber.Handler
 	}
-	AuthHandler interface {
-		Login() fiber.Handler
-		Logout() fiber.Handler
-	}
 )

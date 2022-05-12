@@ -1,6 +1,7 @@
 package retail_merchant
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/SeyramWood/app/adapters/gateways"
@@ -17,30 +18,23 @@ func NewRetailMerchantRepo(db *database.Adapter) gateways.RetailMerchantRepo {
 	return &repository{db.DB}
 }
 
-func (r *repository) Insert(customer *models.RetailMerchant) (*ent.RetailMerchant, error) {
+func (r *repository) Insert(mercthant *models.RetailMerchant) (*ent.RetailMerchant, error) {
+	result, err := r.db.RetailMerchant.Create().
+		SetLastName(mercthant.LastName).
+		SetOtherName(mercthant.OtherName).
+		SetPhone(mercthant.Phone).
+		SetOtherPhone(mercthant.OtherPhone).
+		SetAddress(mercthant.Address).
+		SetDigitalAddress(mercthant.DigitalAddress).
+		SetGhanaCard(mercthant.GhanaCard).
+		Save(context.Background())
 
-	// hashPassword, _ := bcrypt.GenerateFromPassword([]byte(customer.Password), 16)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating agent: %w", err)
+	}
 
-	// r.db.Customer.Create().
-	// 	SetFirstName(customer.FirstName).
-	// 	SetLastName(customer.LastName).
-	// 	SetPhone(customer.Phone).
-	// 	SetEmail(customer.Email).
-	// 	SetPassword(hashPassword).
-	// 	Save(context.Background())
+	return result, nil
 
-	// hashPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 16)
-	// u, err := r.db.User.
-	// 	Create().
-	// 	SetUsername(user.Username).
-	// 	SetPassword(hashPassword).
-	// 	Save(ctx)
-
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed creating user: %w", err)
-	// }
-
-	return nil, nil
 }
 
 func (r *repository) Read(id int) (*ent.RetailMerchant, error) {

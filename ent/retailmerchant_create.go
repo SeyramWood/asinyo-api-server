@@ -10,6 +10,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/retailmerchant"
 )
 
@@ -45,18 +47,6 @@ func (rmc *RetailMerchantCreate) SetNillableUpdatedAt(t *time.Time) *RetailMerch
 	if t != nil {
 		rmc.SetUpdatedAt(*t)
 	}
-	return rmc
-}
-
-// SetUsername sets the "username" field.
-func (rmc *RetailMerchantCreate) SetUsername(s string) *RetailMerchantCreate {
-	rmc.mutation.SetUsername(s)
-	return rmc
-}
-
-// SetPassword sets the "password" field.
-func (rmc *RetailMerchantCreate) SetPassword(b []byte) *RetailMerchantCreate {
-	rmc.mutation.SetPassword(b)
 	return rmc
 }
 
@@ -108,6 +98,36 @@ func (rmc *RetailMerchantCreate) SetAddress(s string) *RetailMerchantCreate {
 func (rmc *RetailMerchantCreate) SetDigitalAddress(s string) *RetailMerchantCreate {
 	rmc.mutation.SetDigitalAddress(s)
 	return rmc
+}
+
+// SetProductsID sets the "products" edge to the Product entity by ID.
+func (rmc *RetailMerchantCreate) SetProductsID(id int) *RetailMerchantCreate {
+	rmc.mutation.SetProductsID(id)
+	return rmc
+}
+
+// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
+func (rmc *RetailMerchantCreate) SetNillableProductsID(id *int) *RetailMerchantCreate {
+	if id != nil {
+		rmc = rmc.SetProductsID(*id)
+	}
+	return rmc
+}
+
+// SetProducts sets the "products" edge to the Product entity.
+func (rmc *RetailMerchantCreate) SetProducts(p *Product) *RetailMerchantCreate {
+	return rmc.SetProductsID(p.ID)
+}
+
+// SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
+func (rmc *RetailMerchantCreate) SetMerchantID(id int) *RetailMerchantCreate {
+	rmc.mutation.SetMerchantID(id)
+	return rmc
+}
+
+// SetMerchant sets the "merchant" edge to the Merchant entity.
+func (rmc *RetailMerchantCreate) SetMerchant(m *Merchant) *RetailMerchantCreate {
+	return rmc.SetMerchantID(m.ID)
 }
 
 // Mutation returns the RetailMerchantMutation object of the builder.
@@ -199,22 +219,6 @@ func (rmc *RetailMerchantCreate) check() error {
 	if _, ok := rmc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "RetailMerchant.updated_at"`)}
 	}
-	if _, ok := rmc.mutation.Username(); !ok {
-		return &ValidationError{Name: "username", err: errors.New(`ent: missing required field "RetailMerchant.username"`)}
-	}
-	if v, ok := rmc.mutation.Username(); ok {
-		if err := retailmerchant.UsernameValidator(v); err != nil {
-			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.username": %w`, err)}
-		}
-	}
-	if _, ok := rmc.mutation.Password(); !ok {
-		return &ValidationError{Name: "password", err: errors.New(`ent: missing required field "RetailMerchant.password"`)}
-	}
-	if v, ok := rmc.mutation.Password(); ok {
-		if err := retailmerchant.PasswordValidator(v); err != nil {
-			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.password": %w`, err)}
-		}
-	}
 	if _, ok := rmc.mutation.GhanaCard(); !ok {
 		return &ValidationError{Name: "ghana_card", err: errors.New(`ent: missing required field "RetailMerchant.ghana_card"`)}
 	}
@@ -263,6 +267,9 @@ func (rmc *RetailMerchantCreate) check() error {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.digital_address": %w`, err)}
 		}
 	}
+	if _, ok := rmc.mutation.MerchantID(); !ok {
+		return &ValidationError{Name: "merchant", err: errors.New(`ent: missing required edge "RetailMerchant.merchant"`)}
+	}
 	return nil
 }
 
@@ -305,22 +312,6 @@ func (rmc *RetailMerchantCreate) createSpec() (*RetailMerchant, *sqlgraph.Create
 			Column: retailmerchant.FieldUpdatedAt,
 		})
 		_node.UpdatedAt = value
-	}
-	if value, ok := rmc.mutation.Username(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldUsername,
-		})
-		_node.Username = value
-	}
-	if value, ok := rmc.mutation.Password(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: retailmerchant.FieldPassword,
-		})
-		_node.Password = value
 	}
 	if value, ok := rmc.mutation.GhanaCard(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -377,6 +368,46 @@ func (rmc *RetailMerchantCreate) createSpec() (*RetailMerchant, *sqlgraph.Create
 			Column: retailmerchant.FieldDigitalAddress,
 		})
 		_node.DigitalAddress = value
+	}
+	if nodes := rmc.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   retailmerchant.ProductsTable,
+			Columns: []string{retailmerchant.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.retail_merchant_products = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rmc.mutation.MerchantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   retailmerchant.MerchantTable,
+			Columns: []string{retailmerchant.MerchantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.merchant_retailer = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

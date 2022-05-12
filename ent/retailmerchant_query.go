@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/predicate"
+	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/retailmerchant"
 )
 
@@ -24,6 +26,10 @@ type RetailMerchantQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.RetailMerchant
+	// eager-loading edges.
+	withProducts *ProductQuery
+	withMerchant *MerchantQuery
+	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +64,50 @@ func (rmq *RetailMerchantQuery) Unique(unique bool) *RetailMerchantQuery {
 func (rmq *RetailMerchantQuery) Order(o ...OrderFunc) *RetailMerchantQuery {
 	rmq.order = append(rmq.order, o...)
 	return rmq
+}
+
+// QueryProducts chains the current query on the "products" edge.
+func (rmq *RetailMerchantQuery) QueryProducts() *ProductQuery {
+	query := &ProductQuery{config: rmq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rmq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rmq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(retailmerchant.Table, retailmerchant.FieldID, selector),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, retailmerchant.ProductsTable, retailmerchant.ProductsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rmq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryMerchant chains the current query on the "merchant" edge.
+func (rmq *RetailMerchantQuery) QueryMerchant() *MerchantQuery {
+	query := &MerchantQuery{config: rmq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rmq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rmq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(retailmerchant.Table, retailmerchant.FieldID, selector),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, retailmerchant.MerchantTable, retailmerchant.MerchantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rmq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first RetailMerchant entity from the query.
@@ -236,16 +286,40 @@ func (rmq *RetailMerchantQuery) Clone() *RetailMerchantQuery {
 		return nil
 	}
 	return &RetailMerchantQuery{
-		config:     rmq.config,
-		limit:      rmq.limit,
-		offset:     rmq.offset,
-		order:      append([]OrderFunc{}, rmq.order...),
-		predicates: append([]predicate.RetailMerchant{}, rmq.predicates...),
+		config:       rmq.config,
+		limit:        rmq.limit,
+		offset:       rmq.offset,
+		order:        append([]OrderFunc{}, rmq.order...),
+		predicates:   append([]predicate.RetailMerchant{}, rmq.predicates...),
+		withProducts: rmq.withProducts.Clone(),
+		withMerchant: rmq.withMerchant.Clone(),
 		// clone intermediate query.
 		sql:    rmq.sql.Clone(),
 		path:   rmq.path,
 		unique: rmq.unique,
 	}
+}
+
+// WithProducts tells the query-builder to eager-load the nodes that are connected to
+// the "products" edge. The optional arguments are used to configure the query builder of the edge.
+func (rmq *RetailMerchantQuery) WithProducts(opts ...func(*ProductQuery)) *RetailMerchantQuery {
+	query := &ProductQuery{config: rmq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rmq.withProducts = query
+	return rmq
+}
+
+// WithMerchant tells the query-builder to eager-load the nodes that are connected to
+// the "merchant" edge. The optional arguments are used to configure the query builder of the edge.
+func (rmq *RetailMerchantQuery) WithMerchant(opts ...func(*MerchantQuery)) *RetailMerchantQuery {
+	query := &MerchantQuery{config: rmq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rmq.withMerchant = query
+	return rmq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -311,9 +385,20 @@ func (rmq *RetailMerchantQuery) prepareQuery(ctx context.Context) error {
 
 func (rmq *RetailMerchantQuery) sqlAll(ctx context.Context) ([]*RetailMerchant, error) {
 	var (
-		nodes = []*RetailMerchant{}
-		_spec = rmq.querySpec()
+		nodes       = []*RetailMerchant{}
+		withFKs     = rmq.withFKs
+		_spec       = rmq.querySpec()
+		loadedTypes = [2]bool{
+			rmq.withProducts != nil,
+			rmq.withMerchant != nil,
+		}
 	)
+	if rmq.withProducts != nil || rmq.withMerchant != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, retailmerchant.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &RetailMerchant{config: rmq.config}
 		nodes = append(nodes, node)
@@ -324,6 +409,7 @@ func (rmq *RetailMerchantQuery) sqlAll(ctx context.Context) ([]*RetailMerchant, 
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if err := sqlgraph.QueryNodes(ctx, rmq.driver, _spec); err != nil {
@@ -332,6 +418,65 @@ func (rmq *RetailMerchantQuery) sqlAll(ctx context.Context) ([]*RetailMerchant, 
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := rmq.withProducts; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*RetailMerchant)
+		for i := range nodes {
+			if nodes[i].retail_merchant_products == nil {
+				continue
+			}
+			fk := *nodes[i].retail_merchant_products
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(product.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "retail_merchant_products" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Products = n
+			}
+		}
+	}
+
+	if query := rmq.withMerchant; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*RetailMerchant)
+		for i := range nodes {
+			if nodes[i].merchant_retailer == nil {
+				continue
+			}
+			fk := *nodes[i].merchant_retailer
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(merchant.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "merchant_retailer" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Merchant = n
+			}
+		}
+	}
+
 	return nodes, nil
 }
 

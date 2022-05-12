@@ -8,10 +8,13 @@ import (
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/product"
+	"github.com/SeyramWood/ent/productcategorymajor"
+	"github.com/SeyramWood/ent/productcategoryminor"
 	"github.com/SeyramWood/ent/retailmerchant"
 	"github.com/SeyramWood/ent/schema"
 	"github.com/SeyramWood/ent/suppliermerchant"
-	"github.com/SeyramWood/ent/user"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -103,10 +106,10 @@ func init() {
 	customer.DefaultUpdatedAt = customerDescUpdatedAt.Default.(func() time.Time)
 	// customer.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	customer.UpdateDefaultUpdatedAt = customerDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// customerDescEmail is the schema descriptor for email field.
-	customerDescEmail := customerFields[0].Descriptor()
-	// customer.EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	customer.EmailValidator = customerDescEmail.Validators[0].(func(string) error)
+	// customerDescUsername is the schema descriptor for username field.
+	customerDescUsername := customerFields[0].Descriptor()
+	// customer.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
+	customer.UsernameValidator = customerDescUsername.Validators[0].(func(string) error)
 	// customerDescPassword is the schema descriptor for password field.
 	customerDescPassword := customerFields[1].Descriptor()
 	// customer.PasswordValidator is a validator for the "password" field. It is called by the builders before save.
@@ -123,6 +126,102 @@ func init() {
 	customerDescPhone := customerFields[4].Descriptor()
 	// customer.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
 	customer.PhoneValidator = customerDescPhone.Validators[0].(func(string) error)
+	merchantMixin := schema.Merchant{}.Mixin()
+	merchantMixinFields0 := merchantMixin[0].Fields()
+	_ = merchantMixinFields0
+	merchantFields := schema.Merchant{}.Fields()
+	_ = merchantFields
+	// merchantDescCreatedAt is the schema descriptor for created_at field.
+	merchantDescCreatedAt := merchantMixinFields0[0].Descriptor()
+	// merchant.DefaultCreatedAt holds the default value on creation for the created_at field.
+	merchant.DefaultCreatedAt = merchantDescCreatedAt.Default.(func() time.Time)
+	// merchantDescUpdatedAt is the schema descriptor for updated_at field.
+	merchantDescUpdatedAt := merchantMixinFields0[1].Descriptor()
+	// merchant.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	merchant.DefaultUpdatedAt = merchantDescUpdatedAt.Default.(func() time.Time)
+	// merchant.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	merchant.UpdateDefaultUpdatedAt = merchantDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// merchantDescUsername is the schema descriptor for username field.
+	merchantDescUsername := merchantFields[0].Descriptor()
+	// merchant.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
+	merchant.UsernameValidator = merchantDescUsername.Validators[0].(func(string) error)
+	// merchantDescPassword is the schema descriptor for password field.
+	merchantDescPassword := merchantFields[1].Descriptor()
+	// merchant.PasswordValidator is a validator for the "password" field. It is called by the builders before save.
+	merchant.PasswordValidator = merchantDescPassword.Validators[0].(func([]byte) error)
+	productMixin := schema.Product{}.Mixin()
+	productMixinFields0 := productMixin[0].Fields()
+	_ = productMixinFields0
+	productFields := schema.Product{}.Fields()
+	_ = productFields
+	// productDescCreatedAt is the schema descriptor for created_at field.
+	productDescCreatedAt := productMixinFields0[0].Descriptor()
+	// product.DefaultCreatedAt holds the default value on creation for the created_at field.
+	product.DefaultCreatedAt = productDescCreatedAt.Default.(func() time.Time)
+	// productDescUpdatedAt is the schema descriptor for updated_at field.
+	productDescUpdatedAt := productMixinFields0[1].Descriptor()
+	// product.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	product.DefaultUpdatedAt = productDescUpdatedAt.Default.(func() time.Time)
+	// product.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	product.UpdateDefaultUpdatedAt = productDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// productDescName is the schema descriptor for Name field.
+	productDescName := productFields[0].Descriptor()
+	// product.NameValidator is a validator for the "Name" field. It is called by the builders before save.
+	product.NameValidator = productDescName.Validators[0].(func(string) error)
+	// productDescPrice is the schema descriptor for Price field.
+	productDescPrice := productFields[1].Descriptor()
+	// product.DefaultPrice holds the default value on creation for the Price field.
+	product.DefaultPrice = productDescPrice.Default.(float64)
+	// productDescPromoPrice is the schema descriptor for PromoPrice field.
+	productDescPromoPrice := productFields[2].Descriptor()
+	// product.DefaultPromoPrice holds the default value on creation for the PromoPrice field.
+	product.DefaultPromoPrice = productDescPromoPrice.Default.(float64)
+	// productDescDescription is the schema descriptor for Description field.
+	productDescDescription := productFields[3].Descriptor()
+	// product.DescriptionValidator is a validator for the "Description" field. It is called by the builders before save.
+	product.DescriptionValidator = productDescDescription.Validators[0].(func(string) error)
+	// productDescImage is the schema descriptor for Image field.
+	productDescImage := productFields[4].Descriptor()
+	// product.ImageValidator is a validator for the "Image" field. It is called by the builders before save.
+	product.ImageValidator = productDescImage.Validators[0].(func(string) error)
+	productcategorymajorMixin := schema.ProductCategoryMajor{}.Mixin()
+	productcategorymajorMixinFields0 := productcategorymajorMixin[0].Fields()
+	_ = productcategorymajorMixinFields0
+	productcategorymajorFields := schema.ProductCategoryMajor{}.Fields()
+	_ = productcategorymajorFields
+	// productcategorymajorDescCreatedAt is the schema descriptor for created_at field.
+	productcategorymajorDescCreatedAt := productcategorymajorMixinFields0[0].Descriptor()
+	// productcategorymajor.DefaultCreatedAt holds the default value on creation for the created_at field.
+	productcategorymajor.DefaultCreatedAt = productcategorymajorDescCreatedAt.Default.(func() time.Time)
+	// productcategorymajorDescUpdatedAt is the schema descriptor for updated_at field.
+	productcategorymajorDescUpdatedAt := productcategorymajorMixinFields0[1].Descriptor()
+	// productcategorymajor.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	productcategorymajor.DefaultUpdatedAt = productcategorymajorDescUpdatedAt.Default.(func() time.Time)
+	// productcategorymajor.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	productcategorymajor.UpdateDefaultUpdatedAt = productcategorymajorDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// productcategorymajorDescCategory is the schema descriptor for category field.
+	productcategorymajorDescCategory := productcategorymajorFields[0].Descriptor()
+	// productcategorymajor.CategoryValidator is a validator for the "category" field. It is called by the builders before save.
+	productcategorymajor.CategoryValidator = productcategorymajorDescCategory.Validators[0].(func(string) error)
+	productcategoryminorMixin := schema.ProductCategoryMinor{}.Mixin()
+	productcategoryminorMixinFields0 := productcategoryminorMixin[0].Fields()
+	_ = productcategoryminorMixinFields0
+	productcategoryminorFields := schema.ProductCategoryMinor{}.Fields()
+	_ = productcategoryminorFields
+	// productcategoryminorDescCreatedAt is the schema descriptor for created_at field.
+	productcategoryminorDescCreatedAt := productcategoryminorMixinFields0[0].Descriptor()
+	// productcategoryminor.DefaultCreatedAt holds the default value on creation for the created_at field.
+	productcategoryminor.DefaultCreatedAt = productcategoryminorDescCreatedAt.Default.(func() time.Time)
+	// productcategoryminorDescUpdatedAt is the schema descriptor for updated_at field.
+	productcategoryminorDescUpdatedAt := productcategoryminorMixinFields0[1].Descriptor()
+	// productcategoryminor.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	productcategoryminor.DefaultUpdatedAt = productcategoryminorDescUpdatedAt.Default.(func() time.Time)
+	// productcategoryminor.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	productcategoryminor.UpdateDefaultUpdatedAt = productcategoryminorDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// productcategoryminorDescCategory is the schema descriptor for category field.
+	productcategoryminorDescCategory := productcategoryminorFields[0].Descriptor()
+	// productcategoryminor.CategoryValidator is a validator for the "category" field. It is called by the builders before save.
+	productcategoryminor.CategoryValidator = productcategoryminorDescCategory.Validators[0].(func(string) error)
 	retailmerchantMixin := schema.RetailMerchant{}.Mixin()
 	retailmerchantMixinFields0 := retailmerchantMixin[0].Fields()
 	_ = retailmerchantMixinFields0
@@ -138,36 +237,28 @@ func init() {
 	retailmerchant.DefaultUpdatedAt = retailmerchantDescUpdatedAt.Default.(func() time.Time)
 	// retailmerchant.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	retailmerchant.UpdateDefaultUpdatedAt = retailmerchantDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// retailmerchantDescUsername is the schema descriptor for username field.
-	retailmerchantDescUsername := retailmerchantFields[0].Descriptor()
-	// retailmerchant.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
-	retailmerchant.UsernameValidator = retailmerchantDescUsername.Validators[0].(func(string) error)
-	// retailmerchantDescPassword is the schema descriptor for password field.
-	retailmerchantDescPassword := retailmerchantFields[1].Descriptor()
-	// retailmerchant.PasswordValidator is a validator for the "password" field. It is called by the builders before save.
-	retailmerchant.PasswordValidator = retailmerchantDescPassword.Validators[0].(func([]byte) error)
 	// retailmerchantDescGhanaCard is the schema descriptor for ghana_card field.
-	retailmerchantDescGhanaCard := retailmerchantFields[2].Descriptor()
+	retailmerchantDescGhanaCard := retailmerchantFields[0].Descriptor()
 	// retailmerchant.GhanaCardValidator is a validator for the "ghana_card" field. It is called by the builders before save.
 	retailmerchant.GhanaCardValidator = retailmerchantDescGhanaCard.Validators[0].(func(string) error)
 	// retailmerchantDescLastName is the schema descriptor for last_name field.
-	retailmerchantDescLastName := retailmerchantFields[3].Descriptor()
+	retailmerchantDescLastName := retailmerchantFields[1].Descriptor()
 	// retailmerchant.LastNameValidator is a validator for the "last_name" field. It is called by the builders before save.
 	retailmerchant.LastNameValidator = retailmerchantDescLastName.Validators[0].(func(string) error)
 	// retailmerchantDescOtherName is the schema descriptor for other_name field.
-	retailmerchantDescOtherName := retailmerchantFields[4].Descriptor()
+	retailmerchantDescOtherName := retailmerchantFields[2].Descriptor()
 	// retailmerchant.OtherNameValidator is a validator for the "other_name" field. It is called by the builders before save.
 	retailmerchant.OtherNameValidator = retailmerchantDescOtherName.Validators[0].(func(string) error)
 	// retailmerchantDescPhone is the schema descriptor for phone field.
-	retailmerchantDescPhone := retailmerchantFields[5].Descriptor()
+	retailmerchantDescPhone := retailmerchantFields[3].Descriptor()
 	// retailmerchant.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
 	retailmerchant.PhoneValidator = retailmerchantDescPhone.Validators[0].(func(string) error)
 	// retailmerchantDescAddress is the schema descriptor for address field.
-	retailmerchantDescAddress := retailmerchantFields[7].Descriptor()
+	retailmerchantDescAddress := retailmerchantFields[5].Descriptor()
 	// retailmerchant.AddressValidator is a validator for the "address" field. It is called by the builders before save.
 	retailmerchant.AddressValidator = retailmerchantDescAddress.Validators[0].(func(string) error)
 	// retailmerchantDescDigitalAddress is the schema descriptor for digital_address field.
-	retailmerchantDescDigitalAddress := retailmerchantFields[8].Descriptor()
+	retailmerchantDescDigitalAddress := retailmerchantFields[6].Descriptor()
 	// retailmerchant.DigitalAddressValidator is a validator for the "digital_address" field. It is called by the builders before save.
 	retailmerchant.DigitalAddressValidator = retailmerchantDescDigitalAddress.Validators[0].(func(string) error)
 	suppliermerchantMixin := schema.SupplierMerchant{}.Mixin()
@@ -185,59 +276,28 @@ func init() {
 	suppliermerchant.DefaultUpdatedAt = suppliermerchantDescUpdatedAt.Default.(func() time.Time)
 	// suppliermerchant.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	suppliermerchant.UpdateDefaultUpdatedAt = suppliermerchantDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// suppliermerchantDescUsername is the schema descriptor for username field.
-	suppliermerchantDescUsername := suppliermerchantFields[0].Descriptor()
-	// suppliermerchant.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
-	suppliermerchant.UsernameValidator = suppliermerchantDescUsername.Validators[0].(func(string) error)
-	// suppliermerchantDescPassword is the schema descriptor for password field.
-	suppliermerchantDescPassword := suppliermerchantFields[1].Descriptor()
-	// suppliermerchant.PasswordValidator is a validator for the "password" field. It is called by the builders before save.
-	suppliermerchant.PasswordValidator = suppliermerchantDescPassword.Validators[0].(func([]byte) error)
 	// suppliermerchantDescGhanaCard is the schema descriptor for ghana_card field.
-	suppliermerchantDescGhanaCard := suppliermerchantFields[2].Descriptor()
+	suppliermerchantDescGhanaCard := suppliermerchantFields[0].Descriptor()
 	// suppliermerchant.GhanaCardValidator is a validator for the "ghana_card" field. It is called by the builders before save.
 	suppliermerchant.GhanaCardValidator = suppliermerchantDescGhanaCard.Validators[0].(func(string) error)
 	// suppliermerchantDescLastName is the schema descriptor for last_name field.
-	suppliermerchantDescLastName := suppliermerchantFields[3].Descriptor()
+	suppliermerchantDescLastName := suppliermerchantFields[1].Descriptor()
 	// suppliermerchant.LastNameValidator is a validator for the "last_name" field. It is called by the builders before save.
 	suppliermerchant.LastNameValidator = suppliermerchantDescLastName.Validators[0].(func(string) error)
 	// suppliermerchantDescOtherName is the schema descriptor for other_name field.
-	suppliermerchantDescOtherName := suppliermerchantFields[4].Descriptor()
+	suppliermerchantDescOtherName := suppliermerchantFields[2].Descriptor()
 	// suppliermerchant.OtherNameValidator is a validator for the "other_name" field. It is called by the builders before save.
 	suppliermerchant.OtherNameValidator = suppliermerchantDescOtherName.Validators[0].(func(string) error)
 	// suppliermerchantDescPhone is the schema descriptor for phone field.
-	suppliermerchantDescPhone := suppliermerchantFields[5].Descriptor()
+	suppliermerchantDescPhone := suppliermerchantFields[3].Descriptor()
 	// suppliermerchant.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
 	suppliermerchant.PhoneValidator = suppliermerchantDescPhone.Validators[0].(func(string) error)
 	// suppliermerchantDescAddress is the schema descriptor for address field.
-	suppliermerchantDescAddress := suppliermerchantFields[7].Descriptor()
+	suppliermerchantDescAddress := suppliermerchantFields[5].Descriptor()
 	// suppliermerchant.AddressValidator is a validator for the "address" field. It is called by the builders before save.
 	suppliermerchant.AddressValidator = suppliermerchantDescAddress.Validators[0].(func(string) error)
 	// suppliermerchantDescDigitalAddress is the schema descriptor for digital_address field.
-	suppliermerchantDescDigitalAddress := suppliermerchantFields[8].Descriptor()
+	suppliermerchantDescDigitalAddress := suppliermerchantFields[6].Descriptor()
 	// suppliermerchant.DigitalAddressValidator is a validator for the "digital_address" field. It is called by the builders before save.
 	suppliermerchant.DigitalAddressValidator = suppliermerchantDescDigitalAddress.Validators[0].(func(string) error)
-	userMixin := schema.User{}.Mixin()
-	userMixinFields0 := userMixin[0].Fields()
-	_ = userMixinFields0
-	userFields := schema.User{}.Fields()
-	_ = userFields
-	// userDescCreatedAt is the schema descriptor for created_at field.
-	userDescCreatedAt := userMixinFields0[0].Descriptor()
-	// user.DefaultCreatedAt holds the default value on creation for the created_at field.
-	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
-	// userDescUpdatedAt is the schema descriptor for updated_at field.
-	userDescUpdatedAt := userMixinFields0[1].Descriptor()
-	// user.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
-	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	user.UpdateDefaultUpdatedAt = userDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// userDescUsername is the schema descriptor for username field.
-	userDescUsername := userFields[0].Descriptor()
-	// user.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
-	user.UsernameValidator = userDescUsername.Validators[0].(func(string) error)
-	// userDescPassword is the schema descriptor for password field.
-	userDescPassword := userFields[1].Descriptor()
-	// user.PasswordValidator is a validator for the "password" field. It is called by the builders before save.
-	user.PasswordValidator = userDescPassword.Validators[0].(func([]byte) error)
 }

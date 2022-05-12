@@ -34,9 +34,9 @@ func (cu *CustomerUpdate) SetUpdatedAt(t time.Time) *CustomerUpdate {
 	return cu
 }
 
-// SetEmail sets the "email" field.
-func (cu *CustomerUpdate) SetEmail(s string) *CustomerUpdate {
-	cu.mutation.SetEmail(s)
+// SetUsername sets the "username" field.
+func (cu *CustomerUpdate) SetUsername(s string) *CustomerUpdate {
+	cu.mutation.SetUsername(s)
 	return cu
 }
 
@@ -160,9 +160,9 @@ func (cu *CustomerUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (cu *CustomerUpdate) check() error {
-	if v, ok := cu.mutation.Email(); ok {
-		if err := customer.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "Customer.email": %w`, err)}
+	if v, ok := cu.mutation.Username(); ok {
+		if err := customer.UsernameValidator(v); err != nil {
+			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "Customer.username": %w`, err)}
 		}
 	}
 	if v, ok := cu.mutation.Password(); ok {
@@ -213,11 +213,11 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: customer.FieldUpdatedAt,
 		})
 	}
-	if value, ok := cu.mutation.Email(); ok {
+	if value, ok := cu.mutation.Username(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: customer.FieldEmail,
+			Column: customer.FieldUsername,
 		})
 	}
 	if value, ok := cu.mutation.Password(); ok {
@@ -286,9 +286,9 @@ func (cuo *CustomerUpdateOne) SetUpdatedAt(t time.Time) *CustomerUpdateOne {
 	return cuo
 }
 
-// SetEmail sets the "email" field.
-func (cuo *CustomerUpdateOne) SetEmail(s string) *CustomerUpdateOne {
-	cuo.mutation.SetEmail(s)
+// SetUsername sets the "username" field.
+func (cuo *CustomerUpdateOne) SetUsername(s string) *CustomerUpdateOne {
+	cuo.mutation.SetUsername(s)
 	return cuo
 }
 
@@ -419,9 +419,9 @@ func (cuo *CustomerUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (cuo *CustomerUpdateOne) check() error {
-	if v, ok := cuo.mutation.Email(); ok {
-		if err := customer.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "Customer.email": %w`, err)}
+	if v, ok := cuo.mutation.Username(); ok {
+		if err := customer.UsernameValidator(v); err != nil {
+			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "Customer.username": %w`, err)}
 		}
 	}
 	if v, ok := cuo.mutation.Password(); ok {
@@ -489,11 +489,11 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Column: customer.FieldUpdatedAt,
 		})
 	}
-	if value, ok := cuo.mutation.Email(); ok {
+	if value, ok := cuo.mutation.Username(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: customer.FieldEmail,
+			Column: customer.FieldUsername,
 		})
 	}
 	if value, ok := cuo.mutation.Password(); ok {
