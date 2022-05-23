@@ -2,14 +2,11 @@ package auth
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/domain/models"
-	"github.com/SeyramWood/config"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -30,7 +27,7 @@ func (s *service) Login(c *fiber.Ctx) error {
 	authType := c.Get("Asinyo-Authorization-Type")
 	var request models.User
 	var merchantRequest models.UserMerchant
-	fmt.Println(authType)
+
 	if authType == "supplier" || authType == "retailer" {
 		err := c.BodyParser(&merchantRequest)
 		if err != nil {
@@ -50,7 +47,7 @@ func (s *service) Login(c *fiber.Ctx) error {
 	case "agent":
 		return s.signinAgent(c, request)
 	case "supplier":
-		return s.signinSupplerMerchant(c, merchantRequest)
+		return s.signinSupplierMerchant(c, merchantRequest)
 	case "retailer":
 		return s.signinRetailMerchant(c, merchantRequest)
 	case "asinyo":
@@ -73,7 +70,7 @@ func (s *service) Logout(c *fiber.Ctx) error {
 	})
 }
 
-func (s *service) FetcAuthUser(c *fiber.Ctx) error {
+func (s *service) FetchAuthUser(c *fiber.Ctx) error {
 
 	user := c.Locals("user").(*jwt.Token)
 
@@ -112,7 +109,7 @@ func (s *service) FetcAuthUser(c *fiber.Ctx) error {
 					"status": false,
 				})
 			}
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthSupplierMerchantResponse(&presenters.AuthSupplierMerchant{
+			return c.Status(fiber.StatusOK).JSON(presenters.AuthSupplierMerchantResponse(&presenters.AuthMerchant{
 				ID:        user.Edges.Merchant.ID,
 				Username:  user.Edges.Merchant.Username,
 				LastName:  user.LastName,
@@ -132,7 +129,7 @@ func (s *service) FetcAuthUser(c *fiber.Ctx) error {
 					"status": false,
 				})
 			}
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthRetailMerchantResponse(&presenters.AuthRetailMerchant{
+			return c.Status(fiber.StatusOK).JSON(presenters.AuthRetailMerchantResponse(&presenters.AuthMerchant{
 				ID:        user.Edges.Merchant.ID,
 				Username:  user.Edges.Merchant.Username,
 				LastName:  user.LastName,
@@ -163,25 +160,25 @@ func (s *service) hashCheck(hash []byte, plain string) bool {
 	return true
 }
 
-func (s *service) geterateToken(id int, userType string) (interface{}, error) {
+// func (s *service) generateToken(id int, userType string) (interface{}, error) {
 
-	claims := jwt.MapClaims{
-		"Issuer":    strconv.Itoa(id),
-		"IssuedAt":  jwt.NewNumericDate(time.Now()),
-		"ExpiresAt": jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
-		"UserType":  userType,
-	}
+// 	claims := jwt.MapClaims{
+// 		"Issuer":    strconv.Itoa(id),
+// 		"IssuedAt":  jwt.NewNumericDate(time.Now()),
+// 		"ExpiresAt": jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
+// 		"UserType":  userType,
+// 	}
 
-	claim := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+// 	claim := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	token, err := claim.SignedString([]byte(config.App().Key))
+// 	token, err := claim.SignedString([]byte(config.App().Key))
 
-	if err != nil {
-		return nil, err
-	}
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return token, nil
-}
+// 	return token, nil
+// }
 
 func (s *service) signinCustomer(c *fiber.Ctx, request models.User) error {
 
@@ -189,11 +186,7 @@ func (s *service) signinCustomer(c *fiber.Ctx, request models.User) error {
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
 	} else {
 		if s.hashCheck(user.Password, request.Password) {
-			if token, err := s.geterateToken(user.ID, "customer"); err != nil {
-				return c.SendStatus(fiber.StatusInternalServerError)
-			} else {
-				return c.Status(fiber.StatusOK).JSON(fiber.Map{config.App().TokenName: token.(string)})
-			}
+			return c.Status(fiber.StatusOK).JSON(presenters.AuthCustomerResponse(user))
 		}
 	}
 	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))
@@ -205,27 +198,30 @@ func (s *service) signinAgent(c *fiber.Ctx, request models.User) error {
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
 	} else {
 		if s.hashCheck(user.Password, request.Password) {
-			if token, err := s.geterateToken(user.ID, "agent"); err != nil {
-				return c.SendStatus(fiber.StatusInternalServerError)
-			} else {
-				return c.Status(fiber.StatusOK).JSON(fiber.Map{config.App().TokenName: token.(string)})
-			}
+			return c.Status(fiber.StatusOK).JSON(presenters.AuthAgentResponse(user))
 		}
 	}
 	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))
 }
-func (s *service) signinSupplerMerchant(c *fiber.Ctx, request models.UserMerchant) error {
+func (s *service) signinSupplierMerchant(c *fiber.Ctx, request models.UserMerchant) error {
 
 	if user, err := s.repo.ReadMerchant(request.Username, "username"); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
 	} else {
-		fmt.Println(user)
 		if s.hashCheck(user.Password, request.Password) {
-			if token, err := s.geterateToken(user.ID, "supplier"); err != nil {
-				return c.SendStatus(fiber.StatusInternalServerError)
-			} else {
-				return c.Status(fiber.StatusOK).JSON(fiber.Map{config.App().TokenName: token.(string)})
+			merchant, err := user.QuerySupplier().WithMerchant().Only(context.Background())
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"status": false,
+				})
 			}
+			return c.Status(fiber.StatusOK).JSON(presenters.AuthSupplierMerchantResponse(&presenters.AuthMerchant{
+				ID:        merchant.Edges.Merchant.ID,
+				Username:  merchant.Edges.Merchant.Username,
+				LastName:  merchant.LastName,
+				OtherName: merchant.OtherName,
+				UserType:  "supplier",
+			}))
 		}
 	}
 	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))
@@ -236,11 +232,19 @@ func (s *service) signinRetailMerchant(c *fiber.Ctx, request models.UserMerchant
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
 	} else {
 		if s.hashCheck(user.Password, request.Password) {
-			if token, err := s.geterateToken(user.ID, "retailer"); err != nil {
-				return c.SendStatus(fiber.StatusInternalServerError)
-			} else {
-				return c.Status(fiber.StatusOK).JSON(fiber.Map{config.App().TokenName: token.(string)})
+			merchant, err := user.QuerySupplier().WithMerchant().Only(context.Background())
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"status": false,
+				})
 			}
+			return c.Status(fiber.StatusOK).JSON(presenters.AuthSupplierMerchantResponse(&presenters.AuthMerchant{
+				ID:        merchant.Edges.Merchant.ID,
+				Username:  merchant.Edges.Merchant.Username,
+				LastName:  merchant.LastName,
+				OtherName: merchant.OtherName,
+				UserType:  "retailer",
+			}))
 		}
 	}
 	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))
@@ -251,11 +255,7 @@ func (s *service) signinAdmin(c *fiber.Ctx, request models.User) error {
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
 	} else {
 		if s.hashCheck(user.Password, request.Password) {
-			if token, err := s.geterateToken(user.ID, "asinyo"); err != nil {
-				return c.SendStatus(fiber.StatusInternalServerError)
-			} else {
-				return c.Status(fiber.StatusOK).JSON(fiber.Map{config.App().TokenName: token.(string)})
-			}
+			return c.Status(fiber.StatusOK).JSON(presenters.AuthAdminResponse(user))
 		}
 	}
 	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))

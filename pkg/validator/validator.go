@@ -71,6 +71,7 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 		} else if rule == "required" && fieldType == "bool" && !value.Bool() {
 			return fmt.Sprintf("The %s field is required", formattedField)
 		} else if fieldType == "string" && value.Len() != 0 {
+
 			switch rule {
 			case "string":
 				r, _ := regexp.Compile("^[0-9a-zA-Z-+ ]+$")
@@ -108,7 +109,6 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 				if !r.MatchString(value.String()) {
 					return "The address field must be a valid digital address."
 				}
-
 			default:
 				if strings.Contains(rule, ":") {
 					r := strings.Split(rule, ":")
@@ -140,6 +140,10 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 						if r := isUsernameExist(value.String(), field, table); r != nil {
 							return r
 						}
+						// case "file":
+						// mimes := r[1]
+						// fmt.Println(r)
+
 					}
 
 				}

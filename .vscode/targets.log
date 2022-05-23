@@ -8,30 +8,24 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri May 06 12:58:49 2022
+# Make data base, printed on Sat May 21 12:15:21 2022
 
 # Variables
 
 # environment
-SYSTEMDRIVE = C:
+FPS_BROWSER_APP_PROFILE_STRING = Internet Explorer
 # environment
-JAVA_HOME = C:\Program Files\OpenJDK\openjdk-11.0.13_8
+SYSTEMDRIVE = C:
 # environment
 LC_ALL = C
 # environment
 USERPROFILE = C:\Users\Seyram
 # environment
-TMPDIR = C:\Users\Seyram\AppData\Local\Temp
-# environment
 LOCALAPPDATA = C:\Users\Seyram\AppData\Local
 # environment
-VSCODE_IPC_HOOK_EXTHOST = \\.\pipe\vscode-ipc-44b354bb-668d-4cef-b9b5-e4b744432fb7-sock
+VSCODE_IPC_HOOK_EXTHOST = \\.\pipe\vscode-ipc-77891297-2d76-4a85-908c-bc4cc9122088-sock
 # environment
-WSLENV = WT_SESSION::WT_PROFILE_ID
-# environment
-VSCODE_CWD = C:\Users\Seyram\Desktop\projects\asinyo-api
-# environment
-MINGW_PREFIX = C:/Program Files/Git/mingw64
+VSCODE_CWD = C:\Users\Seyram\Desktop\projects
 # environment
 CHOCOLATEYINSTALL = C:\ProgramData\chocolatey
 # environment
@@ -47,23 +41,15 @@ GOPATH = C:\Users\Seyram\go
 # automatic
 @D = $(patsubst %/,%,$(patsubst %\,%,$(dir $@)))
 # environment
-ACLOCAL_PATH = C:\Program Files\Git\mingw64\share\aclocal;C:\Program Files\Git\usr\share\aclocal
+CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_8692_WWOCFDGQFQZLVTOC
 # environment
-CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_3372_ACDFURHWYJIXANPK
-# environment
-ORIGINAL_TEMP = C:/Users/Seyram/AppData/Local/Temp
+FPS_BROWSER_USER_PROFILE_STRING = Default
 # environment
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # default
 .VARIABLES := 
-# environment
-PWD = C:/Users/Seyram/Desktop/projects/asinyo-api
 # automatic
 %D = $(patsubst %/,%,$(patsubst %\,%,$(dir $%)))
-# environment
-HOSTNAME = SEYRAM
-# environment
-OLDPWD = C:/Users/Seyram/Desktop/projects/asinyo
 # automatic
 ^D = $(patsubst %/,%,$(patsubst %\,%,$(dir $^)))
 # environment
@@ -71,9 +57,7 @@ VSCODE_LOG_STACK = true
 # automatic
 %F = $(notdir $%)
 # environment
-VSCODE_CODE_CACHE_PATH = C:\Users\Seyram\AppData\Roaming\Code - Insiders\CachedData\e6d98a13fcd3bf928d0e755eaae873ac200a98bd
-# environment
-SSH_ASKPASS = C:/Program Files/Git/mingw64/bin/git-askpass.exe
+VSCODE_CODE_CACHE_PATH = C:\Users\Seyram\AppData\Roaming\Code - Insiders\CachedData\17c75e11805103026b943c8dc4d50a35f245f76f
 # environment
 LANG = C
 # default
@@ -87,15 +71,11 @@ PROCESSOR_ARCHITEW6432 = AMD64
 # makefile
 MAKEFLAGS = pqrR
 # environment
-PKG_CONFIG_PATH = C:\Program Files\Git\mingw64\lib\pkgconfig;C:\Program Files\Git\mingw64\share\pkgconfig
-# environment
 ONEDRIVE = C:\Users\Seyram\OneDrive
 # makefile
 CURDIR := c:/Users/Seyram/Desktop/projects/asinyo-api
 # environment
 VSCODE_PIPE_LOGGING = true
-# environment
-MSYSTEM_CARCH = x86_64
 # environment
 APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 # automatic
@@ -117,17 +97,11 @@ MAKEFILE_LIST := Makefile
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-VSCODE_PID = 3372
+VSCODE_PID = 8692
 # automatic
 ?D = $(patsubst %/,%,$(patsubst %\,%,$(dir $?)))
-# environment
-MINGW_CHOST = x86_64-w64-mingw32
-# environment
-WT_PROFILE_ID = {2ece5bfe-50ed-5f3a-ab87-5cd4baafed2b}
 # automatic
 *F = $(notdir $*)
-# environment
-MANPATH = C:\Program Files\Git\mingw64\local\man;C:\Program Files\Git\mingw64\share\man;C:\Program Files\Git\usr\local\man;C:\Program Files\Git\usr\share\man;C:\Program Files\Git\usr\man;C:\Program Files\Git\share\man
 # automatic
 <D = $(patsubst %/,%,$(patsubst %\,%,$(dir $<)))
 # environment
@@ -137,21 +111,13 @@ ONEDRIVECONSUMER = C:\Users\Seyram\OneDrive
 # default
 MAKE_HOST := Windows32
 # environment
-ANDROID_HOME = C:\Users\Seyram\AppData\Local\Android\Sdk
-# environment
 PROGRAMDATA = C:\ProgramData
-# environment
-INFOPATH = C:\Program Files\Git\usr\local\info;C:\Program Files\Git\usr\share\info;C:\Program Files\Git\usr\info;C:\Program Files\Git\share\info
-# makefile
-SHELL = C:/Program Files/Git/usr/bin/sh.exe
-# environment
-ORIGINAL_PATH = C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Users\Seyram\bin;C:\Python310\Scripts;C:\Python310;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\xampp\php;C:\composer;C:\ProgramData\chocolatey\bin;C:\Program Files\OpenJDK\openjdk-8u302-b08\bin;C:\Program Files\PuTTY;C:\Program Files\nodejs;C:\Program Files\OpenJDK\openjdk-11.0.13_8\bin;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Go\bin;C:\Program Files\Git\cmd;C:\Users\Seyram\AppData\Local\Programs\Microsoft VS Code Insiders\bin;C:\Users\Seyram\go\bin
+# default
+SHELL := sh.exe
 # environment
 HOMEPATH = \Users\Seyram
 # default
 MAKECMDGOALS := all
-# environment
-SHLVL = 2
 # environment
 DRIVERDATA = C:\Windows\System32\Drivers\DriverData
 # environment
@@ -163,23 +129,19 @@ MAKELEVEL := 0
 # default
 MAKE = $(MAKE_COMMAND)
 # environment
-PATH = C:\Users\Seyram\bin;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\local\bin;C:\Program Files\Git\usr\bin;C:\Program Files\Git\usr\bin;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Users\Seyram\bin;C:\Python310\Scripts;C:\Python310;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\xampp\php;C:\composer;C:\ProgramData\chocolatey\bin;C:\Program Files\OpenJDK\openjdk-8u302-b08\bin;C:\Program Files\PuTTY;C:\Program Files\nodejs;C:\Program Files\OpenJDK\openjdk-11.0.13_8\bin;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Go\bin;C:\Program Files\Git\cmd;C:\Users\Seyram\AppData\Local\Programs\Microsoft VS Code Insiders\bin;C:\Users\Seyram\go\bin;C:\Program Files\Git\usr\bin\vendor_perl;C:\Program Files\Git\usr\bin\core_perl
+PATH = C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\Go\bin;C:\Users\Seyram\AppData\Local\Microsoft\WindowsApps;C:\Users\Seyram\AppData\Local\Programs\Microsoft VS Code Insiders\bin;C:\Users\Seyram\AppData\Roaming\npm;C:\Program Files\MongoDB\Server\5.0\bin;C:\Users\Seyram\go\bin
 # environment
-COMPUTERNAME = SEYRAM
+COMPUTERNAME = DESKTOP-CEC8B1O
 # default
 MAKEFILES := 
 # automatic
 ^F = $(notdir $^)
 # environment
-MINGW_PACKAGE_PREFIX = mingw-w64-x86_64
-# environment
 PROMPT = $P$G
 # environment
-CHOCOLATEYLASTPATHUPDATE = 132871261370473377
+CHOCOLATEYLASTPATHUPDATE = 132940283955978820
 # environment
-WT_SESSION = 659b2080-65bf-4ed2-9376-682ee19d6933
-# environment
-LOGONSERVER = \\SEYRAM
+LOGONSERVER = \\DESKTOP-CEC8B1O
 # environment
 VSCODE_LOG_NATIVE = false
 # environment
@@ -191,39 +153,29 @@ COMMONPROGRAMFILES = C:\Program Files (x86)\Common Files
 # environment
 PROGRAMW6432 = C:\Program Files
 # environment
-MSYSTEM_CHOST = x86_64-w64-mingw32
-# environment
-PATHEXT = .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW
+PATHEXT = .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
 # automatic
 +F = $(notdir $+)
 # environment
-CONFIG_SITE = C:/Program Files/Git/etc/config.site
-# environment
 ORIGINAL_XDG_CURRENT_DESKTOP = undefined
 # environment
-USERDOMAIN = SEYRAM
+USERDOMAIN = DESKTOP-CEC8B1O
 # 'override' directive
 GNUMAKEFLAGS := 
 # environment
 OS = Windows_NT
-# environment
-MSYSTEM_PREFIX = C:/Program Files/Git/mingw64
 # makefile
 .DEFAULT_GOAL := run
-# environment
-DISPLAY = needs-to-be-defined
 # default
 MAKE_VERSION := 4.3
 # environment
 PROGRAMFILES(X86) = C:\Program Files (x86)
 # environment
-USERDOMAIN_ROAMINGPROFILE = SEYRAM
+USERDOMAIN_ROAMINGPROFILE = DESKTOP-CEC8B1O
 # environment
-NUMBER_OF_PROCESSORS = 8
+NUMBER_OF_PROCESSORS = 4
 # environment
 PUBLIC = C:\Users\Public
-# environment
-_ = C:/Users/Seyram/AppData/Local/Programs/Microsoft VS Code Insiders/Code - Insiders.exe
 # environment
 APPDATA = C:\Users\Seyram\AppData\Roaming
 # environment
@@ -235,47 +187,33 @@ GOMODCACHE = C:\Users\Seyram\go\pkg\mod
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
-MSYSTEM = MINGW64
-# environment
-HOME = C:\Users\Seyram
-# environment
 COMMONPROGRAMFILES(X86) = C:\Program Files (x86)\Common Files
-# environment
-EXEPATH = C:\Program Files\Git\bin
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
 TEMP = C:\Users\Seyram\AppData\Local\Temp
 # environment
-TERM = xterm-256color
-# environment
-VSCODE_IPC_HOOK = \\.\pipe\75112ac1a7d9ea8209bcaa5d8606d356-1.67.0-insider-main-sock
+VSCODE_IPC_HOOK = \\.\pipe\75112ac1a7d9ea8209bcaa5d8606d356-1.68.0-insider-main-sock
 # environment
 GOPROXY = https://proxy.golang.org,direct
 # default
 .RECIPEPREFIX := 
-# environment
-ORIGINAL_TMP = C:/Users/Seyram/AppData/Local/Temp
 # automatic
 <F = $(notdir $<)
-# environment
-PLINK_PROTOCOL = ssh
 # default
 SUFFIXES := 
 # environment
 ALLUSERSPROFILE = C:\ProgramData
 # environment
-VSCODE_CLI = 1
-# environment
-ELECTRON_NO_ATTACH_CONSOLE = 1
+SESSIONNAME = Console
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell nocomment grouped-target extra-prereqs archives jobserver output-sync load
 # environment
-PROCESSOR_REVISION = 3c03
+PROCESSOR_REVISION = 4501
 # environment
-PROCESSOR_IDENTIFIER = Intel64 Family 6 Model 60 Stepping 3, GenuineIntel
+PROCESSOR_IDENTIFIER = Intel64 Family 6 Model 69 Stepping 1, GenuineIntel
 # variable set hash-table stats:
-# Load=131/1024=13%, Rehash=0, Collisions=15/158=9%
+# Load=100/1024=10%, Rehash=0, Collisions=10/127=8%
 
 # Pattern-specific Variable Values
 
@@ -283,7 +221,7 @@ PROCESSOR_IDENTIFIER = Intel64 Family 6 Model 60 Stepping 3, GenuineIntel
 
 # Directories
 
-# . (key c:/Users/Seyram/Desktop/projects/asinyo-api, mtime 1651570511): 15 files, no impossibilities.
+# . (key c:/Users/Seyram/Desktop/projects/asinyo-api, mtime 1652616569): 15 files, no impossibilities.
 
 # 15 files, no impossibilities in 1 directories.
 
@@ -296,7 +234,7 @@ PROCESSOR_IDENTIFIER = Intel64 Family 6 Model 60 Stepping 3, GenuineIntel
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-03 09:35:11
+#  Last modified 2022-05-01 18:48:56
 #  File has been updated.
 #  Successfully updated.
 
@@ -338,7 +276,8 @@ gen_ent:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 8):
+#  recipe to execute (from 'Makefile', line  
+8):
 	go generate ./ent
 
 # files hash-table stats:
@@ -355,6 +294,6 @@ gen_ent:
 # strcache performance: lookups = 30 / hit rate = 26%
 # hash-table stats:
 # Load=22/8192=0%, Rehash=0, Collisions=0/30=0%
-# Finished Make data base on Fri May 06 12:58:49 2022
+# Finished Make data base on Sat May 21 12:15:21 2022
 
  

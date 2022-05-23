@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"errors"
-
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/product"
@@ -59,14 +57,31 @@ func (h *ProductHandler) Create() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
 		}
-
-		_, err = h.service.Create(&request)
-
+		// NewStorage()
+		file, _ := c.FormFile("image")
+		buffer, err := file.Open()
 		if err != nil {
-
-			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(errors.New("error creating merchant")))
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+				"msg": "Bad request",
+			})
 		}
-		return c.JSON(presenters.EmptySuccessResponse())
+		defer buffer.Close()
+		head := make([]byte, 512)
+		buffer.Read(head)
+
+		// mtype := mimetype.Detect(head)
+		// fmt.Println(mtype.String(), mtype.Extension(), file.Filename)
+
+		// fmt.Print(file.Filename)
+		return nil
+
+		// _, err = h.service.Create(&request)
+
+		// if err != nil {
+
+		// 	return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(errors.New("error creating merchant")))
+		// }
+		// return c.JSON(presenters.EmptySuccessResponse())
 	}
 }
 

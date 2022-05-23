@@ -19,21 +19,7 @@ type (
 		OtherName string `json:"otherName"`
 		UserType  string `json:"userType"`
 	}
-	AuthAgent struct {
-		ID        int    `json:"id"`
-		Username  string `json:"username"`
-		LastName  string `json:"lastName"`
-		OtherName string `json:"otherName"`
-		UserType  string `json:"userType"`
-	}
-	AuthSupplierMerchant struct {
-		ID        int    `json:"id"`
-		Username  string `json:"username"`
-		LastName  string `json:"lastName"`
-		OtherName string `json:"otherName"`
-		UserType  string `json:"userType"`
-	}
-	AuthRetailMerchant struct {
+	AuthMerchant struct {
 		ID        int    `json:"id"`
 		Username  string `json:"username"`
 		LastName  string `json:"lastName"`
@@ -59,7 +45,7 @@ func AuthCustomerResponse(data *ent.Customer) *fiber.Map {
 	})
 }
 func AuthAgentResponse(data *ent.Agent) *fiber.Map {
-	return successResponse(&AuthAgent{
+	return successResponse(&AuthMerchant{
 		ID:        data.ID,
 		Username:  data.Username,
 		OtherName: data.OtherName,
@@ -67,8 +53,8 @@ func AuthAgentResponse(data *ent.Agent) *fiber.Map {
 		UserType:  "agent",
 	})
 }
-func AuthSupplierMerchantResponse(data *AuthSupplierMerchant) *fiber.Map {
-	return successResponse(&AuthSupplierMerchant{
+func AuthSupplierMerchantResponse(data *AuthMerchant) *fiber.Map {
+	return successResponse(&AuthMerchant{
 		ID:        data.ID,
 		Username:  data.Username,
 		OtherName: data.OtherName,
@@ -76,8 +62,8 @@ func AuthSupplierMerchantResponse(data *AuthSupplierMerchant) *fiber.Map {
 		UserType:  "supplier",
 	})
 }
-func AuthRetailMerchantResponse(data *AuthRetailMerchant) *fiber.Map {
-	return successResponse(&AuthRetailMerchant{
+func AuthRetailMerchantResponse(data *AuthMerchant) *fiber.Map {
+	return successResponse(&AuthMerchant{
 		ID:        data.ID,
 		Username:  data.Username,
 		OtherName: data.OtherName,

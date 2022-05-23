@@ -165,6 +165,8 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 
 		r.Get("/", h.Fetch()).Name("all")
 
+		r.Post("/create", request.ValidateProduct(), h.Create()).Name("create")
+
 		r.Get("/majors", majorH.Fetch()).Name("majors")
 
 		r.Get("/minors", minorH.Fetch()).Name("minors")
@@ -194,7 +196,7 @@ func authRouter(router fiber.Router, db *database.Adapter) {
 
 		r.Post("/signin", request.ValidateUser(), h.Login()).Name("signin")
 		r.Get("/signout", middleware.Auth(), h.Logout()).Name("signout")
-		r.Get("/user", middleware.Auth(), h.FetcAuthUser()).Name("user")
+		r.Get("/user", middleware.Auth(), h.FetchAuthUser()).Name("user")
 
 	}, "auth.")
 

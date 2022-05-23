@@ -31,8 +31,8 @@ func (auth *authHandler) Logout() fiber.Handler {
 		return auth.service.Logout(c)
 	}
 }
-func (auth *authHandler) FetcAuthUser() fiber.Handler {
+func (auth *authHandler) FetchAuthUser() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return auth.service.FetcAuthUser(c)
+		return auth.service.FetchAuthUser(c)
 	}
 }

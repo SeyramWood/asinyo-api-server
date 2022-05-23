@@ -14,6 +14,7 @@ require (
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.0 // indirect
+	github.com/h2non/filetype v1.1.3 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 )
 
@@ -24,7 +25,7 @@ require (
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/goccy/go-json v0.9.7
-	github.com/gofiber/jwt/v3 v3.2.11 // indirect
+	github.com/gofiber/jwt/v3 v3.2.11
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect

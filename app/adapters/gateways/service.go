@@ -75,6 +75,6 @@ type (
 	AuthService interface {
 		Login(c *fiber.Ctx) error
 		Logout(c *fiber.Ctx) error
-		FetcAuthUser(c *fiber.Ctx) error
+		FetchAuthUser(c *fiber.Ctx) error
 	}
 )
