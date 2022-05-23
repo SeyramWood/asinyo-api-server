@@ -1,8 +1,6 @@
 package request
 
 import (
-	"fmt"
-
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/pkg/validator"
@@ -66,7 +64,6 @@ func ValidateCustomer() fiber.Handler {
 		}
 
 		if er := validator.Validate(&request); er != nil {
-			fmt.Println(er)
 			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 		}
 		return c.Next()
@@ -76,7 +73,7 @@ func ValidateAgent() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		var info models.AgentInfo
-		var retquest models.AgentRequest
+		var request models.AgentRequest
 
 		if c.Get("step") == "one" {
 			err := c.BodyParser(&info)
@@ -91,11 +88,11 @@ func ValidateAgent() fiber.Handler {
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 
 		} else {
-			err := c.BodyParser(&retquest)
+			err := c.BodyParser(&request)
 			if err != nil {
 				return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
 			}
-			if er := validator.Validate(&retquest.Credentials); er != nil {
+			if er := validator.Validate(&request.Credentials); er != nil {
 				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 			}
 
@@ -108,7 +105,7 @@ func ValidateMerchant() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		var info models.MerchantRequestInfo
-		var retquest models.MerchantRequest
+		var request models.MerchantRequest
 
 		if c.Get("step") == "one" {
 			err := c.BodyParser(&info)
@@ -123,11 +120,11 @@ func ValidateMerchant() fiber.Handler {
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 
 		} else {
-			err := c.BodyParser(&retquest)
+			err := c.BodyParser(&request)
 			if err != nil {
 				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 			}
-			if er := validator.Validate(&retquest.Credentials); er != nil {
+			if er := validator.Validate(&request.Credentials); er != nil {
 				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 			}
 
@@ -146,6 +143,7 @@ func ValidateProduct() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
 		}
+
 		if er := validator.Validate(&retquest); er != nil {
 			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 		}
