@@ -27,8 +27,44 @@ const (
 	FieldPhone = "phone"
 	// FieldOtherPhone holds the string denoting the other_phone field in the database.
 	FieldOtherPhone = "other_phone"
+	// EdgeAddresses holds the string denoting the addresses edge name in mutations.
+	EdgeAddresses = "addresses"
+	// EdgeOrders holds the string denoting the orders edge name in mutations.
+	EdgeOrders = "orders"
+	// EdgeBaskets holds the string denoting the baskets edge name in mutations.
+	EdgeBaskets = "baskets"
+	// EdgeFavourites holds the string denoting the favourites edge name in mutations.
+	EdgeFavourites = "favourites"
 	// Table holds the table name of the customer in the database.
 	Table = "customers"
+	// AddressesTable is the table that holds the addresses relation/edge.
+	AddressesTable = "addresses"
+	// AddressesInverseTable is the table name for the Address entity.
+	// It exists in this package in order to avoid circular dependency with the "address" package.
+	AddressesInverseTable = "addresses"
+	// AddressesColumn is the table column denoting the addresses relation/edge.
+	AddressesColumn = "customer_addresses"
+	// OrdersTable is the table that holds the orders relation/edge.
+	OrdersTable = "orders"
+	// OrdersInverseTable is the table name for the Order entity.
+	// It exists in this package in order to avoid circular dependency with the "order" package.
+	OrdersInverseTable = "orders"
+	// OrdersColumn is the table column denoting the orders relation/edge.
+	OrdersColumn = "customer_orders"
+	// BasketsTable is the table that holds the baskets relation/edge.
+	BasketsTable = "baskets"
+	// BasketsInverseTable is the table name for the Basket entity.
+	// It exists in this package in order to avoid circular dependency with the "basket" package.
+	BasketsInverseTable = "baskets"
+	// BasketsColumn is the table column denoting the baskets relation/edge.
+	BasketsColumn = "customer_baskets"
+	// FavouritesTable is the table that holds the favourites relation/edge.
+	FavouritesTable = "favourites"
+	// FavouritesInverseTable is the table name for the Favourite entity.
+	// It exists in this package in order to avoid circular dependency with the "favourite" package.
+	FavouritesInverseTable = "favourites"
+	// FavouritesColumn is the table column denoting the favourites relation/edge.
+	FavouritesColumn = "customer_favourites"
 )
 
 // Columns holds all SQL columns for customer fields.

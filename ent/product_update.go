@@ -11,13 +11,14 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/basket"
+	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
-	"github.com/SeyramWood/ent/retailmerchant"
-	"github.com/SeyramWood/ent/suppliermerchant"
 )
 
 // ProductUpdate is the builder for updating Product entities.
@@ -39,20 +40,20 @@ func (pu *ProductUpdate) SetUpdatedAt(t time.Time) *ProductUpdate {
 	return pu
 }
 
-// SetName sets the "Name" field.
+// SetName sets the "name" field.
 func (pu *ProductUpdate) SetName(s string) *ProductUpdate {
 	pu.mutation.SetName(s)
 	return pu
 }
 
-// SetPrice sets the "Price" field.
+// SetPrice sets the "price" field.
 func (pu *ProductUpdate) SetPrice(f float64) *ProductUpdate {
 	pu.mutation.ResetPrice()
 	pu.mutation.SetPrice(f)
 	return pu
 }
 
-// SetNillablePrice sets the "Price" field if the given value is not nil.
+// SetNillablePrice sets the "price" field if the given value is not nil.
 func (pu *ProductUpdate) SetNillablePrice(f *float64) *ProductUpdate {
 	if f != nil {
 		pu.SetPrice(*f)
@@ -60,20 +61,20 @@ func (pu *ProductUpdate) SetNillablePrice(f *float64) *ProductUpdate {
 	return pu
 }
 
-// AddPrice adds f to the "Price" field.
+// AddPrice adds f to the "price" field.
 func (pu *ProductUpdate) AddPrice(f float64) *ProductUpdate {
 	pu.mutation.AddPrice(f)
 	return pu
 }
 
-// SetPromoPrice sets the "PromoPrice" field.
+// SetPromoPrice sets the "promo_price" field.
 func (pu *ProductUpdate) SetPromoPrice(f float64) *ProductUpdate {
 	pu.mutation.ResetPromoPrice()
 	pu.mutation.SetPromoPrice(f)
 	return pu
 }
 
-// SetNillablePromoPrice sets the "PromoPrice" field if the given value is not nil.
+// SetNillablePromoPrice sets the "promo_price" field if the given value is not nil.
 func (pu *ProductUpdate) SetNillablePromoPrice(f *float64) *ProductUpdate {
 	if f != nil {
 		pu.SetPromoPrice(*f)
@@ -81,97 +82,133 @@ func (pu *ProductUpdate) SetNillablePromoPrice(f *float64) *ProductUpdate {
 	return pu
 }
 
-// AddPromoPrice adds f to the "PromoPrice" field.
+// AddPromoPrice adds f to the "promo_price" field.
 func (pu *ProductUpdate) AddPromoPrice(f float64) *ProductUpdate {
 	pu.mutation.AddPromoPrice(f)
 	return pu
 }
 
-// SetDescription sets the "Description" field.
+// ClearPromoPrice clears the value of the "promo_price" field.
+func (pu *ProductUpdate) ClearPromoPrice() *ProductUpdate {
+	pu.mutation.ClearPromoPrice()
+	return pu
+}
+
+// SetQuantity sets the "quantity" field.
+func (pu *ProductUpdate) SetQuantity(u uint32) *ProductUpdate {
+	pu.mutation.ResetQuantity()
+	pu.mutation.SetQuantity(u)
+	return pu
+}
+
+// SetNillableQuantity sets the "quantity" field if the given value is not nil.
+func (pu *ProductUpdate) SetNillableQuantity(u *uint32) *ProductUpdate {
+	if u != nil {
+		pu.SetQuantity(*u)
+	}
+	return pu
+}
+
+// AddQuantity adds u to the "quantity" field.
+func (pu *ProductUpdate) AddQuantity(u int32) *ProductUpdate {
+	pu.mutation.AddQuantity(u)
+	return pu
+}
+
+// SetUnit sets the "unit" field.
+func (pu *ProductUpdate) SetUnit(s string) *ProductUpdate {
+	pu.mutation.SetUnit(s)
+	return pu
+}
+
+// SetDescription sets the "description" field.
 func (pu *ProductUpdate) SetDescription(s string) *ProductUpdate {
 	pu.mutation.SetDescription(s)
 	return pu
 }
 
-// SetImage sets the "Image" field.
+// SetImage sets the "image" field.
 func (pu *ProductUpdate) SetImage(s string) *ProductUpdate {
 	pu.mutation.SetImage(s)
 	return pu
 }
 
-// AddMajorIDs adds the "major" edge to the ProductCategoryMajor entity by IDs.
-func (pu *ProductUpdate) AddMajorIDs(ids ...int) *ProductUpdate {
-	pu.mutation.AddMajorIDs(ids...)
+// SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
+func (pu *ProductUpdate) SetMerchantID(id int) *ProductUpdate {
+	pu.mutation.SetMerchantID(id)
 	return pu
 }
 
-// AddMajor adds the "major" edges to the ProductCategoryMajor entity.
-func (pu *ProductUpdate) AddMajor(p ...*ProductCategoryMajor) *ProductUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return pu.AddMajorIDs(ids...)
+// SetMerchant sets the "merchant" edge to the Merchant entity.
+func (pu *ProductUpdate) SetMerchant(m *Merchant) *ProductUpdate {
+	return pu.SetMerchantID(m.ID)
 }
 
-// AddMinorIDs adds the "minor" edge to the ProductCategoryMinor entity by IDs.
-func (pu *ProductUpdate) AddMinorIDs(ids ...int) *ProductUpdate {
-	pu.mutation.AddMinorIDs(ids...)
+// SetMajorID sets the "major" edge to the ProductCategoryMajor entity by ID.
+func (pu *ProductUpdate) SetMajorID(id int) *ProductUpdate {
+	pu.mutation.SetMajorID(id)
 	return pu
 }
 
-// AddMinor adds the "minor" edges to the ProductCategoryMinor entity.
-func (pu *ProductUpdate) AddMinor(p ...*ProductCategoryMinor) *ProductUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return pu.AddMinorIDs(ids...)
+// SetMajor sets the "major" edge to the ProductCategoryMajor entity.
+func (pu *ProductUpdate) SetMajor(p *ProductCategoryMajor) *ProductUpdate {
+	return pu.SetMajorID(p.ID)
 }
 
-// AddMechantIDs adds the "mechant" edge to the Merchant entity by IDs.
-func (pu *ProductUpdate) AddMechantIDs(ids ...int) *ProductUpdate {
-	pu.mutation.AddMechantIDs(ids...)
+// SetMinorID sets the "minor" edge to the ProductCategoryMinor entity by ID.
+func (pu *ProductUpdate) SetMinorID(id int) *ProductUpdate {
+	pu.mutation.SetMinorID(id)
 	return pu
 }
 
-// AddMechant adds the "mechant" edges to the Merchant entity.
-func (pu *ProductUpdate) AddMechant(m ...*Merchant) *ProductUpdate {
-	ids := make([]int, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
-	}
-	return pu.AddMechantIDs(ids...)
+// SetMinor sets the "minor" edge to the ProductCategoryMinor entity.
+func (pu *ProductUpdate) SetMinor(p *ProductCategoryMinor) *ProductUpdate {
+	return pu.SetMinorID(p.ID)
 }
 
-// AddSupplierIDs adds the "supplier" edge to the SupplierMerchant entity by IDs.
-func (pu *ProductUpdate) AddSupplierIDs(ids ...int) *ProductUpdate {
-	pu.mutation.AddSupplierIDs(ids...)
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (pu *ProductUpdate) AddOrderIDs(ids ...int) *ProductUpdate {
+	pu.mutation.AddOrderIDs(ids...)
 	return pu
 }
 
-// AddSupplier adds the "supplier" edges to the SupplierMerchant entity.
-func (pu *ProductUpdate) AddSupplier(s ...*SupplierMerchant) *ProductUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// AddOrders adds the "orders" edges to the Order entity.
+func (pu *ProductUpdate) AddOrders(o ...*Order) *ProductUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
 	}
-	return pu.AddSupplierIDs(ids...)
+	return pu.AddOrderIDs(ids...)
 }
 
-// AddRetailerIDs adds the "retailer" edge to the RetailMerchant entity by IDs.
-func (pu *ProductUpdate) AddRetailerIDs(ids ...int) *ProductUpdate {
-	pu.mutation.AddRetailerIDs(ids...)
+// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
+func (pu *ProductUpdate) AddBasketIDs(ids ...int) *ProductUpdate {
+	pu.mutation.AddBasketIDs(ids...)
 	return pu
 }
 
-// AddRetailer adds the "retailer" edges to the RetailMerchant entity.
-func (pu *ProductUpdate) AddRetailer(r ...*RetailMerchant) *ProductUpdate {
-	ids := make([]int, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
+// AddBaskets adds the "baskets" edges to the Basket entity.
+func (pu *ProductUpdate) AddBaskets(b ...*Basket) *ProductUpdate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
 	}
-	return pu.AddRetailerIDs(ids...)
+	return pu.AddBasketIDs(ids...)
+}
+
+// AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
+func (pu *ProductUpdate) AddFavouriteIDs(ids ...int) *ProductUpdate {
+	pu.mutation.AddFavouriteIDs(ids...)
+	return pu
+}
+
+// AddFavourites adds the "favourites" edges to the Favourite entity.
+func (pu *ProductUpdate) AddFavourites(f ...*Favourite) *ProductUpdate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return pu.AddFavouriteIDs(ids...)
 }
 
 // Mutation returns the ProductMutation object of the builder.
@@ -179,109 +216,85 @@ func (pu *ProductUpdate) Mutation() *ProductMutation {
 	return pu.mutation
 }
 
-// ClearMajor clears all "major" edges to the ProductCategoryMajor entity.
+// ClearMerchant clears the "merchant" edge to the Merchant entity.
+func (pu *ProductUpdate) ClearMerchant() *ProductUpdate {
+	pu.mutation.ClearMerchant()
+	return pu
+}
+
+// ClearMajor clears the "major" edge to the ProductCategoryMajor entity.
 func (pu *ProductUpdate) ClearMajor() *ProductUpdate {
 	pu.mutation.ClearMajor()
 	return pu
 }
 
-// RemoveMajorIDs removes the "major" edge to ProductCategoryMajor entities by IDs.
-func (pu *ProductUpdate) RemoveMajorIDs(ids ...int) *ProductUpdate {
-	pu.mutation.RemoveMajorIDs(ids...)
-	return pu
-}
-
-// RemoveMajor removes "major" edges to ProductCategoryMajor entities.
-func (pu *ProductUpdate) RemoveMajor(p ...*ProductCategoryMajor) *ProductUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return pu.RemoveMajorIDs(ids...)
-}
-
-// ClearMinor clears all "minor" edges to the ProductCategoryMinor entity.
+// ClearMinor clears the "minor" edge to the ProductCategoryMinor entity.
 func (pu *ProductUpdate) ClearMinor() *ProductUpdate {
 	pu.mutation.ClearMinor()
 	return pu
 }
 
-// RemoveMinorIDs removes the "minor" edge to ProductCategoryMinor entities by IDs.
-func (pu *ProductUpdate) RemoveMinorIDs(ids ...int) *ProductUpdate {
-	pu.mutation.RemoveMinorIDs(ids...)
+// ClearOrders clears all "orders" edges to the Order entity.
+func (pu *ProductUpdate) ClearOrders() *ProductUpdate {
+	pu.mutation.ClearOrders()
 	return pu
 }
 
-// RemoveMinor removes "minor" edges to ProductCategoryMinor entities.
-func (pu *ProductUpdate) RemoveMinor(p ...*ProductCategoryMinor) *ProductUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (pu *ProductUpdate) RemoveOrderIDs(ids ...int) *ProductUpdate {
+	pu.mutation.RemoveOrderIDs(ids...)
+	return pu
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (pu *ProductUpdate) RemoveOrders(o ...*Order) *ProductUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
 	}
-	return pu.RemoveMinorIDs(ids...)
+	return pu.RemoveOrderIDs(ids...)
 }
 
-// ClearMechant clears all "mechant" edges to the Merchant entity.
-func (pu *ProductUpdate) ClearMechant() *ProductUpdate {
-	pu.mutation.ClearMechant()
+// ClearBaskets clears all "baskets" edges to the Basket entity.
+func (pu *ProductUpdate) ClearBaskets() *ProductUpdate {
+	pu.mutation.ClearBaskets()
 	return pu
 }
 
-// RemoveMechantIDs removes the "mechant" edge to Merchant entities by IDs.
-func (pu *ProductUpdate) RemoveMechantIDs(ids ...int) *ProductUpdate {
-	pu.mutation.RemoveMechantIDs(ids...)
+// RemoveBasketIDs removes the "baskets" edge to Basket entities by IDs.
+func (pu *ProductUpdate) RemoveBasketIDs(ids ...int) *ProductUpdate {
+	pu.mutation.RemoveBasketIDs(ids...)
 	return pu
 }
 
-// RemoveMechant removes "mechant" edges to Merchant entities.
-func (pu *ProductUpdate) RemoveMechant(m ...*Merchant) *ProductUpdate {
-	ids := make([]int, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// RemoveBaskets removes "baskets" edges to Basket entities.
+func (pu *ProductUpdate) RemoveBaskets(b ...*Basket) *ProductUpdate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
 	}
-	return pu.RemoveMechantIDs(ids...)
+	return pu.RemoveBasketIDs(ids...)
 }
 
-// ClearSupplier clears all "supplier" edges to the SupplierMerchant entity.
-func (pu *ProductUpdate) ClearSupplier() *ProductUpdate {
-	pu.mutation.ClearSupplier()
+// ClearFavourites clears all "favourites" edges to the Favourite entity.
+func (pu *ProductUpdate) ClearFavourites() *ProductUpdate {
+	pu.mutation.ClearFavourites()
 	return pu
 }
 
-// RemoveSupplierIDs removes the "supplier" edge to SupplierMerchant entities by IDs.
-func (pu *ProductUpdate) RemoveSupplierIDs(ids ...int) *ProductUpdate {
-	pu.mutation.RemoveSupplierIDs(ids...)
+// RemoveFavouriteIDs removes the "favourites" edge to Favourite entities by IDs.
+func (pu *ProductUpdate) RemoveFavouriteIDs(ids ...int) *ProductUpdate {
+	pu.mutation.RemoveFavouriteIDs(ids...)
 	return pu
 }
 
-// RemoveSupplier removes "supplier" edges to SupplierMerchant entities.
-func (pu *ProductUpdate) RemoveSupplier(s ...*SupplierMerchant) *ProductUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// RemoveFavourites removes "favourites" edges to Favourite entities.
+func (pu *ProductUpdate) RemoveFavourites(f ...*Favourite) *ProductUpdate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
 	}
-	return pu.RemoveSupplierIDs(ids...)
-}
-
-// ClearRetailer clears all "retailer" edges to the RetailMerchant entity.
-func (pu *ProductUpdate) ClearRetailer() *ProductUpdate {
-	pu.mutation.ClearRetailer()
-	return pu
-}
-
-// RemoveRetailerIDs removes the "retailer" edge to RetailMerchant entities by IDs.
-func (pu *ProductUpdate) RemoveRetailerIDs(ids ...int) *ProductUpdate {
-	pu.mutation.RemoveRetailerIDs(ids...)
-	return pu
-}
-
-// RemoveRetailer removes "retailer" edges to RetailMerchant entities.
-func (pu *ProductUpdate) RemoveRetailer(r ...*RetailMerchant) *ProductUpdate {
-	ids := make([]int, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
-	}
-	return pu.RemoveRetailerIDs(ids...)
+	return pu.RemoveFavouriteIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -357,18 +370,32 @@ func (pu *ProductUpdate) defaults() {
 func (pu *ProductUpdate) check() error {
 	if v, ok := pu.mutation.Name(); ok {
 		if err := product.NameValidator(v); err != nil {
-			return &ValidationError{Name: "Name", err: fmt.Errorf(`ent: validator failed for field "Product.Name": %w`, err)}
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Product.name": %w`, err)}
+		}
+	}
+	if v, ok := pu.mutation.Unit(); ok {
+		if err := product.UnitValidator(v); err != nil {
+			return &ValidationError{Name: "unit", err: fmt.Errorf(`ent: validator failed for field "Product.unit": %w`, err)}
 		}
 	}
 	if v, ok := pu.mutation.Description(); ok {
 		if err := product.DescriptionValidator(v); err != nil {
-			return &ValidationError{Name: "Description", err: fmt.Errorf(`ent: validator failed for field "Product.Description": %w`, err)}
+			return &ValidationError{Name: "description", err: fmt.Errorf(`ent: validator failed for field "Product.description": %w`, err)}
 		}
 	}
 	if v, ok := pu.mutation.Image(); ok {
 		if err := product.ImageValidator(v); err != nil {
-			return &ValidationError{Name: "Image", err: fmt.Errorf(`ent: validator failed for field "Product.Image": %w`, err)}
+			return &ValidationError{Name: "image", err: fmt.Errorf(`ent: validator failed for field "Product.image": %w`, err)}
 		}
+	}
+	if _, ok := pu.mutation.MerchantID(); pu.mutation.MerchantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Product.merchant"`)
+	}
+	if _, ok := pu.mutation.MajorID(); pu.mutation.MajorCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Product.major"`)
+	}
+	if _, ok := pu.mutation.MinorID(); pu.mutation.MinorCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Product.minor"`)
 	}
 	return nil
 }
@@ -433,6 +460,33 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: product.FieldPromoPrice,
 		})
 	}
+	if pu.mutation.PromoPriceCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Column: product.FieldPromoPrice,
+		})
+	}
+	if value, ok := pu.mutation.Quantity(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Value:  value,
+			Column: product.FieldQuantity,
+		})
+	}
+	if value, ok := pu.mutation.AddedQuantity(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Value:  value,
+			Column: product.FieldQuantity,
+		})
+	}
+	if value, ok := pu.mutation.Unit(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: product.FieldUnit,
+		})
+	}
 	if value, ok := pu.mutation.Description(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -447,47 +501,63 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: product.FieldImage,
 		})
 	}
-	if pu.mutation.MajorCleared() {
+	if pu.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   product.MajorTable,
-			Columns: product.MajorPrimaryKey,
+			Table:   product.MerchantTable,
+			Columns: []string{product.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
+					Column: merchant.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.RemovedMajorIDs(); len(nodes) > 0 && !pu.mutation.MajorCleared() {
+	if nodes := pu.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   product.MajorTable,
-			Columns: product.MajorPrimaryKey,
+			Table:   product.MerchantTable,
+			Columns: []string{product.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
+					Column: merchant.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.MajorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.MajorTable,
+			Columns: []string{product.MajorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: productcategorymajor.FieldID,
+				},
+			},
+		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := pu.mutation.MajorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   product.MajorTable,
-			Columns: product.MajorPrimaryKey,
+			Columns: []string{product.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -503,10 +573,10 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if pu.mutation.MinorCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   product.MinorTable,
-			Columns: product.MinorPrimaryKey,
+			Columns: []string{product.MinorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -514,34 +584,15 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 					Column: productcategoryminor.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := pu.mutation.RemovedMinorIDs(); len(nodes) > 0 && !pu.mutation.MinorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   product.MinorTable,
-			Columns: product.MinorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := pu.mutation.MinorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   product.MinorTable,
-			Columns: product.MinorPrimaryKey,
+			Columns: []string{product.MinorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -555,33 +606,33 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if pu.mutation.MechantCleared() {
+	if pu.mutation.OrdersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.MechantTable,
-			Columns: []string{product.MechantColumn},
+			Inverse: false,
+			Table:   product.OrdersTable,
+			Columns: []string{product.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: merchant.FieldID,
+					Column: order.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.RemovedMechantIDs(); len(nodes) > 0 && !pu.mutation.MechantCleared() {
+	if nodes := pu.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !pu.mutation.OrdersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.MechantTable,
-			Columns: []string{product.MechantColumn},
+			Inverse: false,
+			Table:   product.OrdersTable,
+			Columns: []string{product.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: merchant.FieldID,
+					Column: order.FieldID,
 				},
 			},
 		}
@@ -590,71 +641,17 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.MechantIDs(); len(nodes) > 0 {
+	if nodes := pu.mutation.OrdersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.MechantTable,
-			Columns: []string{product.MechantColumn},
+			Inverse: false,
+			Table:   product.OrdersTable,
+			Columns: []string{product.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if pu.mutation.SupplierCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.SupplierTable,
-			Columns: []string{product.SupplierColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := pu.mutation.RemovedSupplierIDs(); len(nodes) > 0 && !pu.mutation.SupplierCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.SupplierTable,
-			Columns: []string{product.SupplierColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := pu.mutation.SupplierIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.SupplierTable,
-			Columns: []string{product.SupplierColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
+					Column: order.FieldID,
 				},
 			},
 		}
@@ -663,33 +660,33 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if pu.mutation.RetailerCleared() {
+	if pu.mutation.BasketsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.RetailerTable,
-			Columns: []string{product.RetailerColumn},
+			Inverse: false,
+			Table:   product.BasketsTable,
+			Columns: []string{product.BasketsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
+					Column: basket.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.RemovedRetailerIDs(); len(nodes) > 0 && !pu.mutation.RetailerCleared() {
+	if nodes := pu.mutation.RemovedBasketsIDs(); len(nodes) > 0 && !pu.mutation.BasketsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.RetailerTable,
-			Columns: []string{product.RetailerColumn},
+			Inverse: false,
+			Table:   product.BasketsTable,
+			Columns: []string{product.BasketsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
+					Column: basket.FieldID,
 				},
 			},
 		}
@@ -698,17 +695,71 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.RetailerIDs(); len(nodes) > 0 {
+	if nodes := pu.mutation.BasketsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.RetailerTable,
-			Columns: []string{product.RetailerColumn},
+			Inverse: false,
+			Table:   product.BasketsTable,
+			Columns: []string{product.BasketsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.FavouritesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.FavouritesTable,
+			Columns: []string{product.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedFavouritesIDs(); len(nodes) > 0 && !pu.mutation.FavouritesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.FavouritesTable,
+			Columns: []string{product.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.FavouritesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.FavouritesTable,
+			Columns: []string{product.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
 				},
 			},
 		}
@@ -742,20 +793,20 @@ func (puo *ProductUpdateOne) SetUpdatedAt(t time.Time) *ProductUpdateOne {
 	return puo
 }
 
-// SetName sets the "Name" field.
+// SetName sets the "name" field.
 func (puo *ProductUpdateOne) SetName(s string) *ProductUpdateOne {
 	puo.mutation.SetName(s)
 	return puo
 }
 
-// SetPrice sets the "Price" field.
+// SetPrice sets the "price" field.
 func (puo *ProductUpdateOne) SetPrice(f float64) *ProductUpdateOne {
 	puo.mutation.ResetPrice()
 	puo.mutation.SetPrice(f)
 	return puo
 }
 
-// SetNillablePrice sets the "Price" field if the given value is not nil.
+// SetNillablePrice sets the "price" field if the given value is not nil.
 func (puo *ProductUpdateOne) SetNillablePrice(f *float64) *ProductUpdateOne {
 	if f != nil {
 		puo.SetPrice(*f)
@@ -763,20 +814,20 @@ func (puo *ProductUpdateOne) SetNillablePrice(f *float64) *ProductUpdateOne {
 	return puo
 }
 
-// AddPrice adds f to the "Price" field.
+// AddPrice adds f to the "price" field.
 func (puo *ProductUpdateOne) AddPrice(f float64) *ProductUpdateOne {
 	puo.mutation.AddPrice(f)
 	return puo
 }
 
-// SetPromoPrice sets the "PromoPrice" field.
+// SetPromoPrice sets the "promo_price" field.
 func (puo *ProductUpdateOne) SetPromoPrice(f float64) *ProductUpdateOne {
 	puo.mutation.ResetPromoPrice()
 	puo.mutation.SetPromoPrice(f)
 	return puo
 }
 
-// SetNillablePromoPrice sets the "PromoPrice" field if the given value is not nil.
+// SetNillablePromoPrice sets the "promo_price" field if the given value is not nil.
 func (puo *ProductUpdateOne) SetNillablePromoPrice(f *float64) *ProductUpdateOne {
 	if f != nil {
 		puo.SetPromoPrice(*f)
@@ -784,97 +835,133 @@ func (puo *ProductUpdateOne) SetNillablePromoPrice(f *float64) *ProductUpdateOne
 	return puo
 }
 
-// AddPromoPrice adds f to the "PromoPrice" field.
+// AddPromoPrice adds f to the "promo_price" field.
 func (puo *ProductUpdateOne) AddPromoPrice(f float64) *ProductUpdateOne {
 	puo.mutation.AddPromoPrice(f)
 	return puo
 }
 
-// SetDescription sets the "Description" field.
+// ClearPromoPrice clears the value of the "promo_price" field.
+func (puo *ProductUpdateOne) ClearPromoPrice() *ProductUpdateOne {
+	puo.mutation.ClearPromoPrice()
+	return puo
+}
+
+// SetQuantity sets the "quantity" field.
+func (puo *ProductUpdateOne) SetQuantity(u uint32) *ProductUpdateOne {
+	puo.mutation.ResetQuantity()
+	puo.mutation.SetQuantity(u)
+	return puo
+}
+
+// SetNillableQuantity sets the "quantity" field if the given value is not nil.
+func (puo *ProductUpdateOne) SetNillableQuantity(u *uint32) *ProductUpdateOne {
+	if u != nil {
+		puo.SetQuantity(*u)
+	}
+	return puo
+}
+
+// AddQuantity adds u to the "quantity" field.
+func (puo *ProductUpdateOne) AddQuantity(u int32) *ProductUpdateOne {
+	puo.mutation.AddQuantity(u)
+	return puo
+}
+
+// SetUnit sets the "unit" field.
+func (puo *ProductUpdateOne) SetUnit(s string) *ProductUpdateOne {
+	puo.mutation.SetUnit(s)
+	return puo
+}
+
+// SetDescription sets the "description" field.
 func (puo *ProductUpdateOne) SetDescription(s string) *ProductUpdateOne {
 	puo.mutation.SetDescription(s)
 	return puo
 }
 
-// SetImage sets the "Image" field.
+// SetImage sets the "image" field.
 func (puo *ProductUpdateOne) SetImage(s string) *ProductUpdateOne {
 	puo.mutation.SetImage(s)
 	return puo
 }
 
-// AddMajorIDs adds the "major" edge to the ProductCategoryMajor entity by IDs.
-func (puo *ProductUpdateOne) AddMajorIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.AddMajorIDs(ids...)
+// SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
+func (puo *ProductUpdateOne) SetMerchantID(id int) *ProductUpdateOne {
+	puo.mutation.SetMerchantID(id)
 	return puo
 }
 
-// AddMajor adds the "major" edges to the ProductCategoryMajor entity.
-func (puo *ProductUpdateOne) AddMajor(p ...*ProductCategoryMajor) *ProductUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return puo.AddMajorIDs(ids...)
+// SetMerchant sets the "merchant" edge to the Merchant entity.
+func (puo *ProductUpdateOne) SetMerchant(m *Merchant) *ProductUpdateOne {
+	return puo.SetMerchantID(m.ID)
 }
 
-// AddMinorIDs adds the "minor" edge to the ProductCategoryMinor entity by IDs.
-func (puo *ProductUpdateOne) AddMinorIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.AddMinorIDs(ids...)
+// SetMajorID sets the "major" edge to the ProductCategoryMajor entity by ID.
+func (puo *ProductUpdateOne) SetMajorID(id int) *ProductUpdateOne {
+	puo.mutation.SetMajorID(id)
 	return puo
 }
 
-// AddMinor adds the "minor" edges to the ProductCategoryMinor entity.
-func (puo *ProductUpdateOne) AddMinor(p ...*ProductCategoryMinor) *ProductUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return puo.AddMinorIDs(ids...)
+// SetMajor sets the "major" edge to the ProductCategoryMajor entity.
+func (puo *ProductUpdateOne) SetMajor(p *ProductCategoryMajor) *ProductUpdateOne {
+	return puo.SetMajorID(p.ID)
 }
 
-// AddMechantIDs adds the "mechant" edge to the Merchant entity by IDs.
-func (puo *ProductUpdateOne) AddMechantIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.AddMechantIDs(ids...)
+// SetMinorID sets the "minor" edge to the ProductCategoryMinor entity by ID.
+func (puo *ProductUpdateOne) SetMinorID(id int) *ProductUpdateOne {
+	puo.mutation.SetMinorID(id)
 	return puo
 }
 
-// AddMechant adds the "mechant" edges to the Merchant entity.
-func (puo *ProductUpdateOne) AddMechant(m ...*Merchant) *ProductUpdateOne {
-	ids := make([]int, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
-	}
-	return puo.AddMechantIDs(ids...)
+// SetMinor sets the "minor" edge to the ProductCategoryMinor entity.
+func (puo *ProductUpdateOne) SetMinor(p *ProductCategoryMinor) *ProductUpdateOne {
+	return puo.SetMinorID(p.ID)
 }
 
-// AddSupplierIDs adds the "supplier" edge to the SupplierMerchant entity by IDs.
-func (puo *ProductUpdateOne) AddSupplierIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.AddSupplierIDs(ids...)
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (puo *ProductUpdateOne) AddOrderIDs(ids ...int) *ProductUpdateOne {
+	puo.mutation.AddOrderIDs(ids...)
 	return puo
 }
 
-// AddSupplier adds the "supplier" edges to the SupplierMerchant entity.
-func (puo *ProductUpdateOne) AddSupplier(s ...*SupplierMerchant) *ProductUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// AddOrders adds the "orders" edges to the Order entity.
+func (puo *ProductUpdateOne) AddOrders(o ...*Order) *ProductUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
 	}
-	return puo.AddSupplierIDs(ids...)
+	return puo.AddOrderIDs(ids...)
 }
 
-// AddRetailerIDs adds the "retailer" edge to the RetailMerchant entity by IDs.
-func (puo *ProductUpdateOne) AddRetailerIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.AddRetailerIDs(ids...)
+// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
+func (puo *ProductUpdateOne) AddBasketIDs(ids ...int) *ProductUpdateOne {
+	puo.mutation.AddBasketIDs(ids...)
 	return puo
 }
 
-// AddRetailer adds the "retailer" edges to the RetailMerchant entity.
-func (puo *ProductUpdateOne) AddRetailer(r ...*RetailMerchant) *ProductUpdateOne {
-	ids := make([]int, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
+// AddBaskets adds the "baskets" edges to the Basket entity.
+func (puo *ProductUpdateOne) AddBaskets(b ...*Basket) *ProductUpdateOne {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
 	}
-	return puo.AddRetailerIDs(ids...)
+	return puo.AddBasketIDs(ids...)
+}
+
+// AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
+func (puo *ProductUpdateOne) AddFavouriteIDs(ids ...int) *ProductUpdateOne {
+	puo.mutation.AddFavouriteIDs(ids...)
+	return puo
+}
+
+// AddFavourites adds the "favourites" edges to the Favourite entity.
+func (puo *ProductUpdateOne) AddFavourites(f ...*Favourite) *ProductUpdateOne {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return puo.AddFavouriteIDs(ids...)
 }
 
 // Mutation returns the ProductMutation object of the builder.
@@ -882,109 +969,85 @@ func (puo *ProductUpdateOne) Mutation() *ProductMutation {
 	return puo.mutation
 }
 
-// ClearMajor clears all "major" edges to the ProductCategoryMajor entity.
+// ClearMerchant clears the "merchant" edge to the Merchant entity.
+func (puo *ProductUpdateOne) ClearMerchant() *ProductUpdateOne {
+	puo.mutation.ClearMerchant()
+	return puo
+}
+
+// ClearMajor clears the "major" edge to the ProductCategoryMajor entity.
 func (puo *ProductUpdateOne) ClearMajor() *ProductUpdateOne {
 	puo.mutation.ClearMajor()
 	return puo
 }
 
-// RemoveMajorIDs removes the "major" edge to ProductCategoryMajor entities by IDs.
-func (puo *ProductUpdateOne) RemoveMajorIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.RemoveMajorIDs(ids...)
-	return puo
-}
-
-// RemoveMajor removes "major" edges to ProductCategoryMajor entities.
-func (puo *ProductUpdateOne) RemoveMajor(p ...*ProductCategoryMajor) *ProductUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return puo.RemoveMajorIDs(ids...)
-}
-
-// ClearMinor clears all "minor" edges to the ProductCategoryMinor entity.
+// ClearMinor clears the "minor" edge to the ProductCategoryMinor entity.
 func (puo *ProductUpdateOne) ClearMinor() *ProductUpdateOne {
 	puo.mutation.ClearMinor()
 	return puo
 }
 
-// RemoveMinorIDs removes the "minor" edge to ProductCategoryMinor entities by IDs.
-func (puo *ProductUpdateOne) RemoveMinorIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.RemoveMinorIDs(ids...)
+// ClearOrders clears all "orders" edges to the Order entity.
+func (puo *ProductUpdateOne) ClearOrders() *ProductUpdateOne {
+	puo.mutation.ClearOrders()
 	return puo
 }
 
-// RemoveMinor removes "minor" edges to ProductCategoryMinor entities.
-func (puo *ProductUpdateOne) RemoveMinor(p ...*ProductCategoryMinor) *ProductUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (puo *ProductUpdateOne) RemoveOrderIDs(ids ...int) *ProductUpdateOne {
+	puo.mutation.RemoveOrderIDs(ids...)
+	return puo
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (puo *ProductUpdateOne) RemoveOrders(o ...*Order) *ProductUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
 	}
-	return puo.RemoveMinorIDs(ids...)
+	return puo.RemoveOrderIDs(ids...)
 }
 
-// ClearMechant clears all "mechant" edges to the Merchant entity.
-func (puo *ProductUpdateOne) ClearMechant() *ProductUpdateOne {
-	puo.mutation.ClearMechant()
+// ClearBaskets clears all "baskets" edges to the Basket entity.
+func (puo *ProductUpdateOne) ClearBaskets() *ProductUpdateOne {
+	puo.mutation.ClearBaskets()
 	return puo
 }
 
-// RemoveMechantIDs removes the "mechant" edge to Merchant entities by IDs.
-func (puo *ProductUpdateOne) RemoveMechantIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.RemoveMechantIDs(ids...)
+// RemoveBasketIDs removes the "baskets" edge to Basket entities by IDs.
+func (puo *ProductUpdateOne) RemoveBasketIDs(ids ...int) *ProductUpdateOne {
+	puo.mutation.RemoveBasketIDs(ids...)
 	return puo
 }
 
-// RemoveMechant removes "mechant" edges to Merchant entities.
-func (puo *ProductUpdateOne) RemoveMechant(m ...*Merchant) *ProductUpdateOne {
-	ids := make([]int, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// RemoveBaskets removes "baskets" edges to Basket entities.
+func (puo *ProductUpdateOne) RemoveBaskets(b ...*Basket) *ProductUpdateOne {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
 	}
-	return puo.RemoveMechantIDs(ids...)
+	return puo.RemoveBasketIDs(ids...)
 }
 
-// ClearSupplier clears all "supplier" edges to the SupplierMerchant entity.
-func (puo *ProductUpdateOne) ClearSupplier() *ProductUpdateOne {
-	puo.mutation.ClearSupplier()
+// ClearFavourites clears all "favourites" edges to the Favourite entity.
+func (puo *ProductUpdateOne) ClearFavourites() *ProductUpdateOne {
+	puo.mutation.ClearFavourites()
 	return puo
 }
 
-// RemoveSupplierIDs removes the "supplier" edge to SupplierMerchant entities by IDs.
-func (puo *ProductUpdateOne) RemoveSupplierIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.RemoveSupplierIDs(ids...)
+// RemoveFavouriteIDs removes the "favourites" edge to Favourite entities by IDs.
+func (puo *ProductUpdateOne) RemoveFavouriteIDs(ids ...int) *ProductUpdateOne {
+	puo.mutation.RemoveFavouriteIDs(ids...)
 	return puo
 }
 
-// RemoveSupplier removes "supplier" edges to SupplierMerchant entities.
-func (puo *ProductUpdateOne) RemoveSupplier(s ...*SupplierMerchant) *ProductUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// RemoveFavourites removes "favourites" edges to Favourite entities.
+func (puo *ProductUpdateOne) RemoveFavourites(f ...*Favourite) *ProductUpdateOne {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
 	}
-	return puo.RemoveSupplierIDs(ids...)
-}
-
-// ClearRetailer clears all "retailer" edges to the RetailMerchant entity.
-func (puo *ProductUpdateOne) ClearRetailer() *ProductUpdateOne {
-	puo.mutation.ClearRetailer()
-	return puo
-}
-
-// RemoveRetailerIDs removes the "retailer" edge to RetailMerchant entities by IDs.
-func (puo *ProductUpdateOne) RemoveRetailerIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.RemoveRetailerIDs(ids...)
-	return puo
-}
-
-// RemoveRetailer removes "retailer" edges to RetailMerchant entities.
-func (puo *ProductUpdateOne) RemoveRetailer(r ...*RetailMerchant) *ProductUpdateOne {
-	ids := make([]int, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
-	}
-	return puo.RemoveRetailerIDs(ids...)
+	return puo.RemoveFavouriteIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -1067,18 +1130,32 @@ func (puo *ProductUpdateOne) defaults() {
 func (puo *ProductUpdateOne) check() error {
 	if v, ok := puo.mutation.Name(); ok {
 		if err := product.NameValidator(v); err != nil {
-			return &ValidationError{Name: "Name", err: fmt.Errorf(`ent: validator failed for field "Product.Name": %w`, err)}
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Product.name": %w`, err)}
+		}
+	}
+	if v, ok := puo.mutation.Unit(); ok {
+		if err := product.UnitValidator(v); err != nil {
+			return &ValidationError{Name: "unit", err: fmt.Errorf(`ent: validator failed for field "Product.unit": %w`, err)}
 		}
 	}
 	if v, ok := puo.mutation.Description(); ok {
 		if err := product.DescriptionValidator(v); err != nil {
-			return &ValidationError{Name: "Description", err: fmt.Errorf(`ent: validator failed for field "Product.Description": %w`, err)}
+			return &ValidationError{Name: "description", err: fmt.Errorf(`ent: validator failed for field "Product.description": %w`, err)}
 		}
 	}
 	if v, ok := puo.mutation.Image(); ok {
 		if err := product.ImageValidator(v); err != nil {
-			return &ValidationError{Name: "Image", err: fmt.Errorf(`ent: validator failed for field "Product.Image": %w`, err)}
+			return &ValidationError{Name: "image", err: fmt.Errorf(`ent: validator failed for field "Product.image": %w`, err)}
 		}
+	}
+	if _, ok := puo.mutation.MerchantID(); puo.mutation.MerchantCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Product.merchant"`)
+	}
+	if _, ok := puo.mutation.MajorID(); puo.mutation.MajorCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Product.major"`)
+	}
+	if _, ok := puo.mutation.MinorID(); puo.mutation.MinorCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Product.minor"`)
 	}
 	return nil
 }
@@ -1160,6 +1237,33 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Column: product.FieldPromoPrice,
 		})
 	}
+	if puo.mutation.PromoPriceCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Column: product.FieldPromoPrice,
+		})
+	}
+	if value, ok := puo.mutation.Quantity(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Value:  value,
+			Column: product.FieldQuantity,
+		})
+	}
+	if value, ok := puo.mutation.AddedQuantity(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Value:  value,
+			Column: product.FieldQuantity,
+		})
+	}
+	if value, ok := puo.mutation.Unit(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: product.FieldUnit,
+		})
+	}
 	if value, ok := puo.mutation.Description(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -1174,47 +1278,63 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Column: product.FieldImage,
 		})
 	}
-	if puo.mutation.MajorCleared() {
+	if puo.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   product.MajorTable,
-			Columns: product.MajorPrimaryKey,
+			Table:   product.MerchantTable,
+			Columns: []string{product.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
+					Column: merchant.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.RemovedMajorIDs(); len(nodes) > 0 && !puo.mutation.MajorCleared() {
+	if nodes := puo.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   product.MajorTable,
-			Columns: product.MajorPrimaryKey,
+			Table:   product.MerchantTable,
+			Columns: []string{product.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
+					Column: merchant.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.MajorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.MajorTable,
+			Columns: []string{product.MajorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: productcategorymajor.FieldID,
+				},
+			},
+		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := puo.mutation.MajorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   product.MajorTable,
-			Columns: product.MajorPrimaryKey,
+			Columns: []string{product.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -1230,10 +1350,10 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 	}
 	if puo.mutation.MinorCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   product.MinorTable,
-			Columns: product.MinorPrimaryKey,
+			Columns: []string{product.MinorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -1241,34 +1361,15 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 					Column: productcategoryminor.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := puo.mutation.RemovedMinorIDs(); len(nodes) > 0 && !puo.mutation.MinorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   product.MinorTable,
-			Columns: product.MinorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := puo.mutation.MinorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   product.MinorTable,
-			Columns: product.MinorPrimaryKey,
+			Columns: []string{product.MinorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -1282,33 +1383,33 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if puo.mutation.MechantCleared() {
+	if puo.mutation.OrdersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.MechantTable,
-			Columns: []string{product.MechantColumn},
+			Inverse: false,
+			Table:   product.OrdersTable,
+			Columns: []string{product.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: merchant.FieldID,
+					Column: order.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.RemovedMechantIDs(); len(nodes) > 0 && !puo.mutation.MechantCleared() {
+	if nodes := puo.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !puo.mutation.OrdersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.MechantTable,
-			Columns: []string{product.MechantColumn},
+			Inverse: false,
+			Table:   product.OrdersTable,
+			Columns: []string{product.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: merchant.FieldID,
+					Column: order.FieldID,
 				},
 			},
 		}
@@ -1317,71 +1418,17 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.MechantIDs(); len(nodes) > 0 {
+	if nodes := puo.mutation.OrdersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.MechantTable,
-			Columns: []string{product.MechantColumn},
+			Inverse: false,
+			Table:   product.OrdersTable,
+			Columns: []string{product.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if puo.mutation.SupplierCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.SupplierTable,
-			Columns: []string{product.SupplierColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := puo.mutation.RemovedSupplierIDs(); len(nodes) > 0 && !puo.mutation.SupplierCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.SupplierTable,
-			Columns: []string{product.SupplierColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := puo.mutation.SupplierIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.SupplierTable,
-			Columns: []string{product.SupplierColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
+					Column: order.FieldID,
 				},
 			},
 		}
@@ -1390,33 +1437,33 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if puo.mutation.RetailerCleared() {
+	if puo.mutation.BasketsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.RetailerTable,
-			Columns: []string{product.RetailerColumn},
+			Inverse: false,
+			Table:   product.BasketsTable,
+			Columns: []string{product.BasketsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
+					Column: basket.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.RemovedRetailerIDs(); len(nodes) > 0 && !puo.mutation.RetailerCleared() {
+	if nodes := puo.mutation.RemovedBasketsIDs(); len(nodes) > 0 && !puo.mutation.BasketsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.RetailerTable,
-			Columns: []string{product.RetailerColumn},
+			Inverse: false,
+			Table:   product.BasketsTable,
+			Columns: []string{product.BasketsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
+					Column: basket.FieldID,
 				},
 			},
 		}
@@ -1425,17 +1472,71 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.RetailerIDs(); len(nodes) > 0 {
+	if nodes := puo.mutation.BasketsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.RetailerTable,
-			Columns: []string{product.RetailerColumn},
+			Inverse: false,
+			Table:   product.BasketsTable,
+			Columns: []string{product.BasketsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.FavouritesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.FavouritesTable,
+			Columns: []string{product.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedFavouritesIDs(); len(nodes) > 0 && !puo.mutation.FavouritesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.FavouritesTable,
+			Columns: []string{product.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.FavouritesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.FavouritesTable,
+			Columns: []string{product.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
 				},
 			},
 		}

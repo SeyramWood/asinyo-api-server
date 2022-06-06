@@ -42,6 +42,12 @@ func (pcmu *ProductCategoryMajorUpdate) SetCategory(s string) *ProductCategoryMa
 	return pcmu
 }
 
+// SetSulg sets the "sulg" field.
+func (pcmu *ProductCategoryMajorUpdate) SetSulg(s string) *ProductCategoryMajorUpdate {
+	pcmu.mutation.SetSulg(s)
+	return pcmu
+}
+
 // AddMinorIDs adds the "minors" edge to the ProductCategoryMinor entity by IDs.
 func (pcmu *ProductCategoryMajorUpdate) AddMinorIDs(ids ...int) *ProductCategoryMajorUpdate {
 	pcmu.mutation.AddMinorIDs(ids...)
@@ -195,6 +201,11 @@ func (pcmu *ProductCategoryMajorUpdate) check() error {
 			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMajor.category": %w`, err)}
 		}
 	}
+	if v, ok := pcmu.mutation.Sulg(); ok {
+		if err := productcategorymajor.SulgValidator(v); err != nil {
+			return &ValidationError{Name: "sulg", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMajor.sulg": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -230,12 +241,19 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 			Column: productcategorymajor.FieldCategory,
 		})
 	}
+	if value, ok := pcmu.mutation.Sulg(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: productcategorymajor.FieldSulg,
+		})
+	}
 	if pcmu.mutation.MinorsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.MinorsTable,
-			Columns: productcategorymajor.MinorsPrimaryKey,
+			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -248,10 +266,10 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 	}
 	if nodes := pcmu.mutation.RemovedMinorsIDs(); len(nodes) > 0 && !pcmu.mutation.MinorsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.MinorsTable,
-			Columns: productcategorymajor.MinorsPrimaryKey,
+			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -267,10 +285,10 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 	}
 	if nodes := pcmu.mutation.MinorsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.MinorsTable,
-			Columns: productcategorymajor.MinorsPrimaryKey,
+			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -286,10 +304,10 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 	}
 	if pcmu.mutation.ProductsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.ProductsTable,
-			Columns: productcategorymajor.ProductsPrimaryKey,
+			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -302,10 +320,10 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 	}
 	if nodes := pcmu.mutation.RemovedProductsIDs(); len(nodes) > 0 && !pcmu.mutation.ProductsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.ProductsTable,
-			Columns: productcategorymajor.ProductsPrimaryKey,
+			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -321,10 +339,10 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 	}
 	if nodes := pcmu.mutation.ProductsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.ProductsTable,
-			Columns: productcategorymajor.ProductsPrimaryKey,
+			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -366,6 +384,12 @@ func (pcmuo *ProductCategoryMajorUpdateOne) SetUpdatedAt(t time.Time) *ProductCa
 // SetCategory sets the "category" field.
 func (pcmuo *ProductCategoryMajorUpdateOne) SetCategory(s string) *ProductCategoryMajorUpdateOne {
 	pcmuo.mutation.SetCategory(s)
+	return pcmuo
+}
+
+// SetSulg sets the "sulg" field.
+func (pcmuo *ProductCategoryMajorUpdateOne) SetSulg(s string) *ProductCategoryMajorUpdateOne {
+	pcmuo.mutation.SetSulg(s)
 	return pcmuo
 }
 
@@ -529,6 +553,11 @@ func (pcmuo *ProductCategoryMajorUpdateOne) check() error {
 			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMajor.category": %w`, err)}
 		}
 	}
+	if v, ok := pcmuo.mutation.Sulg(); ok {
+		if err := productcategorymajor.SulgValidator(v); err != nil {
+			return &ValidationError{Name: "sulg", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMajor.sulg": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -581,12 +610,19 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Column: productcategorymajor.FieldCategory,
 		})
 	}
+	if value, ok := pcmuo.mutation.Sulg(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: productcategorymajor.FieldSulg,
+		})
+	}
 	if pcmuo.mutation.MinorsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.MinorsTable,
-			Columns: productcategorymajor.MinorsPrimaryKey,
+			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -599,10 +635,10 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 	}
 	if nodes := pcmuo.mutation.RemovedMinorsIDs(); len(nodes) > 0 && !pcmuo.mutation.MinorsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.MinorsTable,
-			Columns: productcategorymajor.MinorsPrimaryKey,
+			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -618,10 +654,10 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 	}
 	if nodes := pcmuo.mutation.MinorsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.MinorsTable,
-			Columns: productcategorymajor.MinorsPrimaryKey,
+			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -637,10 +673,10 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 	}
 	if pcmuo.mutation.ProductsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.ProductsTable,
-			Columns: productcategorymajor.ProductsPrimaryKey,
+			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -653,10 +689,10 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 	}
 	if nodes := pcmuo.mutation.RemovedProductsIDs(); len(nodes) > 0 && !pcmuo.mutation.ProductsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.ProductsTable,
-			Columns: productcategorymajor.ProductsPrimaryKey,
+			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -672,10 +708,10 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 	}
 	if nodes := pcmuo.mutation.ProductsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.ProductsTable,
-			Columns: productcategorymajor.ProductsPrimaryKey,
+			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

@@ -8,10 +8,15 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
+	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -37,10 +42,15 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
+		address.Table:              address.ValidColumn,
 		admin.Table:                admin.ValidColumn,
 		agent.Table:                agent.ValidColumn,
+		basket.Table:               basket.ValidColumn,
 		customer.Table:             customer.ValidColumn,
+		favourite.Table:            favourite.ValidColumn,
 		merchant.Table:             merchant.ValidColumn,
+		merchantstore.Table:        merchantstore.ValidColumn,
+		order.Table:                order.ValidColumn,
 		product.Table:              product.ValidColumn,
 		productcategorymajor.Table: productcategorymajor.ValidColumn,
 		productcategoryminor.Table: productcategoryminor.ValidColumn,

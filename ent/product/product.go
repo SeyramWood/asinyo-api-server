@@ -19,55 +19,72 @@ const (
 	FieldName = "name"
 	// FieldPrice holds the string denoting the price field in the database.
 	FieldPrice = "price"
-	// FieldPromoPrice holds the string denoting the promoprice field in the database.
+	// FieldPromoPrice holds the string denoting the promo_price field in the database.
 	FieldPromoPrice = "promo_price"
+	// FieldQuantity holds the string denoting the quantity field in the database.
+	FieldQuantity = "quantity"
+	// FieldUnit holds the string denoting the unit field in the database.
+	FieldUnit = "unit"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
 	// FieldImage holds the string denoting the image field in the database.
 	FieldImage = "image"
+	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
+	EdgeMerchant = "merchant"
 	// EdgeMajor holds the string denoting the major edge name in mutations.
 	EdgeMajor = "major"
 	// EdgeMinor holds the string denoting the minor edge name in mutations.
 	EdgeMinor = "minor"
-	// EdgeMechant holds the string denoting the mechant edge name in mutations.
-	EdgeMechant = "mechant"
-	// EdgeSupplier holds the string denoting the supplier edge name in mutations.
-	EdgeSupplier = "supplier"
-	// EdgeRetailer holds the string denoting the retailer edge name in mutations.
-	EdgeRetailer = "retailer"
+	// EdgeOrders holds the string denoting the orders edge name in mutations.
+	EdgeOrders = "orders"
+	// EdgeBaskets holds the string denoting the baskets edge name in mutations.
+	EdgeBaskets = "baskets"
+	// EdgeFavourites holds the string denoting the favourites edge name in mutations.
+	EdgeFavourites = "favourites"
 	// Table holds the table name of the product in the database.
 	Table = "products"
-	// MajorTable is the table that holds the major relation/edge. The primary key declared below.
-	MajorTable = "product_category_major_products"
+	// MerchantTable is the table that holds the merchant relation/edge.
+	MerchantTable = "products"
+	// MerchantInverseTable is the table name for the Merchant entity.
+	// It exists in this package in order to avoid circular dependency with the "merchant" package.
+	MerchantInverseTable = "merchants"
+	// MerchantColumn is the table column denoting the merchant relation/edge.
+	MerchantColumn = "merchant_products"
+	// MajorTable is the table that holds the major relation/edge.
+	MajorTable = "products"
 	// MajorInverseTable is the table name for the ProductCategoryMajor entity.
 	// It exists in this package in order to avoid circular dependency with the "productcategorymajor" package.
 	MajorInverseTable = "product_category_majors"
-	// MinorTable is the table that holds the minor relation/edge. The primary key declared below.
-	MinorTable = "product_category_minor_products"
+	// MajorColumn is the table column denoting the major relation/edge.
+	MajorColumn = "product_category_major_products"
+	// MinorTable is the table that holds the minor relation/edge.
+	MinorTable = "products"
 	// MinorInverseTable is the table name for the ProductCategoryMinor entity.
 	// It exists in this package in order to avoid circular dependency with the "productcategoryminor" package.
 	MinorInverseTable = "product_category_minors"
-	// MechantTable is the table that holds the mechant relation/edge.
-	MechantTable = "merchants"
-	// MechantInverseTable is the table name for the Merchant entity.
-	// It exists in this package in order to avoid circular dependency with the "merchant" package.
-	MechantInverseTable = "merchants"
-	// MechantColumn is the table column denoting the mechant relation/edge.
-	MechantColumn = "merchant_products"
-	// SupplierTable is the table that holds the supplier relation/edge.
-	SupplierTable = "supplier_merchants"
-	// SupplierInverseTable is the table name for the SupplierMerchant entity.
-	// It exists in this package in order to avoid circular dependency with the "suppliermerchant" package.
-	SupplierInverseTable = "supplier_merchants"
-	// SupplierColumn is the table column denoting the supplier relation/edge.
-	SupplierColumn = "supplier_merchant_products"
-	// RetailerTable is the table that holds the retailer relation/edge.
-	RetailerTable = "retail_merchants"
-	// RetailerInverseTable is the table name for the RetailMerchant entity.
-	// It exists in this package in order to avoid circular dependency with the "retailmerchant" package.
-	RetailerInverseTable = "retail_merchants"
-	// RetailerColumn is the table column denoting the retailer relation/edge.
-	RetailerColumn = "retail_merchant_products"
+	// MinorColumn is the table column denoting the minor relation/edge.
+	MinorColumn = "product_category_minor_products"
+	// OrdersTable is the table that holds the orders relation/edge.
+	OrdersTable = "orders"
+	// OrdersInverseTable is the table name for the Order entity.
+	// It exists in this package in order to avoid circular dependency with the "order" package.
+	OrdersInverseTable = "orders"
+	// OrdersColumn is the table column denoting the orders relation/edge.
+	OrdersColumn = "product_orders"
+	// BasketsTable is the table that holds the baskets relation/edge.
+	BasketsTable = "baskets"
+	// BasketsInverseTable is the table name for the Basket entity.
+	// It exists in this package in order to avoid circular dependency with the "basket" package.
+	BasketsInverseTable = "baskets"
+	// BasketsColumn is the table column denoting the baskets relation/edge.
+	BasketsColumn = "product_baskets"
+	// FavouritesTable is the table that holds the favourites relation/edge.
+	FavouritesTable = "favourites"
+	// FavouritesInverseTable is the table name for the Favourite entity.
+	// It exists in this package in order to avoid circular dependency with the "favourite" package.
+	FavouritesInverseTable = "favourites"
+	// FavouritesColumn is the table column denoting the favourites relation/edge.
+	FavouritesColumn = "product_favourites"
 )
 
 // Columns holds all SQL columns for product fields.
@@ -78,23 +95,29 @@ var Columns = []string{
 	FieldName,
 	FieldPrice,
 	FieldPromoPrice,
+	FieldQuantity,
+	FieldUnit,
 	FieldDescription,
 	FieldImage,
 }
 
-var (
-	// MajorPrimaryKey and MajorColumn2 are the table columns denoting the
-	// primary key for the major relation (M2M).
-	MajorPrimaryKey = []string{"product_category_major_id", "product_id"}
-	// MinorPrimaryKey and MinorColumn2 are the table columns denoting the
-	// primary key for the minor relation (M2M).
-	MinorPrimaryKey = []string{"product_category_minor_id", "product_id"}
-)
+// ForeignKeys holds the SQL foreign-keys that are owned by the "products"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"merchant_products",
+	"product_category_major_products",
+	"product_category_minor_products",
+}
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -108,14 +131,16 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// NameValidator is a validator for the "Name" field. It is called by the builders before save.
+	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
-	// DefaultPrice holds the default value on creation for the "Price" field.
+	// DefaultPrice holds the default value on creation for the "price" field.
 	DefaultPrice float64
-	// DefaultPromoPrice holds the default value on creation for the "PromoPrice" field.
-	DefaultPromoPrice float64
-	// DescriptionValidator is a validator for the "Description" field. It is called by the builders before save.
+	// DefaultQuantity holds the default value on creation for the "quantity" field.
+	DefaultQuantity uint32
+	// UnitValidator is a validator for the "unit" field. It is called by the builders before save.
+	UnitValidator func(string) error
+	// DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
 	DescriptionValidator func(string) error
-	// ImageValidator is a validator for the "Image" field. It is called by the builders before save.
+	// ImageValidator is a validator for the "image" field. It is called by the builders before save.
 	ImageValidator func(string) error
 )

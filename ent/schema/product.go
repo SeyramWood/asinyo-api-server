@@ -20,31 +20,33 @@ func (Product) Mixin() []ent.Mixin {
 // Fields of the Product.
 func (Product) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("Name").NotEmpty(),
-		field.Float("Price").Default(0.00),
-		field.Float("PromoPrice").Default(0.00),
-		field.Text("Description").NotEmpty(),
-		field.String("Image").NotEmpty(),
+		field.String("name").NotEmpty(),
+		field.Float("price").Default(0.00),
+		field.Float("promo_price").Optional().Nillable(),
+		field.Uint32("quantity").Default(1),
+		field.String("unit").NotEmpty(),
+		field.Text("description").NotEmpty(),
+		field.String("image").NotEmpty(),
 	}
 }
 
 // Edges of the Product.
 func (Product) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.From("merchant", Merchant.Type).
+			Ref("products").
+			Unique().
+			Required(),
 		edge.From("major", ProductCategoryMajor.Type).
 			Ref("products").
+			Unique().
 			Required(),
 		edge.From("minor", ProductCategoryMinor.Type).
 			Ref("products").
+			Unique().
 			Required(),
-		edge.From("mechant", Merchant.Type).
-			Ref("products").
-			Required(),
-		edge.From("supplier", SupplierMerchant.Type).
-			Ref("products").
-			Required(),
-		edge.From("retailer", RetailMerchant.Type).
-			Ref("products").
-			Required(),
+		edge.To("orders", Order.Type),
+		edge.To("baskets", Basket.Type),
+		edge.To("favourites", Favourite.Type),
 	}
 }

@@ -17,22 +17,28 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldCategory holds the string denoting the category field in the database.
 	FieldCategory = "category"
+	// FieldSulg holds the string denoting the sulg field in the database.
+	FieldSulg = "sulg"
 	// EdgeMinors holds the string denoting the minors edge name in mutations.
 	EdgeMinors = "minors"
 	// EdgeProducts holds the string denoting the products edge name in mutations.
 	EdgeProducts = "products"
 	// Table holds the table name of the productcategorymajor in the database.
 	Table = "product_category_majors"
-	// MinorsTable is the table that holds the minors relation/edge. The primary key declared below.
-	MinorsTable = "product_category_major_minors"
+	// MinorsTable is the table that holds the minors relation/edge.
+	MinorsTable = "product_category_minors"
 	// MinorsInverseTable is the table name for the ProductCategoryMinor entity.
 	// It exists in this package in order to avoid circular dependency with the "productcategoryminor" package.
 	MinorsInverseTable = "product_category_minors"
-	// ProductsTable is the table that holds the products relation/edge. The primary key declared below.
-	ProductsTable = "product_category_major_products"
+	// MinorsColumn is the table column denoting the minors relation/edge.
+	MinorsColumn = "product_category_major_minors"
+	// ProductsTable is the table that holds the products relation/edge.
+	ProductsTable = "products"
 	// ProductsInverseTable is the table name for the Product entity.
 	// It exists in this package in order to avoid circular dependency with the "product" package.
 	ProductsInverseTable = "products"
+	// ProductsColumn is the table column denoting the products relation/edge.
+	ProductsColumn = "product_category_major_products"
 )
 
 // Columns holds all SQL columns for productcategorymajor fields.
@@ -41,16 +47,8 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldCategory,
+	FieldSulg,
 }
-
-var (
-	// MinorsPrimaryKey and MinorsColumn2 are the table columns denoting the
-	// primary key for the minors relation (M2M).
-	MinorsPrimaryKey = []string{"product_category_major_id", "product_category_minor_id"}
-	// ProductsPrimaryKey and ProductsColumn2 are the table columns denoting the
-	// primary key for the products relation (M2M).
-	ProductsPrimaryKey = []string{"product_category_major_id", "product_id"}
-)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -71,4 +69,6 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// CategoryValidator is a validator for the "category" field. It is called by the builders before save.
 	CategoryValidator func(string) error
+	// SulgValidator is a validator for the "sulg" field. It is called by the builders before save.
+	SulgValidator func(string) error
 )

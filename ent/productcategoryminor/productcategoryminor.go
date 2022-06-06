@@ -17,22 +17,30 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldCategory holds the string denoting the category field in the database.
 	FieldCategory = "category"
-	// EdgeProducts holds the string denoting the products edge name in mutations.
-	EdgeProducts = "products"
+	// FieldImage holds the string denoting the image field in the database.
+	FieldImage = "image"
+	// FieldSulg holds the string denoting the sulg field in the database.
+	FieldSulg = "sulg"
 	// EdgeMajor holds the string denoting the major edge name in mutations.
 	EdgeMajor = "major"
+	// EdgeProducts holds the string denoting the products edge name in mutations.
+	EdgeProducts = "products"
 	// Table holds the table name of the productcategoryminor in the database.
 	Table = "product_category_minors"
-	// ProductsTable is the table that holds the products relation/edge. The primary key declared below.
-	ProductsTable = "product_category_minor_products"
-	// ProductsInverseTable is the table name for the Product entity.
-	// It exists in this package in order to avoid circular dependency with the "product" package.
-	ProductsInverseTable = "products"
-	// MajorTable is the table that holds the major relation/edge. The primary key declared below.
-	MajorTable = "product_category_major_minors"
+	// MajorTable is the table that holds the major relation/edge.
+	MajorTable = "product_category_minors"
 	// MajorInverseTable is the table name for the ProductCategoryMajor entity.
 	// It exists in this package in order to avoid circular dependency with the "productcategorymajor" package.
 	MajorInverseTable = "product_category_majors"
+	// MajorColumn is the table column denoting the major relation/edge.
+	MajorColumn = "product_category_major_minors"
+	// ProductsTable is the table that holds the products relation/edge.
+	ProductsTable = "products"
+	// ProductsInverseTable is the table name for the Product entity.
+	// It exists in this package in order to avoid circular dependency with the "product" package.
+	ProductsInverseTable = "products"
+	// ProductsColumn is the table column denoting the products relation/edge.
+	ProductsColumn = "product_category_minor_products"
 )
 
 // Columns holds all SQL columns for productcategoryminor fields.
@@ -41,21 +49,25 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldCategory,
+	FieldImage,
+	FieldSulg,
 }
 
-var (
-	// ProductsPrimaryKey and ProductsColumn2 are the table columns denoting the
-	// primary key for the products relation (M2M).
-	ProductsPrimaryKey = []string{"product_category_minor_id", "product_id"}
-	// MajorPrimaryKey and MajorColumn2 are the table columns denoting the
-	// primary key for the major relation (M2M).
-	MajorPrimaryKey = []string{"product_category_major_id", "product_category_minor_id"}
-)
+// ForeignKeys holds the SQL foreign-keys that are owned by the "product_category_minors"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"product_category_major_minors",
+}
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -71,4 +83,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// CategoryValidator is a validator for the "category" field. It is called by the builders before save.
 	CategoryValidator func(string) error
+	// ImageValidator is a validator for the "image" field. It is called by the builders before save.
+	ImageValidator func(string) error
+	// SulgValidator is a validator for the "sulg" field. It is called by the builders before save.
+	SulgValidator func(string) error
 )

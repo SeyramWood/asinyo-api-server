@@ -12,14 +12,24 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Address is the client for interacting with the Address builders.
+	Address *AddressClient
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
 	// Agent is the client for interacting with the Agent builders.
 	Agent *AgentClient
+	// Basket is the client for interacting with the Basket builders.
+	Basket *BasketClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
+	// Favourite is the client for interacting with the Favourite builders.
+	Favourite *FavouriteClient
 	// Merchant is the client for interacting with the Merchant builders.
 	Merchant *MerchantClient
+	// MerchantStore is the client for interacting with the MerchantStore builders.
+	MerchantStore *MerchantStoreClient
+	// Order is the client for interacting with the Order builders.
+	Order *OrderClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
 	// ProductCategoryMajor is the client for interacting with the ProductCategoryMajor builders.
@@ -165,10 +175,15 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Address = NewAddressClient(tx.config)
 	tx.Admin = NewAdminClient(tx.config)
 	tx.Agent = NewAgentClient(tx.config)
+	tx.Basket = NewBasketClient(tx.config)
 	tx.Customer = NewCustomerClient(tx.config)
+	tx.Favourite = NewFavouriteClient(tx.config)
 	tx.Merchant = NewMerchantClient(tx.config)
+	tx.MerchantStore = NewMerchantStoreClient(tx.config)
+	tx.Order = NewOrderClient(tx.config)
 	tx.Product = NewProductClient(tx.config)
 	tx.ProductCategoryMajor = NewProductCategoryMajorClient(tx.config)
 	tx.ProductCategoryMinor = NewProductCategoryMinorClient(tx.config)
@@ -183,7 +198,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Admin.QueryXXX(), the query will be executed
+// applies a query, for example: Address.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

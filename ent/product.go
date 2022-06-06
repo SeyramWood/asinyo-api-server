@@ -8,7 +8,10 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/product"
+	"github.com/SeyramWood/ent/productcategorymajor"
+	"github.com/SeyramWood/ent/productcategoryminor"
 )
 
 // Product is the model entity for the Product schema.
@@ -20,81 +23,114 @@ type Product struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// Name holds the value of the "Name" field.
-	Name string `json:"Name,omitempty"`
-	// Price holds the value of the "Price" field.
-	Price float64 `json:"Price,omitempty"`
-	// PromoPrice holds the value of the "PromoPrice" field.
-	PromoPrice float64 `json:"PromoPrice,omitempty"`
-	// Description holds the value of the "Description" field.
-	Description string `json:"Description,omitempty"`
-	// Image holds the value of the "Image" field.
-	Image string `json:"Image,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
+	// Price holds the value of the "price" field.
+	Price float64 `json:"price,omitempty"`
+	// PromoPrice holds the value of the "promo_price" field.
+	PromoPrice *float64 `json:"promo_price,omitempty"`
+	// Quantity holds the value of the "quantity" field.
+	Quantity uint32 `json:"quantity,omitempty"`
+	// Unit holds the value of the "unit" field.
+	Unit string `json:"unit,omitempty"`
+	// Description holds the value of the "description" field.
+	Description string `json:"description,omitempty"`
+	// Image holds the value of the "image" field.
+	Image string `json:"image,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProductQuery when eager-loading is set.
-	Edges ProductEdges `json:"edges"`
+	Edges                           ProductEdges `json:"edges"`
+	merchant_products               *int
+	product_category_major_products *int
+	product_category_minor_products *int
 }
 
 // ProductEdges holds the relations/edges for other nodes in the graph.
 type ProductEdges struct {
+	// Merchant holds the value of the merchant edge.
+	Merchant *Merchant `json:"merchant,omitempty"`
 	// Major holds the value of the major edge.
-	Major []*ProductCategoryMajor `json:"major,omitempty"`
+	Major *ProductCategoryMajor `json:"major,omitempty"`
 	// Minor holds the value of the minor edge.
-	Minor []*ProductCategoryMinor `json:"minor,omitempty"`
-	// Mechant holds the value of the mechant edge.
-	Mechant []*Merchant `json:"mechant,omitempty"`
-	// Supplier holds the value of the supplier edge.
-	Supplier []*SupplierMerchant `json:"supplier,omitempty"`
-	// Retailer holds the value of the retailer edge.
-	Retailer []*RetailMerchant `json:"retailer,omitempty"`
+	Minor *ProductCategoryMinor `json:"minor,omitempty"`
+	// Orders holds the value of the orders edge.
+	Orders []*Order `json:"orders,omitempty"`
+	// Baskets holds the value of the baskets edge.
+	Baskets []*Basket `json:"baskets,omitempty"`
+	// Favourites holds the value of the favourites edge.
+	Favourites []*Favourite `json:"favourites,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
+}
+
+// MerchantOrErr returns the Merchant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProductEdges) MerchantOrErr() (*Merchant, error) {
+	if e.loadedTypes[0] {
+		if e.Merchant == nil {
+			// The edge merchant was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: merchant.Label}
+		}
+		return e.Merchant, nil
+	}
+	return nil, &NotLoadedError{edge: "merchant"}
 }
 
 // MajorOrErr returns the Major value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProductEdges) MajorOrErr() ([]*ProductCategoryMajor, error) {
-	if e.loadedTypes[0] {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProductEdges) MajorOrErr() (*ProductCategoryMajor, error) {
+	if e.loadedTypes[1] {
+		if e.Major == nil {
+			// The edge major was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: productcategorymajor.Label}
+		}
 		return e.Major, nil
 	}
 	return nil, &NotLoadedError{edge: "major"}
 }
 
 // MinorOrErr returns the Minor value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProductEdges) MinorOrErr() ([]*ProductCategoryMinor, error) {
-	if e.loadedTypes[1] {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProductEdges) MinorOrErr() (*ProductCategoryMinor, error) {
+	if e.loadedTypes[2] {
+		if e.Minor == nil {
+			// The edge minor was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: productcategoryminor.Label}
+		}
 		return e.Minor, nil
 	}
 	return nil, &NotLoadedError{edge: "minor"}
 }
 
-// MechantOrErr returns the Mechant value or an error if the edge
+// OrdersOrErr returns the Orders value or an error if the edge
 // was not loaded in eager-loading.
-func (e ProductEdges) MechantOrErr() ([]*Merchant, error) {
-	if e.loadedTypes[2] {
-		return e.Mechant, nil
-	}
-	return nil, &NotLoadedError{edge: "mechant"}
-}
-
-// SupplierOrErr returns the Supplier value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProductEdges) SupplierOrErr() ([]*SupplierMerchant, error) {
+func (e ProductEdges) OrdersOrErr() ([]*Order, error) {
 	if e.loadedTypes[3] {
-		return e.Supplier, nil
+		return e.Orders, nil
 	}
-	return nil, &NotLoadedError{edge: "supplier"}
+	return nil, &NotLoadedError{edge: "orders"}
 }
 
-// RetailerOrErr returns the Retailer value or an error if the edge
+// BasketsOrErr returns the Baskets value or an error if the edge
 // was not loaded in eager-loading.
-func (e ProductEdges) RetailerOrErr() ([]*RetailMerchant, error) {
+func (e ProductEdges) BasketsOrErr() ([]*Basket, error) {
 	if e.loadedTypes[4] {
-		return e.Retailer, nil
+		return e.Baskets, nil
 	}
-	return nil, &NotLoadedError{edge: "retailer"}
+	return nil, &NotLoadedError{edge: "baskets"}
+}
+
+// FavouritesOrErr returns the Favourites value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProductEdges) FavouritesOrErr() ([]*Favourite, error) {
+	if e.loadedTypes[5] {
+		return e.Favourites, nil
+	}
+	return nil, &NotLoadedError{edge: "favourites"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -104,12 +140,18 @@ func (*Product) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case product.FieldPrice, product.FieldPromoPrice:
 			values[i] = new(sql.NullFloat64)
-		case product.FieldID:
+		case product.FieldID, product.FieldQuantity:
 			values[i] = new(sql.NullInt64)
-		case product.FieldName, product.FieldDescription, product.FieldImage:
+		case product.FieldName, product.FieldUnit, product.FieldDescription, product.FieldImage:
 			values[i] = new(sql.NullString)
 		case product.FieldCreatedAt, product.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case product.ForeignKeys[0]: // merchant_products
+			values[i] = new(sql.NullInt64)
+		case product.ForeignKeys[1]: // product_category_major_products
+			values[i] = new(sql.NullInt64)
+		case product.ForeignKeys[2]: // product_category_minor_products
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Product", columns[i])
 		}
@@ -145,37 +187,76 @@ func (pr *Product) assignValues(columns []string, values []interface{}) error {
 			}
 		case product.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field Name", values[i])
+				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				pr.Name = value.String
 			}
 		case product.FieldPrice:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field Price", values[i])
+				return fmt.Errorf("unexpected type %T for field price", values[i])
 			} else if value.Valid {
 				pr.Price = value.Float64
 			}
 		case product.FieldPromoPrice:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field PromoPrice", values[i])
+				return fmt.Errorf("unexpected type %T for field promo_price", values[i])
 			} else if value.Valid {
-				pr.PromoPrice = value.Float64
+				pr.PromoPrice = new(float64)
+				*pr.PromoPrice = value.Float64
+			}
+		case product.FieldQuantity:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field quantity", values[i])
+			} else if value.Valid {
+				pr.Quantity = uint32(value.Int64)
+			}
+		case product.FieldUnit:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field unit", values[i])
+			} else if value.Valid {
+				pr.Unit = value.String
 			}
 		case product.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field Description", values[i])
+				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				pr.Description = value.String
 			}
 		case product.FieldImage:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field Image", values[i])
+				return fmt.Errorf("unexpected type %T for field image", values[i])
 			} else if value.Valid {
 				pr.Image = value.String
+			}
+		case product.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field merchant_products", value)
+			} else if value.Valid {
+				pr.merchant_products = new(int)
+				*pr.merchant_products = int(value.Int64)
+			}
+		case product.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field product_category_major_products", value)
+			} else if value.Valid {
+				pr.product_category_major_products = new(int)
+				*pr.product_category_major_products = int(value.Int64)
+			}
+		case product.ForeignKeys[2]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field product_category_minor_products", value)
+			} else if value.Valid {
+				pr.product_category_minor_products = new(int)
+				*pr.product_category_minor_products = int(value.Int64)
 			}
 		}
 	}
 	return nil
+}
+
+// QueryMerchant queries the "merchant" edge of the Product entity.
+func (pr *Product) QueryMerchant() *MerchantQuery {
+	return (&ProductClient{config: pr.config}).QueryMerchant(pr)
 }
 
 // QueryMajor queries the "major" edge of the Product entity.
@@ -188,19 +269,19 @@ func (pr *Product) QueryMinor() *ProductCategoryMinorQuery {
 	return (&ProductClient{config: pr.config}).QueryMinor(pr)
 }
 
-// QueryMechant queries the "mechant" edge of the Product entity.
-func (pr *Product) QueryMechant() *MerchantQuery {
-	return (&ProductClient{config: pr.config}).QueryMechant(pr)
+// QueryOrders queries the "orders" edge of the Product entity.
+func (pr *Product) QueryOrders() *OrderQuery {
+	return (&ProductClient{config: pr.config}).QueryOrders(pr)
 }
 
-// QuerySupplier queries the "supplier" edge of the Product entity.
-func (pr *Product) QuerySupplier() *SupplierMerchantQuery {
-	return (&ProductClient{config: pr.config}).QuerySupplier(pr)
+// QueryBaskets queries the "baskets" edge of the Product entity.
+func (pr *Product) QueryBaskets() *BasketQuery {
+	return (&ProductClient{config: pr.config}).QueryBaskets(pr)
 }
 
-// QueryRetailer queries the "retailer" edge of the Product entity.
-func (pr *Product) QueryRetailer() *RetailMerchantQuery {
-	return (&ProductClient{config: pr.config}).QueryRetailer(pr)
+// QueryFavourites queries the "favourites" edge of the Product entity.
+func (pr *Product) QueryFavourites() *FavouriteQuery {
+	return (&ProductClient{config: pr.config}).QueryFavourites(pr)
 }
 
 // Update returns a builder for updating this Product.
@@ -230,15 +311,21 @@ func (pr *Product) String() string {
 	builder.WriteString(pr.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", updated_at=")
 	builder.WriteString(pr.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", Name=")
+	builder.WriteString(", name=")
 	builder.WriteString(pr.Name)
-	builder.WriteString(", Price=")
+	builder.WriteString(", price=")
 	builder.WriteString(fmt.Sprintf("%v", pr.Price))
-	builder.WriteString(", PromoPrice=")
-	builder.WriteString(fmt.Sprintf("%v", pr.PromoPrice))
-	builder.WriteString(", Description=")
+	if v := pr.PromoPrice; v != nil {
+		builder.WriteString(", promo_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", quantity=")
+	builder.WriteString(fmt.Sprintf("%v", pr.Quantity))
+	builder.WriteString(", unit=")
+	builder.WriteString(pr.Unit)
+	builder.WriteString(", description=")
 	builder.WriteString(pr.Description)
-	builder.WriteString(", Image=")
+	builder.WriteString(", image=")
 	builder.WriteString(pr.Image)
 	builder.WriteByte(')')
 	return builder.String()

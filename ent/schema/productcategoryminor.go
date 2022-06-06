@@ -20,14 +20,19 @@ func (ProductCategoryMinor) Mixin() []ent.Mixin {
 // Fields of the ProductCategoryMinor.
 func (ProductCategoryMinor) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("category").NotEmpty(),
+		field.String("category").NotEmpty().Unique(),
+		field.String("image").NotEmpty(),
+		field.String("sulg").NotEmpty(),
 	}
 }
 
 // Edges of the ProductCategoryMinor.
 func (ProductCategoryMinor) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.From("major", ProductCategoryMajor.Type).
+			Ref("minors").
+			Unique().
+			Required(),
 		edge.To("products", Product.Type),
-		edge.From("major", ProductCategoryMajor.Type).Required().Ref("minors"),
 	}
 }

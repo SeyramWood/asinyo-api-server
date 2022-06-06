@@ -33,8 +33,6 @@ func (RetailMerchant) Fields() []ent.Field {
 // Edges of the RetailMerchant.
 func (RetailMerchant) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("products", Product.Type).
-			Unique(),
 		edge.From("merchant", Merchant.Type).
 			Ref("retailer").
 			Unique().

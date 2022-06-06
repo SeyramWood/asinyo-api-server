@@ -22,8 +22,7 @@ func NewProductCatMinorRepo(db *database.Adapter) gateways.ProductCatMinorRepo {
 func (r *repository) Insert(cat *models.ProductCategoryMinor) (*ent.ProductCategoryMinor, error) {
 
 	major := r.db.ProductCategoryMajor.Query().Where(productcategorymajor.ID(cat.CategoryMajor)).OnlyX(context.Background())
-	category, err := r.db.ProductCategoryMinor.Create().
-		AddMajor(major).
+	category, err := r.db.ProductCategoryMinor.Create().SetMajor(major).
 		SetCategory(cat.Category).Save(context.Background())
 
 	if err != nil {
@@ -44,11 +43,12 @@ func (r *repository) Read(id int) (*ent.ProductCategoryMinor, error) {
 
 func (r *repository) ReadAll() ([]*ent.ProductCategoryMinor, error) {
 
-	// cats, err := r.db.ProductCategoryMinor.Query().WithMinors().All(context.Background())
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+	cats, err := r.db.ProductCategoryMinor.Query().WithMajor().All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+	return cats, nil
 }
 
 func (a *repository) Update(i *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error) {

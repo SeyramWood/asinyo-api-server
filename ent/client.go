@@ -9,10 +9,15 @@ import (
 
 	"github.com/SeyramWood/ent/migrate"
 
+	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
+	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -29,14 +34,24 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Address is the client for interacting with the Address builders.
+	Address *AddressClient
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
 	// Agent is the client for interacting with the Agent builders.
 	Agent *AgentClient
+	// Basket is the client for interacting with the Basket builders.
+	Basket *BasketClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
+	// Favourite is the client for interacting with the Favourite builders.
+	Favourite *FavouriteClient
 	// Merchant is the client for interacting with the Merchant builders.
 	Merchant *MerchantClient
+	// MerchantStore is the client for interacting with the MerchantStore builders.
+	MerchantStore *MerchantStoreClient
+	// Order is the client for interacting with the Order builders.
+	Order *OrderClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
 	// ProductCategoryMajor is the client for interacting with the ProductCategoryMajor builders.
@@ -60,10 +75,15 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Address = NewAddressClient(c.config)
 	c.Admin = NewAdminClient(c.config)
 	c.Agent = NewAgentClient(c.config)
+	c.Basket = NewBasketClient(c.config)
 	c.Customer = NewCustomerClient(c.config)
+	c.Favourite = NewFavouriteClient(c.config)
 	c.Merchant = NewMerchantClient(c.config)
+	c.MerchantStore = NewMerchantStoreClient(c.config)
+	c.Order = NewOrderClient(c.config)
 	c.Product = NewProductClient(c.config)
 	c.ProductCategoryMajor = NewProductCategoryMajorClient(c.config)
 	c.ProductCategoryMinor = NewProductCategoryMinorClient(c.config)
@@ -102,10 +122,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                  ctx,
 		config:               cfg,
+		Address:              NewAddressClient(cfg),
 		Admin:                NewAdminClient(cfg),
 		Agent:                NewAgentClient(cfg),
+		Basket:               NewBasketClient(cfg),
 		Customer:             NewCustomerClient(cfg),
+		Favourite:            NewFavouriteClient(cfg),
 		Merchant:             NewMerchantClient(cfg),
+		MerchantStore:        NewMerchantStoreClient(cfg),
+		Order:                NewOrderClient(cfg),
 		Product:              NewProductClient(cfg),
 		ProductCategoryMajor: NewProductCategoryMajorClient(cfg),
 		ProductCategoryMinor: NewProductCategoryMinorClient(cfg),
@@ -130,10 +155,15 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                  ctx,
 		config:               cfg,
+		Address:              NewAddressClient(cfg),
 		Admin:                NewAdminClient(cfg),
 		Agent:                NewAgentClient(cfg),
+		Basket:               NewBasketClient(cfg),
 		Customer:             NewCustomerClient(cfg),
+		Favourite:            NewFavouriteClient(cfg),
 		Merchant:             NewMerchantClient(cfg),
+		MerchantStore:        NewMerchantStoreClient(cfg),
+		Order:                NewOrderClient(cfg),
 		Product:              NewProductClient(cfg),
 		ProductCategoryMajor: NewProductCategoryMajorClient(cfg),
 		ProductCategoryMinor: NewProductCategoryMinorClient(cfg),
@@ -145,7 +175,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Admin.
+//		Address.
 //		Query().
 //		Count(ctx)
 //
@@ -168,15 +198,174 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.Address.Use(hooks...)
 	c.Admin.Use(hooks...)
 	c.Agent.Use(hooks...)
+	c.Basket.Use(hooks...)
 	c.Customer.Use(hooks...)
+	c.Favourite.Use(hooks...)
 	c.Merchant.Use(hooks...)
+	c.MerchantStore.Use(hooks...)
+	c.Order.Use(hooks...)
 	c.Product.Use(hooks...)
 	c.ProductCategoryMajor.Use(hooks...)
 	c.ProductCategoryMinor.Use(hooks...)
 	c.RetailMerchant.Use(hooks...)
 	c.SupplierMerchant.Use(hooks...)
+}
+
+// AddressClient is a client for the Address schema.
+type AddressClient struct {
+	config
+}
+
+// NewAddressClient returns a client for the Address from the given config.
+func NewAddressClient(c config) *AddressClient {
+	return &AddressClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `address.Hooks(f(g(h())))`.
+func (c *AddressClient) Use(hooks ...Hook) {
+	c.hooks.Address = append(c.hooks.Address, hooks...)
+}
+
+// Create returns a create builder for Address.
+func (c *AddressClient) Create() *AddressCreate {
+	mutation := newAddressMutation(c.config, OpCreate)
+	return &AddressCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Address entities.
+func (c *AddressClient) CreateBulk(builders ...*AddressCreate) *AddressCreateBulk {
+	return &AddressCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Address.
+func (c *AddressClient) Update() *AddressUpdate {
+	mutation := newAddressMutation(c.config, OpUpdate)
+	return &AddressUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AddressClient) UpdateOne(a *Address) *AddressUpdateOne {
+	mutation := newAddressMutation(c.config, OpUpdateOne, withAddress(a))
+	return &AddressUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AddressClient) UpdateOneID(id int) *AddressUpdateOne {
+	mutation := newAddressMutation(c.config, OpUpdateOne, withAddressID(id))
+	return &AddressUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Address.
+func (c *AddressClient) Delete() *AddressDelete {
+	mutation := newAddressMutation(c.config, OpDelete)
+	return &AddressDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *AddressClient) DeleteOne(a *Address) *AddressDeleteOne {
+	return c.DeleteOneID(a.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *AddressClient) DeleteOneID(id int) *AddressDeleteOne {
+	builder := c.Delete().Where(address.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AddressDeleteOne{builder}
+}
+
+// Query returns a query builder for Address.
+func (c *AddressClient) Query() *AddressQuery {
+	return &AddressQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Address entity by its id.
+func (c *AddressClient) Get(ctx context.Context, id int) (*Address, error) {
+	return c.Query().Where(address.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AddressClient) GetX(ctx context.Context, id int) *Address {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMerchant queries the merchant edge of a Address.
+func (c *AddressClient) QueryMerchant(a *Address) *MerchantQuery {
+	query := &MerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(address.Table, address.FieldID, id),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, address.MerchantTable, address.MerchantColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAgent queries the agent edge of a Address.
+func (c *AddressClient) QueryAgent(a *Address) *AgentQuery {
+	query := &AgentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(address.Table, address.FieldID, id),
+			sqlgraph.To(agent.Table, agent.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, address.AgentTable, address.AgentColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCustomer queries the customer edge of a Address.
+func (c *AddressClient) QueryCustomer(a *Address) *CustomerQuery {
+	query := &CustomerQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(address.Table, address.FieldID, id),
+			sqlgraph.To(customer.Table, customer.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, address.CustomerTable, address.CustomerColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOrders queries the orders edge of a Address.
+func (c *AddressClient) QueryOrders(a *Address) *OrderQuery {
+	query := &OrderQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(address.Table, address.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, address.OrdersTable, address.OrdersColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AddressClient) Hooks() []Hook {
+	return c.hooks.Address
 }
 
 // AdminClient is a client for the Admin schema.
@@ -354,9 +543,227 @@ func (c *AgentClient) GetX(ctx context.Context, id int) *Agent {
 	return obj
 }
 
+// QueryAddresses queries the addresses edge of a Agent.
+func (c *AgentClient) QueryAddresses(a *Agent) *AddressQuery {
+	query := &AddressQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(agent.Table, agent.FieldID, id),
+			sqlgraph.To(address.Table, address.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, agent.AddressesTable, agent.AddressesColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOrders queries the orders edge of a Agent.
+func (c *AgentClient) QueryOrders(a *Agent) *OrderQuery {
+	query := &OrderQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(agent.Table, agent.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, agent.OrdersTable, agent.OrdersColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBaskets queries the baskets edge of a Agent.
+func (c *AgentClient) QueryBaskets(a *Agent) *BasketQuery {
+	query := &BasketQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(agent.Table, agent.FieldID, id),
+			sqlgraph.To(basket.Table, basket.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, agent.BasketsTable, agent.BasketsColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFavourites queries the favourites edge of a Agent.
+func (c *AgentClient) QueryFavourites(a *Agent) *FavouriteQuery {
+	query := &FavouriteQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(agent.Table, agent.FieldID, id),
+			sqlgraph.To(favourite.Table, favourite.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, agent.FavouritesTable, agent.FavouritesColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AgentClient) Hooks() []Hook {
 	return c.hooks.Agent
+}
+
+// BasketClient is a client for the Basket schema.
+type BasketClient struct {
+	config
+}
+
+// NewBasketClient returns a client for the Basket from the given config.
+func NewBasketClient(c config) *BasketClient {
+	return &BasketClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `basket.Hooks(f(g(h())))`.
+func (c *BasketClient) Use(hooks ...Hook) {
+	c.hooks.Basket = append(c.hooks.Basket, hooks...)
+}
+
+// Create returns a create builder for Basket.
+func (c *BasketClient) Create() *BasketCreate {
+	mutation := newBasketMutation(c.config, OpCreate)
+	return &BasketCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Basket entities.
+func (c *BasketClient) CreateBulk(builders ...*BasketCreate) *BasketCreateBulk {
+	return &BasketCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Basket.
+func (c *BasketClient) Update() *BasketUpdate {
+	mutation := newBasketMutation(c.config, OpUpdate)
+	return &BasketUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BasketClient) UpdateOne(b *Basket) *BasketUpdateOne {
+	mutation := newBasketMutation(c.config, OpUpdateOne, withBasket(b))
+	return &BasketUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BasketClient) UpdateOneID(id int) *BasketUpdateOne {
+	mutation := newBasketMutation(c.config, OpUpdateOne, withBasketID(id))
+	return &BasketUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Basket.
+func (c *BasketClient) Delete() *BasketDelete {
+	mutation := newBasketMutation(c.config, OpDelete)
+	return &BasketDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *BasketClient) DeleteOne(b *Basket) *BasketDeleteOne {
+	return c.DeleteOneID(b.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *BasketClient) DeleteOneID(id int) *BasketDeleteOne {
+	builder := c.Delete().Where(basket.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BasketDeleteOne{builder}
+}
+
+// Query returns a query builder for Basket.
+func (c *BasketClient) Query() *BasketQuery {
+	return &BasketQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Basket entity by its id.
+func (c *BasketClient) Get(ctx context.Context, id int) (*Basket, error) {
+	return c.Query().Where(basket.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BasketClient) GetX(ctx context.Context, id int) *Basket {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMerchant queries the merchant edge of a Basket.
+func (c *BasketClient) QueryMerchant(b *Basket) *MerchantQuery {
+	query := &MerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(basket.Table, basket.FieldID, id),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, basket.MerchantTable, basket.MerchantColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAgent queries the agent edge of a Basket.
+func (c *BasketClient) QueryAgent(b *Basket) *AgentQuery {
+	query := &AgentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(basket.Table, basket.FieldID, id),
+			sqlgraph.To(agent.Table, agent.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, basket.AgentTable, basket.AgentColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCustomer queries the customer edge of a Basket.
+func (c *BasketClient) QueryCustomer(b *Basket) *CustomerQuery {
+	query := &CustomerQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(basket.Table, basket.FieldID, id),
+			sqlgraph.To(customer.Table, customer.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, basket.CustomerTable, basket.CustomerColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProduct queries the product edge of a Basket.
+func (c *BasketClient) QueryProduct(b *Basket) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(basket.Table, basket.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, basket.ProductTable, basket.ProductColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *BasketClient) Hooks() []Hook {
+	return c.hooks.Basket
 }
 
 // CustomerClient is a client for the Customer schema.
@@ -444,9 +851,227 @@ func (c *CustomerClient) GetX(ctx context.Context, id int) *Customer {
 	return obj
 }
 
+// QueryAddresses queries the addresses edge of a Customer.
+func (c *CustomerClient) QueryAddresses(cu *Customer) *AddressQuery {
+	query := &AddressQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cu.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, id),
+			sqlgraph.To(address.Table, address.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, customer.AddressesTable, customer.AddressesColumn),
+		)
+		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOrders queries the orders edge of a Customer.
+func (c *CustomerClient) QueryOrders(cu *Customer) *OrderQuery {
+	query := &OrderQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cu.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, customer.OrdersTable, customer.OrdersColumn),
+		)
+		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBaskets queries the baskets edge of a Customer.
+func (c *CustomerClient) QueryBaskets(cu *Customer) *BasketQuery {
+	query := &BasketQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cu.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, id),
+			sqlgraph.To(basket.Table, basket.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, customer.BasketsTable, customer.BasketsColumn),
+		)
+		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFavourites queries the favourites edge of a Customer.
+func (c *CustomerClient) QueryFavourites(cu *Customer) *FavouriteQuery {
+	query := &FavouriteQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cu.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, id),
+			sqlgraph.To(favourite.Table, favourite.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, customer.FavouritesTable, customer.FavouritesColumn),
+		)
+		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CustomerClient) Hooks() []Hook {
 	return c.hooks.Customer
+}
+
+// FavouriteClient is a client for the Favourite schema.
+type FavouriteClient struct {
+	config
+}
+
+// NewFavouriteClient returns a client for the Favourite from the given config.
+func NewFavouriteClient(c config) *FavouriteClient {
+	return &FavouriteClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `favourite.Hooks(f(g(h())))`.
+func (c *FavouriteClient) Use(hooks ...Hook) {
+	c.hooks.Favourite = append(c.hooks.Favourite, hooks...)
+}
+
+// Create returns a create builder for Favourite.
+func (c *FavouriteClient) Create() *FavouriteCreate {
+	mutation := newFavouriteMutation(c.config, OpCreate)
+	return &FavouriteCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Favourite entities.
+func (c *FavouriteClient) CreateBulk(builders ...*FavouriteCreate) *FavouriteCreateBulk {
+	return &FavouriteCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Favourite.
+func (c *FavouriteClient) Update() *FavouriteUpdate {
+	mutation := newFavouriteMutation(c.config, OpUpdate)
+	return &FavouriteUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FavouriteClient) UpdateOne(f *Favourite) *FavouriteUpdateOne {
+	mutation := newFavouriteMutation(c.config, OpUpdateOne, withFavourite(f))
+	return &FavouriteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FavouriteClient) UpdateOneID(id int) *FavouriteUpdateOne {
+	mutation := newFavouriteMutation(c.config, OpUpdateOne, withFavouriteID(id))
+	return &FavouriteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Favourite.
+func (c *FavouriteClient) Delete() *FavouriteDelete {
+	mutation := newFavouriteMutation(c.config, OpDelete)
+	return &FavouriteDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *FavouriteClient) DeleteOne(f *Favourite) *FavouriteDeleteOne {
+	return c.DeleteOneID(f.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *FavouriteClient) DeleteOneID(id int) *FavouriteDeleteOne {
+	builder := c.Delete().Where(favourite.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FavouriteDeleteOne{builder}
+}
+
+// Query returns a query builder for Favourite.
+func (c *FavouriteClient) Query() *FavouriteQuery {
+	return &FavouriteQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Favourite entity by its id.
+func (c *FavouriteClient) Get(ctx context.Context, id int) (*Favourite, error) {
+	return c.Query().Where(favourite.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FavouriteClient) GetX(ctx context.Context, id int) *Favourite {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMerchant queries the merchant edge of a Favourite.
+func (c *FavouriteClient) QueryMerchant(f *Favourite) *MerchantQuery {
+	query := &MerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := f.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(favourite.Table, favourite.FieldID, id),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, favourite.MerchantTable, favourite.MerchantColumn),
+		)
+		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAgent queries the agent edge of a Favourite.
+func (c *FavouriteClient) QueryAgent(f *Favourite) *AgentQuery {
+	query := &AgentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := f.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(favourite.Table, favourite.FieldID, id),
+			sqlgraph.To(agent.Table, agent.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, favourite.AgentTable, favourite.AgentColumn),
+		)
+		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCustomer queries the customer edge of a Favourite.
+func (c *FavouriteClient) QueryCustomer(f *Favourite) *CustomerQuery {
+	query := &CustomerQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := f.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(favourite.Table, favourite.FieldID, id),
+			sqlgraph.To(customer.Table, customer.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, favourite.CustomerTable, favourite.CustomerColumn),
+		)
+		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProduct queries the product edge of a Favourite.
+func (c *FavouriteClient) QueryProduct(f *Favourite) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := f.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(favourite.Table, favourite.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, favourite.ProductTable, favourite.ProductColumn),
+		)
+		fromV = sqlgraph.Neighbors(f.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *FavouriteClient) Hooks() []Hook {
+	return c.hooks.Favourite
 }
 
 // MerchantClient is a client for the Merchant schema.
@@ -566,6 +1191,22 @@ func (c *MerchantClient) QueryRetailer(m *Merchant) *RetailMerchantQuery {
 	return query
 }
 
+// QueryStore queries the store edge of a Merchant.
+func (c *MerchantClient) QueryStore(m *Merchant) *MerchantStoreQuery {
+	query := &MerchantStoreQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, id),
+			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, merchant.StoreTable, merchant.StoreColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryProducts queries the products edge of a Merchant.
 func (c *MerchantClient) QueryProducts(m *Merchant) *ProductQuery {
 	query := &ProductQuery{config: c.config}
@@ -574,7 +1215,71 @@ func (c *MerchantClient) QueryProducts(m *Merchant) *ProductQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(merchant.Table, merchant.FieldID, id),
 			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, merchant.ProductsTable, merchant.ProductsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.ProductsTable, merchant.ProductsColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAddresses queries the addresses edge of a Merchant.
+func (c *MerchantClient) QueryAddresses(m *Merchant) *AddressQuery {
+	query := &AddressQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, id),
+			sqlgraph.To(address.Table, address.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.AddressesTable, merchant.AddressesColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOrders queries the orders edge of a Merchant.
+func (c *MerchantClient) QueryOrders(m *Merchant) *OrderQuery {
+	query := &OrderQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.OrdersTable, merchant.OrdersColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBaskets queries the baskets edge of a Merchant.
+func (c *MerchantClient) QueryBaskets(m *Merchant) *BasketQuery {
+	query := &BasketQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, id),
+			sqlgraph.To(basket.Table, basket.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.BasketsTable, merchant.BasketsColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFavourites queries the favourites edge of a Merchant.
+func (c *MerchantClient) QueryFavourites(m *Merchant) *FavouriteQuery {
+	query := &FavouriteQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, id),
+			sqlgraph.To(favourite.Table, favourite.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.FavouritesTable, merchant.FavouritesColumn),
 		)
 		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
 		return fromV, nil
@@ -585,6 +1290,282 @@ func (c *MerchantClient) QueryProducts(m *Merchant) *ProductQuery {
 // Hooks returns the client hooks.
 func (c *MerchantClient) Hooks() []Hook {
 	return c.hooks.Merchant
+}
+
+// MerchantStoreClient is a client for the MerchantStore schema.
+type MerchantStoreClient struct {
+	config
+}
+
+// NewMerchantStoreClient returns a client for the MerchantStore from the given config.
+func NewMerchantStoreClient(c config) *MerchantStoreClient {
+	return &MerchantStoreClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `merchantstore.Hooks(f(g(h())))`.
+func (c *MerchantStoreClient) Use(hooks ...Hook) {
+	c.hooks.MerchantStore = append(c.hooks.MerchantStore, hooks...)
+}
+
+// Create returns a create builder for MerchantStore.
+func (c *MerchantStoreClient) Create() *MerchantStoreCreate {
+	mutation := newMerchantStoreMutation(c.config, OpCreate)
+	return &MerchantStoreCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of MerchantStore entities.
+func (c *MerchantStoreClient) CreateBulk(builders ...*MerchantStoreCreate) *MerchantStoreCreateBulk {
+	return &MerchantStoreCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for MerchantStore.
+func (c *MerchantStoreClient) Update() *MerchantStoreUpdate {
+	mutation := newMerchantStoreMutation(c.config, OpUpdate)
+	return &MerchantStoreUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MerchantStoreClient) UpdateOne(ms *MerchantStore) *MerchantStoreUpdateOne {
+	mutation := newMerchantStoreMutation(c.config, OpUpdateOne, withMerchantStore(ms))
+	return &MerchantStoreUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MerchantStoreClient) UpdateOneID(id int) *MerchantStoreUpdateOne {
+	mutation := newMerchantStoreMutation(c.config, OpUpdateOne, withMerchantStoreID(id))
+	return &MerchantStoreUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for MerchantStore.
+func (c *MerchantStoreClient) Delete() *MerchantStoreDelete {
+	mutation := newMerchantStoreMutation(c.config, OpDelete)
+	return &MerchantStoreDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *MerchantStoreClient) DeleteOne(ms *MerchantStore) *MerchantStoreDeleteOne {
+	return c.DeleteOneID(ms.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *MerchantStoreClient) DeleteOneID(id int) *MerchantStoreDeleteOne {
+	builder := c.Delete().Where(merchantstore.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MerchantStoreDeleteOne{builder}
+}
+
+// Query returns a query builder for MerchantStore.
+func (c *MerchantStoreClient) Query() *MerchantStoreQuery {
+	return &MerchantStoreQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a MerchantStore entity by its id.
+func (c *MerchantStoreClient) Get(ctx context.Context, id int) (*MerchantStore, error) {
+	return c.Query().Where(merchantstore.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MerchantStoreClient) GetX(ctx context.Context, id int) *MerchantStore {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMerchant queries the merchant edge of a MerchantStore.
+func (c *MerchantStoreClient) QueryMerchant(ms *MerchantStore) *MerchantQuery {
+	query := &MerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ms.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, id),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, merchantstore.MerchantTable, merchantstore.MerchantColumn),
+		)
+		fromV = sqlgraph.Neighbors(ms.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *MerchantStoreClient) Hooks() []Hook {
+	return c.hooks.MerchantStore
+}
+
+// OrderClient is a client for the Order schema.
+type OrderClient struct {
+	config
+}
+
+// NewOrderClient returns a client for the Order from the given config.
+func NewOrderClient(c config) *OrderClient {
+	return &OrderClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `order.Hooks(f(g(h())))`.
+func (c *OrderClient) Use(hooks ...Hook) {
+	c.hooks.Order = append(c.hooks.Order, hooks...)
+}
+
+// Create returns a create builder for Order.
+func (c *OrderClient) Create() *OrderCreate {
+	mutation := newOrderMutation(c.config, OpCreate)
+	return &OrderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Order entities.
+func (c *OrderClient) CreateBulk(builders ...*OrderCreate) *OrderCreateBulk {
+	return &OrderCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Order.
+func (c *OrderClient) Update() *OrderUpdate {
+	mutation := newOrderMutation(c.config, OpUpdate)
+	return &OrderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OrderClient) UpdateOne(o *Order) *OrderUpdateOne {
+	mutation := newOrderMutation(c.config, OpUpdateOne, withOrder(o))
+	return &OrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OrderClient) UpdateOneID(id int) *OrderUpdateOne {
+	mutation := newOrderMutation(c.config, OpUpdateOne, withOrderID(id))
+	return &OrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Order.
+func (c *OrderClient) Delete() *OrderDelete {
+	mutation := newOrderMutation(c.config, OpDelete)
+	return &OrderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *OrderClient) DeleteOne(o *Order) *OrderDeleteOne {
+	return c.DeleteOneID(o.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *OrderClient) DeleteOneID(id int) *OrderDeleteOne {
+	builder := c.Delete().Where(order.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OrderDeleteOne{builder}
+}
+
+// Query returns a query builder for Order.
+func (c *OrderClient) Query() *OrderQuery {
+	return &OrderQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Order entity by its id.
+func (c *OrderClient) Get(ctx context.Context, id int) (*Order, error) {
+	return c.Query().Where(order.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OrderClient) GetX(ctx context.Context, id int) *Order {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMerchant queries the merchant edge of a Order.
+func (c *OrderClient) QueryMerchant(o *Order) *MerchantQuery {
+	query := &MerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.MerchantTable, order.MerchantColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAgent queries the agent edge of a Order.
+func (c *OrderClient) QueryAgent(o *Order) *AgentQuery {
+	query := &AgentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(agent.Table, agent.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.AgentTable, order.AgentColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCustomer queries the customer edge of a Order.
+func (c *OrderClient) QueryCustomer(o *Order) *CustomerQuery {
+	query := &CustomerQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(customer.Table, customer.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.CustomerTable, order.CustomerColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAddress queries the address edge of a Order.
+func (c *OrderClient) QueryAddress(o *Order) *AddressQuery {
+	query := &AddressQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(address.Table, address.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.AddressTable, order.AddressColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProduct queries the product edge of a Order.
+func (c *OrderClient) QueryProduct(o *Order) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.ProductTable, order.ProductColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OrderClient) Hooks() []Hook {
+	return c.hooks.Order
 }
 
 // ProductClient is a client for the Product schema.
@@ -672,6 +1653,22 @@ func (c *ProductClient) GetX(ctx context.Context, id int) *Product {
 	return obj
 }
 
+// QueryMerchant queries the merchant edge of a Product.
+func (c *ProductClient) QueryMerchant(pr *Product) *MerchantQuery {
+	query := &MerchantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, product.MerchantTable, product.MerchantColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryMajor queries the major edge of a Product.
 func (c *ProductClient) QueryMajor(pr *Product) *ProductCategoryMajorQuery {
 	query := &ProductCategoryMajorQuery{config: c.config}
@@ -680,7 +1677,7 @@ func (c *ProductClient) QueryMajor(pr *Product) *ProductCategoryMajorQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(product.Table, product.FieldID, id),
 			sqlgraph.To(productcategorymajor.Table, productcategorymajor.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, product.MajorTable, product.MajorPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, product.MajorTable, product.MajorColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -696,7 +1693,7 @@ func (c *ProductClient) QueryMinor(pr *Product) *ProductCategoryMinorQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(product.Table, product.FieldID, id),
 			sqlgraph.To(productcategoryminor.Table, productcategoryminor.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, product.MinorTable, product.MinorPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, product.MinorTable, product.MinorColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -704,15 +1701,15 @@ func (c *ProductClient) QueryMinor(pr *Product) *ProductCategoryMinorQuery {
 	return query
 }
 
-// QueryMechant queries the mechant edge of a Product.
-func (c *ProductClient) QueryMechant(pr *Product) *MerchantQuery {
-	query := &MerchantQuery{config: c.config}
+// QueryOrders queries the orders edge of a Product.
+func (c *ProductClient) QueryOrders(pr *Product) *OrderQuery {
+	query := &OrderQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := pr.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(product.Table, product.FieldID, id),
-			sqlgraph.To(merchant.Table, merchant.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, product.MechantTable, product.MechantColumn),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, product.OrdersTable, product.OrdersColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -720,15 +1717,15 @@ func (c *ProductClient) QueryMechant(pr *Product) *MerchantQuery {
 	return query
 }
 
-// QuerySupplier queries the supplier edge of a Product.
-func (c *ProductClient) QuerySupplier(pr *Product) *SupplierMerchantQuery {
-	query := &SupplierMerchantQuery{config: c.config}
+// QueryBaskets queries the baskets edge of a Product.
+func (c *ProductClient) QueryBaskets(pr *Product) *BasketQuery {
+	query := &BasketQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := pr.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(product.Table, product.FieldID, id),
-			sqlgraph.To(suppliermerchant.Table, suppliermerchant.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, product.SupplierTable, product.SupplierColumn),
+			sqlgraph.To(basket.Table, basket.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, product.BasketsTable, product.BasketsColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -736,15 +1733,15 @@ func (c *ProductClient) QuerySupplier(pr *Product) *SupplierMerchantQuery {
 	return query
 }
 
-// QueryRetailer queries the retailer edge of a Product.
-func (c *ProductClient) QueryRetailer(pr *Product) *RetailMerchantQuery {
-	query := &RetailMerchantQuery{config: c.config}
+// QueryFavourites queries the favourites edge of a Product.
+func (c *ProductClient) QueryFavourites(pr *Product) *FavouriteQuery {
+	query := &FavouriteQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := pr.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(product.Table, product.FieldID, id),
-			sqlgraph.To(retailmerchant.Table, retailmerchant.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, product.RetailerTable, product.RetailerColumn),
+			sqlgraph.To(favourite.Table, favourite.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, product.FavouritesTable, product.FavouritesColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -850,7 +1847,7 @@ func (c *ProductCategoryMajorClient) QueryMinors(pcm *ProductCategoryMajor) *Pro
 		step := sqlgraph.NewStep(
 			sqlgraph.From(productcategorymajor.Table, productcategorymajor.FieldID, id),
 			sqlgraph.To(productcategoryminor.Table, productcategoryminor.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, productcategorymajor.MinorsTable, productcategorymajor.MinorsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, productcategorymajor.MinorsTable, productcategorymajor.MinorsColumn),
 		)
 		fromV = sqlgraph.Neighbors(pcm.driver.Dialect(), step)
 		return fromV, nil
@@ -866,7 +1863,7 @@ func (c *ProductCategoryMajorClient) QueryProducts(pcm *ProductCategoryMajor) *P
 		step := sqlgraph.NewStep(
 			sqlgraph.From(productcategorymajor.Table, productcategorymajor.FieldID, id),
 			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, productcategorymajor.ProductsTable, productcategorymajor.ProductsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, productcategorymajor.ProductsTable, productcategorymajor.ProductsColumn),
 		)
 		fromV = sqlgraph.Neighbors(pcm.driver.Dialect(), step)
 		return fromV, nil
@@ -964,22 +1961,6 @@ func (c *ProductCategoryMinorClient) GetX(ctx context.Context, id int) *ProductC
 	return obj
 }
 
-// QueryProducts queries the products edge of a ProductCategoryMinor.
-func (c *ProductCategoryMinorClient) QueryProducts(pcm *ProductCategoryMinor) *ProductQuery {
-	query := &ProductQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := pcm.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(productcategoryminor.Table, productcategoryminor.FieldID, id),
-			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, productcategoryminor.ProductsTable, productcategoryminor.ProductsPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(pcm.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryMajor queries the major edge of a ProductCategoryMinor.
 func (c *ProductCategoryMinorClient) QueryMajor(pcm *ProductCategoryMinor) *ProductCategoryMajorQuery {
 	query := &ProductCategoryMajorQuery{config: c.config}
@@ -988,7 +1969,23 @@ func (c *ProductCategoryMinorClient) QueryMajor(pcm *ProductCategoryMinor) *Prod
 		step := sqlgraph.NewStep(
 			sqlgraph.From(productcategoryminor.Table, productcategoryminor.FieldID, id),
 			sqlgraph.To(productcategorymajor.Table, productcategorymajor.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, productcategoryminor.MajorTable, productcategoryminor.MajorPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, productcategoryminor.MajorTable, productcategoryminor.MajorColumn),
+		)
+		fromV = sqlgraph.Neighbors(pcm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProducts queries the products edge of a ProductCategoryMinor.
+func (c *ProductCategoryMinorClient) QueryProducts(pcm *ProductCategoryMinor) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pcm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(productcategoryminor.Table, productcategoryminor.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, productcategoryminor.ProductsTable, productcategoryminor.ProductsColumn),
 		)
 		fromV = sqlgraph.Neighbors(pcm.driver.Dialect(), step)
 		return fromV, nil
@@ -1084,22 +2081,6 @@ func (c *RetailMerchantClient) GetX(ctx context.Context, id int) *RetailMerchant
 		panic(err)
 	}
 	return obj
-}
-
-// QueryProducts queries the products edge of a RetailMerchant.
-func (c *RetailMerchantClient) QueryProducts(rm *RetailMerchant) *ProductQuery {
-	query := &ProductQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := rm.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(retailmerchant.Table, retailmerchant.FieldID, id),
-			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, retailmerchant.ProductsTable, retailmerchant.ProductsColumn),
-		)
-		fromV = sqlgraph.Neighbors(rm.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
 }
 
 // QueryMerchant queries the merchant edge of a RetailMerchant.
@@ -1206,22 +2187,6 @@ func (c *SupplierMerchantClient) GetX(ctx context.Context, id int) *SupplierMerc
 		panic(err)
 	}
 	return obj
-}
-
-// QueryProducts queries the products edge of a SupplierMerchant.
-func (c *SupplierMerchantClient) QueryProducts(sm *SupplierMerchant) *ProductQuery {
-	query := &ProductQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := sm.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(suppliermerchant.Table, suppliermerchant.FieldID, id),
-			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, suppliermerchant.ProductsTable, suppliermerchant.ProductsColumn),
-		)
-		fromV = sqlgraph.Neighbors(sm.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
 }
 
 // QueryMerchant queries the merchant edge of a SupplierMerchant.

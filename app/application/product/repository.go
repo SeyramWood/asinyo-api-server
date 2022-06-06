@@ -1,12 +1,17 @@
 package product
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
+	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/product"
+	"github.com/SeyramWood/ent/productcategorymajor"
+	"github.com/SeyramWood/ent/productcategoryminor"
 )
 
 type repository struct {
@@ -17,32 +22,313 @@ func NewProductRepo(db *database.Adapter) gateways.ProductRepo {
 	return &repository{db.DB}
 }
 
-func (r *repository) Insert(mercthant *models.Product) (*ent.Product, error) {
+func (r *repository) Insert(prod *models.Product, imageUrl string) (*ent.Product, error) {
+	ctx := context.Background()
 
-	return nil, nil
+	mq := r.db.Merchant.Query().Where(merchant.ID(prod.Merchant)).OnlyX(ctx)
+	major := r.db.ProductCategoryMajor.Query().Where(productcategorymajor.ID(prod.CategoryMajor)).OnlyX(ctx)
+	minor := r.db.ProductCategoryMinor.Query().Where(productcategoryminor.ID(prod.CategoryMinor)).OnlyX(ctx)
+
+	result, err := r.db.Product.Create().SetMerchant(mq).SetMajor(major).SetMinor(minor).
+		SetQuantity(uint32(prod.Quantity)).
+		SetUnit(prod.Unit).
+		SetName(prod.Name).
+		SetPrice(prod.Price).
+		SetPromoPrice(prod.PromoPrice).
+		SetDescription(prod.Description).
+		SetImage(imageUrl).
+		Save(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed creating product: %w", err)
+	}
+	return result, nil
 
 }
 
 func (r *repository) Read(id int) (*ent.Product, error) {
 
-	// b, err := r.db.User.Query().Where(user.ID(id)).First(context.Background())
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+	result, err := r.db.Product.Query().Where(product.ID(id)).WithMerchant().
+		WithMajor().WithMinor().
+		Only(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+
+}
+func (r *repository) ReadBySupplierMerchant(id int) (*ent.Product, error) {
+
+	result, err := r.db.Product.Query().Where(product.ID(id)).
+		WithMerchant(func(mq *ent.MerchantQuery) {
+			mq.WithSupplier()
+		}).
+		WithMajor().
+		WithMinor().
+		Only(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+
+}
+func (r *repository) ReadByRetailMerchant(id int) (*ent.Product, error) {
+
+	result, err := r.db.Product.Query().Where(product.ID(id)).
+		WithMerchant(func(mq *ent.MerchantQuery) {
+			mq.WithRetailer()
+		}).
+		WithMajor().
+		WithMinor().
+		Only(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+
 }
 
 func (r *repository) ReadAll() ([]*ent.Product, error) {
+	products, err := r.db.Product.Query().
+		WithMerchant().
+		WithMajor().
+		WithMinor().
+		All(context.Background())
 
-	// b, err := r.db.User.Query().
-	// 	All(context.Background())
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
+}
+func (r *repository) ReadBySlugRetailMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error) {
+	products, err := r.db.ProductCategoryMinor.Query().
+		Where(productcategoryminor.Sulg(slug)).
+		WithProducts(func(pq *ent.ProductQuery) {
+			pq.Where(product.HasMerchantWith(
+				merchant.Type("retailer"),
+			)).
+				WithMajor().
+				WithMinor().
+				WithMerchant(
+					func(mq *ent.MerchantQuery) {
+						mq.WithRetailer()
+					})
+		}).
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+func (r *repository) ReadBySlugRetailMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error) {
+	products, err := r.db.ProductCategoryMajor.Query().
+		Where(productcategorymajor.Sulg(slug)).
+		WithProducts(func(pq *ent.ProductQuery) {
+			pq.Where(product.HasMerchantWith(
+				merchant.Type("retailer"),
+			)).
+				WithMajor().
+				WithMinor().
+				WithMerchant(
+					func(mq *ent.MerchantQuery) {
+						mq.WithRetailer()
+					})
+		}).
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+func (r *repository) ReadAllRetailMerchantCategoryMinor() ([]*ent.ProductCategoryMinor, error) {
+	products, err := r.db.ProductCategoryMinor.Query().
+		WithProducts(func(pq *ent.ProductQuery) {
+			pq.Where(product.HasMerchantWith(
+				merchant.Type("retailer"),
+			)).
+				WithMajor().
+				WithMinor().
+				WithMerchant(
+					func(mq *ent.MerchantQuery) {
+						mq.WithRetailer()
+					})
+		}).
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+func (r *repository) ReadAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error) {
+	products, err := r.db.ProductCategoryMajor.Query().
+		WithProducts(func(pq *ent.ProductQuery) {
+			pq.Where(product.HasMerchantWith(
+				merchant.Type("retailer"),
+			)).
+				WithMajor().
+				WithMinor().
+				WithMerchant(
+					func(mq *ent.MerchantQuery) {
+						mq.WithRetailer()
+					})
+		}).
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+func (r *repository) ReadAllSupplierMerchantCategoryMinor() ([]*ent.ProductCategoryMinor, error) {
+	products, err := r.db.ProductCategoryMinor.Query().
+		WithProducts(func(pq *ent.ProductQuery) {
+			pq.Where(product.HasMerchantWith(
+				merchant.Type("supplier"),
+			)).
+				WithMajor().
+				WithMinor().
+				WithMerchant(
+					func(mq *ent.MerchantQuery) {
+						mq.WithSupplier()
+					})
+		}).
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+func (r *repository) ReadAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error) {
+	products, err := r.db.ProductCategoryMajor.Query().
+		WithProducts(func(pq *ent.ProductQuery) {
+			pq.Where(product.HasMerchantWith(
+				merchant.Type("supplier"),
+			)).
+				WithMajor().
+				WithMinor().
+				WithMerchant(
+					func(mq *ent.MerchantQuery) {
+						mq.WithSupplier()
+					})
+		}).
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
 }
 
-func (a *repository) Update(i *models.Product) (*models.Product, error) {
+func (r *repository) ReadAllBySupplierMerchant(merchantId int) ([]*ent.Product, error) {
+
+	products, err := r.db.Product.Query().
+		Where(product.HasMerchantWith(merchant.ID(merchantId))).
+		WithMerchant(func(mq *ent.MerchantQuery) {
+			mq.WithSupplier()
+		}).
+		WithMajor().
+		WithMinor().
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+
+}
+
+func (r *repository) ReadAllMajorByRetailer(majorId int) ([]*ent.Product, error) {
+
+	products, err := r.db.ProductCategoryMajor.Query().
+		Where(productcategorymajor.ID(majorId)).
+		QueryProducts().
+		WithMerchant(func(mq *ent.MerchantQuery) {
+			mq.WithRetailer()
+		}).
+		WithMinor().
+		WithMajor().
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+
+}
+
+func (r *repository) ReadAllByRetailMerchant(merchantId int) ([]*ent.Product, error) {
+
+	products, err := r.db.Product.Query().
+		Where(product.HasMerchantWith(merchant.ID(merchantId))).
+		WithMerchant(func(mq *ent.MerchantQuery) {
+			mq.WithRetailer()
+		}).
+		WithMajor().
+		WithMinor().
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+
+}
+
+func (r *repository) ReadBestSellerBySupplierMerchant() ([]*ent.Product, error) {
+
+	products, err := r.db.Product.Query().
+		Where(product.HasMerchantWith(merchant.Type("supplier"))).
+		WithMerchant(func(mq *ent.MerchantQuery) {
+			mq.WithSupplier()
+		}).
+		WithMajor().
+		WithMinor().
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+
+}
+
+func (r *repository) ReadBestSellerRetailMerchant() ([]*ent.Product, error) {
+
+	products, err := r.db.Product.Query().
+		Where(product.HasMerchantWith(merchant.Type("retailer"))).
+		WithMerchant(func(mq *ent.MerchantQuery) {
+			mq.WithRetailer()
+		}).
+		WithMajor().
+		WithMinor().
+		All(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+	// fmt.Println(products)
+	return products, nil
+
+}
+
+func (r *repository) Update(i *models.Product) (*models.Product, error) {
 	// book.UpdatedAt = time.Now()
 	// _, err := r.Collection.UpdateOne(context.Background(), bson.M{"_id": book.ID}, bson.M{"$set": book})
 	// if err != nil {
@@ -51,8 +337,7 @@ func (a *repository) Update(i *models.Product) (*models.Product, error) {
 	return i, nil
 }
 
-//DeleteBook is a mongo repository that helps to delete books
-func (r *repository) Delete(ID string) error {
+func (r *repository) Delete(id string) error {
 	return fmt.Errorf("failed creating book")
 	// return r.Delete(ID).Error
 }

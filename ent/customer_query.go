@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -11,7 +12,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/address"
+	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
 
@@ -24,6 +29,11 @@ type CustomerQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.Customer
+	// eager-loading edges.
+	withAddresses  *AddressQuery
+	withOrders     *OrderQuery
+	withBaskets    *BasketQuery
+	withFavourites *FavouriteQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +68,94 @@ func (cq *CustomerQuery) Unique(unique bool) *CustomerQuery {
 func (cq *CustomerQuery) Order(o ...OrderFunc) *CustomerQuery {
 	cq.order = append(cq.order, o...)
 	return cq
+}
+
+// QueryAddresses chains the current query on the "addresses" edge.
+func (cq *CustomerQuery) QueryAddresses() *AddressQuery {
+	query := &AddressQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, selector),
+			sqlgraph.To(address.Table, address.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, customer.AddressesTable, customer.AddressesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOrders chains the current query on the "orders" edge.
+func (cq *CustomerQuery) QueryOrders() *OrderQuery {
+	query := &OrderQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, selector),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, customer.OrdersTable, customer.OrdersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBaskets chains the current query on the "baskets" edge.
+func (cq *CustomerQuery) QueryBaskets() *BasketQuery {
+	query := &BasketQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, selector),
+			sqlgraph.To(basket.Table, basket.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, customer.BasketsTable, customer.BasketsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFavourites chains the current query on the "favourites" edge.
+func (cq *CustomerQuery) QueryFavourites() *FavouriteQuery {
+	query := &FavouriteQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, selector),
+			sqlgraph.To(favourite.Table, favourite.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, customer.FavouritesTable, customer.FavouritesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Customer entity from the query.
@@ -236,16 +334,64 @@ func (cq *CustomerQuery) Clone() *CustomerQuery {
 		return nil
 	}
 	return &CustomerQuery{
-		config:     cq.config,
-		limit:      cq.limit,
-		offset:     cq.offset,
-		order:      append([]OrderFunc{}, cq.order...),
-		predicates: append([]predicate.Customer{}, cq.predicates...),
+		config:         cq.config,
+		limit:          cq.limit,
+		offset:         cq.offset,
+		order:          append([]OrderFunc{}, cq.order...),
+		predicates:     append([]predicate.Customer{}, cq.predicates...),
+		withAddresses:  cq.withAddresses.Clone(),
+		withOrders:     cq.withOrders.Clone(),
+		withBaskets:    cq.withBaskets.Clone(),
+		withFavourites: cq.withFavourites.Clone(),
 		// clone intermediate query.
 		sql:    cq.sql.Clone(),
 		path:   cq.path,
 		unique: cq.unique,
 	}
+}
+
+// WithAddresses tells the query-builder to eager-load the nodes that are connected to
+// the "addresses" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CustomerQuery) WithAddresses(opts ...func(*AddressQuery)) *CustomerQuery {
+	query := &AddressQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withAddresses = query
+	return cq
+}
+
+// WithOrders tells the query-builder to eager-load the nodes that are connected to
+// the "orders" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CustomerQuery) WithOrders(opts ...func(*OrderQuery)) *CustomerQuery {
+	query := &OrderQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withOrders = query
+	return cq
+}
+
+// WithBaskets tells the query-builder to eager-load the nodes that are connected to
+// the "baskets" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CustomerQuery) WithBaskets(opts ...func(*BasketQuery)) *CustomerQuery {
+	query := &BasketQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withBaskets = query
+	return cq
+}
+
+// WithFavourites tells the query-builder to eager-load the nodes that are connected to
+// the "favourites" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CustomerQuery) WithFavourites(opts ...func(*FavouriteQuery)) *CustomerQuery {
+	query := &FavouriteQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withFavourites = query
+	return cq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -311,8 +457,14 @@ func (cq *CustomerQuery) prepareQuery(ctx context.Context) error {
 
 func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 	var (
-		nodes = []*Customer{}
-		_spec = cq.querySpec()
+		nodes       = []*Customer{}
+		_spec       = cq.querySpec()
+		loadedTypes = [4]bool{
+			cq.withAddresses != nil,
+			cq.withOrders != nil,
+			cq.withBaskets != nil,
+			cq.withFavourites != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &Customer{config: cq.config}
@@ -324,6 +476,7 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if err := sqlgraph.QueryNodes(ctx, cq.driver, _spec); err != nil {
@@ -332,6 +485,123 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := cq.withAddresses; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Customer)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Addresses = []*Address{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Address(func(s *sql.Selector) {
+			s.Where(sql.InValues(customer.AddressesColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.customer_addresses
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "customer_addresses" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "customer_addresses" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Addresses = append(node.Edges.Addresses, n)
+		}
+	}
+
+	if query := cq.withOrders; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Customer)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Orders = []*Order{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Order(func(s *sql.Selector) {
+			s.Where(sql.InValues(customer.OrdersColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.customer_orders
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "customer_orders" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "customer_orders" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Orders = append(node.Edges.Orders, n)
+		}
+	}
+
+	if query := cq.withBaskets; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Customer)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Baskets = []*Basket{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Basket(func(s *sql.Selector) {
+			s.Where(sql.InValues(customer.BasketsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.customer_baskets
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "customer_baskets" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "customer_baskets" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Baskets = append(node.Edges.Baskets, n)
+		}
+	}
+
+	if query := cq.withFavourites; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Customer)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Favourites = []*Favourite{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Favourite(func(s *sql.Selector) {
+			s.Where(sql.InValues(customer.FavouritesColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.customer_favourites
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "customer_favourites" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "customer_favourites" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Favourites = append(node.Edges.Favourites, n)
+		}
+	}
+
 	return nodes, nil
 }
 

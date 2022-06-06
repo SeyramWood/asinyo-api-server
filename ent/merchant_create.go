@@ -10,7 +10,12 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/address"
+	"github.com/SeyramWood/ent/basket"
+	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/retailmerchant"
 	"github.com/SeyramWood/ent/suppliermerchant"
@@ -63,6 +68,12 @@ func (mc *MerchantCreate) SetPassword(b []byte) *MerchantCreate {
 	return mc
 }
 
+// SetType sets the "type" field.
+func (mc *MerchantCreate) SetType(s string) *MerchantCreate {
+	mc.mutation.SetType(s)
+	return mc
+}
+
 // SetSupplierID sets the "supplier" edge to the SupplierMerchant entity by ID.
 func (mc *MerchantCreate) SetSupplierID(id int) *MerchantCreate {
 	mc.mutation.SetSupplierID(id)
@@ -101,23 +112,98 @@ func (mc *MerchantCreate) SetRetailer(r *RetailMerchant) *MerchantCreate {
 	return mc.SetRetailerID(r.ID)
 }
 
-// SetProductsID sets the "products" edge to the Product entity by ID.
-func (mc *MerchantCreate) SetProductsID(id int) *MerchantCreate {
-	mc.mutation.SetProductsID(id)
+// SetStoreID sets the "store" edge to the MerchantStore entity by ID.
+func (mc *MerchantCreate) SetStoreID(id int) *MerchantCreate {
+	mc.mutation.SetStoreID(id)
 	return mc
 }
 
-// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
-func (mc *MerchantCreate) SetNillableProductsID(id *int) *MerchantCreate {
+// SetNillableStoreID sets the "store" edge to the MerchantStore entity by ID if the given value is not nil.
+func (mc *MerchantCreate) SetNillableStoreID(id *int) *MerchantCreate {
 	if id != nil {
-		mc = mc.SetProductsID(*id)
+		mc = mc.SetStoreID(*id)
 	}
 	return mc
 }
 
-// SetProducts sets the "products" edge to the Product entity.
-func (mc *MerchantCreate) SetProducts(p *Product) *MerchantCreate {
-	return mc.SetProductsID(p.ID)
+// SetStore sets the "store" edge to the MerchantStore entity.
+func (mc *MerchantCreate) SetStore(m *MerchantStore) *MerchantCreate {
+	return mc.SetStoreID(m.ID)
+}
+
+// AddProductIDs adds the "products" edge to the Product entity by IDs.
+func (mc *MerchantCreate) AddProductIDs(ids ...int) *MerchantCreate {
+	mc.mutation.AddProductIDs(ids...)
+	return mc
+}
+
+// AddProducts adds the "products" edges to the Product entity.
+func (mc *MerchantCreate) AddProducts(p ...*Product) *MerchantCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return mc.AddProductIDs(ids...)
+}
+
+// AddAddressIDs adds the "addresses" edge to the Address entity by IDs.
+func (mc *MerchantCreate) AddAddressIDs(ids ...int) *MerchantCreate {
+	mc.mutation.AddAddressIDs(ids...)
+	return mc
+}
+
+// AddAddresses adds the "addresses" edges to the Address entity.
+func (mc *MerchantCreate) AddAddresses(a ...*Address) *MerchantCreate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return mc.AddAddressIDs(ids...)
+}
+
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (mc *MerchantCreate) AddOrderIDs(ids ...int) *MerchantCreate {
+	mc.mutation.AddOrderIDs(ids...)
+	return mc
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (mc *MerchantCreate) AddOrders(o ...*Order) *MerchantCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return mc.AddOrderIDs(ids...)
+}
+
+// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
+func (mc *MerchantCreate) AddBasketIDs(ids ...int) *MerchantCreate {
+	mc.mutation.AddBasketIDs(ids...)
+	return mc
+}
+
+// AddBaskets adds the "baskets" edges to the Basket entity.
+func (mc *MerchantCreate) AddBaskets(b ...*Basket) *MerchantCreate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return mc.AddBasketIDs(ids...)
+}
+
+// AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
+func (mc *MerchantCreate) AddFavouriteIDs(ids ...int) *MerchantCreate {
+	mc.mutation.AddFavouriteIDs(ids...)
+	return mc
+}
+
+// AddFavourites adds the "favourites" edges to the Favourite entity.
+func (mc *MerchantCreate) AddFavourites(f ...*Favourite) *MerchantCreate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return mc.AddFavouriteIDs(ids...)
 }
 
 // Mutation returns the MerchantMutation object of the builder.
@@ -225,6 +311,14 @@ func (mc *MerchantCreate) check() error {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "Merchant.password": %w`, err)}
 		}
 	}
+	if _, ok := mc.mutation.GetType(); !ok {
+		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Merchant.type"`)}
+	}
+	if v, ok := mc.mutation.GetType(); ok {
+		if err := merchant.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Merchant.type": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -284,6 +378,14 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 		})
 		_node.Password = value
 	}
+	if value, ok := mc.mutation.GetType(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: merchant.FieldType,
+		})
+		_node.Type = value
+	}
 	if nodes := mc.mutation.SupplierIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
@@ -322,9 +424,28 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := mc.mutation.StoreIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   merchant.StoreTable,
+			Columns: []string{merchant.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := mc.mutation.ProductsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   merchant.ProductsTable,
 			Columns: []string{merchant.ProductsColumn},
@@ -339,7 +460,82 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.merchant_products = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := mc.mutation.AddressesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.AddressesTable,
+			Columns: []string{merchant.AddressesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := mc.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.OrdersTable,
+			Columns: []string{merchant.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := mc.mutation.BasketsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.BasketsTable,
+			Columns: []string{merchant.BasketsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := mc.mutation.FavouritesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.FavouritesTable,
+			Columns: []string{merchant.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

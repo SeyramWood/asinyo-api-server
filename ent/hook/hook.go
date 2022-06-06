@@ -9,6 +9,19 @@ import (
 	"github.com/SeyramWood/ent"
 )
 
+// The AddressFunc type is an adapter to allow the use of ordinary
+// function as Address mutator.
+type AddressFunc func(context.Context, *ent.AddressMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AddressFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.AddressMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AddressMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The AdminFunc type is an adapter to allow the use of ordinary
 // function as Admin mutator.
 type AdminFunc func(context.Context, *ent.AdminMutation) (ent.Value, error)
@@ -35,6 +48,19 @@ func (f AgentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return f(ctx, mv)
 }
 
+// The BasketFunc type is an adapter to allow the use of ordinary
+// function as Basket mutator.
+type BasketFunc func(context.Context, *ent.BasketMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BasketFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.BasketMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BasketMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The CustomerFunc type is an adapter to allow the use of ordinary
 // function as Customer mutator.
 type CustomerFunc func(context.Context, *ent.CustomerMutation) (ent.Value, error)
@@ -48,6 +74,19 @@ func (f CustomerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return f(ctx, mv)
 }
 
+// The FavouriteFunc type is an adapter to allow the use of ordinary
+// function as Favourite mutator.
+type FavouriteFunc func(context.Context, *ent.FavouriteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FavouriteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.FavouriteMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FavouriteMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The MerchantFunc type is an adapter to allow the use of ordinary
 // function as Merchant mutator.
 type MerchantFunc func(context.Context, *ent.MerchantMutation) (ent.Value, error)
@@ -57,6 +96,32 @@ func (f MerchantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	mv, ok := m.(*ent.MerchantMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MerchantMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The MerchantStoreFunc type is an adapter to allow the use of ordinary
+// function as MerchantStore mutator.
+type MerchantStoreFunc func(context.Context, *ent.MerchantStoreMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MerchantStoreFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.MerchantStoreMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MerchantStoreMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The OrderFunc type is an adapter to allow the use of ordinary
+// function as Order mutator.
+type OrderFunc func(context.Context, *ent.OrderMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OrderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.OrderMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrderMutation", m)
 	}
 	return f(ctx, mv)
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/SeyramWood/ent/predicate"
 )
 
@@ -1296,6 +1297,118 @@ func DigitalAddressEqualFold(v string) predicate.Agent {
 func DigitalAddressContainsFold(v string) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldDigitalAddress), v))
+	})
+}
+
+// HasAddresses applies the HasEdge predicate on the "addresses" edge.
+func HasAddresses() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AddressesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AddressesTable, AddressesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAddressesWith applies the HasEdge predicate on the "addresses" edge with a given conditions (other predicates).
+func HasAddressesWith(preds ...predicate.Address) predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AddressesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AddressesTable, AddressesColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOrders applies the HasEdge predicate on the "orders" edge.
+func HasOrders() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OrdersTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrdersWith applies the HasEdge predicate on the "orders" edge with a given conditions (other predicates).
+func HasOrdersWith(preds ...predicate.Order) predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OrdersInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBaskets applies the HasEdge predicate on the "baskets" edge.
+func HasBaskets() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(BasketsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BasketsTable, BasketsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBasketsWith applies the HasEdge predicate on the "baskets" edge with a given conditions (other predicates).
+func HasBasketsWith(preds ...predicate.Basket) predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(BasketsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BasketsTable, BasketsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasFavourites applies the HasEdge predicate on the "favourites" edge.
+func HasFavourites() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(FavouritesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFavouritesWith applies the HasEdge predicate on the "favourites" edge with a given conditions (other predicates).
+func HasFavouritesWith(preds ...predicate.Favourite) predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(FavouritesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

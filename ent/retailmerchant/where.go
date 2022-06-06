@@ -1099,34 +1099,6 @@ func DigitalAddressContainsFold(v string) predicate.RetailMerchant {
 	})
 }
 
-// HasProducts applies the HasEdge predicate on the "products" edge.
-func HasProducts() predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ProductsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, ProductsTable, ProductsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasProductsWith applies the HasEdge predicate on the "products" edge with a given conditions (other predicates).
-func HasProductsWith(preds ...predicate.Product) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ProductsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, ProductsTable, ProductsColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasMerchant applies the HasEdge predicate on the "merchant" edge.
 func HasMerchant() predicate.RetailMerchant {
 	return predicate.RetailMerchant(func(s *sql.Selector) {

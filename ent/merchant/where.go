@@ -121,6 +121,13 @@ func Password(v []byte) predicate.Merchant {
 	})
 }
 
+// Type applies equality check predicate on the "type" field. It's identical to TypeEQ.
+func Type(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldType), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Merchant {
 	return predicate.Merchant(func(s *sql.Selector) {
@@ -460,6 +467,117 @@ func PasswordLTE(v []byte) predicate.Merchant {
 	})
 }
 
+// TypeEQ applies the EQ predicate on the "type" field.
+func TypeEQ(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldType), v))
+	})
+}
+
+// TypeNEQ applies the NEQ predicate on the "type" field.
+func TypeNEQ(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldType), v))
+	})
+}
+
+// TypeIn applies the In predicate on the "type" field.
+func TypeIn(vs ...string) predicate.Merchant {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Merchant(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldType), v...))
+	})
+}
+
+// TypeNotIn applies the NotIn predicate on the "type" field.
+func TypeNotIn(vs ...string) predicate.Merchant {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Merchant(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldType), v...))
+	})
+}
+
+// TypeGT applies the GT predicate on the "type" field.
+func TypeGT(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldType), v))
+	})
+}
+
+// TypeGTE applies the GTE predicate on the "type" field.
+func TypeGTE(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldType), v))
+	})
+}
+
+// TypeLT applies the LT predicate on the "type" field.
+func TypeLT(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldType), v))
+	})
+}
+
+// TypeLTE applies the LTE predicate on the "type" field.
+func TypeLTE(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldType), v))
+	})
+}
+
+// TypeContains applies the Contains predicate on the "type" field.
+func TypeContains(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldType), v))
+	})
+}
+
+// TypeHasPrefix applies the HasPrefix predicate on the "type" field.
+func TypeHasPrefix(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldType), v))
+	})
+}
+
+// TypeHasSuffix applies the HasSuffix predicate on the "type" field.
+func TypeHasSuffix(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldType), v))
+	})
+}
+
+// TypeEqualFold applies the EqualFold predicate on the "type" field.
+func TypeEqualFold(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldType), v))
+	})
+}
+
+// TypeContainsFold applies the ContainsFold predicate on the "type" field.
+func TypeContainsFold(v string) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldType), v))
+	})
+}
+
 // HasSupplier applies the HasEdge predicate on the "supplier" edge.
 func HasSupplier() predicate.Merchant {
 	return predicate.Merchant(func(s *sql.Selector) {
@@ -516,13 +634,41 @@ func HasRetailerWith(preds ...predicate.RetailMerchant) predicate.Merchant {
 	})
 }
 
+// HasStore applies the HasEdge predicate on the "store" edge.
+func HasStore() predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StoreTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, StoreTable, StoreColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStoreWith applies the HasEdge predicate on the "store" edge with a given conditions (other predicates).
+func HasStoreWith(preds ...predicate.MerchantStore) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StoreInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, StoreTable, StoreColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasProducts applies the HasEdge predicate on the "products" edge.
 func HasProducts() predicate.Merchant {
 	return predicate.Merchant(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ProductsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, ProductsTable, ProductsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProductsTable, ProductsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -534,7 +680,119 @@ func HasProductsWith(preds ...predicate.Product) predicate.Merchant {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ProductsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, ProductsTable, ProductsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProductsTable, ProductsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAddresses applies the HasEdge predicate on the "addresses" edge.
+func HasAddresses() predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AddressesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AddressesTable, AddressesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAddressesWith applies the HasEdge predicate on the "addresses" edge with a given conditions (other predicates).
+func HasAddressesWith(preds ...predicate.Address) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AddressesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AddressesTable, AddressesColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOrders applies the HasEdge predicate on the "orders" edge.
+func HasOrders() predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OrdersTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrdersWith applies the HasEdge predicate on the "orders" edge with a given conditions (other predicates).
+func HasOrdersWith(preds ...predicate.Order) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OrdersInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasBaskets applies the HasEdge predicate on the "baskets" edge.
+func HasBaskets() predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(BasketsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BasketsTable, BasketsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBasketsWith applies the HasEdge predicate on the "baskets" edge with a given conditions (other predicates).
+func HasBasketsWith(preds ...predicate.Basket) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(BasketsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BasketsTable, BasketsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasFavourites applies the HasEdge predicate on the "favourites" edge.
+func HasFavourites() predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(FavouritesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFavouritesWith applies the HasEdge predicate on the "favourites" edge with a given conditions (other predicates).
+func HasFavouritesWith(preds ...predicate.Favourite) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(FavouritesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

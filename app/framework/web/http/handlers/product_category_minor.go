@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"fmt"
-
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/product_cat_minor"
@@ -39,13 +37,14 @@ func (h *ProductCatMinorHandler) FetchByID() fiber.Handler {
 func (h *ProductCatMinorHandler) Fetch() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		result, err := h.service.FetchAll()
+		results, err := h.service.FetchAll()
 
 		if err != nil {
 
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductCatMinorErrorResponse(err))
 		}
-		return c.JSON(presenters.ProductCatMinorsSuccessResponse(result))
+
+		return c.JSON(presenters.ProductCatMinorsSuccessResponse(results))
 	}
 }
 
@@ -63,7 +62,7 @@ func (h *ProductCatMinorHandler) Create() fiber.Handler {
 		cat, err := h.service.Create(&request)
 
 		if err != nil {
-			fmt.Println(err)
+
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductCatMinorErrorResponse(err))
 		}
 		return c.JSON(presenters.ProductCatMinorSuccessResponse(cat))

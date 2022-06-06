@@ -28,8 +28,9 @@ type ProductCategoryMinorQuery struct {
 	fields     []string
 	predicates []predicate.ProductCategoryMinor
 	// eager-loading edges.
-	withProducts *ProductQuery
 	withMajor    *ProductCategoryMajorQuery
+	withProducts *ProductQuery
+	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -66,28 +67,6 @@ func (pcmq *ProductCategoryMinorQuery) Order(o ...OrderFunc) *ProductCategoryMin
 	return pcmq
 }
 
-// QueryProducts chains the current query on the "products" edge.
-func (pcmq *ProductCategoryMinorQuery) QueryProducts() *ProductQuery {
-	query := &ProductQuery{config: pcmq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := pcmq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := pcmq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(productcategoryminor.Table, productcategoryminor.FieldID, selector),
-			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, productcategoryminor.ProductsTable, productcategoryminor.ProductsPrimaryKey...),
-		)
-		fromU = sqlgraph.SetNeighbors(pcmq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // QueryMajor chains the current query on the "major" edge.
 func (pcmq *ProductCategoryMinorQuery) QueryMajor() *ProductCategoryMajorQuery {
 	query := &ProductCategoryMajorQuery{config: pcmq.config}
@@ -102,7 +81,29 @@ func (pcmq *ProductCategoryMinorQuery) QueryMajor() *ProductCategoryMajorQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(productcategoryminor.Table, productcategoryminor.FieldID, selector),
 			sqlgraph.To(productcategorymajor.Table, productcategorymajor.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, productcategoryminor.MajorTable, productcategoryminor.MajorPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, productcategoryminor.MajorTable, productcategoryminor.MajorColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pcmq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProducts chains the current query on the "products" edge.
+func (pcmq *ProductCategoryMinorQuery) QueryProducts() *ProductQuery {
+	query := &ProductQuery{config: pcmq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pcmq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pcmq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(productcategoryminor.Table, productcategoryminor.FieldID, selector),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, productcategoryminor.ProductsTable, productcategoryminor.ProductsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pcmq.driver.Dialect(), step)
 		return fromU, nil
@@ -291,24 +292,13 @@ func (pcmq *ProductCategoryMinorQuery) Clone() *ProductCategoryMinorQuery {
 		offset:       pcmq.offset,
 		order:        append([]OrderFunc{}, pcmq.order...),
 		predicates:   append([]predicate.ProductCategoryMinor{}, pcmq.predicates...),
-		withProducts: pcmq.withProducts.Clone(),
 		withMajor:    pcmq.withMajor.Clone(),
+		withProducts: pcmq.withProducts.Clone(),
 		// clone intermediate query.
 		sql:    pcmq.sql.Clone(),
 		path:   pcmq.path,
 		unique: pcmq.unique,
 	}
-}
-
-// WithProducts tells the query-builder to eager-load the nodes that are connected to
-// the "products" edge. The optional arguments are used to configure the query builder of the edge.
-func (pcmq *ProductCategoryMinorQuery) WithProducts(opts ...func(*ProductQuery)) *ProductCategoryMinorQuery {
-	query := &ProductQuery{config: pcmq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	pcmq.withProducts = query
-	return pcmq
 }
 
 // WithMajor tells the query-builder to eager-load the nodes that are connected to
@@ -319,6 +309,17 @@ func (pcmq *ProductCategoryMinorQuery) WithMajor(opts ...func(*ProductCategoryMa
 		opt(query)
 	}
 	pcmq.withMajor = query
+	return pcmq
+}
+
+// WithProducts tells the query-builder to eager-load the nodes that are connected to
+// the "products" edge. The optional arguments are used to configure the query builder of the edge.
+func (pcmq *ProductCategoryMinorQuery) WithProducts(opts ...func(*ProductQuery)) *ProductCategoryMinorQuery {
+	query := &ProductQuery{config: pcmq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	pcmq.withProducts = query
 	return pcmq
 }
 
@@ -386,12 +387,19 @@ func (pcmq *ProductCategoryMinorQuery) prepareQuery(ctx context.Context) error {
 func (pcmq *ProductCategoryMinorQuery) sqlAll(ctx context.Context) ([]*ProductCategoryMinor, error) {
 	var (
 		nodes       = []*ProductCategoryMinor{}
+		withFKs     = pcmq.withFKs
 		_spec       = pcmq.querySpec()
 		loadedTypes = [2]bool{
-			pcmq.withProducts != nil,
 			pcmq.withMajor != nil,
+			pcmq.withProducts != nil,
 		}
 	)
+	if pcmq.withMajor != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, productcategoryminor.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &ProductCategoryMinor{config: pcmq.config}
 		nodes = append(nodes, node)
@@ -412,133 +420,61 @@ func (pcmq *ProductCategoryMinorQuery) sqlAll(ctx context.Context) ([]*ProductCa
 		return nodes, nil
 	}
 
-	if query := pcmq.withProducts; query != nil {
-		fks := make([]driver.Value, 0, len(nodes))
-		ids := make(map[int]*ProductCategoryMinor, len(nodes))
-		for _, node := range nodes {
-			ids[node.ID] = node
-			fks = append(fks, node.ID)
-			node.Edges.Products = []*Product{}
+	if query := pcmq.withMajor; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*ProductCategoryMinor)
+		for i := range nodes {
+			if nodes[i].product_category_major_minors == nil {
+				continue
+			}
+			fk := *nodes[i].product_category_major_minors
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
-		var (
-			edgeids []int
-			edges   = make(map[int][]*ProductCategoryMinor)
-		)
-		_spec := &sqlgraph.EdgeQuerySpec{
-			Edge: &sqlgraph.EdgeSpec{
-				Inverse: false,
-				Table:   productcategoryminor.ProductsTable,
-				Columns: productcategoryminor.ProductsPrimaryKey,
-			},
-			Predicate: func(s *sql.Selector) {
-				s.Where(sql.InValues(productcategoryminor.ProductsPrimaryKey[0], fks...))
-			},
-			ScanValues: func() [2]interface{} {
-				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
-			},
-			Assign: func(out, in interface{}) error {
-				eout, ok := out.(*sql.NullInt64)
-				if !ok || eout == nil {
-					return fmt.Errorf("unexpected id value for edge-out")
-				}
-				ein, ok := in.(*sql.NullInt64)
-				if !ok || ein == nil {
-					return fmt.Errorf("unexpected id value for edge-in")
-				}
-				outValue := int(eout.Int64)
-				inValue := int(ein.Int64)
-				node, ok := ids[outValue]
-				if !ok {
-					return fmt.Errorf("unexpected node id in edges: %v", outValue)
-				}
-				if _, ok := edges[inValue]; !ok {
-					edgeids = append(edgeids, inValue)
-				}
-				edges[inValue] = append(edges[inValue], node)
-				return nil
-			},
-		}
-		if err := sqlgraph.QueryEdges(ctx, pcmq.driver, _spec); err != nil {
-			return nil, fmt.Errorf(`query edges "products": %w`, err)
-		}
-		query.Where(product.IDIn(edgeids...))
+		query.Where(productcategorymajor.IDIn(ids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			nodes, ok := edges[n.ID]
+			nodes, ok := nodeids[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected "products" node returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "product_category_major_minors" returned %v`, n.ID)
 			}
 			for i := range nodes {
-				nodes[i].Edges.Products = append(nodes[i].Edges.Products, n)
+				nodes[i].Edges.Major = n
 			}
 		}
 	}
 
-	if query := pcmq.withMajor; query != nil {
+	if query := pcmq.withProducts; query != nil {
 		fks := make([]driver.Value, 0, len(nodes))
-		ids := make(map[int]*ProductCategoryMinor, len(nodes))
-		for _, node := range nodes {
-			ids[node.ID] = node
-			fks = append(fks, node.ID)
-			node.Edges.Major = []*ProductCategoryMajor{}
+		nodeids := make(map[int]*ProductCategoryMinor)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Products = []*Product{}
 		}
-		var (
-			edgeids []int
-			edges   = make(map[int][]*ProductCategoryMinor)
-		)
-		_spec := &sqlgraph.EdgeQuerySpec{
-			Edge: &sqlgraph.EdgeSpec{
-				Inverse: true,
-				Table:   productcategoryminor.MajorTable,
-				Columns: productcategoryminor.MajorPrimaryKey,
-			},
-			Predicate: func(s *sql.Selector) {
-				s.Where(sql.InValues(productcategoryminor.MajorPrimaryKey[1], fks...))
-			},
-			ScanValues: func() [2]interface{} {
-				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
-			},
-			Assign: func(out, in interface{}) error {
-				eout, ok := out.(*sql.NullInt64)
-				if !ok || eout == nil {
-					return fmt.Errorf("unexpected id value for edge-out")
-				}
-				ein, ok := in.(*sql.NullInt64)
-				if !ok || ein == nil {
-					return fmt.Errorf("unexpected id value for edge-in")
-				}
-				outValue := int(eout.Int64)
-				inValue := int(ein.Int64)
-				node, ok := ids[outValue]
-				if !ok {
-					return fmt.Errorf("unexpected node id in edges: %v", outValue)
-				}
-				if _, ok := edges[inValue]; !ok {
-					edgeids = append(edgeids, inValue)
-				}
-				edges[inValue] = append(edges[inValue], node)
-				return nil
-			},
-		}
-		if err := sqlgraph.QueryEdges(ctx, pcmq.driver, _spec); err != nil {
-			return nil, fmt.Errorf(`query edges "major": %w`, err)
-		}
-		query.Where(productcategorymajor.IDIn(edgeids...))
+		query.withFKs = true
+		query.Where(predicate.Product(func(s *sql.Selector) {
+			s.Where(sql.InValues(productcategoryminor.ProductsColumn, fks...))
+		}))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			nodes, ok := edges[n.ID]
+			fk := n.product_category_minor_products
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "product_category_minor_products" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected "major" node returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "product_category_minor_products" returned %v for node %v`, *fk, n.ID)
 			}
-			for i := range nodes {
-				nodes[i].Edges.Major = append(nodes[i].Edges.Major, n)
-			}
+			node.Edges.Products = append(node.Edges.Products, n)
 		}
 	}
 

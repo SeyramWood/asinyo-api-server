@@ -33,8 +33,6 @@ func (SupplierMerchant) Fields() []ent.Field {
 // Edges of the SupplierMerchant.
 func (SupplierMerchant) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("products", Product.Type).
-			Unique(),
 		edge.From("merchant", Merchant.Type).
 			Ref("supplier").
 			Unique().

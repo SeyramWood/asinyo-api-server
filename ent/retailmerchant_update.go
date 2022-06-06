@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/predicate"
-	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/retailmerchant"
 )
 
@@ -92,25 +91,6 @@ func (rmu *RetailMerchantUpdate) SetDigitalAddress(s string) *RetailMerchantUpda
 	return rmu
 }
 
-// SetProductsID sets the "products" edge to the Product entity by ID.
-func (rmu *RetailMerchantUpdate) SetProductsID(id int) *RetailMerchantUpdate {
-	rmu.mutation.SetProductsID(id)
-	return rmu
-}
-
-// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
-func (rmu *RetailMerchantUpdate) SetNillableProductsID(id *int) *RetailMerchantUpdate {
-	if id != nil {
-		rmu = rmu.SetProductsID(*id)
-	}
-	return rmu
-}
-
-// SetProducts sets the "products" edge to the Product entity.
-func (rmu *RetailMerchantUpdate) SetProducts(p *Product) *RetailMerchantUpdate {
-	return rmu.SetProductsID(p.ID)
-}
-
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (rmu *RetailMerchantUpdate) SetMerchantID(id int) *RetailMerchantUpdate {
 	rmu.mutation.SetMerchantID(id)
@@ -125,12 +105,6 @@ func (rmu *RetailMerchantUpdate) SetMerchant(m *Merchant) *RetailMerchantUpdate 
 // Mutation returns the RetailMerchantMutation object of the builder.
 func (rmu *RetailMerchantUpdate) Mutation() *RetailMerchantMutation {
 	return rmu.mutation
-}
-
-// ClearProducts clears the "products" edge to the Product entity.
-func (rmu *RetailMerchantUpdate) ClearProducts() *RetailMerchantUpdate {
-	rmu.mutation.ClearProducts()
-	return rmu
 }
 
 // ClearMerchant clears the "merchant" edge to the Merchant entity.
@@ -326,41 +300,6 @@ func (rmu *RetailMerchantUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Column: retailmerchant.FieldDigitalAddress,
 		})
 	}
-	if rmu.mutation.ProductsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   retailmerchant.ProductsTable,
-			Columns: []string{retailmerchant.ProductsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := rmu.mutation.ProductsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   retailmerchant.ProductsTable,
-			Columns: []string{retailmerchant.ProductsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if rmu.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
@@ -477,25 +416,6 @@ func (rmuo *RetailMerchantUpdateOne) SetDigitalAddress(s string) *RetailMerchant
 	return rmuo
 }
 
-// SetProductsID sets the "products" edge to the Product entity by ID.
-func (rmuo *RetailMerchantUpdateOne) SetProductsID(id int) *RetailMerchantUpdateOne {
-	rmuo.mutation.SetProductsID(id)
-	return rmuo
-}
-
-// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
-func (rmuo *RetailMerchantUpdateOne) SetNillableProductsID(id *int) *RetailMerchantUpdateOne {
-	if id != nil {
-		rmuo = rmuo.SetProductsID(*id)
-	}
-	return rmuo
-}
-
-// SetProducts sets the "products" edge to the Product entity.
-func (rmuo *RetailMerchantUpdateOne) SetProducts(p *Product) *RetailMerchantUpdateOne {
-	return rmuo.SetProductsID(p.ID)
-}
-
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (rmuo *RetailMerchantUpdateOne) SetMerchantID(id int) *RetailMerchantUpdateOne {
 	rmuo.mutation.SetMerchantID(id)
@@ -510,12 +430,6 @@ func (rmuo *RetailMerchantUpdateOne) SetMerchant(m *Merchant) *RetailMerchantUpd
 // Mutation returns the RetailMerchantMutation object of the builder.
 func (rmuo *RetailMerchantUpdateOne) Mutation() *RetailMerchantMutation {
 	return rmuo.mutation
-}
-
-// ClearProducts clears the "products" edge to the Product entity.
-func (rmuo *RetailMerchantUpdateOne) ClearProducts() *RetailMerchantUpdateOne {
-	rmuo.mutation.ClearProducts()
-	return rmuo
 }
 
 // ClearMerchant clears the "merchant" edge to the Merchant entity.
@@ -734,41 +648,6 @@ func (rmuo *RetailMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Retail
 			Value:  value,
 			Column: retailmerchant.FieldDigitalAddress,
 		})
-	}
-	if rmuo.mutation.ProductsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   retailmerchant.ProductsTable,
-			Columns: []string{retailmerchant.ProductsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := rmuo.mutation.ProductsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   retailmerchant.ProductsTable,
-			Columns: []string{retailmerchant.ProductsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if rmuo.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{

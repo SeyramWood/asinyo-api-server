@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
 )
 
@@ -22,38 +23,48 @@ type ProductCategoryMinor struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Category holds the value of the "category" field.
 	Category string `json:"category,omitempty"`
+	// Image holds the value of the "image" field.
+	Image string `json:"image,omitempty"`
+	// Sulg holds the value of the "sulg" field.
+	Sulg string `json:"sulg,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProductCategoryMinorQuery when eager-loading is set.
-	Edges ProductCategoryMinorEdges `json:"edges"`
+	Edges                         ProductCategoryMinorEdges `json:"edges"`
+	product_category_major_minors *int
 }
 
 // ProductCategoryMinorEdges holds the relations/edges for other nodes in the graph.
 type ProductCategoryMinorEdges struct {
+	// Major holds the value of the major edge.
+	Major *ProductCategoryMajor `json:"major,omitempty"`
 	// Products holds the value of the products edge.
 	Products []*Product `json:"products,omitempty"`
-	// Major holds the value of the major edge.
-	Major []*ProductCategoryMajor `json:"major,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
 }
 
-// ProductsOrErr returns the Products value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProductCategoryMinorEdges) ProductsOrErr() ([]*Product, error) {
-	if e.loadedTypes[0] {
-		return e.Products, nil
-	}
-	return nil, &NotLoadedError{edge: "products"}
-}
-
 // MajorOrErr returns the Major value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProductCategoryMinorEdges) MajorOrErr() ([]*ProductCategoryMajor, error) {
-	if e.loadedTypes[1] {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProductCategoryMinorEdges) MajorOrErr() (*ProductCategoryMajor, error) {
+	if e.loadedTypes[0] {
+		if e.Major == nil {
+			// The edge major was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: productcategorymajor.Label}
+		}
 		return e.Major, nil
 	}
 	return nil, &NotLoadedError{edge: "major"}
+}
+
+// ProductsOrErr returns the Products value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProductCategoryMinorEdges) ProductsOrErr() ([]*Product, error) {
+	if e.loadedTypes[1] {
+		return e.Products, nil
+	}
+	return nil, &NotLoadedError{edge: "products"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -63,10 +74,12 @@ func (*ProductCategoryMinor) scanValues(columns []string) ([]interface{}, error)
 		switch columns[i] {
 		case productcategoryminor.FieldID:
 			values[i] = new(sql.NullInt64)
-		case productcategoryminor.FieldCategory:
+		case productcategoryminor.FieldCategory, productcategoryminor.FieldImage, productcategoryminor.FieldSulg:
 			values[i] = new(sql.NullString)
 		case productcategoryminor.FieldCreatedAt, productcategoryminor.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case productcategoryminor.ForeignKeys[0]: // product_category_major_minors
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type ProductCategoryMinor", columns[i])
 		}
@@ -106,19 +119,38 @@ func (pcm *ProductCategoryMinor) assignValues(columns []string, values []interfa
 			} else if value.Valid {
 				pcm.Category = value.String
 			}
+		case productcategoryminor.FieldImage:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field image", values[i])
+			} else if value.Valid {
+				pcm.Image = value.String
+			}
+		case productcategoryminor.FieldSulg:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field sulg", values[i])
+			} else if value.Valid {
+				pcm.Sulg = value.String
+			}
+		case productcategoryminor.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field product_category_major_minors", value)
+			} else if value.Valid {
+				pcm.product_category_major_minors = new(int)
+				*pcm.product_category_major_minors = int(value.Int64)
+			}
 		}
 	}
 	return nil
 }
 
-// QueryProducts queries the "products" edge of the ProductCategoryMinor entity.
-func (pcm *ProductCategoryMinor) QueryProducts() *ProductQuery {
-	return (&ProductCategoryMinorClient{config: pcm.config}).QueryProducts(pcm)
-}
-
 // QueryMajor queries the "major" edge of the ProductCategoryMinor entity.
 func (pcm *ProductCategoryMinor) QueryMajor() *ProductCategoryMajorQuery {
 	return (&ProductCategoryMinorClient{config: pcm.config}).QueryMajor(pcm)
+}
+
+// QueryProducts queries the "products" edge of the ProductCategoryMinor entity.
+func (pcm *ProductCategoryMinor) QueryProducts() *ProductQuery {
+	return (&ProductCategoryMinorClient{config: pcm.config}).QueryProducts(pcm)
 }
 
 // Update returns a builder for updating this ProductCategoryMinor.
@@ -150,6 +182,10 @@ func (pcm *ProductCategoryMinor) String() string {
 	builder.WriteString(pcm.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", category=")
 	builder.WriteString(pcm.Category)
+	builder.WriteString(", image=")
+	builder.WriteString(pcm.Image)
+	builder.WriteString(", sulg=")
+	builder.WriteString(pcm.Sulg)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -22,6 +22,7 @@ func (Merchant) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("username").NotEmpty().Unique(),
 		field.Bytes("password").NotEmpty().Sensitive(),
+		field.String("type").NotEmpty(),
 	}
 }
 
@@ -32,7 +33,12 @@ func (Merchant) Edges() []ent.Edge {
 			Unique(),
 		edge.To("retailer", RetailMerchant.Type).
 			Unique(),
-		edge.To("products", Product.Type).
+		edge.To("store", MerchantStore.Type).
 			Unique(),
+		edge.To("products", Product.Type),
+		edge.To("addresses", Address.Type),
+		edge.To("orders", Order.Type),
+		edge.To("baskets", Basket.Type),
+		edge.To("favourites", Favourite.Type),
 	}
 }

@@ -11,7 +11,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
+	"github.com/SeyramWood/ent/basket"
+	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
 
@@ -102,9 +106,153 @@ func (au *AgentUpdate) SetDigitalAddress(s string) *AgentUpdate {
 	return au
 }
 
+// AddAddressIDs adds the "addresses" edge to the Address entity by IDs.
+func (au *AgentUpdate) AddAddressIDs(ids ...int) *AgentUpdate {
+	au.mutation.AddAddressIDs(ids...)
+	return au
+}
+
+// AddAddresses adds the "addresses" edges to the Address entity.
+func (au *AgentUpdate) AddAddresses(a ...*Address) *AgentUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return au.AddAddressIDs(ids...)
+}
+
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (au *AgentUpdate) AddOrderIDs(ids ...int) *AgentUpdate {
+	au.mutation.AddOrderIDs(ids...)
+	return au
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (au *AgentUpdate) AddOrders(o ...*Order) *AgentUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return au.AddOrderIDs(ids...)
+}
+
+// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
+func (au *AgentUpdate) AddBasketIDs(ids ...int) *AgentUpdate {
+	au.mutation.AddBasketIDs(ids...)
+	return au
+}
+
+// AddBaskets adds the "baskets" edges to the Basket entity.
+func (au *AgentUpdate) AddBaskets(b ...*Basket) *AgentUpdate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return au.AddBasketIDs(ids...)
+}
+
+// AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
+func (au *AgentUpdate) AddFavouriteIDs(ids ...int) *AgentUpdate {
+	au.mutation.AddFavouriteIDs(ids...)
+	return au
+}
+
+// AddFavourites adds the "favourites" edges to the Favourite entity.
+func (au *AgentUpdate) AddFavourites(f ...*Favourite) *AgentUpdate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return au.AddFavouriteIDs(ids...)
+}
+
 // Mutation returns the AgentMutation object of the builder.
 func (au *AgentUpdate) Mutation() *AgentMutation {
 	return au.mutation
+}
+
+// ClearAddresses clears all "addresses" edges to the Address entity.
+func (au *AgentUpdate) ClearAddresses() *AgentUpdate {
+	au.mutation.ClearAddresses()
+	return au
+}
+
+// RemoveAddressIDs removes the "addresses" edge to Address entities by IDs.
+func (au *AgentUpdate) RemoveAddressIDs(ids ...int) *AgentUpdate {
+	au.mutation.RemoveAddressIDs(ids...)
+	return au
+}
+
+// RemoveAddresses removes "addresses" edges to Address entities.
+func (au *AgentUpdate) RemoveAddresses(a ...*Address) *AgentUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return au.RemoveAddressIDs(ids...)
+}
+
+// ClearOrders clears all "orders" edges to the Order entity.
+func (au *AgentUpdate) ClearOrders() *AgentUpdate {
+	au.mutation.ClearOrders()
+	return au
+}
+
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (au *AgentUpdate) RemoveOrderIDs(ids ...int) *AgentUpdate {
+	au.mutation.RemoveOrderIDs(ids...)
+	return au
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (au *AgentUpdate) RemoveOrders(o ...*Order) *AgentUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return au.RemoveOrderIDs(ids...)
+}
+
+// ClearBaskets clears all "baskets" edges to the Basket entity.
+func (au *AgentUpdate) ClearBaskets() *AgentUpdate {
+	au.mutation.ClearBaskets()
+	return au
+}
+
+// RemoveBasketIDs removes the "baskets" edge to Basket entities by IDs.
+func (au *AgentUpdate) RemoveBasketIDs(ids ...int) *AgentUpdate {
+	au.mutation.RemoveBasketIDs(ids...)
+	return au
+}
+
+// RemoveBaskets removes "baskets" edges to Basket entities.
+func (au *AgentUpdate) RemoveBaskets(b ...*Basket) *AgentUpdate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return au.RemoveBasketIDs(ids...)
+}
+
+// ClearFavourites clears all "favourites" edges to the Favourite entity.
+func (au *AgentUpdate) ClearFavourites() *AgentUpdate {
+	au.mutation.ClearFavourites()
+	return au
+}
+
+// RemoveFavouriteIDs removes the "favourites" edge to Favourite entities by IDs.
+func (au *AgentUpdate) RemoveFavouriteIDs(ids ...int) *AgentUpdate {
+	au.mutation.RemoveFavouriteIDs(ids...)
+	return au
+}
+
+// RemoveFavourites removes "favourites" edges to Favourite entities.
+func (au *AgentUpdate) RemoveFavourites(f ...*Favourite) *AgentUpdate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return au.RemoveFavouriteIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -315,6 +463,222 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: agent.FieldDigitalAddress,
 		})
 	}
+	if au.mutation.AddressesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.AddressesTable,
+			Columns: []string{agent.AddressesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedAddressesIDs(); len(nodes) > 0 && !au.mutation.AddressesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.AddressesTable,
+			Columns: []string{agent.AddressesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.AddressesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.AddressesTable,
+			Columns: []string{agent.AddressesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if au.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.OrdersTable,
+			Columns: []string{agent.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !au.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.OrdersTable,
+			Columns: []string{agent.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.OrdersTable,
+			Columns: []string{agent.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if au.mutation.BasketsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.BasketsTable,
+			Columns: []string{agent.BasketsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedBasketsIDs(); len(nodes) > 0 && !au.mutation.BasketsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.BasketsTable,
+			Columns: []string{agent.BasketsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.BasketsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.BasketsTable,
+			Columns: []string{agent.BasketsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if au.mutation.FavouritesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.FavouritesTable,
+			Columns: []string{agent.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedFavouritesIDs(); len(nodes) > 0 && !au.mutation.FavouritesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.FavouritesTable,
+			Columns: []string{agent.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.FavouritesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.FavouritesTable,
+			Columns: []string{agent.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{agent.Label}
@@ -408,9 +772,153 @@ func (auo *AgentUpdateOne) SetDigitalAddress(s string) *AgentUpdateOne {
 	return auo
 }
 
+// AddAddressIDs adds the "addresses" edge to the Address entity by IDs.
+func (auo *AgentUpdateOne) AddAddressIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.AddAddressIDs(ids...)
+	return auo
+}
+
+// AddAddresses adds the "addresses" edges to the Address entity.
+func (auo *AgentUpdateOne) AddAddresses(a ...*Address) *AgentUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return auo.AddAddressIDs(ids...)
+}
+
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (auo *AgentUpdateOne) AddOrderIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.AddOrderIDs(ids...)
+	return auo
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (auo *AgentUpdateOne) AddOrders(o ...*Order) *AgentUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return auo.AddOrderIDs(ids...)
+}
+
+// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
+func (auo *AgentUpdateOne) AddBasketIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.AddBasketIDs(ids...)
+	return auo
+}
+
+// AddBaskets adds the "baskets" edges to the Basket entity.
+func (auo *AgentUpdateOne) AddBaskets(b ...*Basket) *AgentUpdateOne {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return auo.AddBasketIDs(ids...)
+}
+
+// AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
+func (auo *AgentUpdateOne) AddFavouriteIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.AddFavouriteIDs(ids...)
+	return auo
+}
+
+// AddFavourites adds the "favourites" edges to the Favourite entity.
+func (auo *AgentUpdateOne) AddFavourites(f ...*Favourite) *AgentUpdateOne {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return auo.AddFavouriteIDs(ids...)
+}
+
 // Mutation returns the AgentMutation object of the builder.
 func (auo *AgentUpdateOne) Mutation() *AgentMutation {
 	return auo.mutation
+}
+
+// ClearAddresses clears all "addresses" edges to the Address entity.
+func (auo *AgentUpdateOne) ClearAddresses() *AgentUpdateOne {
+	auo.mutation.ClearAddresses()
+	return auo
+}
+
+// RemoveAddressIDs removes the "addresses" edge to Address entities by IDs.
+func (auo *AgentUpdateOne) RemoveAddressIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.RemoveAddressIDs(ids...)
+	return auo
+}
+
+// RemoveAddresses removes "addresses" edges to Address entities.
+func (auo *AgentUpdateOne) RemoveAddresses(a ...*Address) *AgentUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return auo.RemoveAddressIDs(ids...)
+}
+
+// ClearOrders clears all "orders" edges to the Order entity.
+func (auo *AgentUpdateOne) ClearOrders() *AgentUpdateOne {
+	auo.mutation.ClearOrders()
+	return auo
+}
+
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (auo *AgentUpdateOne) RemoveOrderIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.RemoveOrderIDs(ids...)
+	return auo
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (auo *AgentUpdateOne) RemoveOrders(o ...*Order) *AgentUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return auo.RemoveOrderIDs(ids...)
+}
+
+// ClearBaskets clears all "baskets" edges to the Basket entity.
+func (auo *AgentUpdateOne) ClearBaskets() *AgentUpdateOne {
+	auo.mutation.ClearBaskets()
+	return auo
+}
+
+// RemoveBasketIDs removes the "baskets" edge to Basket entities by IDs.
+func (auo *AgentUpdateOne) RemoveBasketIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.RemoveBasketIDs(ids...)
+	return auo
+}
+
+// RemoveBaskets removes "baskets" edges to Basket entities.
+func (auo *AgentUpdateOne) RemoveBaskets(b ...*Basket) *AgentUpdateOne {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return auo.RemoveBasketIDs(ids...)
+}
+
+// ClearFavourites clears all "favourites" edges to the Favourite entity.
+func (auo *AgentUpdateOne) ClearFavourites() *AgentUpdateOne {
+	auo.mutation.ClearFavourites()
+	return auo
+}
+
+// RemoveFavouriteIDs removes the "favourites" edge to Favourite entities by IDs.
+func (auo *AgentUpdateOne) RemoveFavouriteIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.RemoveFavouriteIDs(ids...)
+	return auo
+}
+
+// RemoveFavourites removes "favourites" edges to Favourite entities.
+func (auo *AgentUpdateOne) RemoveFavourites(f ...*Favourite) *AgentUpdateOne {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return auo.RemoveFavouriteIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -644,6 +1152,222 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Value:  value,
 			Column: agent.FieldDigitalAddress,
 		})
+	}
+	if auo.mutation.AddressesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.AddressesTable,
+			Columns: []string{agent.AddressesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedAddressesIDs(); len(nodes) > 0 && !auo.mutation.AddressesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.AddressesTable,
+			Columns: []string{agent.AddressesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.AddressesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.AddressesTable,
+			Columns: []string{agent.AddressesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.OrdersTable,
+			Columns: []string{agent.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !auo.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.OrdersTable,
+			Columns: []string{agent.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.OrdersTable,
+			Columns: []string{agent.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.BasketsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.BasketsTable,
+			Columns: []string{agent.BasketsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedBasketsIDs(); len(nodes) > 0 && !auo.mutation.BasketsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.BasketsTable,
+			Columns: []string{agent.BasketsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.BasketsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.BasketsTable,
+			Columns: []string{agent.BasketsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.FavouritesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.FavouritesTable,
+			Columns: []string{agent.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedFavouritesIDs(); len(nodes) > 0 && !auo.mutation.FavouritesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.FavouritesTable,
+			Columns: []string{agent.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.FavouritesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.FavouritesTable,
+			Columns: []string{agent.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Agent{config: auo.config}
 	_spec.Assign = _node.assignValues

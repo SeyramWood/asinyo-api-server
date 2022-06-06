@@ -10,7 +10,11 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/address"
+	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/order"
 )
 
 // CustomerCreate is the builder for creating a Customer entity.
@@ -90,6 +94,66 @@ func (cc *CustomerCreate) SetNillableOtherPhone(s *string) *CustomerCreate {
 		cc.SetOtherPhone(*s)
 	}
 	return cc
+}
+
+// AddAddressIDs adds the "addresses" edge to the Address entity by IDs.
+func (cc *CustomerCreate) AddAddressIDs(ids ...int) *CustomerCreate {
+	cc.mutation.AddAddressIDs(ids...)
+	return cc
+}
+
+// AddAddresses adds the "addresses" edges to the Address entity.
+func (cc *CustomerCreate) AddAddresses(a ...*Address) *CustomerCreate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return cc.AddAddressIDs(ids...)
+}
+
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (cc *CustomerCreate) AddOrderIDs(ids ...int) *CustomerCreate {
+	cc.mutation.AddOrderIDs(ids...)
+	return cc
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (cc *CustomerCreate) AddOrders(o ...*Order) *CustomerCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return cc.AddOrderIDs(ids...)
+}
+
+// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
+func (cc *CustomerCreate) AddBasketIDs(ids ...int) *CustomerCreate {
+	cc.mutation.AddBasketIDs(ids...)
+	return cc
+}
+
+// AddBaskets adds the "baskets" edges to the Basket entity.
+func (cc *CustomerCreate) AddBaskets(b ...*Basket) *CustomerCreate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return cc.AddBasketIDs(ids...)
+}
+
+// AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
+func (cc *CustomerCreate) AddFavouriteIDs(ids ...int) *CustomerCreate {
+	cc.mutation.AddFavouriteIDs(ids...)
+	return cc
+}
+
+// AddFavourites adds the "favourites" edges to the Favourite entity.
+func (cc *CustomerCreate) AddFavourites(f ...*Favourite) *CustomerCreate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return cc.AddFavouriteIDs(ids...)
 }
 
 // Mutation returns the CustomerMutation object of the builder.
@@ -311,6 +375,82 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 			Column: customer.FieldOtherPhone,
 		})
 		_node.OtherPhone = &value
+	}
+	if nodes := cc.mutation.AddressesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.AddressesTable,
+			Columns: []string{customer.AddressesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.OrdersTable,
+			Columns: []string{customer.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.BasketsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.BasketsTable,
+			Columns: []string{customer.BasketsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.FavouritesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.FavouritesTable,
+			Columns: []string{customer.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

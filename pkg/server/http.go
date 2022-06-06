@@ -36,5 +36,5 @@ func NewHTTPServer() *HTTP {
 }
 
 func (http *HTTP) Run() {
-	log.Fatal(http.Server.Listen(fmt.Sprint(config.App().URL)))
+	log.Fatal(http.Server.Listen(fmt.Sprint(config.App().ServerURL)))
 }

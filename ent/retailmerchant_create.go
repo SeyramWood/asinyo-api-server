@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/merchant"
-	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/retailmerchant"
 )
 
@@ -98,25 +97,6 @@ func (rmc *RetailMerchantCreate) SetAddress(s string) *RetailMerchantCreate {
 func (rmc *RetailMerchantCreate) SetDigitalAddress(s string) *RetailMerchantCreate {
 	rmc.mutation.SetDigitalAddress(s)
 	return rmc
-}
-
-// SetProductsID sets the "products" edge to the Product entity by ID.
-func (rmc *RetailMerchantCreate) SetProductsID(id int) *RetailMerchantCreate {
-	rmc.mutation.SetProductsID(id)
-	return rmc
-}
-
-// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
-func (rmc *RetailMerchantCreate) SetNillableProductsID(id *int) *RetailMerchantCreate {
-	if id != nil {
-		rmc = rmc.SetProductsID(*id)
-	}
-	return rmc
-}
-
-// SetProducts sets the "products" edge to the Product entity.
-func (rmc *RetailMerchantCreate) SetProducts(p *Product) *RetailMerchantCreate {
-	return rmc.SetProductsID(p.ID)
 }
 
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
@@ -368,26 +348,6 @@ func (rmc *RetailMerchantCreate) createSpec() (*RetailMerchant, *sqlgraph.Create
 			Column: retailmerchant.FieldDigitalAddress,
 		})
 		_node.DigitalAddress = value
-	}
-	if nodes := rmc.mutation.ProductsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   retailmerchant.ProductsTable,
-			Columns: []string{retailmerchant.ProductsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.retail_merchant_products = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := rmc.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -56,6 +56,12 @@ func (pcmc *ProductCategoryMajorCreate) SetCategory(s string) *ProductCategoryMa
 	return pcmc
 }
 
+// SetSulg sets the "sulg" field.
+func (pcmc *ProductCategoryMajorCreate) SetSulg(s string) *ProductCategoryMajorCreate {
+	pcmc.mutation.SetSulg(s)
+	return pcmc
+}
+
 // AddMinorIDs adds the "minors" edge to the ProductCategoryMinor entity by IDs.
 func (pcmc *ProductCategoryMajorCreate) AddMinorIDs(ids ...int) *ProductCategoryMajorCreate {
 	pcmc.mutation.AddMinorIDs(ids...)
@@ -183,6 +189,14 @@ func (pcmc *ProductCategoryMajorCreate) check() error {
 			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMajor.category": %w`, err)}
 		}
 	}
+	if _, ok := pcmc.mutation.Sulg(); !ok {
+		return &ValidationError{Name: "sulg", err: errors.New(`ent: missing required field "ProductCategoryMajor.sulg"`)}
+	}
+	if v, ok := pcmc.mutation.Sulg(); ok {
+		if err := productcategorymajor.SulgValidator(v); err != nil {
+			return &ValidationError{Name: "sulg", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMajor.sulg": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -234,12 +248,20 @@ func (pcmc *ProductCategoryMajorCreate) createSpec() (*ProductCategoryMajor, *sq
 		})
 		_node.Category = value
 	}
+	if value, ok := pcmc.mutation.Sulg(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: productcategorymajor.FieldSulg,
+		})
+		_node.Sulg = value
+	}
 	if nodes := pcmc.mutation.MinorsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.MinorsTable,
-			Columns: productcategorymajor.MinorsPrimaryKey,
+			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -255,10 +277,10 @@ func (pcmc *ProductCategoryMajorCreate) createSpec() (*ProductCategoryMajor, *sq
 	}
 	if nodes := pcmc.mutation.ProductsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategorymajor.ProductsTable,
-			Columns: productcategorymajor.ProductsPrimaryKey,
+			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

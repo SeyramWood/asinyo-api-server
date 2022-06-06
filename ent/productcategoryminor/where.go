@@ -114,6 +114,20 @@ func Category(v string) predicate.ProductCategoryMinor {
 	})
 }
 
+// Image applies equality check predicate on the "image" field. It's identical to ImageEQ.
+func Image(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldImage), v))
+	})
+}
+
+// Sulg applies equality check predicate on the "sulg" field. It's identical to SulgEQ.
+func Sulg(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldSulg), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ProductCategoryMinor {
 	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
@@ -377,31 +391,225 @@ func CategoryContainsFold(v string) predicate.ProductCategoryMinor {
 	})
 }
 
-// HasProducts applies the HasEdge predicate on the "products" edge.
-func HasProducts() predicate.ProductCategoryMinor {
+// ImageEQ applies the EQ predicate on the "image" field.
+func ImageEQ(v string) predicate.ProductCategoryMinor {
 	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ProductsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, ProductsTable, ProductsPrimaryKey...),
-		)
-		sqlgraph.HasNeighbors(s, step)
+		s.Where(sql.EQ(s.C(FieldImage), v))
 	})
 }
 
-// HasProductsWith applies the HasEdge predicate on the "products" edge with a given conditions (other predicates).
-func HasProductsWith(preds ...predicate.Product) predicate.ProductCategoryMinor {
+// ImageNEQ applies the NEQ predicate on the "image" field.
+func ImageNEQ(v string) predicate.ProductCategoryMinor {
 	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ProductsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, ProductsTable, ProductsPrimaryKey...),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
+		s.Where(sql.NEQ(s.C(FieldImage), v))
+	})
+}
+
+// ImageIn applies the In predicate on the "image" field.
+func ImageIn(vs ...string) predicate.ProductCategoryMinor {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldImage), v...))
+	})
+}
+
+// ImageNotIn applies the NotIn predicate on the "image" field.
+func ImageNotIn(vs ...string) predicate.ProductCategoryMinor {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldImage), v...))
+	})
+}
+
+// ImageGT applies the GT predicate on the "image" field.
+func ImageGT(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldImage), v))
+	})
+}
+
+// ImageGTE applies the GTE predicate on the "image" field.
+func ImageGTE(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldImage), v))
+	})
+}
+
+// ImageLT applies the LT predicate on the "image" field.
+func ImageLT(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldImage), v))
+	})
+}
+
+// ImageLTE applies the LTE predicate on the "image" field.
+func ImageLTE(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldImage), v))
+	})
+}
+
+// ImageContains applies the Contains predicate on the "image" field.
+func ImageContains(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldImage), v))
+	})
+}
+
+// ImageHasPrefix applies the HasPrefix predicate on the "image" field.
+func ImageHasPrefix(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldImage), v))
+	})
+}
+
+// ImageHasSuffix applies the HasSuffix predicate on the "image" field.
+func ImageHasSuffix(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldImage), v))
+	})
+}
+
+// ImageEqualFold applies the EqualFold predicate on the "image" field.
+func ImageEqualFold(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldImage), v))
+	})
+}
+
+// ImageContainsFold applies the ContainsFold predicate on the "image" field.
+func ImageContainsFold(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldImage), v))
+	})
+}
+
+// SulgEQ applies the EQ predicate on the "sulg" field.
+func SulgEQ(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldSulg), v))
+	})
+}
+
+// SulgNEQ applies the NEQ predicate on the "sulg" field.
+func SulgNEQ(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldSulg), v))
+	})
+}
+
+// SulgIn applies the In predicate on the "sulg" field.
+func SulgIn(vs ...string) predicate.ProductCategoryMinor {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldSulg), v...))
+	})
+}
+
+// SulgNotIn applies the NotIn predicate on the "sulg" field.
+func SulgNotIn(vs ...string) predicate.ProductCategoryMinor {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldSulg), v...))
+	})
+}
+
+// SulgGT applies the GT predicate on the "sulg" field.
+func SulgGT(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldSulg), v))
+	})
+}
+
+// SulgGTE applies the GTE predicate on the "sulg" field.
+func SulgGTE(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldSulg), v))
+	})
+}
+
+// SulgLT applies the LT predicate on the "sulg" field.
+func SulgLT(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldSulg), v))
+	})
+}
+
+// SulgLTE applies the LTE predicate on the "sulg" field.
+func SulgLTE(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldSulg), v))
+	})
+}
+
+// SulgContains applies the Contains predicate on the "sulg" field.
+func SulgContains(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldSulg), v))
+	})
+}
+
+// SulgHasPrefix applies the HasPrefix predicate on the "sulg" field.
+func SulgHasPrefix(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldSulg), v))
+	})
+}
+
+// SulgHasSuffix applies the HasSuffix predicate on the "sulg" field.
+func SulgHasSuffix(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldSulg), v))
+	})
+}
+
+// SulgEqualFold applies the EqualFold predicate on the "sulg" field.
+func SulgEqualFold(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldSulg), v))
+	})
+}
+
+// SulgContainsFold applies the ContainsFold predicate on the "sulg" field.
+func SulgContainsFold(v string) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldSulg), v))
 	})
 }
 
@@ -411,7 +619,7 @@ func HasMajor() predicate.ProductCategoryMinor {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(MajorTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, MajorTable, MajorPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, MajorTable, MajorColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -423,7 +631,35 @@ func HasMajorWith(preds ...predicate.ProductCategoryMajor) predicate.ProductCate
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(MajorInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, MajorTable, MajorPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, MajorTable, MajorColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasProducts applies the HasEdge predicate on the "products" edge.
+func HasProducts() predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ProductsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProductsTable, ProductsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProductsWith applies the HasEdge predicate on the "products" edge with a given conditions (other predicates).
+func HasProductsWith(preds ...predicate.Product) predicate.ProductCategoryMinor {
+	return predicate.ProductCategoryMinor(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ProductsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProductsTable, ProductsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
