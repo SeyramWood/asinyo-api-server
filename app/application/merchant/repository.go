@@ -24,6 +24,7 @@ func (r *repository) Insert(mercthant *models.MerchantRequest) (*ent.Merchant, e
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(mercthant.Credentials.Password), 16)
 
 	merchant, err := r.db.Merchant.Create().
+		SetType(mercthant.Info.MerchantType).
 		SetUsername(mercthant.Credentials.Username).
 		SetPassword(hashPassword).
 		Save(context.Background())
@@ -46,9 +47,7 @@ func (r *repository) Insert(mercthant *models.MerchantRequest) (*ent.Merchant, e
 		if err != nil {
 			return nil, fmt.Errorf("failed creating merchant: %w", err)
 		}
-	}
-
-	if mercthant.Info.MerchantType == "retailer" {
+	} else if mercthant.Info.MerchantType == "retailer" {
 		_, err := r.db.RetailMerchant.Create().
 			SetMerchant(merchant).
 			SetGhanaCard(mercthant.Info.GhanaCard).

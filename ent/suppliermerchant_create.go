@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/merchant"
-	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/suppliermerchant"
 )
 
@@ -98,25 +97,6 @@ func (smc *SupplierMerchantCreate) SetAddress(s string) *SupplierMerchantCreate 
 func (smc *SupplierMerchantCreate) SetDigitalAddress(s string) *SupplierMerchantCreate {
 	smc.mutation.SetDigitalAddress(s)
 	return smc
-}
-
-// SetProductsID sets the "products" edge to the Product entity by ID.
-func (smc *SupplierMerchantCreate) SetProductsID(id int) *SupplierMerchantCreate {
-	smc.mutation.SetProductsID(id)
-	return smc
-}
-
-// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
-func (smc *SupplierMerchantCreate) SetNillableProductsID(id *int) *SupplierMerchantCreate {
-	if id != nil {
-		smc = smc.SetProductsID(*id)
-	}
-	return smc
-}
-
-// SetProducts sets the "products" edge to the Product entity.
-func (smc *SupplierMerchantCreate) SetProducts(p *Product) *SupplierMerchantCreate {
-	return smc.SetProductsID(p.ID)
 }
 
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
@@ -368,26 +348,6 @@ func (smc *SupplierMerchantCreate) createSpec() (*SupplierMerchant, *sqlgraph.Cr
 			Column: suppliermerchant.FieldDigitalAddress,
 		})
 		_node.DigitalAddress = value
-	}
-	if nodes := smc.mutation.ProductsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   suppliermerchant.ProductsTable,
-			Columns: []string{suppliermerchant.ProductsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.supplier_merchant_products = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := smc.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -42,6 +42,29 @@ func (pcmu *ProductCategoryMinorUpdate) SetCategory(s string) *ProductCategoryMi
 	return pcmu
 }
 
+// SetImage sets the "image" field.
+func (pcmu *ProductCategoryMinorUpdate) SetImage(s string) *ProductCategoryMinorUpdate {
+	pcmu.mutation.SetImage(s)
+	return pcmu
+}
+
+// SetSulg sets the "sulg" field.
+func (pcmu *ProductCategoryMinorUpdate) SetSulg(s string) *ProductCategoryMinorUpdate {
+	pcmu.mutation.SetSulg(s)
+	return pcmu
+}
+
+// SetMajorID sets the "major" edge to the ProductCategoryMajor entity by ID.
+func (pcmu *ProductCategoryMinorUpdate) SetMajorID(id int) *ProductCategoryMinorUpdate {
+	pcmu.mutation.SetMajorID(id)
+	return pcmu
+}
+
+// SetMajor sets the "major" edge to the ProductCategoryMajor entity.
+func (pcmu *ProductCategoryMinorUpdate) SetMajor(p *ProductCategoryMajor) *ProductCategoryMinorUpdate {
+	return pcmu.SetMajorID(p.ID)
+}
+
 // AddProductIDs adds the "products" edge to the Product entity by IDs.
 func (pcmu *ProductCategoryMinorUpdate) AddProductIDs(ids ...int) *ProductCategoryMinorUpdate {
 	pcmu.mutation.AddProductIDs(ids...)
@@ -57,24 +80,15 @@ func (pcmu *ProductCategoryMinorUpdate) AddProducts(p ...*Product) *ProductCateg
 	return pcmu.AddProductIDs(ids...)
 }
 
-// AddMajorIDs adds the "major" edge to the ProductCategoryMajor entity by IDs.
-func (pcmu *ProductCategoryMinorUpdate) AddMajorIDs(ids ...int) *ProductCategoryMinorUpdate {
-	pcmu.mutation.AddMajorIDs(ids...)
-	return pcmu
-}
-
-// AddMajor adds the "major" edges to the ProductCategoryMajor entity.
-func (pcmu *ProductCategoryMinorUpdate) AddMajor(p ...*ProductCategoryMajor) *ProductCategoryMinorUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return pcmu.AddMajorIDs(ids...)
-}
-
 // Mutation returns the ProductCategoryMinorMutation object of the builder.
 func (pcmu *ProductCategoryMinorUpdate) Mutation() *ProductCategoryMinorMutation {
 	return pcmu.mutation
+}
+
+// ClearMajor clears the "major" edge to the ProductCategoryMajor entity.
+func (pcmu *ProductCategoryMinorUpdate) ClearMajor() *ProductCategoryMinorUpdate {
+	pcmu.mutation.ClearMajor()
+	return pcmu
 }
 
 // ClearProducts clears all "products" edges to the Product entity.
@@ -96,27 +110,6 @@ func (pcmu *ProductCategoryMinorUpdate) RemoveProducts(p ...*Product) *ProductCa
 		ids[i] = p[i].ID
 	}
 	return pcmu.RemoveProductIDs(ids...)
-}
-
-// ClearMajor clears all "major" edges to the ProductCategoryMajor entity.
-func (pcmu *ProductCategoryMinorUpdate) ClearMajor() *ProductCategoryMinorUpdate {
-	pcmu.mutation.ClearMajor()
-	return pcmu
-}
-
-// RemoveMajorIDs removes the "major" edge to ProductCategoryMajor entities by IDs.
-func (pcmu *ProductCategoryMinorUpdate) RemoveMajorIDs(ids ...int) *ProductCategoryMinorUpdate {
-	pcmu.mutation.RemoveMajorIDs(ids...)
-	return pcmu
-}
-
-// RemoveMajor removes "major" edges to ProductCategoryMajor entities.
-func (pcmu *ProductCategoryMinorUpdate) RemoveMajor(p ...*ProductCategoryMajor) *ProductCategoryMinorUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return pcmu.RemoveMajorIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -195,6 +188,19 @@ func (pcmu *ProductCategoryMinorUpdate) check() error {
 			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.category": %w`, err)}
 		}
 	}
+	if v, ok := pcmu.mutation.Image(); ok {
+		if err := productcategoryminor.ImageValidator(v); err != nil {
+			return &ValidationError{Name: "image", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.image": %w`, err)}
+		}
+	}
+	if v, ok := pcmu.mutation.Sulg(); ok {
+		if err := productcategoryminor.SulgValidator(v); err != nil {
+			return &ValidationError{Name: "sulg", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.sulg": %w`, err)}
+		}
+	}
+	if _, ok := pcmu.mutation.MajorID(); pcmu.mutation.MajorCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "ProductCategoryMinor.major"`)
+	}
 	return nil
 }
 
@@ -230,12 +236,61 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 			Column: productcategoryminor.FieldCategory,
 		})
 	}
+	if value, ok := pcmu.mutation.Image(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: productcategoryminor.FieldImage,
+		})
+	}
+	if value, ok := pcmu.mutation.Sulg(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: productcategoryminor.FieldSulg,
+		})
+	}
+	if pcmu.mutation.MajorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   productcategoryminor.MajorTable,
+			Columns: []string{productcategoryminor.MajorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: productcategorymajor.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pcmu.mutation.MajorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   productcategoryminor.MajorTable,
+			Columns: []string{productcategoryminor.MajorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: productcategorymajor.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if pcmu.mutation.ProductsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategoryminor.ProductsTable,
-			Columns: productcategoryminor.ProductsPrimaryKey,
+			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -248,10 +303,10 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 	}
 	if nodes := pcmu.mutation.RemovedProductsIDs(); len(nodes) > 0 && !pcmu.mutation.ProductsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategoryminor.ProductsTable,
-			Columns: productcategoryminor.ProductsPrimaryKey,
+			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -267,69 +322,15 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 	}
 	if nodes := pcmu.mutation.ProductsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategoryminor.ProductsTable,
-			Columns: productcategoryminor.ProductsPrimaryKey,
+			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: product.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if pcmu.mutation.MajorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   productcategoryminor.MajorTable,
-			Columns: productcategoryminor.MajorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := pcmu.mutation.RemovedMajorIDs(); len(nodes) > 0 && !pcmu.mutation.MajorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   productcategoryminor.MajorTable,
-			Columns: productcategoryminor.MajorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := pcmu.mutation.MajorIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   productcategoryminor.MajorTable,
-			Columns: productcategoryminor.MajorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
 				},
 			},
 		}
@@ -369,6 +370,29 @@ func (pcmuo *ProductCategoryMinorUpdateOne) SetCategory(s string) *ProductCatego
 	return pcmuo
 }
 
+// SetImage sets the "image" field.
+func (pcmuo *ProductCategoryMinorUpdateOne) SetImage(s string) *ProductCategoryMinorUpdateOne {
+	pcmuo.mutation.SetImage(s)
+	return pcmuo
+}
+
+// SetSulg sets the "sulg" field.
+func (pcmuo *ProductCategoryMinorUpdateOne) SetSulg(s string) *ProductCategoryMinorUpdateOne {
+	pcmuo.mutation.SetSulg(s)
+	return pcmuo
+}
+
+// SetMajorID sets the "major" edge to the ProductCategoryMajor entity by ID.
+func (pcmuo *ProductCategoryMinorUpdateOne) SetMajorID(id int) *ProductCategoryMinorUpdateOne {
+	pcmuo.mutation.SetMajorID(id)
+	return pcmuo
+}
+
+// SetMajor sets the "major" edge to the ProductCategoryMajor entity.
+func (pcmuo *ProductCategoryMinorUpdateOne) SetMajor(p *ProductCategoryMajor) *ProductCategoryMinorUpdateOne {
+	return pcmuo.SetMajorID(p.ID)
+}
+
 // AddProductIDs adds the "products" edge to the Product entity by IDs.
 func (pcmuo *ProductCategoryMinorUpdateOne) AddProductIDs(ids ...int) *ProductCategoryMinorUpdateOne {
 	pcmuo.mutation.AddProductIDs(ids...)
@@ -384,24 +408,15 @@ func (pcmuo *ProductCategoryMinorUpdateOne) AddProducts(p ...*Product) *ProductC
 	return pcmuo.AddProductIDs(ids...)
 }
 
-// AddMajorIDs adds the "major" edge to the ProductCategoryMajor entity by IDs.
-func (pcmuo *ProductCategoryMinorUpdateOne) AddMajorIDs(ids ...int) *ProductCategoryMinorUpdateOne {
-	pcmuo.mutation.AddMajorIDs(ids...)
-	return pcmuo
-}
-
-// AddMajor adds the "major" edges to the ProductCategoryMajor entity.
-func (pcmuo *ProductCategoryMinorUpdateOne) AddMajor(p ...*ProductCategoryMajor) *ProductCategoryMinorUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return pcmuo.AddMajorIDs(ids...)
-}
-
 // Mutation returns the ProductCategoryMinorMutation object of the builder.
 func (pcmuo *ProductCategoryMinorUpdateOne) Mutation() *ProductCategoryMinorMutation {
 	return pcmuo.mutation
+}
+
+// ClearMajor clears the "major" edge to the ProductCategoryMajor entity.
+func (pcmuo *ProductCategoryMinorUpdateOne) ClearMajor() *ProductCategoryMinorUpdateOne {
+	pcmuo.mutation.ClearMajor()
+	return pcmuo
 }
 
 // ClearProducts clears all "products" edges to the Product entity.
@@ -423,27 +438,6 @@ func (pcmuo *ProductCategoryMinorUpdateOne) RemoveProducts(p ...*Product) *Produ
 		ids[i] = p[i].ID
 	}
 	return pcmuo.RemoveProductIDs(ids...)
-}
-
-// ClearMajor clears all "major" edges to the ProductCategoryMajor entity.
-func (pcmuo *ProductCategoryMinorUpdateOne) ClearMajor() *ProductCategoryMinorUpdateOne {
-	pcmuo.mutation.ClearMajor()
-	return pcmuo
-}
-
-// RemoveMajorIDs removes the "major" edge to ProductCategoryMajor entities by IDs.
-func (pcmuo *ProductCategoryMinorUpdateOne) RemoveMajorIDs(ids ...int) *ProductCategoryMinorUpdateOne {
-	pcmuo.mutation.RemoveMajorIDs(ids...)
-	return pcmuo
-}
-
-// RemoveMajor removes "major" edges to ProductCategoryMajor entities.
-func (pcmuo *ProductCategoryMinorUpdateOne) RemoveMajor(p ...*ProductCategoryMajor) *ProductCategoryMinorUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return pcmuo.RemoveMajorIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -529,6 +523,19 @@ func (pcmuo *ProductCategoryMinorUpdateOne) check() error {
 			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.category": %w`, err)}
 		}
 	}
+	if v, ok := pcmuo.mutation.Image(); ok {
+		if err := productcategoryminor.ImageValidator(v); err != nil {
+			return &ValidationError{Name: "image", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.image": %w`, err)}
+		}
+	}
+	if v, ok := pcmuo.mutation.Sulg(); ok {
+		if err := productcategoryminor.SulgValidator(v); err != nil {
+			return &ValidationError{Name: "sulg", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.sulg": %w`, err)}
+		}
+	}
+	if _, ok := pcmuo.mutation.MajorID(); pcmuo.mutation.MajorCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "ProductCategoryMinor.major"`)
+	}
 	return nil
 }
 
@@ -581,12 +588,61 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Column: productcategoryminor.FieldCategory,
 		})
 	}
+	if value, ok := pcmuo.mutation.Image(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: productcategoryminor.FieldImage,
+		})
+	}
+	if value, ok := pcmuo.mutation.Sulg(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: productcategoryminor.FieldSulg,
+		})
+	}
+	if pcmuo.mutation.MajorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   productcategoryminor.MajorTable,
+			Columns: []string{productcategoryminor.MajorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: productcategorymajor.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pcmuo.mutation.MajorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   productcategoryminor.MajorTable,
+			Columns: []string{productcategoryminor.MajorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: productcategorymajor.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if pcmuo.mutation.ProductsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategoryminor.ProductsTable,
-			Columns: productcategoryminor.ProductsPrimaryKey,
+			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -599,10 +655,10 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 	}
 	if nodes := pcmuo.mutation.RemovedProductsIDs(); len(nodes) > 0 && !pcmuo.mutation.ProductsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategoryminor.ProductsTable,
-			Columns: productcategoryminor.ProductsPrimaryKey,
+			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -618,69 +674,15 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 	}
 	if nodes := pcmuo.mutation.ProductsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   productcategoryminor.ProductsTable,
-			Columns: productcategoryminor.ProductsPrimaryKey,
+			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: product.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if pcmuo.mutation.MajorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   productcategoryminor.MajorTable,
-			Columns: productcategoryminor.MajorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := pcmuo.mutation.RemovedMajorIDs(); len(nodes) > 0 && !pcmuo.mutation.MajorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   productcategoryminor.MajorTable,
-			Columns: productcategoryminor.MajorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := pcmuo.mutation.MajorIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   productcategoryminor.MajorTable,
-			Columns: productcategoryminor.MajorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
 				},
 			},
 		}

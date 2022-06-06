@@ -32,6 +32,60 @@ type Customer struct {
 	Phone string `json:"phone,omitempty"`
 	// OtherPhone holds the value of the "other_phone" field.
 	OtherPhone *string `json:"other_phone,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the CustomerQuery when eager-loading is set.
+	Edges CustomerEdges `json:"edges"`
+}
+
+// CustomerEdges holds the relations/edges for other nodes in the graph.
+type CustomerEdges struct {
+	// Addresses holds the value of the addresses edge.
+	Addresses []*Address `json:"addresses,omitempty"`
+	// Orders holds the value of the orders edge.
+	Orders []*Order `json:"orders,omitempty"`
+	// Baskets holds the value of the baskets edge.
+	Baskets []*Basket `json:"baskets,omitempty"`
+	// Favourites holds the value of the favourites edge.
+	Favourites []*Favourite `json:"favourites,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [4]bool
+}
+
+// AddressesOrErr returns the Addresses value or an error if the edge
+// was not loaded in eager-loading.
+func (e CustomerEdges) AddressesOrErr() ([]*Address, error) {
+	if e.loadedTypes[0] {
+		return e.Addresses, nil
+	}
+	return nil, &NotLoadedError{edge: "addresses"}
+}
+
+// OrdersOrErr returns the Orders value or an error if the edge
+// was not loaded in eager-loading.
+func (e CustomerEdges) OrdersOrErr() ([]*Order, error) {
+	if e.loadedTypes[1] {
+		return e.Orders, nil
+	}
+	return nil, &NotLoadedError{edge: "orders"}
+}
+
+// BasketsOrErr returns the Baskets value or an error if the edge
+// was not loaded in eager-loading.
+func (e CustomerEdges) BasketsOrErr() ([]*Basket, error) {
+	if e.loadedTypes[2] {
+		return e.Baskets, nil
+	}
+	return nil, &NotLoadedError{edge: "baskets"}
+}
+
+// FavouritesOrErr returns the Favourites value or an error if the edge
+// was not loaded in eager-loading.
+func (e CustomerEdges) FavouritesOrErr() ([]*Favourite, error) {
+	if e.loadedTypes[3] {
+		return e.Favourites, nil
+	}
+	return nil, &NotLoadedError{edge: "favourites"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -120,6 +174,26 @@ func (c *Customer) assignValues(columns []string, values []interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryAddresses queries the "addresses" edge of the Customer entity.
+func (c *Customer) QueryAddresses() *AddressQuery {
+	return (&CustomerClient{config: c.config}).QueryAddresses(c)
+}
+
+// QueryOrders queries the "orders" edge of the Customer entity.
+func (c *Customer) QueryOrders() *OrderQuery {
+	return (&CustomerClient{config: c.config}).QueryOrders(c)
+}
+
+// QueryBaskets queries the "baskets" edge of the Customer entity.
+func (c *Customer) QueryBaskets() *BasketQuery {
+	return (&CustomerClient{config: c.config}).QueryBaskets(c)
+}
+
+// QueryFavourites queries the "favourites" edge of the Customer entity.
+func (c *Customer) QueryFavourites() *FavouriteQuery {
+	return (&CustomerClient{config: c.config}).QueryFavourites(c)
 }
 
 // Update returns a builder for updating this Customer.

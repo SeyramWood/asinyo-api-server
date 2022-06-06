@@ -29,19 +29,10 @@ const (
 	FieldAddress = "address"
 	// FieldDigitalAddress holds the string denoting the digital_address field in the database.
 	FieldDigitalAddress = "digital_address"
-	// EdgeProducts holds the string denoting the products edge name in mutations.
-	EdgeProducts = "products"
 	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
 	EdgeMerchant = "merchant"
 	// Table holds the table name of the retailmerchant in the database.
 	Table = "retail_merchants"
-	// ProductsTable is the table that holds the products relation/edge.
-	ProductsTable = "retail_merchants"
-	// ProductsInverseTable is the table name for the Product entity.
-	// It exists in this package in order to avoid circular dependency with the "product" package.
-	ProductsInverseTable = "products"
-	// ProductsColumn is the table column denoting the products relation/edge.
-	ProductsColumn = "retail_merchant_products"
 	// MerchantTable is the table that holds the merchant relation/edge.
 	MerchantTable = "retail_merchants"
 	// MerchantInverseTable is the table name for the Merchant entity.
@@ -69,7 +60,6 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"merchant_retailer",
-	"retail_merchant_products",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

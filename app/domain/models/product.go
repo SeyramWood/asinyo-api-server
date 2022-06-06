@@ -11,6 +11,7 @@ type (
 	Product struct {
 		CategoryMajor int     `json:"categoryMajor" form:"categoryMajor" validate:"required"`
 		CategoryMinor int     `json:"categoryMinor" form:"categoryMinor" validate:"required"`
+		Merchant      int     `json:"merchant" form:"merchant" validate:"required"`
 		Quantity      int     `json:"quantity" form:"quantity" validate:"required"`
 		Unit          string  `json:"unit" form:"unit" validate:"required|string"`
 		Name          string  `json:"name" form:"name" validate:"required|string"`

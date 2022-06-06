@@ -56,6 +56,29 @@ func (pcmc *ProductCategoryMinorCreate) SetCategory(s string) *ProductCategoryMi
 	return pcmc
 }
 
+// SetImage sets the "image" field.
+func (pcmc *ProductCategoryMinorCreate) SetImage(s string) *ProductCategoryMinorCreate {
+	pcmc.mutation.SetImage(s)
+	return pcmc
+}
+
+// SetSulg sets the "sulg" field.
+func (pcmc *ProductCategoryMinorCreate) SetSulg(s string) *ProductCategoryMinorCreate {
+	pcmc.mutation.SetSulg(s)
+	return pcmc
+}
+
+// SetMajorID sets the "major" edge to the ProductCategoryMajor entity by ID.
+func (pcmc *ProductCategoryMinorCreate) SetMajorID(id int) *ProductCategoryMinorCreate {
+	pcmc.mutation.SetMajorID(id)
+	return pcmc
+}
+
+// SetMajor sets the "major" edge to the ProductCategoryMajor entity.
+func (pcmc *ProductCategoryMinorCreate) SetMajor(p *ProductCategoryMajor) *ProductCategoryMinorCreate {
+	return pcmc.SetMajorID(p.ID)
+}
+
 // AddProductIDs adds the "products" edge to the Product entity by IDs.
 func (pcmc *ProductCategoryMinorCreate) AddProductIDs(ids ...int) *ProductCategoryMinorCreate {
 	pcmc.mutation.AddProductIDs(ids...)
@@ -69,21 +92,6 @@ func (pcmc *ProductCategoryMinorCreate) AddProducts(p ...*Product) *ProductCateg
 		ids[i] = p[i].ID
 	}
 	return pcmc.AddProductIDs(ids...)
-}
-
-// AddMajorIDs adds the "major" edge to the ProductCategoryMajor entity by IDs.
-func (pcmc *ProductCategoryMinorCreate) AddMajorIDs(ids ...int) *ProductCategoryMinorCreate {
-	pcmc.mutation.AddMajorIDs(ids...)
-	return pcmc
-}
-
-// AddMajor adds the "major" edges to the ProductCategoryMajor entity.
-func (pcmc *ProductCategoryMinorCreate) AddMajor(p ...*ProductCategoryMajor) *ProductCategoryMinorCreate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return pcmc.AddMajorIDs(ids...)
 }
 
 // Mutation returns the ProductCategoryMinorMutation object of the builder.
@@ -183,7 +191,23 @@ func (pcmc *ProductCategoryMinorCreate) check() error {
 			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.category": %w`, err)}
 		}
 	}
-	if len(pcmc.mutation.MajorIDs()) == 0 {
+	if _, ok := pcmc.mutation.Image(); !ok {
+		return &ValidationError{Name: "image", err: errors.New(`ent: missing required field "ProductCategoryMinor.image"`)}
+	}
+	if v, ok := pcmc.mutation.Image(); ok {
+		if err := productcategoryminor.ImageValidator(v); err != nil {
+			return &ValidationError{Name: "image", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.image": %w`, err)}
+		}
+	}
+	if _, ok := pcmc.mutation.Sulg(); !ok {
+		return &ValidationError{Name: "sulg", err: errors.New(`ent: missing required field "ProductCategoryMinor.sulg"`)}
+	}
+	if v, ok := pcmc.mutation.Sulg(); ok {
+		if err := productcategoryminor.SulgValidator(v); err != nil {
+			return &ValidationError{Name: "sulg", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.sulg": %w`, err)}
+		}
+	}
+	if _, ok := pcmc.mutation.MajorID(); !ok {
 		return &ValidationError{Name: "major", err: errors.New(`ent: missing required edge "ProductCategoryMinor.major"`)}
 	}
 	return nil
@@ -237,36 +261,53 @@ func (pcmc *ProductCategoryMinorCreate) createSpec() (*ProductCategoryMinor, *sq
 		})
 		_node.Category = value
 	}
-	if nodes := pcmc.mutation.ProductsIDs(); len(nodes) > 0 {
+	if value, ok := pcmc.mutation.Image(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: productcategoryminor.FieldImage,
+		})
+		_node.Image = value
+	}
+	if value, ok := pcmc.mutation.Sulg(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: productcategoryminor.FieldSulg,
+		})
+		_node.Sulg = value
+	}
+	if nodes := pcmc.mutation.MajorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   productcategoryminor.ProductsTable,
-			Columns: productcategoryminor.ProductsPrimaryKey,
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   productcategoryminor.MajorTable,
+			Columns: []string{productcategoryminor.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: product.FieldID,
+					Column: productcategorymajor.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.product_category_major_minors = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := pcmc.mutation.MajorIDs(); len(nodes) > 0 {
+	if nodes := pcmc.mutation.ProductsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   productcategoryminor.MajorTable,
-			Columns: productcategoryminor.MajorPrimaryKey,
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   productcategoryminor.ProductsTable,
+			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
+					Column: product.FieldID,
 				},
 			},
 		}

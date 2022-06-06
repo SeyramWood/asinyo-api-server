@@ -1,10 +1,11 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/app/framework/web/http/handlers"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/csrf"
 )
 
 type HttpRouter struct {
@@ -15,9 +16,20 @@ func NewHttpRouter(db *database.Adapter) *HttpRouter {
 }
 
 func (h *HttpRouter) Router(app *fiber.App) {
-	r := app.Group("", csrf.New())
-	r.Get("/", handlers.Index())
+	// Custom config
+	app.Static("/", "./public", fiber.Static{
+		Compress:      true,
+		ByteRange:     true,
+		Browse:        true,
+		CacheDuration: 10 * time.Second,
+		MaxAge:        3600,
+	})
+
+	r := app.Group("")
+	// r.Get("/", handlers.Index())
+
 	pageRouter(r)
+
 	// 404 Handler
 	app.Use(func(c *fiber.Ctx) error {
 		return c.SendStatus(404) // => 404 "Not Found"

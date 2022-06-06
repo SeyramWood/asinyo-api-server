@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/merchant"
-	"github.com/SeyramWood/ent/product"
+	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/retailmerchant"
 	"github.com/SeyramWood/ent/suppliermerchant"
 )
@@ -27,10 +27,11 @@ type Merchant struct {
 	Username string `json:"username,omitempty"`
 	// Password holds the value of the "password" field.
 	Password []byte `json:"-"`
+	// Type holds the value of the "type" field.
+	Type string `json:"type,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MerchantQuery when eager-loading is set.
-	Edges             MerchantEdges `json:"edges"`
-	merchant_products *int
+	Edges MerchantEdges `json:"edges"`
 }
 
 // MerchantEdges holds the relations/edges for other nodes in the graph.
@@ -39,11 +40,21 @@ type MerchantEdges struct {
 	Supplier *SupplierMerchant `json:"supplier,omitempty"`
 	// Retailer holds the value of the retailer edge.
 	Retailer *RetailMerchant `json:"retailer,omitempty"`
+	// Store holds the value of the store edge.
+	Store *MerchantStore `json:"store,omitempty"`
 	// Products holds the value of the products edge.
-	Products *Product `json:"products,omitempty"`
+	Products []*Product `json:"products,omitempty"`
+	// Addresses holds the value of the addresses edge.
+	Addresses []*Address `json:"addresses,omitempty"`
+	// Orders holds the value of the orders edge.
+	Orders []*Order `json:"orders,omitempty"`
+	// Baskets holds the value of the baskets edge.
+	Baskets []*Basket `json:"baskets,omitempty"`
+	// Favourites holds the value of the favourites edge.
+	Favourites []*Favourite `json:"favourites,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [8]bool
 }
 
 // SupplierOrErr returns the Supplier value or an error if the edge
@@ -74,18 +85,63 @@ func (e MerchantEdges) RetailerOrErr() (*RetailMerchant, error) {
 	return nil, &NotLoadedError{edge: "retailer"}
 }
 
-// ProductsOrErr returns the Products value or an error if the edge
+// StoreOrErr returns the Store value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e MerchantEdges) ProductsOrErr() (*Product, error) {
+func (e MerchantEdges) StoreOrErr() (*MerchantStore, error) {
 	if e.loadedTypes[2] {
-		if e.Products == nil {
-			// The edge products was loaded in eager-loading,
+		if e.Store == nil {
+			// The edge store was loaded in eager-loading,
 			// but was not found.
-			return nil, &NotFoundError{label: product.Label}
+			return nil, &NotFoundError{label: merchantstore.Label}
 		}
+		return e.Store, nil
+	}
+	return nil, &NotLoadedError{edge: "store"}
+}
+
+// ProductsOrErr returns the Products value or an error if the edge
+// was not loaded in eager-loading.
+func (e MerchantEdges) ProductsOrErr() ([]*Product, error) {
+	if e.loadedTypes[3] {
 		return e.Products, nil
 	}
 	return nil, &NotLoadedError{edge: "products"}
+}
+
+// AddressesOrErr returns the Addresses value or an error if the edge
+// was not loaded in eager-loading.
+func (e MerchantEdges) AddressesOrErr() ([]*Address, error) {
+	if e.loadedTypes[4] {
+		return e.Addresses, nil
+	}
+	return nil, &NotLoadedError{edge: "addresses"}
+}
+
+// OrdersOrErr returns the Orders value or an error if the edge
+// was not loaded in eager-loading.
+func (e MerchantEdges) OrdersOrErr() ([]*Order, error) {
+	if e.loadedTypes[5] {
+		return e.Orders, nil
+	}
+	return nil, &NotLoadedError{edge: "orders"}
+}
+
+// BasketsOrErr returns the Baskets value or an error if the edge
+// was not loaded in eager-loading.
+func (e MerchantEdges) BasketsOrErr() ([]*Basket, error) {
+	if e.loadedTypes[6] {
+		return e.Baskets, nil
+	}
+	return nil, &NotLoadedError{edge: "baskets"}
+}
+
+// FavouritesOrErr returns the Favourites value or an error if the edge
+// was not loaded in eager-loading.
+func (e MerchantEdges) FavouritesOrErr() ([]*Favourite, error) {
+	if e.loadedTypes[7] {
+		return e.Favourites, nil
+	}
+	return nil, &NotLoadedError{edge: "favourites"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -97,12 +153,10 @@ func (*Merchant) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new([]byte)
 		case merchant.FieldID:
 			values[i] = new(sql.NullInt64)
-		case merchant.FieldUsername:
+		case merchant.FieldUsername, merchant.FieldType:
 			values[i] = new(sql.NullString)
 		case merchant.FieldCreatedAt, merchant.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case merchant.ForeignKeys[0]: // merchant_products
-			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Merchant", columns[i])
 		}
@@ -148,12 +202,11 @@ func (m *Merchant) assignValues(columns []string, values []interface{}) error {
 			} else if value != nil {
 				m.Password = *value
 			}
-		case merchant.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field merchant_products", value)
+		case merchant.FieldType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field type", values[i])
 			} else if value.Valid {
-				m.merchant_products = new(int)
-				*m.merchant_products = int(value.Int64)
+				m.Type = value.String
 			}
 		}
 	}
@@ -170,9 +223,34 @@ func (m *Merchant) QueryRetailer() *RetailMerchantQuery {
 	return (&MerchantClient{config: m.config}).QueryRetailer(m)
 }
 
+// QueryStore queries the "store" edge of the Merchant entity.
+func (m *Merchant) QueryStore() *MerchantStoreQuery {
+	return (&MerchantClient{config: m.config}).QueryStore(m)
+}
+
 // QueryProducts queries the "products" edge of the Merchant entity.
 func (m *Merchant) QueryProducts() *ProductQuery {
 	return (&MerchantClient{config: m.config}).QueryProducts(m)
+}
+
+// QueryAddresses queries the "addresses" edge of the Merchant entity.
+func (m *Merchant) QueryAddresses() *AddressQuery {
+	return (&MerchantClient{config: m.config}).QueryAddresses(m)
+}
+
+// QueryOrders queries the "orders" edge of the Merchant entity.
+func (m *Merchant) QueryOrders() *OrderQuery {
+	return (&MerchantClient{config: m.config}).QueryOrders(m)
+}
+
+// QueryBaskets queries the "baskets" edge of the Merchant entity.
+func (m *Merchant) QueryBaskets() *BasketQuery {
+	return (&MerchantClient{config: m.config}).QueryBaskets(m)
+}
+
+// QueryFavourites queries the "favourites" edge of the Merchant entity.
+func (m *Merchant) QueryFavourites() *FavouriteQuery {
+	return (&MerchantClient{config: m.config}).QueryFavourites(m)
 }
 
 // Update returns a builder for updating this Merchant.
@@ -205,6 +283,8 @@ func (m *Merchant) String() string {
 	builder.WriteString(", username=")
 	builder.WriteString(m.Username)
 	builder.WriteString(", password=<sensitive>")
+	builder.WriteString(", type=")
+	builder.WriteString(m.Type)
 	builder.WriteByte(')')
 	return builder.String()
 }

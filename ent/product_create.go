@@ -10,12 +10,13 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/basket"
+	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
-	"github.com/SeyramWood/ent/retailmerchant"
-	"github.com/SeyramWood/ent/suppliermerchant"
 )
 
 // ProductCreate is the builder for creating a Product entity.
@@ -53,19 +54,19 @@ func (pc *ProductCreate) SetNillableUpdatedAt(t *time.Time) *ProductCreate {
 	return pc
 }
 
-// SetName sets the "Name" field.
+// SetName sets the "name" field.
 func (pc *ProductCreate) SetName(s string) *ProductCreate {
 	pc.mutation.SetName(s)
 	return pc
 }
 
-// SetPrice sets the "Price" field.
+// SetPrice sets the "price" field.
 func (pc *ProductCreate) SetPrice(f float64) *ProductCreate {
 	pc.mutation.SetPrice(f)
 	return pc
 }
 
-// SetNillablePrice sets the "Price" field if the given value is not nil.
+// SetNillablePrice sets the "price" field if the given value is not nil.
 func (pc *ProductCreate) SetNillablePrice(f *float64) *ProductCreate {
 	if f != nil {
 		pc.SetPrice(*f)
@@ -73,13 +74,13 @@ func (pc *ProductCreate) SetNillablePrice(f *float64) *ProductCreate {
 	return pc
 }
 
-// SetPromoPrice sets the "PromoPrice" field.
+// SetPromoPrice sets the "promo_price" field.
 func (pc *ProductCreate) SetPromoPrice(f float64) *ProductCreate {
 	pc.mutation.SetPromoPrice(f)
 	return pc
 }
 
-// SetNillablePromoPrice sets the "PromoPrice" field if the given value is not nil.
+// SetNillablePromoPrice sets the "promo_price" field if the given value is not nil.
 func (pc *ProductCreate) SetNillablePromoPrice(f *float64) *ProductCreate {
 	if f != nil {
 		pc.SetPromoPrice(*f)
@@ -87,91 +88,114 @@ func (pc *ProductCreate) SetNillablePromoPrice(f *float64) *ProductCreate {
 	return pc
 }
 
-// SetDescription sets the "Description" field.
+// SetQuantity sets the "quantity" field.
+func (pc *ProductCreate) SetQuantity(u uint32) *ProductCreate {
+	pc.mutation.SetQuantity(u)
+	return pc
+}
+
+// SetNillableQuantity sets the "quantity" field if the given value is not nil.
+func (pc *ProductCreate) SetNillableQuantity(u *uint32) *ProductCreate {
+	if u != nil {
+		pc.SetQuantity(*u)
+	}
+	return pc
+}
+
+// SetUnit sets the "unit" field.
+func (pc *ProductCreate) SetUnit(s string) *ProductCreate {
+	pc.mutation.SetUnit(s)
+	return pc
+}
+
+// SetDescription sets the "description" field.
 func (pc *ProductCreate) SetDescription(s string) *ProductCreate {
 	pc.mutation.SetDescription(s)
 	return pc
 }
 
-// SetImage sets the "Image" field.
+// SetImage sets the "image" field.
 func (pc *ProductCreate) SetImage(s string) *ProductCreate {
 	pc.mutation.SetImage(s)
 	return pc
 }
 
-// AddMajorIDs adds the "major" edge to the ProductCategoryMajor entity by IDs.
-func (pc *ProductCreate) AddMajorIDs(ids ...int) *ProductCreate {
-	pc.mutation.AddMajorIDs(ids...)
+// SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
+func (pc *ProductCreate) SetMerchantID(id int) *ProductCreate {
+	pc.mutation.SetMerchantID(id)
 	return pc
 }
 
-// AddMajor adds the "major" edges to the ProductCategoryMajor entity.
-func (pc *ProductCreate) AddMajor(p ...*ProductCategoryMajor) *ProductCreate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return pc.AddMajorIDs(ids...)
+// SetMerchant sets the "merchant" edge to the Merchant entity.
+func (pc *ProductCreate) SetMerchant(m *Merchant) *ProductCreate {
+	return pc.SetMerchantID(m.ID)
 }
 
-// AddMinorIDs adds the "minor" edge to the ProductCategoryMinor entity by IDs.
-func (pc *ProductCreate) AddMinorIDs(ids ...int) *ProductCreate {
-	pc.mutation.AddMinorIDs(ids...)
+// SetMajorID sets the "major" edge to the ProductCategoryMajor entity by ID.
+func (pc *ProductCreate) SetMajorID(id int) *ProductCreate {
+	pc.mutation.SetMajorID(id)
 	return pc
 }
 
-// AddMinor adds the "minor" edges to the ProductCategoryMinor entity.
-func (pc *ProductCreate) AddMinor(p ...*ProductCategoryMinor) *ProductCreate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return pc.AddMinorIDs(ids...)
+// SetMajor sets the "major" edge to the ProductCategoryMajor entity.
+func (pc *ProductCreate) SetMajor(p *ProductCategoryMajor) *ProductCreate {
+	return pc.SetMajorID(p.ID)
 }
 
-// AddMechantIDs adds the "mechant" edge to the Merchant entity by IDs.
-func (pc *ProductCreate) AddMechantIDs(ids ...int) *ProductCreate {
-	pc.mutation.AddMechantIDs(ids...)
+// SetMinorID sets the "minor" edge to the ProductCategoryMinor entity by ID.
+func (pc *ProductCreate) SetMinorID(id int) *ProductCreate {
+	pc.mutation.SetMinorID(id)
 	return pc
 }
 
-// AddMechant adds the "mechant" edges to the Merchant entity.
-func (pc *ProductCreate) AddMechant(m ...*Merchant) *ProductCreate {
-	ids := make([]int, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
-	}
-	return pc.AddMechantIDs(ids...)
+// SetMinor sets the "minor" edge to the ProductCategoryMinor entity.
+func (pc *ProductCreate) SetMinor(p *ProductCategoryMinor) *ProductCreate {
+	return pc.SetMinorID(p.ID)
 }
 
-// AddSupplierIDs adds the "supplier" edge to the SupplierMerchant entity by IDs.
-func (pc *ProductCreate) AddSupplierIDs(ids ...int) *ProductCreate {
-	pc.mutation.AddSupplierIDs(ids...)
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (pc *ProductCreate) AddOrderIDs(ids ...int) *ProductCreate {
+	pc.mutation.AddOrderIDs(ids...)
 	return pc
 }
 
-// AddSupplier adds the "supplier" edges to the SupplierMerchant entity.
-func (pc *ProductCreate) AddSupplier(s ...*SupplierMerchant) *ProductCreate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// AddOrders adds the "orders" edges to the Order entity.
+func (pc *ProductCreate) AddOrders(o ...*Order) *ProductCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
 	}
-	return pc.AddSupplierIDs(ids...)
+	return pc.AddOrderIDs(ids...)
 }
 
-// AddRetailerIDs adds the "retailer" edge to the RetailMerchant entity by IDs.
-func (pc *ProductCreate) AddRetailerIDs(ids ...int) *ProductCreate {
-	pc.mutation.AddRetailerIDs(ids...)
+// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
+func (pc *ProductCreate) AddBasketIDs(ids ...int) *ProductCreate {
+	pc.mutation.AddBasketIDs(ids...)
 	return pc
 }
 
-// AddRetailer adds the "retailer" edges to the RetailMerchant entity.
-func (pc *ProductCreate) AddRetailer(r ...*RetailMerchant) *ProductCreate {
-	ids := make([]int, len(r))
-	for i := range r {
-		ids[i] = r[i].ID
+// AddBaskets adds the "baskets" edges to the Basket entity.
+func (pc *ProductCreate) AddBaskets(b ...*Basket) *ProductCreate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
 	}
-	return pc.AddRetailerIDs(ids...)
+	return pc.AddBasketIDs(ids...)
+}
+
+// AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
+func (pc *ProductCreate) AddFavouriteIDs(ids ...int) *ProductCreate {
+	pc.mutation.AddFavouriteIDs(ids...)
+	return pc
+}
+
+// AddFavourites adds the "favourites" edges to the Favourite entity.
+func (pc *ProductCreate) AddFavourites(f ...*Favourite) *ProductCreate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return pc.AddFavouriteIDs(ids...)
 }
 
 // Mutation returns the ProductMutation object of the builder.
@@ -257,9 +281,9 @@ func (pc *ProductCreate) defaults() {
 		v := product.DefaultPrice
 		pc.mutation.SetPrice(v)
 	}
-	if _, ok := pc.mutation.PromoPrice(); !ok {
-		v := product.DefaultPromoPrice
-		pc.mutation.SetPromoPrice(v)
+	if _, ok := pc.mutation.Quantity(); !ok {
+		v := product.DefaultQuantity
+		pc.mutation.SetQuantity(v)
 	}
 }
 
@@ -272,49 +296,51 @@ func (pc *ProductCreate) check() error {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Product.updated_at"`)}
 	}
 	if _, ok := pc.mutation.Name(); !ok {
-		return &ValidationError{Name: "Name", err: errors.New(`ent: missing required field "Product.Name"`)}
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Product.name"`)}
 	}
 	if v, ok := pc.mutation.Name(); ok {
 		if err := product.NameValidator(v); err != nil {
-			return &ValidationError{Name: "Name", err: fmt.Errorf(`ent: validator failed for field "Product.Name": %w`, err)}
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Product.name": %w`, err)}
 		}
 	}
 	if _, ok := pc.mutation.Price(); !ok {
-		return &ValidationError{Name: "Price", err: errors.New(`ent: missing required field "Product.Price"`)}
+		return &ValidationError{Name: "price", err: errors.New(`ent: missing required field "Product.price"`)}
 	}
-	if _, ok := pc.mutation.PromoPrice(); !ok {
-		return &ValidationError{Name: "PromoPrice", err: errors.New(`ent: missing required field "Product.PromoPrice"`)}
+	if _, ok := pc.mutation.Quantity(); !ok {
+		return &ValidationError{Name: "quantity", err: errors.New(`ent: missing required field "Product.quantity"`)}
+	}
+	if _, ok := pc.mutation.Unit(); !ok {
+		return &ValidationError{Name: "unit", err: errors.New(`ent: missing required field "Product.unit"`)}
+	}
+	if v, ok := pc.mutation.Unit(); ok {
+		if err := product.UnitValidator(v); err != nil {
+			return &ValidationError{Name: "unit", err: fmt.Errorf(`ent: validator failed for field "Product.unit": %w`, err)}
+		}
 	}
 	if _, ok := pc.mutation.Description(); !ok {
-		return &ValidationError{Name: "Description", err: errors.New(`ent: missing required field "Product.Description"`)}
+		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "Product.description"`)}
 	}
 	if v, ok := pc.mutation.Description(); ok {
 		if err := product.DescriptionValidator(v); err != nil {
-			return &ValidationError{Name: "Description", err: fmt.Errorf(`ent: validator failed for field "Product.Description": %w`, err)}
+			return &ValidationError{Name: "description", err: fmt.Errorf(`ent: validator failed for field "Product.description": %w`, err)}
 		}
 	}
 	if _, ok := pc.mutation.Image(); !ok {
-		return &ValidationError{Name: "Image", err: errors.New(`ent: missing required field "Product.Image"`)}
+		return &ValidationError{Name: "image", err: errors.New(`ent: missing required field "Product.image"`)}
 	}
 	if v, ok := pc.mutation.Image(); ok {
 		if err := product.ImageValidator(v); err != nil {
-			return &ValidationError{Name: "Image", err: fmt.Errorf(`ent: validator failed for field "Product.Image": %w`, err)}
+			return &ValidationError{Name: "image", err: fmt.Errorf(`ent: validator failed for field "Product.image": %w`, err)}
 		}
 	}
-	if len(pc.mutation.MajorIDs()) == 0 {
+	if _, ok := pc.mutation.MerchantID(); !ok {
+		return &ValidationError{Name: "merchant", err: errors.New(`ent: missing required edge "Product.merchant"`)}
+	}
+	if _, ok := pc.mutation.MajorID(); !ok {
 		return &ValidationError{Name: "major", err: errors.New(`ent: missing required edge "Product.major"`)}
 	}
-	if len(pc.mutation.MinorIDs()) == 0 {
+	if _, ok := pc.mutation.MinorID(); !ok {
 		return &ValidationError{Name: "minor", err: errors.New(`ent: missing required edge "Product.minor"`)}
-	}
-	if len(pc.mutation.MechantIDs()) == 0 {
-		return &ValidationError{Name: "mechant", err: errors.New(`ent: missing required edge "Product.mechant"`)}
-	}
-	if len(pc.mutation.SupplierIDs()) == 0 {
-		return &ValidationError{Name: "supplier", err: errors.New(`ent: missing required edge "Product.supplier"`)}
-	}
-	if len(pc.mutation.RetailerIDs()) == 0 {
-		return &ValidationError{Name: "retailer", err: errors.New(`ent: missing required edge "Product.retailer"`)}
 	}
 	return nil
 }
@@ -381,7 +407,23 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: product.FieldPromoPrice,
 		})
-		_node.PromoPrice = value
+		_node.PromoPrice = &value
+	}
+	if value, ok := pc.mutation.Quantity(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Value:  value,
+			Column: product.FieldQuantity,
+		})
+		_node.Quantity = value
+	}
+	if value, ok := pc.mutation.Unit(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: product.FieldUnit,
+		})
+		_node.Unit = value
 	}
 	if value, ok := pc.mutation.Description(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -399,50 +441,12 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 		})
 		_node.Image = value
 	}
-	if nodes := pc.mutation.MajorIDs(); len(nodes) > 0 {
+	if nodes := pc.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   product.MajorTable,
-			Columns: product.MajorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := pc.mutation.MinorIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   product.MinorTable,
-			Columns: product.MinorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := pc.mutation.MechantIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.MechantTable,
-			Columns: []string{product.MechantColumn},
+			Table:   product.MerchantTable,
+			Columns: []string{product.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -454,19 +458,60 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.merchant_products = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := pc.mutation.SupplierIDs(); len(nodes) > 0 {
+	if nodes := pc.mutation.MajorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   product.SupplierTable,
-			Columns: []string{product.SupplierColumn},
+			Table:   product.MajorTable,
+			Columns: []string{product.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
+					Column: productcategorymajor.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.product_category_major_products = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.MinorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.MinorTable,
+			Columns: []string{product.MinorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: productcategoryminor.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.product_category_minor_products = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.OrdersTable,
+			Columns: []string{product.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
 				},
 			},
 		}
@@ -475,17 +520,36 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := pc.mutation.RetailerIDs(); len(nodes) > 0 {
+	if nodes := pc.mutation.BasketsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   product.RetailerTable,
-			Columns: []string{product.RetailerColumn},
+			Inverse: false,
+			Table:   product.BasketsTable,
+			Columns: []string{product.BasketsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
+					Column: basket.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.FavouritesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.FavouritesTable,
+			Columns: []string{product.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
 				},
 			},
 		}

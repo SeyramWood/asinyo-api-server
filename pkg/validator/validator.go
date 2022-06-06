@@ -37,7 +37,7 @@ func Validate(i interface{}) interface{} {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			if _, ok := t.Field(i).Tag.Lookup("validate"); ok {
+			if _, ok := t.Field(i).Tag.Lookup("json"); ok {
 				msg := validator(i, t, v)
 				mut.Lock()
 				if msg == "" {
@@ -112,7 +112,7 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 			default:
 				if strings.Contains(rule, ":") {
 					r := strings.Split(rule, ":")
-					switch string(r[0]) {
+					switch r[0] {
 					case "max":
 						val, _ := strconv.Atoi(r[1])
 						if value.Len() > val {
@@ -150,7 +150,6 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 
 			}
 		}
-
 	}
 
 	return ""

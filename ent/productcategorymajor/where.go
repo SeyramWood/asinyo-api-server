@@ -114,6 +114,13 @@ func Category(v string) predicate.ProductCategoryMajor {
 	})
 }
 
+// Sulg applies equality check predicate on the "sulg" field. It's identical to SulgEQ.
+func Sulg(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldSulg), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
@@ -377,13 +384,124 @@ func CategoryContainsFold(v string) predicate.ProductCategoryMajor {
 	})
 }
 
+// SulgEQ applies the EQ predicate on the "sulg" field.
+func SulgEQ(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldSulg), v))
+	})
+}
+
+// SulgNEQ applies the NEQ predicate on the "sulg" field.
+func SulgNEQ(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldSulg), v))
+	})
+}
+
+// SulgIn applies the In predicate on the "sulg" field.
+func SulgIn(vs ...string) predicate.ProductCategoryMajor {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldSulg), v...))
+	})
+}
+
+// SulgNotIn applies the NotIn predicate on the "sulg" field.
+func SulgNotIn(vs ...string) predicate.ProductCategoryMajor {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldSulg), v...))
+	})
+}
+
+// SulgGT applies the GT predicate on the "sulg" field.
+func SulgGT(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldSulg), v))
+	})
+}
+
+// SulgGTE applies the GTE predicate on the "sulg" field.
+func SulgGTE(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldSulg), v))
+	})
+}
+
+// SulgLT applies the LT predicate on the "sulg" field.
+func SulgLT(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldSulg), v))
+	})
+}
+
+// SulgLTE applies the LTE predicate on the "sulg" field.
+func SulgLTE(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldSulg), v))
+	})
+}
+
+// SulgContains applies the Contains predicate on the "sulg" field.
+func SulgContains(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldSulg), v))
+	})
+}
+
+// SulgHasPrefix applies the HasPrefix predicate on the "sulg" field.
+func SulgHasPrefix(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldSulg), v))
+	})
+}
+
+// SulgHasSuffix applies the HasSuffix predicate on the "sulg" field.
+func SulgHasSuffix(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldSulg), v))
+	})
+}
+
+// SulgEqualFold applies the EqualFold predicate on the "sulg" field.
+func SulgEqualFold(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldSulg), v))
+	})
+}
+
+// SulgContainsFold applies the ContainsFold predicate on the "sulg" field.
+func SulgContainsFold(v string) predicate.ProductCategoryMajor {
+	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldSulg), v))
+	})
+}
+
 // HasMinors applies the HasEdge predicate on the "minors" edge.
 func HasMinors() predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(MinorsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, MinorsTable, MinorsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, MinorsTable, MinorsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -395,7 +513,7 @@ func HasMinorsWith(preds ...predicate.ProductCategoryMinor) predicate.ProductCat
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(MinorsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, MinorsTable, MinorsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, MinorsTable, MinorsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
@@ -411,7 +529,7 @@ func HasProducts() predicate.ProductCategoryMajor {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ProductsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, ProductsTable, ProductsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProductsTable, ProductsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -423,7 +541,7 @@ func HasProductsWith(preds ...predicate.Product) predicate.ProductCategoryMajor 
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ProductsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, ProductsTable, ProductsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProductsTable, ProductsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

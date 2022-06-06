@@ -220,7 +220,6 @@ func (s *service) signinSupplierMerchant(c *fiber.Ctx, request models.UserMercha
 				Username:  merchant.Edges.Merchant.Username,
 				LastName:  merchant.LastName,
 				OtherName: merchant.OtherName,
-				UserType:  "supplier",
 			}))
 		}
 	}
@@ -232,18 +231,17 @@ func (s *service) signinRetailMerchant(c *fiber.Ctx, request models.UserMerchant
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
 	} else {
 		if s.hashCheck(user.Password, request.Password) {
-			merchant, err := user.QuerySupplier().WithMerchant().Only(context.Background())
+			merchant, err := user.QueryRetailer().WithMerchant().Only(context.Background())
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"status": false,
 				})
 			}
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthSupplierMerchantResponse(&presenters.AuthMerchant{
+			return c.Status(fiber.StatusOK).JSON(presenters.AuthRetailMerchantResponse(&presenters.AuthMerchant{
 				ID:        merchant.Edges.Merchant.ID,
 				Username:  merchant.Edges.Merchant.Username,
 				LastName:  merchant.LastName,
 				OtherName: merchant.OtherName,
-				UserType:  "retailer",
 			}))
 		}
 	}

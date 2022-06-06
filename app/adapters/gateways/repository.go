@@ -11,63 +11,82 @@ type (
 		Read(id int) (*ent.Customer, error)
 		ReadAll() ([]*ent.Customer, error)
 		Update(customer *models.Customer) (*models.Customer, error)
-		Delete(ID string) error
+		Delete(id string) error
 	}
 	AgentRepo interface {
 		Insert(agent *models.AgentRequest) (*ent.Agent, error)
 		Read(id int) (*ent.Agent, error)
 		ReadAll() ([]*ent.Agent, error)
 		Update(agent *models.Agent) (*models.Agent, error)
-		Delete(ID string) error
-	}
-	SupplierMerchantRepo interface {
-		Insert(merchant *models.SupplierMerchant) (*ent.SupplierMerchant, error)
-		Read(id int) (*ent.SupplierMerchant, error)
-		ReadAll() ([]*ent.SupplierMerchant, error)
-		Update(merchant *models.SupplierMerchant) (*models.SupplierMerchant, error)
-		Delete(ID string) error
-	}
-	RetailMerchantRepo interface {
-		Insert(merchant *models.RetailMerchant) (*ent.RetailMerchant, error)
-		Read(id int) (*ent.RetailMerchant, error)
-		ReadAll() ([]*ent.RetailMerchant, error)
-		Update(merchant *models.RetailMerchant) (*models.RetailMerchant, error)
-		Delete(ID string) error
+		Delete(id string) error
 	}
 	MerchantRepo interface {
 		Insert(merchant *models.MerchantRequest) (*ent.Merchant, error)
 		Read(id int) (*ent.Merchant, error)
 		ReadAll() ([]*ent.Merchant, error)
 		Update(merchant *models.Merchant) (*models.Merchant, error)
-		Delete(ID string) error
+		Delete(id string) error
+	}
+	SupplierMerchantRepo interface {
+		Insert(merchant *models.SupplierMerchant) (*ent.SupplierMerchant, error)
+		Read(id int) (*ent.SupplierMerchant, error)
+		ReadAll() ([]*ent.SupplierMerchant, error)
+		Update(merchant *models.SupplierMerchant) (*models.SupplierMerchant, error)
+		Delete(id string) error
+	}
+	RetailMerchantRepo interface {
+		Insert(merchant *models.RetailMerchant) (*ent.RetailMerchant, error)
+		Read(id int) (*ent.RetailMerchant, error)
+		ReadAll() ([]*ent.RetailMerchant, error)
+		Update(merchant *models.RetailMerchant) (*models.RetailMerchant, error)
+		Delete(id string) error
+	}
+	MerchantStoreRepo interface {
+		Insert(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.Merchant, error)
+		UpdateAccount(store interface{}, merchantId int, logo string) (*ent.MerchantStore, error)
+		Read(id int) (*ent.Merchant, error)
+		ReadAll() ([]*ent.MerchantStore, error)
+		Update(store *models.MerchantStore) (*models.MerchantStore, error)
+		Delete(id string) error
 	}
 	ProductRepo interface {
-		Insert(merchant *models.Product) (*ent.Product, error)
+		Insert(merchant *models.Product, imageUrl string) (*ent.Product, error)
 		Read(id int) (*ent.Product, error)
+		ReadBySupplierMerchant(id int) (*ent.Product, error)
+		ReadByRetailMerchant(id int) (*ent.Product, error)
 		ReadAll() ([]*ent.Product, error)
+		ReadBySlugRetailMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error)
+		ReadBySlugRetailMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
+		ReadAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
+		ReadAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
+		ReadAllMajorByRetailer(majorId int) ([]*ent.Product, error)
+		ReadAllBySupplierMerchant(merchant int) ([]*ent.Product, error)
+		ReadAllByRetailMerchant(merchant int) ([]*ent.Product, error)
+		ReadBestSellerBySupplierMerchant() ([]*ent.Product, error)
+		ReadBestSellerRetailMerchant() ([]*ent.Product, error)
 		Update(merchant *models.Product) (*models.Product, error)
-		Delete(ID string) error
+		Delete(id string) error
 	}
 	ProductCatMajorRepo interface {
 		Insert(merchant *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error)
 		Read(id int) (*ent.ProductCategoryMajor, error)
 		ReadAll() ([]*ent.ProductCategoryMajor, error)
 		Update(merchant *models.ProductCategoryMajor) (*models.ProductCategoryMajor, error)
-		Delete(ID string) error
+		Delete(id string) error
 	}
 	ProductCatMinorRepo interface {
 		Insert(merchant *models.ProductCategoryMinor) (*ent.ProductCategoryMinor, error)
 		Read(id int) (*ent.ProductCategoryMinor, error)
 		ReadAll() ([]*ent.ProductCategoryMinor, error)
 		Update(merchant *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error)
-		Delete(ID string) error
+		Delete(id string) error
 	}
 	AdminRepo interface {
 		Insert(user *models.Admin) (*ent.Admin, error)
 		Read(id int) (*ent.Admin, error)
 		ReadAll() ([]*ent.Admin, error)
 		Update(user *models.Admin) (*models.Admin, error)
-		Delete(ID string) error
+		Delete(id string) error
 	}
 
 	AuthRepo interface {

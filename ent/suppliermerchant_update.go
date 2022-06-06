@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/predicate"
-	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/suppliermerchant"
 )
 
@@ -92,25 +91,6 @@ func (smu *SupplierMerchantUpdate) SetDigitalAddress(s string) *SupplierMerchant
 	return smu
 }
 
-// SetProductsID sets the "products" edge to the Product entity by ID.
-func (smu *SupplierMerchantUpdate) SetProductsID(id int) *SupplierMerchantUpdate {
-	smu.mutation.SetProductsID(id)
-	return smu
-}
-
-// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
-func (smu *SupplierMerchantUpdate) SetNillableProductsID(id *int) *SupplierMerchantUpdate {
-	if id != nil {
-		smu = smu.SetProductsID(*id)
-	}
-	return smu
-}
-
-// SetProducts sets the "products" edge to the Product entity.
-func (smu *SupplierMerchantUpdate) SetProducts(p *Product) *SupplierMerchantUpdate {
-	return smu.SetProductsID(p.ID)
-}
-
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (smu *SupplierMerchantUpdate) SetMerchantID(id int) *SupplierMerchantUpdate {
 	smu.mutation.SetMerchantID(id)
@@ -125,12 +105,6 @@ func (smu *SupplierMerchantUpdate) SetMerchant(m *Merchant) *SupplierMerchantUpd
 // Mutation returns the SupplierMerchantMutation object of the builder.
 func (smu *SupplierMerchantUpdate) Mutation() *SupplierMerchantMutation {
 	return smu.mutation
-}
-
-// ClearProducts clears the "products" edge to the Product entity.
-func (smu *SupplierMerchantUpdate) ClearProducts() *SupplierMerchantUpdate {
-	smu.mutation.ClearProducts()
-	return smu
 }
 
 // ClearMerchant clears the "merchant" edge to the Merchant entity.
@@ -326,41 +300,6 @@ func (smu *SupplierMerchantUpdate) sqlSave(ctx context.Context) (n int, err erro
 			Column: suppliermerchant.FieldDigitalAddress,
 		})
 	}
-	if smu.mutation.ProductsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   suppliermerchant.ProductsTable,
-			Columns: []string{suppliermerchant.ProductsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := smu.mutation.ProductsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   suppliermerchant.ProductsTable,
-			Columns: []string{suppliermerchant.ProductsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if smu.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
@@ -477,25 +416,6 @@ func (smuo *SupplierMerchantUpdateOne) SetDigitalAddress(s string) *SupplierMerc
 	return smuo
 }
 
-// SetProductsID sets the "products" edge to the Product entity by ID.
-func (smuo *SupplierMerchantUpdateOne) SetProductsID(id int) *SupplierMerchantUpdateOne {
-	smuo.mutation.SetProductsID(id)
-	return smuo
-}
-
-// SetNillableProductsID sets the "products" edge to the Product entity by ID if the given value is not nil.
-func (smuo *SupplierMerchantUpdateOne) SetNillableProductsID(id *int) *SupplierMerchantUpdateOne {
-	if id != nil {
-		smuo = smuo.SetProductsID(*id)
-	}
-	return smuo
-}
-
-// SetProducts sets the "products" edge to the Product entity.
-func (smuo *SupplierMerchantUpdateOne) SetProducts(p *Product) *SupplierMerchantUpdateOne {
-	return smuo.SetProductsID(p.ID)
-}
-
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (smuo *SupplierMerchantUpdateOne) SetMerchantID(id int) *SupplierMerchantUpdateOne {
 	smuo.mutation.SetMerchantID(id)
@@ -510,12 +430,6 @@ func (smuo *SupplierMerchantUpdateOne) SetMerchant(m *Merchant) *SupplierMerchan
 // Mutation returns the SupplierMerchantMutation object of the builder.
 func (smuo *SupplierMerchantUpdateOne) Mutation() *SupplierMerchantMutation {
 	return smuo.mutation
-}
-
-// ClearProducts clears the "products" edge to the Product entity.
-func (smuo *SupplierMerchantUpdateOne) ClearProducts() *SupplierMerchantUpdateOne {
-	smuo.mutation.ClearProducts()
-	return smuo
 }
 
 // ClearMerchant clears the "merchant" edge to the Merchant entity.
@@ -734,41 +648,6 @@ func (smuo *SupplierMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Supp
 			Value:  value,
 			Column: suppliermerchant.FieldDigitalAddress,
 		})
-	}
-	if smuo.mutation.ProductsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   suppliermerchant.ProductsTable,
-			Columns: []string{suppliermerchant.ProductsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := smuo.mutation.ProductsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   suppliermerchant.ProductsTable,
-			Columns: []string{suppliermerchant.ProductsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if smuo.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{

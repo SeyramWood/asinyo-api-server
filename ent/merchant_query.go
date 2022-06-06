@@ -12,7 +12,12 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/address"
+	"github.com/SeyramWood/ent/basket"
+	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/retailmerchant"
@@ -29,10 +34,14 @@ type MerchantQuery struct {
 	fields     []string
 	predicates []predicate.Merchant
 	// eager-loading edges.
-	withSupplier *SupplierMerchantQuery
-	withRetailer *RetailMerchantQuery
-	withProducts *ProductQuery
-	withFKs      bool
+	withSupplier   *SupplierMerchantQuery
+	withRetailer   *RetailMerchantQuery
+	withStore      *MerchantStoreQuery
+	withProducts   *ProductQuery
+	withAddresses  *AddressQuery
+	withOrders     *OrderQuery
+	withBaskets    *BasketQuery
+	withFavourites *FavouriteQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -113,6 +122,28 @@ func (mq *MerchantQuery) QueryRetailer() *RetailMerchantQuery {
 	return query
 }
 
+// QueryStore chains the current query on the "store" edge.
+func (mq *MerchantQuery) QueryStore() *MerchantStoreQuery {
+	query := &MerchantStoreQuery{config: mq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
+			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, merchant.StoreTable, merchant.StoreColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryProducts chains the current query on the "products" edge.
 func (mq *MerchantQuery) QueryProducts() *ProductQuery {
 	query := &ProductQuery{config: mq.config}
@@ -127,7 +158,95 @@ func (mq *MerchantQuery) QueryProducts() *ProductQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
 			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, merchant.ProductsTable, merchant.ProductsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.ProductsTable, merchant.ProductsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAddresses chains the current query on the "addresses" edge.
+func (mq *MerchantQuery) QueryAddresses() *AddressQuery {
+	query := &AddressQuery{config: mq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
+			sqlgraph.To(address.Table, address.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.AddressesTable, merchant.AddressesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOrders chains the current query on the "orders" edge.
+func (mq *MerchantQuery) QueryOrders() *OrderQuery {
+	query := &OrderQuery{config: mq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.OrdersTable, merchant.OrdersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBaskets chains the current query on the "baskets" edge.
+func (mq *MerchantQuery) QueryBaskets() *BasketQuery {
+	query := &BasketQuery{config: mq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
+			sqlgraph.To(basket.Table, basket.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.BasketsTable, merchant.BasketsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFavourites chains the current query on the "favourites" edge.
+func (mq *MerchantQuery) QueryFavourites() *FavouriteQuery {
+	query := &FavouriteQuery{config: mq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
+			sqlgraph.To(favourite.Table, favourite.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.FavouritesTable, merchant.FavouritesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
 		return fromU, nil
@@ -311,14 +430,19 @@ func (mq *MerchantQuery) Clone() *MerchantQuery {
 		return nil
 	}
 	return &MerchantQuery{
-		config:       mq.config,
-		limit:        mq.limit,
-		offset:       mq.offset,
-		order:        append([]OrderFunc{}, mq.order...),
-		predicates:   append([]predicate.Merchant{}, mq.predicates...),
-		withSupplier: mq.withSupplier.Clone(),
-		withRetailer: mq.withRetailer.Clone(),
-		withProducts: mq.withProducts.Clone(),
+		config:         mq.config,
+		limit:          mq.limit,
+		offset:         mq.offset,
+		order:          append([]OrderFunc{}, mq.order...),
+		predicates:     append([]predicate.Merchant{}, mq.predicates...),
+		withSupplier:   mq.withSupplier.Clone(),
+		withRetailer:   mq.withRetailer.Clone(),
+		withStore:      mq.withStore.Clone(),
+		withProducts:   mq.withProducts.Clone(),
+		withAddresses:  mq.withAddresses.Clone(),
+		withOrders:     mq.withOrders.Clone(),
+		withBaskets:    mq.withBaskets.Clone(),
+		withFavourites: mq.withFavourites.Clone(),
 		// clone intermediate query.
 		sql:    mq.sql.Clone(),
 		path:   mq.path,
@@ -348,6 +472,17 @@ func (mq *MerchantQuery) WithRetailer(opts ...func(*RetailMerchantQuery)) *Merch
 	return mq
 }
 
+// WithStore tells the query-builder to eager-load the nodes that are connected to
+// the "store" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MerchantQuery) WithStore(opts ...func(*MerchantStoreQuery)) *MerchantQuery {
+	query := &MerchantStoreQuery{config: mq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withStore = query
+	return mq
+}
+
 // WithProducts tells the query-builder to eager-load the nodes that are connected to
 // the "products" edge. The optional arguments are used to configure the query builder of the edge.
 func (mq *MerchantQuery) WithProducts(opts ...func(*ProductQuery)) *MerchantQuery {
@@ -356,6 +491,50 @@ func (mq *MerchantQuery) WithProducts(opts ...func(*ProductQuery)) *MerchantQuer
 		opt(query)
 	}
 	mq.withProducts = query
+	return mq
+}
+
+// WithAddresses tells the query-builder to eager-load the nodes that are connected to
+// the "addresses" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MerchantQuery) WithAddresses(opts ...func(*AddressQuery)) *MerchantQuery {
+	query := &AddressQuery{config: mq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withAddresses = query
+	return mq
+}
+
+// WithOrders tells the query-builder to eager-load the nodes that are connected to
+// the "orders" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MerchantQuery) WithOrders(opts ...func(*OrderQuery)) *MerchantQuery {
+	query := &OrderQuery{config: mq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withOrders = query
+	return mq
+}
+
+// WithBaskets tells the query-builder to eager-load the nodes that are connected to
+// the "baskets" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MerchantQuery) WithBaskets(opts ...func(*BasketQuery)) *MerchantQuery {
+	query := &BasketQuery{config: mq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withBaskets = query
+	return mq
+}
+
+// WithFavourites tells the query-builder to eager-load the nodes that are connected to
+// the "favourites" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MerchantQuery) WithFavourites(opts ...func(*FavouriteQuery)) *MerchantQuery {
+	query := &FavouriteQuery{config: mq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withFavourites = query
 	return mq
 }
 
@@ -423,20 +602,18 @@ func (mq *MerchantQuery) prepareQuery(ctx context.Context) error {
 func (mq *MerchantQuery) sqlAll(ctx context.Context) ([]*Merchant, error) {
 	var (
 		nodes       = []*Merchant{}
-		withFKs     = mq.withFKs
 		_spec       = mq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [8]bool{
 			mq.withSupplier != nil,
 			mq.withRetailer != nil,
+			mq.withStore != nil,
 			mq.withProducts != nil,
+			mq.withAddresses != nil,
+			mq.withOrders != nil,
+			mq.withBaskets != nil,
+			mq.withFavourites != nil,
 		}
 	)
-	if mq.withProducts != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, merchant.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &Merchant{config: mq.config}
 		nodes = append(nodes, node)
@@ -513,32 +690,176 @@ func (mq *MerchantQuery) sqlAll(ctx context.Context) ([]*Merchant, error) {
 		}
 	}
 
-	if query := mq.withProducts; query != nil {
-		ids := make([]int, 0, len(nodes))
-		nodeids := make(map[int][]*Merchant)
+	if query := mq.withStore; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Merchant)
 		for i := range nodes {
-			if nodes[i].merchant_products == nil {
-				continue
-			}
-			fk := *nodes[i].merchant_products
-			if _, ok := nodeids[fk]; !ok {
-				ids = append(ids, fk)
-			}
-			nodeids[fk] = append(nodeids[fk], nodes[i])
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
 		}
-		query.Where(product.IDIn(ids...))
+		query.withFKs = true
+		query.Where(predicate.MerchantStore(func(s *sql.Selector) {
+			s.Where(sql.InValues(merchant.StoreColumn, fks...))
+		}))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			nodes, ok := nodeids[n.ID]
+			fk := n.merchant_store
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "merchant_store" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "merchant_products" returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "merchant_store" returned %v for node %v`, *fk, n.ID)
 			}
-			for i := range nodes {
-				nodes[i].Edges.Products = n
+			node.Edges.Store = n
+		}
+	}
+
+	if query := mq.withProducts; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Merchant)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Products = []*Product{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Product(func(s *sql.Selector) {
+			s.Where(sql.InValues(merchant.ProductsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.merchant_products
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "merchant_products" is nil for node %v`, n.ID)
 			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "merchant_products" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Products = append(node.Edges.Products, n)
+		}
+	}
+
+	if query := mq.withAddresses; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Merchant)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Addresses = []*Address{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Address(func(s *sql.Selector) {
+			s.Where(sql.InValues(merchant.AddressesColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.merchant_addresses
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "merchant_addresses" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "merchant_addresses" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Addresses = append(node.Edges.Addresses, n)
+		}
+	}
+
+	if query := mq.withOrders; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Merchant)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Orders = []*Order{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Order(func(s *sql.Selector) {
+			s.Where(sql.InValues(merchant.OrdersColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.merchant_orders
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "merchant_orders" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "merchant_orders" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Orders = append(node.Edges.Orders, n)
+		}
+	}
+
+	if query := mq.withBaskets; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Merchant)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Baskets = []*Basket{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Basket(func(s *sql.Selector) {
+			s.Where(sql.InValues(merchant.BasketsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.merchant_baskets
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "merchant_baskets" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "merchant_baskets" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Baskets = append(node.Edges.Baskets, n)
+		}
+	}
+
+	if query := mq.withFavourites; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Merchant)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Favourites = []*Favourite{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Favourite(func(s *sql.Selector) {
+			s.Where(sql.InValues(merchant.FavouritesColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.merchant_favourites
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "merchant_favourites" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "merchant_favourites" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Favourites = append(node.Edges.Favourites, n)
 		}
 	}
 

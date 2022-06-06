@@ -6,17 +6,32 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Address is the predicate function for address builders.
+type Address func(*sql.Selector)
+
 // Admin is the predicate function for admin builders.
 type Admin func(*sql.Selector)
 
 // Agent is the predicate function for agent builders.
 type Agent func(*sql.Selector)
 
+// Basket is the predicate function for basket builders.
+type Basket func(*sql.Selector)
+
 // Customer is the predicate function for customer builders.
 type Customer func(*sql.Selector)
 
+// Favourite is the predicate function for favourite builders.
+type Favourite func(*sql.Selector)
+
 // Merchant is the predicate function for merchant builders.
 type Merchant func(*sql.Selector)
+
+// MerchantStore is the predicate function for merchantstore builders.
+type MerchantStore func(*sql.Selector)
+
+// Order is the predicate function for order builders.
+type Order func(*sql.Selector)
 
 // Product is the predicate function for product builders.
 type Product func(*sql.Selector)

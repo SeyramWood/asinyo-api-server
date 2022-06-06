@@ -24,6 +24,8 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 	agentRouter(r, h.db)
 
+	merchantRouter(r, h.db)
+
 	retailMerchantRouter(r, h.db)
 
 	supplierMerchantRouter(r, h.db)
@@ -80,6 +82,7 @@ func agentRouter(r fiber.Router, db *database.Adapter) {
 	}, "merchant.retailers.")
 
 }
+
 func retailMerchantRouter(r fiber.Router, db *database.Adapter) {
 
 	h := handlers.NewRetailMerchantHandler(db)
@@ -87,7 +90,7 @@ func retailMerchantRouter(r fiber.Router, db *database.Adapter) {
 
 	router := r.Group("/auth/merchant/retailers")
 
-	authRouter := r.Group("/merchant/retailers", middleware.Auth())
+	authRouter := r.Group("/merchant/retailers") //middleware.Auth()
 
 	router.Route("/", func(r fiber.Router) {
 
@@ -110,7 +113,7 @@ func supplierMerchantRouter(r fiber.Router, db *database.Adapter) {
 
 	router := r.Group("/auth/merchant/suppliers")
 
-	authRouter := r.Group("/merchant/suppliers", middleware.Auth())
+	authRouter := r.Group("/merchant/suppliers") //middleware.Auth()
 
 	router.Route("/", func(r fiber.Router) {
 
@@ -124,6 +127,34 @@ func supplierMerchantRouter(r fiber.Router, db *database.Adapter) {
 		r.Delete("/:id", h.Delete()).Name("delete")
 
 	}, "merchant.suppliers.")
+
+}
+
+func merchantRouter(r fiber.Router, db *database.Adapter) {
+
+	//m := handlers.NewMerchantHandler(db)
+	msHandler := handlers.NewMerchantStoreHandler(db)
+
+	mRouter := r.Group("/merchants")
+	msRouter := mRouter.Group("/storefront")
+
+	mRouter.Route("/", func(r fiber.Router) {
+
+		//r.Post("/store", request.ValidateMerchant(), m.Create()).Name("register")
+
+	}, "merchants.")
+
+	msRouter.Route("/", func(r fiber.Router) {
+
+		r.Get("/:merchantId", msHandler.FetchByID())
+
+		r.Post("/:merchantId/profile", request.ValidateMerchantStore(), msHandler.Create())
+
+		r.Put("/:storeId/account/momo", request.ValidateMerchantMomoAccount(), msHandler.SaveMomoAccount())
+
+		r.Put("/:storeId/account/bank", request.ValidateMerchantBankAccount(), msHandler.SaveBankAccount())
+
+	}, "merchants.")
 
 }
 
@@ -165,11 +196,21 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 
 		r.Get("/", h.Fetch()).Name("all")
 
-		r.Post("/create", request.ValidateProduct(), h.Create()).Name("create")
+		r.Get("/category/major", majorH.Fetch()).Name("major")
 
-		r.Get("/majors", majorH.Fetch()).Name("majors")
+		r.Get("/category/minor", minorH.Fetch()).Name("minor")
 
-		r.Get("/minors", minorH.Fetch()).Name("minors")
+		r.Get("/best-seller/:merchant", h.FetchBestSellerProducts()).Name("best.sellers")
+
+		r.Get("/:merchant/:id", h.FetchMerchantProducts()).Name("merchant.all")
+
+		r.Get("/category/major/:merchant", h.FetchAllMerchantCategoryMajorProducts())
+
+		r.Get("/category/:merchant/:cat/:slug", h.FetchBySlugMerchantCategoryProducts())
+
+		r.Get("/:merchant/:id/:slug", h.FetchByIDMerchantProduct())
+
+		r.Post("/create/:merchant", request.ValidateProduct(), h.Create()).Name("create")
 
 	}, "products.")
 
