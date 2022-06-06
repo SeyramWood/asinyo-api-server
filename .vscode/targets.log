@@ -7,13 +7,12 @@ make: *** No rule to make target 'all'.  Stop.
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
+ 
 
-# Make data base, printed on Sat May 21 12:15:21 2022
+# Make data base, printed on Mon Jun 06 10:36:50 2022
 
 # Variables
 
-# environment
-FPS_BROWSER_APP_PROFILE_STRING = Internet Explorer
 # environment
 SYSTEMDRIVE = C:
 # environment
@@ -23,9 +22,9 @@ USERPROFILE = C:\Users\Seyram
 # environment
 LOCALAPPDATA = C:\Users\Seyram\AppData\Local
 # environment
-VSCODE_IPC_HOOK_EXTHOST = \\.\pipe\vscode-ipc-77891297-2d76-4a85-908c-bc4cc9122088-sock
+VSCODE_IPC_HOOK_EXTHOST = \\.\pipe\vscode-ipc-91a50cb9-e71f-41a6-afe3-14fadbf9f0ab-sock
 # environment
-VSCODE_CWD = C:\Users\Seyram\Desktop\projects
+VSCODE_CWD = C:\Users\Seyram\AppData\Local\Programs\Microsoft VS Code Insiders
 # environment
 CHOCOLATEYINSTALL = C:\ProgramData\chocolatey
 # environment
@@ -41,9 +40,7 @@ GOPATH = C:\Users\Seyram\go
 # automatic
 @D = $(patsubst %/,%,$(patsubst %\,%,$(dir $@)))
 # environment
-CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_8692_WWOCFDGQFQZLVTOC
-# environment
-FPS_BROWSER_USER_PROFILE_STRING = Default
+CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_8356_MRORWCZBIEUAFGUS
 # environment
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # default
@@ -71,6 +68,8 @@ PROCESSOR_ARCHITEW6432 = AMD64
 # makefile
 MAKEFLAGS = pqrR
 # environment
+GOLAND_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\goland.vmoptions
+# environment
 ONEDRIVE = C:\Users\Seyram\OneDrive
 # makefile
 CURDIR := c:/Users/Seyram/Desktop/projects/asinyo-api
@@ -78,10 +77,14 @@ CURDIR := c:/Users/Seyram/Desktop/projects/asinyo-api
 VSCODE_PIPE_LOGGING = true
 # environment
 APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
+# environment
+GOLAND = C:\Program Files\JetBrains\GoLand 2022.1.1\bin;
 # automatic
 *D = $(patsubst %/,%,$(patsubst %\,%,$(dir $*)))
 # environment
 PROGRAMFILES = C:\Program Files (x86)
+# environment
+JETBRAINSCLIENT_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\jetbrainsclient.vmoptions
 # environment
 MFLAGS = -pqrR
 # default
@@ -97,11 +100,15 @@ MAKEFILE_LIST := Makefile
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-VSCODE_PID = 8692
+VSCODE_PID = 8356
 # automatic
 ?D = $(patsubst %/,%,$(patsubst %\,%,$(dir $?)))
+# environment
+CLION_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\clion.vmoptions
 # automatic
 *F = $(notdir $*)
+# environment
+APPCODE_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\appcode.vmoptions
 # automatic
 <D = $(patsubst %/,%,$(patsubst %\,%,$(dir $<)))
 # environment
@@ -125,11 +132,15 @@ COMSPEC = C:\Windows\system32\cmd.exe
 # environment
 WINDIR = C:\Windows
 # environment
+PHPSTORM_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\phpstorm.vmoptions
+# environment
+RUBYMINE_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\rubymine.vmoptions
+# environment
 MAKELEVEL := 0
 # default
 MAKE = $(MAKE_COMMAND)
 # environment
-PATH = C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\Go\bin;C:\Users\Seyram\AppData\Local\Microsoft\WindowsApps;C:\Users\Seyram\AppData\Local\Programs\Microsoft VS Code Insiders\bin;C:\Users\Seyram\AppData\Roaming\npm;C:\Program Files\MongoDB\Server\5.0\bin;C:\Users\Seyram\go\bin
+PATH = C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\Go\bin;C:\Users\Seyram\AppData\Local\Microsoft\WindowsApps;C:\Users\Seyram\AppData\Local\Programs\Microsoft VS Code Insiders\bin;C:\Users\Seyram\AppData\Roaming\npm;C:\Program Files\MongoDB\Server\5.0\bin;C:\Users\Seyram\go\bin;C:\Program Files\JetBrains\GoLand 2022.1.1\bin;
 # environment
 COMPUTERNAME = DESKTOP-CEC8B1O
 # default
@@ -140,6 +151,14 @@ MAKEFILES :=
 PROMPT = $P$G
 # environment
 CHOCOLATEYLASTPATHUPDATE = 132940283955978820
+# environment
+WEBIDE_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\webide.vmoptions
+# environment
+PYCHARM_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\pycharm.vmoptions
+# environment
+RIDER_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\rider.vmoptions
+# environment
+IDEA_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\idea.vmoptions
 # environment
 LOGONSERVER = \\DESKTOP-CEC8B1O
 # environment
@@ -153,7 +172,11 @@ COMMONPROGRAMFILES = C:\Program Files (x86)\Common Files
 # environment
 PROGRAMW6432 = C:\Program Files
 # environment
+DATAGRIP_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\datagrip.vmoptions
+# environment
 PATHEXT = .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
+# environment
+WEBSTORM_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\webstorm.vmoptions
 # automatic
 +F = $(notdir $+)
 # environment
@@ -164,6 +187,8 @@ USERDOMAIN = DESKTOP-CEC8B1O
 GNUMAKEFLAGS := 
 # environment
 OS = Windows_NT
+# environment
+DATASPELL_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\dataspell.vmoptions
 # makefile
 .DEFAULT_GOAL := run
 # default
@@ -176,6 +201,8 @@ USERDOMAIN_ROAMINGPROFILE = DESKTOP-CEC8B1O
 NUMBER_OF_PROCESSORS = 4
 # environment
 PUBLIC = C:\Users\Public
+# environment
+JETBRAINS_CLIENT_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\jetbrains_client.vmoptions
 # environment
 APPDATA = C:\Users\Seyram\AppData\Roaming
 # environment
@@ -211,9 +238,11 @@ SESSIONNAME = Console
 # environment
 PROCESSOR_REVISION = 4501
 # environment
+GATEWAY_VM_OPTIONS = C:\ja-netfilter\ja-netfilter\vmoptions\gateway.vmoptions
+# environment
 PROCESSOR_IDENTIFIER = Intel64 Family 6 Model 69 Stepping 1, GenuineIntel
 # variable set hash-table stats:
-# Load=100/1024=10%, Rehash=0, Collisions=10/127=8%
+# Load=114/1024=11%, Rehash=0, Collisions=10/141=7%
 
 # Pattern-specific Variable Values
 
@@ -221,9 +250,9 @@ PROCESSOR_IDENTIFIER = Intel64 Family 6 Model 69 Stepping 1, GenuineIntel
 
 # Directories
 
-# . (key c:/Users/Seyram/Desktop/projects/asinyo-api, mtime 1652616569): 15 files, no impossibilities.
+# . (key c:/Users/Seyram/Desktop/projects/asinyo-api, mtime 1653320017): 16 files, no impossibilities.
 
-# 15 files, no impossibilities in 1 directories.
+# 16 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -276,8 +305,7 @@ gen_ent:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line  
-8):
+#  recipe to execute (from 'Makefile', line 8):
 	go generate ./ent
 
 # files hash-table stats:
@@ -288,12 +316,12 @@ gen_ent:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 22 / storage = 139 B / avg = 6 B
-# current buf: size = 8174 B / used = 139 B / count = 22 / avg = 6 B
+# strcache buffers: 1 (0) / strings = 23 / storage = 150 B / avg = 6 B
+# current buf: size = 8174 B / used = 150 B / count = 23 / avg = 6 B
 
-# strcache performance: lookups = 30 / hit rate = 26%
+# strcache performance: lookups = 31 / hit rate = 25%
 # hash-table stats:
-# Load=22/8192=0%, Rehash=0, Collisions=0/30=0%
-# Finished Make data base on Sat May 21 12:15:21 2022
+# Load=23/8192=0%, Rehash=0, Collisions=0/31=0%
+# Finished Make data base on Mon Jun 06 10:36:50 2022
 
  
