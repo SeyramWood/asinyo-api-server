@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
-	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
@@ -40,7 +39,6 @@ type MerchantQuery struct {
 	withProducts   *ProductQuery
 	withAddresses  *AddressQuery
 	withOrders     *OrderQuery
-	withBaskets    *BasketQuery
 	withFavourites *FavouriteQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -203,28 +201,6 @@ func (mq *MerchantQuery) QueryOrders() *OrderQuery {
 			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
 			sqlgraph.To(order.Table, order.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, merchant.OrdersTable, merchant.OrdersColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryBaskets chains the current query on the "baskets" edge.
-func (mq *MerchantQuery) QueryBaskets() *BasketQuery {
-	query := &BasketQuery{config: mq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := mq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := mq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
-			sqlgraph.To(basket.Table, basket.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, merchant.BasketsTable, merchant.BasketsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
 		return fromU, nil
@@ -441,7 +417,6 @@ func (mq *MerchantQuery) Clone() *MerchantQuery {
 		withProducts:   mq.withProducts.Clone(),
 		withAddresses:  mq.withAddresses.Clone(),
 		withOrders:     mq.withOrders.Clone(),
-		withBaskets:    mq.withBaskets.Clone(),
 		withFavourites: mq.withFavourites.Clone(),
 		// clone intermediate query.
 		sql:    mq.sql.Clone(),
@@ -513,17 +488,6 @@ func (mq *MerchantQuery) WithOrders(opts ...func(*OrderQuery)) *MerchantQuery {
 		opt(query)
 	}
 	mq.withOrders = query
-	return mq
-}
-
-// WithBaskets tells the query-builder to eager-load the nodes that are connected to
-// the "baskets" edge. The optional arguments are used to configure the query builder of the edge.
-func (mq *MerchantQuery) WithBaskets(opts ...func(*BasketQuery)) *MerchantQuery {
-	query := &BasketQuery{config: mq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	mq.withBaskets = query
 	return mq
 }
 
@@ -603,14 +567,13 @@ func (mq *MerchantQuery) sqlAll(ctx context.Context) ([]*Merchant, error) {
 	var (
 		nodes       = []*Merchant{}
 		_spec       = mq.querySpec()
-		loadedTypes = [8]bool{
+		loadedTypes = [7]bool{
 			mq.withSupplier != nil,
 			mq.withRetailer != nil,
 			mq.withStore != nil,
 			mq.withProducts != nil,
 			mq.withAddresses != nil,
 			mq.withOrders != nil,
-			mq.withBaskets != nil,
 			mq.withFavourites != nil,
 		}
 	)
@@ -802,35 +765,6 @@ func (mq *MerchantQuery) sqlAll(ctx context.Context) ([]*Merchant, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "merchant_orders" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Orders = append(node.Edges.Orders, n)
-		}
-	}
-
-	if query := mq.withBaskets; query != nil {
-		fks := make([]driver.Value, 0, len(nodes))
-		nodeids := make(map[int]*Merchant)
-		for i := range nodes {
-			fks = append(fks, nodes[i].ID)
-			nodeids[nodes[i].ID] = nodes[i]
-			nodes[i].Edges.Baskets = []*Basket{}
-		}
-		query.withFKs = true
-		query.Where(predicate.Basket(func(s *sql.Selector) {
-			s.Where(sql.InValues(merchant.BasketsColumn, fks...))
-		}))
-		neighbors, err := query.All(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, n := range neighbors {
-			fk := n.merchant_baskets
-			if fk == nil {
-				return nil, fmt.Errorf(`foreign-key "merchant_baskets" is nil for node %v`, n.ID)
-			}
-			node, ok := nodeids[*fk]
-			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "merchant_baskets" returned %v for node %v`, *fk, n.ID)
-			}
-			node.Edges.Baskets = append(node.Edges.Baskets, n)
 		}
 	}
 

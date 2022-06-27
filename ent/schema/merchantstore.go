@@ -30,6 +30,7 @@ func (MerchantStore) Fields() []ent.Field {
 		field.Enum("default_account").Values("bank", "momo").Optional(),
 		field.JSON("bank_account", &models.MerchantBankAccount{}).Optional(),
 		field.JSON("momo_account", &models.MerchantMomoAccount{}).Optional(),
+		field.String("merchant_type").NotEmpty(),
 	}
 }
 
@@ -39,5 +40,6 @@ func (MerchantStore) Edges() []ent.Edge {
 		edge.From("merchant", Merchant.Type).
 			Ref("store").
 			Unique(),
+		edge.To("orders", OrderDetail.Type),
 	}
 }

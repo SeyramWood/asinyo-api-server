@@ -13,6 +13,7 @@ import (
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/orderdetail"
 )
 
 // MerchantStoreCreate is the builder for creating a MerchantStore entity.
@@ -112,6 +113,12 @@ func (msc *MerchantStoreCreate) SetMomoAccount(mma *models.MerchantMomoAccount) 
 	return msc
 }
 
+// SetMerchantType sets the "merchant_type" field.
+func (msc *MerchantStoreCreate) SetMerchantType(s string) *MerchantStoreCreate {
+	msc.mutation.SetMerchantType(s)
+	return msc
+}
+
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (msc *MerchantStoreCreate) SetMerchantID(id int) *MerchantStoreCreate {
 	msc.mutation.SetMerchantID(id)
@@ -129,6 +136,21 @@ func (msc *MerchantStoreCreate) SetNillableMerchantID(id *int) *MerchantStoreCre
 // SetMerchant sets the "merchant" edge to the Merchant entity.
 func (msc *MerchantStoreCreate) SetMerchant(m *Merchant) *MerchantStoreCreate {
 	return msc.SetMerchantID(m.ID)
+}
+
+// AddOrderIDs adds the "orders" edge to the OrderDetail entity by IDs.
+func (msc *MerchantStoreCreate) AddOrderIDs(ids ...int) *MerchantStoreCreate {
+	msc.mutation.AddOrderIDs(ids...)
+	return msc
+}
+
+// AddOrders adds the "orders" edges to the OrderDetail entity.
+func (msc *MerchantStoreCreate) AddOrders(o ...*OrderDetail) *MerchantStoreCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return msc.AddOrderIDs(ids...)
 }
 
 // Mutation returns the MerchantStoreMutation object of the builder.
@@ -265,6 +287,14 @@ func (msc *MerchantStoreCreate) check() error {
 			return &ValidationError{Name: "default_account", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.default_account": %w`, err)}
 		}
 	}
+	if _, ok := msc.mutation.MerchantType(); !ok {
+		return &ValidationError{Name: "merchant_type", err: errors.New(`ent: missing required field "MerchantStore.merchant_type"`)}
+	}
+	if v, ok := msc.mutation.MerchantType(); ok {
+		if err := merchantstore.MerchantTypeValidator(v); err != nil {
+			return &ValidationError{Name: "merchant_type", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.merchant_type": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -380,6 +410,14 @@ func (msc *MerchantStoreCreate) createSpec() (*MerchantStore, *sqlgraph.CreateSp
 		})
 		_node.MomoAccount = value
 	}
+	if value, ok := msc.mutation.MerchantType(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: merchantstore.FieldMerchantType,
+		})
+		_node.MerchantType = value
+	}
 	if nodes := msc.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
@@ -398,6 +436,25 @@ func (msc *MerchantStoreCreate) createSpec() (*MerchantStore, *sqlgraph.CreateSp
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.merchant_store = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := msc.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.OrdersTable,
+			Columns: []string{merchantstore.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

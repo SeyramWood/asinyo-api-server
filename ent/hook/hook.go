@@ -48,19 +48,6 @@ func (f AgentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return f(ctx, mv)
 }
 
-// The BasketFunc type is an adapter to allow the use of ordinary
-// function as Basket mutator.
-type BasketFunc func(context.Context, *ent.BasketMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f BasketFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.BasketMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BasketMutation", m)
-	}
-	return f(ctx, mv)
-}
-
 // The CustomerFunc type is an adapter to allow the use of ordinary
 // function as Customer mutator.
 type CustomerFunc func(context.Context, *ent.CustomerMutation) (ent.Value, error)
@@ -122,6 +109,32 @@ func (f OrderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	mv, ok := m.(*ent.OrderMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrderMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The OrderDetailFunc type is an adapter to allow the use of ordinary
+// function as OrderDetail mutator.
+type OrderDetailFunc func(context.Context, *ent.OrderDetailMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OrderDetailFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.OrderDetailMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrderDetailMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The PickupStationFunc type is an adapter to allow the use of ordinary
+// function as PickupStation mutator.
+type PickupStationFunc func(context.Context, *ent.PickupStationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PickupStationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.PickupStationMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PickupStationMutation", m)
 	}
 	return f(ctx, mv)
 }

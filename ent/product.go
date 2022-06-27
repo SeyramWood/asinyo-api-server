@@ -47,27 +47,43 @@ type Product struct {
 
 // ProductEdges holds the relations/edges for other nodes in the graph.
 type ProductEdges struct {
+	// Orders holds the value of the orders edge.
+	Orders []*OrderDetail `json:"orders,omitempty"`
+	// Favourites holds the value of the favourites edge.
+	Favourites []*Favourite `json:"favourites,omitempty"`
 	// Merchant holds the value of the merchant edge.
 	Merchant *Merchant `json:"merchant,omitempty"`
 	// Major holds the value of the major edge.
 	Major *ProductCategoryMajor `json:"major,omitempty"`
 	// Minor holds the value of the minor edge.
 	Minor *ProductCategoryMinor `json:"minor,omitempty"`
-	// Orders holds the value of the orders edge.
-	Orders []*Order `json:"orders,omitempty"`
-	// Baskets holds the value of the baskets edge.
-	Baskets []*Basket `json:"baskets,omitempty"`
-	// Favourites holds the value of the favourites edge.
-	Favourites []*Favourite `json:"favourites,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [5]bool
+}
+
+// OrdersOrErr returns the Orders value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProductEdges) OrdersOrErr() ([]*OrderDetail, error) {
+	if e.loadedTypes[0] {
+		return e.Orders, nil
+	}
+	return nil, &NotLoadedError{edge: "orders"}
+}
+
+// FavouritesOrErr returns the Favourites value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProductEdges) FavouritesOrErr() ([]*Favourite, error) {
+	if e.loadedTypes[1] {
+		return e.Favourites, nil
+	}
+	return nil, &NotLoadedError{edge: "favourites"}
 }
 
 // MerchantOrErr returns the Merchant value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ProductEdges) MerchantOrErr() (*Merchant, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[2] {
 		if e.Merchant == nil {
 			// The edge merchant was loaded in eager-loading,
 			// but was not found.
@@ -81,7 +97,7 @@ func (e ProductEdges) MerchantOrErr() (*Merchant, error) {
 // MajorOrErr returns the Major value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ProductEdges) MajorOrErr() (*ProductCategoryMajor, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[3] {
 		if e.Major == nil {
 			// The edge major was loaded in eager-loading,
 			// but was not found.
@@ -95,7 +111,7 @@ func (e ProductEdges) MajorOrErr() (*ProductCategoryMajor, error) {
 // MinorOrErr returns the Minor value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ProductEdges) MinorOrErr() (*ProductCategoryMinor, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[4] {
 		if e.Minor == nil {
 			// The edge minor was loaded in eager-loading,
 			// but was not found.
@@ -104,33 +120,6 @@ func (e ProductEdges) MinorOrErr() (*ProductCategoryMinor, error) {
 		return e.Minor, nil
 	}
 	return nil, &NotLoadedError{edge: "minor"}
-}
-
-// OrdersOrErr returns the Orders value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProductEdges) OrdersOrErr() ([]*Order, error) {
-	if e.loadedTypes[3] {
-		return e.Orders, nil
-	}
-	return nil, &NotLoadedError{edge: "orders"}
-}
-
-// BasketsOrErr returns the Baskets value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProductEdges) BasketsOrErr() ([]*Basket, error) {
-	if e.loadedTypes[4] {
-		return e.Baskets, nil
-	}
-	return nil, &NotLoadedError{edge: "baskets"}
-}
-
-// FavouritesOrErr returns the Favourites value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProductEdges) FavouritesOrErr() ([]*Favourite, error) {
-	if e.loadedTypes[5] {
-		return e.Favourites, nil
-	}
-	return nil, &NotLoadedError{edge: "favourites"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -254,6 +243,16 @@ func (pr *Product) assignValues(columns []string, values []interface{}) error {
 	return nil
 }
 
+// QueryOrders queries the "orders" edge of the Product entity.
+func (pr *Product) QueryOrders() *OrderDetailQuery {
+	return (&ProductClient{config: pr.config}).QueryOrders(pr)
+}
+
+// QueryFavourites queries the "favourites" edge of the Product entity.
+func (pr *Product) QueryFavourites() *FavouriteQuery {
+	return (&ProductClient{config: pr.config}).QueryFavourites(pr)
+}
+
 // QueryMerchant queries the "merchant" edge of the Product entity.
 func (pr *Product) QueryMerchant() *MerchantQuery {
 	return (&ProductClient{config: pr.config}).QueryMerchant(pr)
@@ -267,21 +266,6 @@ func (pr *Product) QueryMajor() *ProductCategoryMajorQuery {
 // QueryMinor queries the "minor" edge of the Product entity.
 func (pr *Product) QueryMinor() *ProductCategoryMinorQuery {
 	return (&ProductClient{config: pr.config}).QueryMinor(pr)
-}
-
-// QueryOrders queries the "orders" edge of the Product entity.
-func (pr *Product) QueryOrders() *OrderQuery {
-	return (&ProductClient{config: pr.config}).QueryOrders(pr)
-}
-
-// QueryBaskets queries the "baskets" edge of the Product entity.
-func (pr *Product) QueryBaskets() *BasketQuery {
-	return (&ProductClient{config: pr.config}).QueryBaskets(pr)
-}
-
-// QueryFavourites queries the "favourites" edge of the Product entity.
-func (pr *Product) QueryFavourites() *FavouriteQuery {
-	return (&ProductClient{config: pr.config}).QueryFavourites(pr)
 }
 
 // Update returns a builder for updating this Product.

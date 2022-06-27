@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
-	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
@@ -162,21 +161,6 @@ func (mu *MerchantUpdate) AddOrders(o ...*Order) *MerchantUpdate {
 	return mu.AddOrderIDs(ids...)
 }
 
-// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
-func (mu *MerchantUpdate) AddBasketIDs(ids ...int) *MerchantUpdate {
-	mu.mutation.AddBasketIDs(ids...)
-	return mu
-}
-
-// AddBaskets adds the "baskets" edges to the Basket entity.
-func (mu *MerchantUpdate) AddBaskets(b ...*Basket) *MerchantUpdate {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return mu.AddBasketIDs(ids...)
-}
-
 // AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
 func (mu *MerchantUpdate) AddFavouriteIDs(ids ...int) *MerchantUpdate {
 	mu.mutation.AddFavouriteIDs(ids...)
@@ -276,27 +260,6 @@ func (mu *MerchantUpdate) RemoveOrders(o ...*Order) *MerchantUpdate {
 		ids[i] = o[i].ID
 	}
 	return mu.RemoveOrderIDs(ids...)
-}
-
-// ClearBaskets clears all "baskets" edges to the Basket entity.
-func (mu *MerchantUpdate) ClearBaskets() *MerchantUpdate {
-	mu.mutation.ClearBaskets()
-	return mu
-}
-
-// RemoveBasketIDs removes the "baskets" edge to Basket entities by IDs.
-func (mu *MerchantUpdate) RemoveBasketIDs(ids ...int) *MerchantUpdate {
-	mu.mutation.RemoveBasketIDs(ids...)
-	return mu
-}
-
-// RemoveBaskets removes "baskets" edges to Basket entities.
-func (mu *MerchantUpdate) RemoveBaskets(b ...*Basket) *MerchantUpdate {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return mu.RemoveBasketIDs(ids...)
 }
 
 // ClearFavourites clears all "favourites" edges to the Favourite entity.
@@ -722,60 +685,6 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if mu.mutation.BasketsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchant.BasketsTable,
-			Columns: []string{merchant.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := mu.mutation.RemovedBasketsIDs(); len(nodes) > 0 && !mu.mutation.BasketsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchant.BasketsTable,
-			Columns: []string{merchant.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := mu.mutation.BasketsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchant.BasketsTable,
-			Columns: []string{merchant.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if mu.mutation.FavouritesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -975,21 +884,6 @@ func (muo *MerchantUpdateOne) AddOrders(o ...*Order) *MerchantUpdateOne {
 	return muo.AddOrderIDs(ids...)
 }
 
-// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
-func (muo *MerchantUpdateOne) AddBasketIDs(ids ...int) *MerchantUpdateOne {
-	muo.mutation.AddBasketIDs(ids...)
-	return muo
-}
-
-// AddBaskets adds the "baskets" edges to the Basket entity.
-func (muo *MerchantUpdateOne) AddBaskets(b ...*Basket) *MerchantUpdateOne {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return muo.AddBasketIDs(ids...)
-}
-
 // AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
 func (muo *MerchantUpdateOne) AddFavouriteIDs(ids ...int) *MerchantUpdateOne {
 	muo.mutation.AddFavouriteIDs(ids...)
@@ -1089,27 +983,6 @@ func (muo *MerchantUpdateOne) RemoveOrders(o ...*Order) *MerchantUpdateOne {
 		ids[i] = o[i].ID
 	}
 	return muo.RemoveOrderIDs(ids...)
-}
-
-// ClearBaskets clears all "baskets" edges to the Basket entity.
-func (muo *MerchantUpdateOne) ClearBaskets() *MerchantUpdateOne {
-	muo.mutation.ClearBaskets()
-	return muo
-}
-
-// RemoveBasketIDs removes the "baskets" edge to Basket entities by IDs.
-func (muo *MerchantUpdateOne) RemoveBasketIDs(ids ...int) *MerchantUpdateOne {
-	muo.mutation.RemoveBasketIDs(ids...)
-	return muo
-}
-
-// RemoveBaskets removes "baskets" edges to Basket entities.
-func (muo *MerchantUpdateOne) RemoveBaskets(b ...*Basket) *MerchantUpdateOne {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return muo.RemoveBasketIDs(ids...)
 }
 
 // ClearFavourites clears all "favourites" edges to the Favourite entity.
@@ -1551,60 +1424,6 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: order.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if muo.mutation.BasketsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchant.BasketsTable,
-			Columns: []string{merchant.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := muo.mutation.RemovedBasketsIDs(); len(nodes) > 0 && !muo.mutation.BasketsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchant.BasketsTable,
-			Columns: []string{merchant.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := muo.mutation.BasketsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchant.BasketsTable,
-			Columns: []string{merchant.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
 				},
 			},
 		}

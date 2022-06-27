@@ -15,7 +15,8 @@ import (
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/order"
-	"github.com/SeyramWood/ent/product"
+	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/SeyramWood/ent/pickupstation"
 )
 
 // OrderCreate is the builder for creating a Order entity.
@@ -53,6 +54,70 @@ func (oc *OrderCreate) SetNillableUpdatedAt(t *time.Time) *OrderCreate {
 	return oc
 }
 
+// SetOrderNumber sets the "order_number" field.
+func (oc *OrderCreate) SetOrderNumber(s string) *OrderCreate {
+	oc.mutation.SetOrderNumber(s)
+	return oc
+}
+
+// SetCurrency sets the "currency" field.
+func (oc *OrderCreate) SetCurrency(s string) *OrderCreate {
+	oc.mutation.SetCurrency(s)
+	return oc
+}
+
+// SetAmount sets the "amount" field.
+func (oc *OrderCreate) SetAmount(f float64) *OrderCreate {
+	oc.mutation.SetAmount(f)
+	return oc
+}
+
+// SetNillableAmount sets the "amount" field if the given value is not nil.
+func (oc *OrderCreate) SetNillableAmount(f *float64) *OrderCreate {
+	if f != nil {
+		oc.SetAmount(*f)
+	}
+	return oc
+}
+
+// SetDeliveryFee sets the "delivery_fee" field.
+func (oc *OrderCreate) SetDeliveryFee(f float64) *OrderCreate {
+	oc.mutation.SetDeliveryFee(f)
+	return oc
+}
+
+// SetNillableDeliveryFee sets the "delivery_fee" field if the given value is not nil.
+func (oc *OrderCreate) SetNillableDeliveryFee(f *float64) *OrderCreate {
+	if f != nil {
+		oc.SetDeliveryFee(*f)
+	}
+	return oc
+}
+
+// SetReference sets the "reference" field.
+func (oc *OrderCreate) SetReference(s string) *OrderCreate {
+	oc.mutation.SetReference(s)
+	return oc
+}
+
+// SetChannel sets the "channel" field.
+func (oc *OrderCreate) SetChannel(s string) *OrderCreate {
+	oc.mutation.SetChannel(s)
+	return oc
+}
+
+// SetPaidAt sets the "paid_at" field.
+func (oc *OrderCreate) SetPaidAt(s string) *OrderCreate {
+	oc.mutation.SetPaidAt(s)
+	return oc
+}
+
+// SetDeliveryMethod sets the "delivery_method" field.
+func (oc *OrderCreate) SetDeliveryMethod(om order.DeliveryMethod) *OrderCreate {
+	oc.mutation.SetDeliveryMethod(om)
+	return oc
+}
+
 // SetStatus sets the "status" field.
 func (oc *OrderCreate) SetStatus(o order.Status) *OrderCreate {
 	oc.mutation.SetStatus(o)
@@ -79,6 +144,21 @@ func (oc *OrderCreate) SetNillableDeliveredAt(t *time.Time) *OrderCreate {
 		oc.SetDeliveredAt(*t)
 	}
 	return oc
+}
+
+// AddDetailIDs adds the "details" edge to the OrderDetail entity by IDs.
+func (oc *OrderCreate) AddDetailIDs(ids ...int) *OrderCreate {
+	oc.mutation.AddDetailIDs(ids...)
+	return oc
+}
+
+// AddDetails adds the "details" edges to the OrderDetail entity.
+func (oc *OrderCreate) AddDetails(o ...*OrderDetail) *OrderCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return oc.AddDetailIDs(ids...)
 }
 
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
@@ -157,23 +237,23 @@ func (oc *OrderCreate) SetAddress(a *Address) *OrderCreate {
 	return oc.SetAddressID(a.ID)
 }
 
-// SetProductID sets the "product" edge to the Product entity by ID.
-func (oc *OrderCreate) SetProductID(id int) *OrderCreate {
-	oc.mutation.SetProductID(id)
+// SetPickupID sets the "pickup" edge to the PickupStation entity by ID.
+func (oc *OrderCreate) SetPickupID(id int) *OrderCreate {
+	oc.mutation.SetPickupID(id)
 	return oc
 }
 
-// SetNillableProductID sets the "product" edge to the Product entity by ID if the given value is not nil.
-func (oc *OrderCreate) SetNillableProductID(id *int) *OrderCreate {
+// SetNillablePickupID sets the "pickup" edge to the PickupStation entity by ID if the given value is not nil.
+func (oc *OrderCreate) SetNillablePickupID(id *int) *OrderCreate {
 	if id != nil {
-		oc = oc.SetProductID(*id)
+		oc = oc.SetPickupID(*id)
 	}
 	return oc
 }
 
-// SetProduct sets the "product" edge to the Product entity.
-func (oc *OrderCreate) SetProduct(p *Product) *OrderCreate {
-	return oc.SetProductID(p.ID)
+// SetPickup sets the "pickup" edge to the PickupStation entity.
+func (oc *OrderCreate) SetPickup(p *PickupStation) *OrderCreate {
+	return oc.SetPickupID(p.ID)
 }
 
 // Mutation returns the OrderMutation object of the builder.
@@ -255,6 +335,14 @@ func (oc *OrderCreate) defaults() {
 		v := order.DefaultUpdatedAt()
 		oc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := oc.mutation.Amount(); !ok {
+		v := order.DefaultAmount
+		oc.mutation.SetAmount(v)
+	}
+	if _, ok := oc.mutation.DeliveryFee(); !ok {
+		v := order.DefaultDeliveryFee
+		oc.mutation.SetDeliveryFee(v)
+	}
 	if _, ok := oc.mutation.Status(); !ok {
 		v := order.DefaultStatus
 		oc.mutation.SetStatus(v)
@@ -268,6 +356,60 @@ func (oc *OrderCreate) check() error {
 	}
 	if _, ok := oc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Order.updated_at"`)}
+	}
+	if _, ok := oc.mutation.OrderNumber(); !ok {
+		return &ValidationError{Name: "order_number", err: errors.New(`ent: missing required field "Order.order_number"`)}
+	}
+	if v, ok := oc.mutation.OrderNumber(); ok {
+		if err := order.OrderNumberValidator(v); err != nil {
+			return &ValidationError{Name: "order_number", err: fmt.Errorf(`ent: validator failed for field "Order.order_number": %w`, err)}
+		}
+	}
+	if _, ok := oc.mutation.Currency(); !ok {
+		return &ValidationError{Name: "currency", err: errors.New(`ent: missing required field "Order.currency"`)}
+	}
+	if v, ok := oc.mutation.Currency(); ok {
+		if err := order.CurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "currency", err: fmt.Errorf(`ent: validator failed for field "Order.currency": %w`, err)}
+		}
+	}
+	if _, ok := oc.mutation.Amount(); !ok {
+		return &ValidationError{Name: "amount", err: errors.New(`ent: missing required field "Order.amount"`)}
+	}
+	if _, ok := oc.mutation.DeliveryFee(); !ok {
+		return &ValidationError{Name: "delivery_fee", err: errors.New(`ent: missing required field "Order.delivery_fee"`)}
+	}
+	if _, ok := oc.mutation.Reference(); !ok {
+		return &ValidationError{Name: "reference", err: errors.New(`ent: missing required field "Order.reference"`)}
+	}
+	if v, ok := oc.mutation.Reference(); ok {
+		if err := order.ReferenceValidator(v); err != nil {
+			return &ValidationError{Name: "reference", err: fmt.Errorf(`ent: validator failed for field "Order.reference": %w`, err)}
+		}
+	}
+	if _, ok := oc.mutation.Channel(); !ok {
+		return &ValidationError{Name: "channel", err: errors.New(`ent: missing required field "Order.channel"`)}
+	}
+	if v, ok := oc.mutation.Channel(); ok {
+		if err := order.ChannelValidator(v); err != nil {
+			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "Order.channel": %w`, err)}
+		}
+	}
+	if _, ok := oc.mutation.PaidAt(); !ok {
+		return &ValidationError{Name: "paid_at", err: errors.New(`ent: missing required field "Order.paid_at"`)}
+	}
+	if v, ok := oc.mutation.PaidAt(); ok {
+		if err := order.PaidAtValidator(v); err != nil {
+			return &ValidationError{Name: "paid_at", err: fmt.Errorf(`ent: validator failed for field "Order.paid_at": %w`, err)}
+		}
+	}
+	if _, ok := oc.mutation.DeliveryMethod(); !ok {
+		return &ValidationError{Name: "delivery_method", err: errors.New(`ent: missing required field "Order.delivery_method"`)}
+	}
+	if v, ok := oc.mutation.DeliveryMethod(); ok {
+		if err := order.DeliveryMethodValidator(v); err != nil {
+			return &ValidationError{Name: "delivery_method", err: fmt.Errorf(`ent: validator failed for field "Order.delivery_method": %w`, err)}
+		}
 	}
 	if _, ok := oc.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Order.status"`)}
@@ -320,6 +462,70 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		})
 		_node.UpdatedAt = value
 	}
+	if value, ok := oc.mutation.OrderNumber(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldOrderNumber,
+		})
+		_node.OrderNumber = value
+	}
+	if value, ok := oc.mutation.Currency(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldCurrency,
+		})
+		_node.Currency = value
+	}
+	if value, ok := oc.mutation.Amount(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldAmount,
+		})
+		_node.Amount = value
+	}
+	if value, ok := oc.mutation.DeliveryFee(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldDeliveryFee,
+		})
+		_node.DeliveryFee = value
+	}
+	if value, ok := oc.mutation.Reference(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldReference,
+		})
+		_node.Reference = value
+	}
+	if value, ok := oc.mutation.Channel(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldChannel,
+		})
+		_node.Channel = value
+	}
+	if value, ok := oc.mutation.PaidAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldPaidAt,
+		})
+		_node.PaidAt = value
+	}
+	if value, ok := oc.mutation.DeliveryMethod(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: order.FieldDeliveryMethod,
+		})
+		_node.DeliveryMethod = value
+	}
 	if value, ok := oc.mutation.Status(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeEnum,
@@ -335,6 +541,25 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			Column: order.FieldDeliveredAt,
 		})
 		_node.DeliveredAt = &value
+	}
+	if nodes := oc.mutation.DetailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.DetailsTable,
+			Columns: []string{order.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := oc.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -416,24 +641,24 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		_node.address_orders = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := oc.mutation.ProductIDs(); len(nodes) > 0 {
+	if nodes := oc.mutation.PickupIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.ProductTable,
-			Columns: []string{order.ProductColumn},
+			Table:   order.PickupTable,
+			Columns: []string{order.PickupColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: product.FieldID,
+					Column: pickupstation.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.product_orders = &nodes[0]
+		_node.pickup_station_orders = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

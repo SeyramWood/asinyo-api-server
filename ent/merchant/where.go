@@ -746,34 +746,6 @@ func HasOrdersWith(preds ...predicate.Order) predicate.Merchant {
 	})
 }
 
-// HasBaskets applies the HasEdge predicate on the "baskets" edge.
-func HasBaskets() predicate.Merchant {
-	return predicate.Merchant(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(BasketsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, BasketsTable, BasketsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasBasketsWith applies the HasEdge predicate on the "baskets" edge with a given conditions (other predicates).
-func HasBasketsWith(preds ...predicate.Basket) predicate.Merchant {
-	return predicate.Merchant(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(BasketsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, BasketsTable, BasketsColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasFavourites applies the HasEdge predicate on the "favourites" edge.
 func HasFavourites() predicate.Merchant {
 	return predicate.Merchant(func(s *sql.Selector) {

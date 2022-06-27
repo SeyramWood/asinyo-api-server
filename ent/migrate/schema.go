@@ -88,48 +88,6 @@ var (
 		Columns:    AgentsColumns,
 		PrimaryKey: []*schema.Column{AgentsColumns[0]},
 	}
-	// BasketsColumns holds the columns for the "baskets" table.
-	BasketsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "agent_baskets", Type: field.TypeInt, Nullable: true},
-		{Name: "customer_baskets", Type: field.TypeInt, Nullable: true},
-		{Name: "merchant_baskets", Type: field.TypeInt, Nullable: true},
-		{Name: "product_baskets", Type: field.TypeInt, Nullable: true},
-	}
-	// BasketsTable holds the schema information for the "baskets" table.
-	BasketsTable = &schema.Table{
-		Name:       "baskets",
-		Columns:    BasketsColumns,
-		PrimaryKey: []*schema.Column{BasketsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "baskets_agents_baskets",
-				Columns:    []*schema.Column{BasketsColumns[3]},
-				RefColumns: []*schema.Column{AgentsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "baskets_customers_baskets",
-				Columns:    []*schema.Column{BasketsColumns[4]},
-				RefColumns: []*schema.Column{CustomersColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "baskets_merchants_baskets",
-				Columns:    []*schema.Column{BasketsColumns[5]},
-				RefColumns: []*schema.Column{MerchantsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "baskets_products_baskets",
-				Columns:    []*schema.Column{BasketsColumns[6]},
-				RefColumns: []*schema.Column{ProductsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
 	// CustomersColumns holds the columns for the "customers" table.
 	CustomersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -219,6 +177,7 @@ var (
 		{Name: "default_account", Type: field.TypeEnum, Nullable: true, Enums: []string{"bank", "momo"}},
 		{Name: "bank_account", Type: field.TypeJSON, Nullable: true},
 		{Name: "momo_account", Type: field.TypeJSON, Nullable: true},
+		{Name: "merchant_type", Type: field.TypeString},
 		{Name: "merchant_store", Type: field.TypeInt, Unique: true, Nullable: true},
 	}
 	// MerchantStoresTable holds the schema information for the "merchant_stores" table.
@@ -229,7 +188,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "merchant_stores_merchants_store",
-				Columns:    []*schema.Column{MerchantStoresColumns[12]},
+				Columns:    []*schema.Column{MerchantStoresColumns[13]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -240,13 +199,21 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"in_progress", "shipping", "delivered"}, Default: "in_progress"},
+		{Name: "order_number", Type: field.TypeString},
+		{Name: "currency", Type: field.TypeString},
+		{Name: "amount", Type: field.TypeFloat64, Default: 0},
+		{Name: "delivery_fee", Type: field.TypeFloat64, Default: 0},
+		{Name: "reference", Type: field.TypeString},
+		{Name: "channel", Type: field.TypeString},
+		{Name: "paid_at", Type: field.TypeString},
+		{Name: "delivery_method", Type: field.TypeEnum, Enums: []string{"HOD", "PSD"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "shipping", "delivered"}, Default: "pending"},
 		{Name: "delivered_at", Type: field.TypeTime, Nullable: true},
 		{Name: "address_orders", Type: field.TypeInt, Nullable: true},
 		{Name: "agent_orders", Type: field.TypeInt, Nullable: true},
 		{Name: "customer_orders", Type: field.TypeInt, Nullable: true},
 		{Name: "merchant_orders", Type: field.TypeInt, Nullable: true},
-		{Name: "product_orders", Type: field.TypeInt, Nullable: true},
+		{Name: "pickup_station_orders", Type: field.TypeInt, Nullable: true},
 	}
 	// OrdersTable holds the schema information for the "orders" table.
 	OrdersTable = &schema.Table{
@@ -256,35 +223,90 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "orders_addresses_orders",
-				Columns:    []*schema.Column{OrdersColumns[5]},
+				Columns:    []*schema.Column{OrdersColumns[13]},
 				RefColumns: []*schema.Column{AddressesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "orders_agents_orders",
-				Columns:    []*schema.Column{OrdersColumns[6]},
+				Columns:    []*schema.Column{OrdersColumns[14]},
 				RefColumns: []*schema.Column{AgentsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "orders_customers_orders",
-				Columns:    []*schema.Column{OrdersColumns[7]},
+				Columns:    []*schema.Column{OrdersColumns[15]},
 				RefColumns: []*schema.Column{CustomersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "orders_merchants_orders",
-				Columns:    []*schema.Column{OrdersColumns[8]},
+				Columns:    []*schema.Column{OrdersColumns[16]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
-				Symbol:     "orders_products_orders",
-				Columns:    []*schema.Column{OrdersColumns[9]},
-				RefColumns: []*schema.Column{ProductsColumns[0]},
+				Symbol:     "orders_pickup_stations_orders",
+				Columns:    []*schema.Column{OrdersColumns[17]},
+				RefColumns: []*schema.Column{PickupStationsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
+	}
+	// OrderDetailsColumns holds the columns for the "order_details" table.
+	OrderDetailsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "price", Type: field.TypeFloat64, Default: 0},
+		{Name: "promo_price", Type: field.TypeFloat64, Default: 0},
+		{Name: "amount", Type: field.TypeFloat64, Default: 0},
+		{Name: "quantity", Type: field.TypeInt, Default: 0},
+		{Name: "merchant_store_orders", Type: field.TypeInt},
+		{Name: "order_details", Type: field.TypeInt},
+		{Name: "product_orders", Type: field.TypeInt},
+	}
+	// OrderDetailsTable holds the schema information for the "order_details" table.
+	OrderDetailsTable = &schema.Table{
+		Name:       "order_details",
+		Columns:    OrderDetailsColumns,
+		PrimaryKey: []*schema.Column{OrderDetailsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "order_details_merchant_stores_orders",
+				Columns:    []*schema.Column{OrderDetailsColumns[7]},
+				RefColumns: []*schema.Column{MerchantStoresColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "order_details_orders_details",
+				Columns:    []*schema.Column{OrderDetailsColumns[8]},
+				RefColumns: []*schema.Column{OrdersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "order_details_products_orders",
+				Columns:    []*schema.Column{OrderDetailsColumns[9]},
+				RefColumns: []*schema.Column{ProductsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// PickupStationsColumns holds the columns for the "pickup_stations" table.
+	PickupStationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "region", Type: field.TypeString},
+		{Name: "city", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "address", Type: field.TypeString},
+	}
+	// PickupStationsTable holds the schema information for the "pickup_stations" table.
+	PickupStationsTable = &schema.Table{
+		Name:       "pickup_stations",
+		Columns:    PickupStationsColumns,
+		PrimaryKey: []*schema.Column{PickupStationsColumns[0]},
 	}
 	// ProductsColumns holds the columns for the "products" table.
 	ProductsColumns = []*schema.Column{
@@ -427,12 +449,13 @@ var (
 		AddressesTable,
 		AdminsTable,
 		AgentsTable,
-		BasketsTable,
 		CustomersTable,
 		FavouritesTable,
 		MerchantsTable,
 		MerchantStoresTable,
 		OrdersTable,
+		OrderDetailsTable,
+		PickupStationsTable,
 		ProductsTable,
 		ProductCategoryMajorsTable,
 		ProductCategoryMinorsTable,
@@ -445,10 +468,6 @@ func init() {
 	AddressesTable.ForeignKeys[0].RefTable = AgentsTable
 	AddressesTable.ForeignKeys[1].RefTable = CustomersTable
 	AddressesTable.ForeignKeys[2].RefTable = MerchantsTable
-	BasketsTable.ForeignKeys[0].RefTable = AgentsTable
-	BasketsTable.ForeignKeys[1].RefTable = CustomersTable
-	BasketsTable.ForeignKeys[2].RefTable = MerchantsTable
-	BasketsTable.ForeignKeys[3].RefTable = ProductsTable
 	FavouritesTable.ForeignKeys[0].RefTable = AgentsTable
 	FavouritesTable.ForeignKeys[1].RefTable = CustomersTable
 	FavouritesTable.ForeignKeys[2].RefTable = MerchantsTable
@@ -458,7 +477,10 @@ func init() {
 	OrdersTable.ForeignKeys[1].RefTable = AgentsTable
 	OrdersTable.ForeignKeys[2].RefTable = CustomersTable
 	OrdersTable.ForeignKeys[3].RefTable = MerchantsTable
-	OrdersTable.ForeignKeys[4].RefTable = ProductsTable
+	OrdersTable.ForeignKeys[4].RefTable = PickupStationsTable
+	OrderDetailsTable.ForeignKeys[0].RefTable = MerchantStoresTable
+	OrderDetailsTable.ForeignKeys[1].RefTable = OrdersTable
+	OrderDetailsTable.ForeignKeys[2].RefTable = ProductsTable
 	ProductsTable.ForeignKeys[0].RefTable = MerchantsTable
 	ProductsTable.ForeignKeys[1].RefTable = ProductCategoryMajorsTable
 	ProductsTable.ForeignKeys[2].RefTable = ProductCategoryMinorsTable

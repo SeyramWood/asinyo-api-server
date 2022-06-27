@@ -39,5 +39,6 @@ type (
 		Image            []byte `json:"image"`
 		OtherImages      []byte `json:"otherImages"`
 		Account          string `json:"account"`
+		MerchantType     string `json:"merchantType" validate:"required|string"`
 	}
 )

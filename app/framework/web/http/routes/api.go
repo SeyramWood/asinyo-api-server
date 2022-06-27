@@ -34,7 +34,13 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 	productRouter(r, h.db)
 
+	paymentRouter(r, h.db)
+
+	orderRouter(r, h.db)
+
 	adminRouter(r, h.db)
+
+	addressRouter(r, h.db)
 
 }
 
@@ -146,13 +152,19 @@ func merchantRouter(r fiber.Router, db *database.Adapter) {
 
 	msRouter.Route("/", func(r fiber.Router) {
 
-		r.Get("/:merchantId", msHandler.FetchByID())
+		r.Get("/:storeId", msHandler.FetchByID())
+
+		r.Get("/:merchantType/all", msHandler.Fetch())
+
+		r.Get("/:merchantId/:merchant", msHandler.FetchByMerchantID())
 
 		r.Post("/:merchantId/profile", request.ValidateMerchantStore(), msHandler.Create())
 
 		r.Put("/:storeId/account/momo", request.ValidateMerchantMomoAccount(), msHandler.SaveMomoAccount())
 
 		r.Put("/:storeId/account/bank", request.ValidateMerchantBankAccount(), msHandler.SaveBankAccount())
+
+		r.Put("/:storeId/default-account/:type", msHandler.SaveDefaultAccount())
 
 	}, "merchants.")
 
@@ -200,7 +212,7 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 
 		r.Get("/category/minor", minorH.Fetch()).Name("minor")
 
-		r.Get("/best-seller/:merchant", h.FetchBestSellerProducts()).Name("best.sellers")
+		r.Get("/best-seller/:merchantType", h.FetchBestSellerProducts()).Name("best.sellers")
 
 		r.Get("/:merchant/:id", h.FetchMerchantProducts()).Name("merchant.all")
 
@@ -226,6 +238,56 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 		r.Post("/minors", request.ValidateProductCatMinor(), minorH.Create()).Name("minors.create")
 
 	}, "product.")
+
+}
+
+func paymentRouter(router fiber.Router, db *database.Adapter) {
+
+	ph := handlers.NewPaystackHandler(db)
+
+	router.Route("/payment", func(r fiber.Router) {
+
+		r.Post("/initiate-transaction/paystack", ph.InitiateTransaction())
+		r.Get("/verify-transaction/paystack/:reference", ph.VerifyTransaction())
+		r.Post("/webhook/paystack", ph.WebhookResponse())
+
+	}, "payment.")
+
+}
+func orderRouter(router fiber.Router, db *database.Adapter) {
+
+	h := handlers.NewOrderHandler(db)
+
+	router.Route("/orders", func(r fiber.Router) {
+
+		r.Get("/:id", h.FetchById())
+
+		r.Get("/:userType/:id", h.FetchByUser())
+
+	}, "order.")
+
+}
+
+func addressRouter(router fiber.Router, db *database.Adapter) {
+
+	h := handlers.NewAddressHandler(db)
+	psh := handlers.NewPickupStationHandler(db)
+
+	router.Route("/address", func(r fiber.Router) {
+
+		r.Get("/all/:userId/:userType", h.FetchAllByUser())
+
+		r.Get("/pickup-station/all", psh.Fetch())
+
+		r.Get("/default/:userId/:userType", h.FetchByUser())
+
+		r.Post("/create/:userId/:userType", request.ValidateAddress(), h.Create())
+
+		r.Put("/update/:addressId", request.ValidateAddress(), h.Update())
+
+		r.Put("/set-default/:userId/:userType/:addressId", h.SaveDefaultAddress())
+
+	}, "payment.")
 
 }
 

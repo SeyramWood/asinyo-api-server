@@ -142,6 +142,13 @@ func Logo(v string) predicate.MerchantStore {
 	})
 }
 
+// MerchantType applies equality check predicate on the "merchant_type" field. It's identical to MerchantTypeEQ.
+func MerchantType(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldMerchantType), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
@@ -953,6 +960,117 @@ func MomoAccountNotNil() predicate.MerchantStore {
 	})
 }
 
+// MerchantTypeEQ applies the EQ predicate on the "merchant_type" field.
+func MerchantTypeEQ(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldMerchantType), v))
+	})
+}
+
+// MerchantTypeNEQ applies the NEQ predicate on the "merchant_type" field.
+func MerchantTypeNEQ(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldMerchantType), v))
+	})
+}
+
+// MerchantTypeIn applies the In predicate on the "merchant_type" field.
+func MerchantTypeIn(vs ...string) predicate.MerchantStore {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldMerchantType), v...))
+	})
+}
+
+// MerchantTypeNotIn applies the NotIn predicate on the "merchant_type" field.
+func MerchantTypeNotIn(vs ...string) predicate.MerchantStore {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldMerchantType), v...))
+	})
+}
+
+// MerchantTypeGT applies the GT predicate on the "merchant_type" field.
+func MerchantTypeGT(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldMerchantType), v))
+	})
+}
+
+// MerchantTypeGTE applies the GTE predicate on the "merchant_type" field.
+func MerchantTypeGTE(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldMerchantType), v))
+	})
+}
+
+// MerchantTypeLT applies the LT predicate on the "merchant_type" field.
+func MerchantTypeLT(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldMerchantType), v))
+	})
+}
+
+// MerchantTypeLTE applies the LTE predicate on the "merchant_type" field.
+func MerchantTypeLTE(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldMerchantType), v))
+	})
+}
+
+// MerchantTypeContains applies the Contains predicate on the "merchant_type" field.
+func MerchantTypeContains(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldMerchantType), v))
+	})
+}
+
+// MerchantTypeHasPrefix applies the HasPrefix predicate on the "merchant_type" field.
+func MerchantTypeHasPrefix(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldMerchantType), v))
+	})
+}
+
+// MerchantTypeHasSuffix applies the HasSuffix predicate on the "merchant_type" field.
+func MerchantTypeHasSuffix(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldMerchantType), v))
+	})
+}
+
+// MerchantTypeEqualFold applies the EqualFold predicate on the "merchant_type" field.
+func MerchantTypeEqualFold(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldMerchantType), v))
+	})
+}
+
+// MerchantTypeContainsFold applies the ContainsFold predicate on the "merchant_type" field.
+func MerchantTypeContainsFold(v string) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldMerchantType), v))
+	})
+}
+
 // HasMerchant applies the HasEdge predicate on the "merchant" edge.
 func HasMerchant() predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
@@ -972,6 +1090,34 @@ func HasMerchantWith(preds ...predicate.Merchant) predicate.MerchantStore {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(MerchantInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, MerchantTable, MerchantColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOrders applies the HasEdge predicate on the "orders" edge.
+func HasOrders() predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OrdersTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrdersWith applies the HasEdge predicate on the "orders" edge with a given conditions (other predicates).
+func HasOrdersWith(preds ...predicate.OrderDetail) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OrdersInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

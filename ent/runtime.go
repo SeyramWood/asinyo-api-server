@@ -8,12 +8,13 @@ import (
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
-	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
+	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/SeyramWood/ent/pickupstation"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -139,21 +140,6 @@ func init() {
 	agentDescDigitalAddress := agentFields[8].Descriptor()
 	// agent.DigitalAddressValidator is a validator for the "digital_address" field. It is called by the builders before save.
 	agent.DigitalAddressValidator = agentDescDigitalAddress.Validators[0].(func(string) error)
-	basketMixin := schema.Basket{}.Mixin()
-	basketMixinFields0 := basketMixin[0].Fields()
-	_ = basketMixinFields0
-	basketFields := schema.Basket{}.Fields()
-	_ = basketFields
-	// basketDescCreatedAt is the schema descriptor for created_at field.
-	basketDescCreatedAt := basketMixinFields0[0].Descriptor()
-	// basket.DefaultCreatedAt holds the default value on creation for the created_at field.
-	basket.DefaultCreatedAt = basketDescCreatedAt.Default.(func() time.Time)
-	// basketDescUpdatedAt is the schema descriptor for updated_at field.
-	basketDescUpdatedAt := basketMixinFields0[1].Descriptor()
-	// basket.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	basket.DefaultUpdatedAt = basketDescUpdatedAt.Default.(func() time.Time)
-	// basket.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	basket.UpdateDefaultUpdatedAt = basketDescUpdatedAt.UpdateDefault.(func() time.Time)
 	customerMixin := schema.Customer{}.Mixin()
 	customerMixinFields0 := customerMixin[0].Fields()
 	_ = customerMixinFields0
@@ -266,6 +252,10 @@ func init() {
 	merchantstoreDescLogo := merchantstoreFields[4].Descriptor()
 	// merchantstore.LogoValidator is a validator for the "logo" field. It is called by the builders before save.
 	merchantstore.LogoValidator = merchantstoreDescLogo.Validators[0].(func(string) error)
+	// merchantstoreDescMerchantType is the schema descriptor for merchant_type field.
+	merchantstoreDescMerchantType := merchantstoreFields[9].Descriptor()
+	// merchantstore.MerchantTypeValidator is a validator for the "merchant_type" field. It is called by the builders before save.
+	merchantstore.MerchantTypeValidator = merchantstoreDescMerchantType.Validators[0].(func(string) error)
 	orderMixin := schema.Order{}.Mixin()
 	orderMixinFields0 := orderMixin[0].Fields()
 	_ = orderMixinFields0
@@ -281,6 +271,96 @@ func init() {
 	order.DefaultUpdatedAt = orderDescUpdatedAt.Default.(func() time.Time)
 	// order.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	order.UpdateDefaultUpdatedAt = orderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// orderDescOrderNumber is the schema descriptor for order_number field.
+	orderDescOrderNumber := orderFields[0].Descriptor()
+	// order.OrderNumberValidator is a validator for the "order_number" field. It is called by the builders before save.
+	order.OrderNumberValidator = orderDescOrderNumber.Validators[0].(func(string) error)
+	// orderDescCurrency is the schema descriptor for currency field.
+	orderDescCurrency := orderFields[1].Descriptor()
+	// order.CurrencyValidator is a validator for the "currency" field. It is called by the builders before save.
+	order.CurrencyValidator = orderDescCurrency.Validators[0].(func(string) error)
+	// orderDescAmount is the schema descriptor for amount field.
+	orderDescAmount := orderFields[2].Descriptor()
+	// order.DefaultAmount holds the default value on creation for the amount field.
+	order.DefaultAmount = orderDescAmount.Default.(float64)
+	// orderDescDeliveryFee is the schema descriptor for delivery_fee field.
+	orderDescDeliveryFee := orderFields[3].Descriptor()
+	// order.DefaultDeliveryFee holds the default value on creation for the delivery_fee field.
+	order.DefaultDeliveryFee = orderDescDeliveryFee.Default.(float64)
+	// orderDescReference is the schema descriptor for reference field.
+	orderDescReference := orderFields[4].Descriptor()
+	// order.ReferenceValidator is a validator for the "reference" field. It is called by the builders before save.
+	order.ReferenceValidator = orderDescReference.Validators[0].(func(string) error)
+	// orderDescChannel is the schema descriptor for channel field.
+	orderDescChannel := orderFields[5].Descriptor()
+	// order.ChannelValidator is a validator for the "channel" field. It is called by the builders before save.
+	order.ChannelValidator = orderDescChannel.Validators[0].(func(string) error)
+	// orderDescPaidAt is the schema descriptor for paid_at field.
+	orderDescPaidAt := orderFields[6].Descriptor()
+	// order.PaidAtValidator is a validator for the "paid_at" field. It is called by the builders before save.
+	order.PaidAtValidator = orderDescPaidAt.Validators[0].(func(string) error)
+	orderdetailMixin := schema.OrderDetail{}.Mixin()
+	orderdetailMixinFields0 := orderdetailMixin[0].Fields()
+	_ = orderdetailMixinFields0
+	orderdetailFields := schema.OrderDetail{}.Fields()
+	_ = orderdetailFields
+	// orderdetailDescCreatedAt is the schema descriptor for created_at field.
+	orderdetailDescCreatedAt := orderdetailMixinFields0[0].Descriptor()
+	// orderdetail.DefaultCreatedAt holds the default value on creation for the created_at field.
+	orderdetail.DefaultCreatedAt = orderdetailDescCreatedAt.Default.(func() time.Time)
+	// orderdetailDescUpdatedAt is the schema descriptor for updated_at field.
+	orderdetailDescUpdatedAt := orderdetailMixinFields0[1].Descriptor()
+	// orderdetail.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	orderdetail.DefaultUpdatedAt = orderdetailDescUpdatedAt.Default.(func() time.Time)
+	// orderdetail.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	orderdetail.UpdateDefaultUpdatedAt = orderdetailDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// orderdetailDescPrice is the schema descriptor for price field.
+	orderdetailDescPrice := orderdetailFields[0].Descriptor()
+	// orderdetail.DefaultPrice holds the default value on creation for the price field.
+	orderdetail.DefaultPrice = orderdetailDescPrice.Default.(float64)
+	// orderdetailDescPromoPrice is the schema descriptor for promo_price field.
+	orderdetailDescPromoPrice := orderdetailFields[1].Descriptor()
+	// orderdetail.DefaultPromoPrice holds the default value on creation for the promo_price field.
+	orderdetail.DefaultPromoPrice = orderdetailDescPromoPrice.Default.(float64)
+	// orderdetailDescAmount is the schema descriptor for amount field.
+	orderdetailDescAmount := orderdetailFields[2].Descriptor()
+	// orderdetail.DefaultAmount holds the default value on creation for the amount field.
+	orderdetail.DefaultAmount = orderdetailDescAmount.Default.(float64)
+	// orderdetailDescQuantity is the schema descriptor for quantity field.
+	orderdetailDescQuantity := orderdetailFields[3].Descriptor()
+	// orderdetail.DefaultQuantity holds the default value on creation for the quantity field.
+	orderdetail.DefaultQuantity = orderdetailDescQuantity.Default.(int)
+	pickupstationMixin := schema.PickupStation{}.Mixin()
+	pickupstationMixinFields0 := pickupstationMixin[0].Fields()
+	_ = pickupstationMixinFields0
+	pickupstationFields := schema.PickupStation{}.Fields()
+	_ = pickupstationFields
+	// pickupstationDescCreatedAt is the schema descriptor for created_at field.
+	pickupstationDescCreatedAt := pickupstationMixinFields0[0].Descriptor()
+	// pickupstation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	pickupstation.DefaultCreatedAt = pickupstationDescCreatedAt.Default.(func() time.Time)
+	// pickupstationDescUpdatedAt is the schema descriptor for updated_at field.
+	pickupstationDescUpdatedAt := pickupstationMixinFields0[1].Descriptor()
+	// pickupstation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	pickupstation.DefaultUpdatedAt = pickupstationDescUpdatedAt.Default.(func() time.Time)
+	// pickupstation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	pickupstation.UpdateDefaultUpdatedAt = pickupstationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// pickupstationDescRegion is the schema descriptor for region field.
+	pickupstationDescRegion := pickupstationFields[0].Descriptor()
+	// pickupstation.RegionValidator is a validator for the "region" field. It is called by the builders before save.
+	pickupstation.RegionValidator = pickupstationDescRegion.Validators[0].(func(string) error)
+	// pickupstationDescCity is the schema descriptor for city field.
+	pickupstationDescCity := pickupstationFields[1].Descriptor()
+	// pickupstation.CityValidator is a validator for the "city" field. It is called by the builders before save.
+	pickupstation.CityValidator = pickupstationDescCity.Validators[0].(func(string) error)
+	// pickupstationDescName is the schema descriptor for name field.
+	pickupstationDescName := pickupstationFields[2].Descriptor()
+	// pickupstation.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	pickupstation.NameValidator = pickupstationDescName.Validators[0].(func(string) error)
+	// pickupstationDescAddress is the schema descriptor for address field.
+	pickupstationDescAddress := pickupstationFields[3].Descriptor()
+	// pickupstation.AddressValidator is a validator for the "address" field. It is called by the builders before save.
+	pickupstation.AddressValidator = pickupstationDescAddress.Validators[0].(func(string) error)
 	productMixin := schema.Product{}.Mixin()
 	productMixinFields0 := productMixin[0].Fields()
 	_ = productMixinFields0

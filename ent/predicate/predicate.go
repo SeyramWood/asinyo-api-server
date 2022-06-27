@@ -15,9 +15,6 @@ type Admin func(*sql.Selector)
 // Agent is the predicate function for agent builders.
 type Agent func(*sql.Selector)
 
-// Basket is the predicate function for basket builders.
-type Basket func(*sql.Selector)
-
 // Customer is the predicate function for customer builders.
 type Customer func(*sql.Selector)
 
@@ -32,6 +29,12 @@ type MerchantStore func(*sql.Selector)
 
 // Order is the predicate function for order builders.
 type Order func(*sql.Selector)
+
+// OrderDetail is the predicate function for orderdetail builders.
+type OrderDetail func(*sql.Selector)
+
+// PickupStation is the predicate function for pickupstation builders.
+type PickupStation func(*sql.Selector)
 
 // Product is the predicate function for product builders.
 type Product func(*sql.Selector)

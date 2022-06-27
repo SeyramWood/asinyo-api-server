@@ -72,7 +72,8 @@ func (r *repository) ReadAgent(username, field string) (*ent.Agent, error) {
 func (r *repository) ReadMerchant(username, field string) (*ent.Merchant, error) {
 	if field == "id" {
 		id, _ := strconv.Atoi(username)
-		user, err := r.db.Merchant.Query().Where(merchant.ID(id)).First(context.Background())
+		user, err := r.db.Merchant.Query().Where(merchant.ID(id)).
+			First(context.Background())
 		if err != nil {
 			return nil, err
 		}

@@ -27,12 +27,13 @@ type hooks struct {
 	Address              []ent.Hook
 	Admin                []ent.Hook
 	Agent                []ent.Hook
-	Basket               []ent.Hook
 	Customer             []ent.Hook
 	Favourite            []ent.Hook
 	Merchant             []ent.Hook
 	MerchantStore        []ent.Hook
 	Order                []ent.Hook
+	OrderDetail          []ent.Hook
+	PickupStation        []ent.Hook
 	Product              []ent.Hook
 	ProductCategoryMajor []ent.Hook
 	ProductCategoryMinor []ent.Hook

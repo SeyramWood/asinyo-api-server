@@ -994,6 +994,62 @@ func ImageContainsFold(v string) predicate.Product {
 	})
 }
 
+// HasOrders applies the HasEdge predicate on the "orders" edge.
+func HasOrders() predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OrdersTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrdersWith applies the HasEdge predicate on the "orders" edge with a given conditions (other predicates).
+func HasOrdersWith(preds ...predicate.OrderDetail) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OrdersInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasFavourites applies the HasEdge predicate on the "favourites" edge.
+func HasFavourites() predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(FavouritesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFavouritesWith applies the HasEdge predicate on the "favourites" edge with a given conditions (other predicates).
+func HasFavouritesWith(preds ...predicate.Favourite) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(FavouritesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasMerchant applies the HasEdge predicate on the "merchant" edge.
 func HasMerchant() predicate.Product {
 	return predicate.Product(func(s *sql.Selector) {
@@ -1069,90 +1125,6 @@ func HasMinorWith(preds ...predicate.ProductCategoryMinor) predicate.Product {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(MinorInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, MinorTable, MinorColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasOrders applies the HasEdge predicate on the "orders" edge.
-func HasOrders() predicate.Product {
-	return predicate.Product(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(OrdersTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasOrdersWith applies the HasEdge predicate on the "orders" edge with a given conditions (other predicates).
-func HasOrdersWith(preds ...predicate.Order) predicate.Product {
-	return predicate.Product(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(OrdersInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasBaskets applies the HasEdge predicate on the "baskets" edge.
-func HasBaskets() predicate.Product {
-	return predicate.Product(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(BasketsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, BasketsTable, BasketsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasBasketsWith applies the HasEdge predicate on the "baskets" edge with a given conditions (other predicates).
-func HasBasketsWith(preds ...predicate.Basket) predicate.Product {
-	return predicate.Product(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(BasketsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, BasketsTable, BasketsColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasFavourites applies the HasEdge predicate on the "favourites" edge.
-func HasFavourites() predicate.Product {
-	return predicate.Product(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(FavouritesTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasFavouritesWith applies the HasEdge predicate on the "favourites" edge with a given conditions (other predicates).
-func HasFavouritesWith(preds ...predicate.Favourite) predicate.Product {
-	return predicate.Product(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(FavouritesInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

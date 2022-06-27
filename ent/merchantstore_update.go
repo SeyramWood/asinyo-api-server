@@ -14,6 +14,7 @@ import (
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/orderdetail"
 	"github.com/SeyramWood/ent/predicate"
 )
 
@@ -122,6 +123,12 @@ func (msu *MerchantStoreUpdate) ClearMomoAccount() *MerchantStoreUpdate {
 	return msu
 }
 
+// SetMerchantType sets the "merchant_type" field.
+func (msu *MerchantStoreUpdate) SetMerchantType(s string) *MerchantStoreUpdate {
+	msu.mutation.SetMerchantType(s)
+	return msu
+}
+
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (msu *MerchantStoreUpdate) SetMerchantID(id int) *MerchantStoreUpdate {
 	msu.mutation.SetMerchantID(id)
@@ -141,6 +148,21 @@ func (msu *MerchantStoreUpdate) SetMerchant(m *Merchant) *MerchantStoreUpdate {
 	return msu.SetMerchantID(m.ID)
 }
 
+// AddOrderIDs adds the "orders" edge to the OrderDetail entity by IDs.
+func (msu *MerchantStoreUpdate) AddOrderIDs(ids ...int) *MerchantStoreUpdate {
+	msu.mutation.AddOrderIDs(ids...)
+	return msu
+}
+
+// AddOrders adds the "orders" edges to the OrderDetail entity.
+func (msu *MerchantStoreUpdate) AddOrders(o ...*OrderDetail) *MerchantStoreUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return msu.AddOrderIDs(ids...)
+}
+
 // Mutation returns the MerchantStoreMutation object of the builder.
 func (msu *MerchantStoreUpdate) Mutation() *MerchantStoreMutation {
 	return msu.mutation
@@ -150,6 +172,27 @@ func (msu *MerchantStoreUpdate) Mutation() *MerchantStoreMutation {
 func (msu *MerchantStoreUpdate) ClearMerchant() *MerchantStoreUpdate {
 	msu.mutation.ClearMerchant()
 	return msu
+}
+
+// ClearOrders clears all "orders" edges to the OrderDetail entity.
+func (msu *MerchantStoreUpdate) ClearOrders() *MerchantStoreUpdate {
+	msu.mutation.ClearOrders()
+	return msu
+}
+
+// RemoveOrderIDs removes the "orders" edge to OrderDetail entities by IDs.
+func (msu *MerchantStoreUpdate) RemoveOrderIDs(ids ...int) *MerchantStoreUpdate {
+	msu.mutation.RemoveOrderIDs(ids...)
+	return msu
+}
+
+// RemoveOrders removes "orders" edges to OrderDetail entities.
+func (msu *MerchantStoreUpdate) RemoveOrders(o ...*OrderDetail) *MerchantStoreUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return msu.RemoveOrderIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -251,6 +294,11 @@ func (msu *MerchantStoreUpdate) check() error {
 	if v, ok := msu.mutation.DefaultAccount(); ok {
 		if err := merchantstore.DefaultAccountValidator(v); err != nil {
 			return &ValidationError{Name: "default_account", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.default_account": %w`, err)}
+		}
+	}
+	if v, ok := msu.mutation.MerchantType(); ok {
+		if err := merchantstore.MerchantTypeValidator(v); err != nil {
+			return &ValidationError{Name: "merchant_type", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.merchant_type": %w`, err)}
 		}
 	}
 	return nil
@@ -368,6 +416,13 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Column: merchantstore.FieldMomoAccount,
 		})
 	}
+	if value, ok := msu.mutation.MerchantType(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: merchantstore.FieldMerchantType,
+		})
+	}
 	if msu.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
@@ -395,6 +450,60 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: merchant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if msu.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.OrdersTable,
+			Columns: []string{merchantstore.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := msu.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !msu.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.OrdersTable,
+			Columns: []string{merchantstore.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := msu.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.OrdersTable,
+			Columns: []string{merchantstore.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
 				},
 			},
 		}
@@ -514,6 +623,12 @@ func (msuo *MerchantStoreUpdateOne) ClearMomoAccount() *MerchantStoreUpdateOne {
 	return msuo
 }
 
+// SetMerchantType sets the "merchant_type" field.
+func (msuo *MerchantStoreUpdateOne) SetMerchantType(s string) *MerchantStoreUpdateOne {
+	msuo.mutation.SetMerchantType(s)
+	return msuo
+}
+
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (msuo *MerchantStoreUpdateOne) SetMerchantID(id int) *MerchantStoreUpdateOne {
 	msuo.mutation.SetMerchantID(id)
@@ -533,6 +648,21 @@ func (msuo *MerchantStoreUpdateOne) SetMerchant(m *Merchant) *MerchantStoreUpdat
 	return msuo.SetMerchantID(m.ID)
 }
 
+// AddOrderIDs adds the "orders" edge to the OrderDetail entity by IDs.
+func (msuo *MerchantStoreUpdateOne) AddOrderIDs(ids ...int) *MerchantStoreUpdateOne {
+	msuo.mutation.AddOrderIDs(ids...)
+	return msuo
+}
+
+// AddOrders adds the "orders" edges to the OrderDetail entity.
+func (msuo *MerchantStoreUpdateOne) AddOrders(o ...*OrderDetail) *MerchantStoreUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return msuo.AddOrderIDs(ids...)
+}
+
 // Mutation returns the MerchantStoreMutation object of the builder.
 func (msuo *MerchantStoreUpdateOne) Mutation() *MerchantStoreMutation {
 	return msuo.mutation
@@ -542,6 +672,27 @@ func (msuo *MerchantStoreUpdateOne) Mutation() *MerchantStoreMutation {
 func (msuo *MerchantStoreUpdateOne) ClearMerchant() *MerchantStoreUpdateOne {
 	msuo.mutation.ClearMerchant()
 	return msuo
+}
+
+// ClearOrders clears all "orders" edges to the OrderDetail entity.
+func (msuo *MerchantStoreUpdateOne) ClearOrders() *MerchantStoreUpdateOne {
+	msuo.mutation.ClearOrders()
+	return msuo
+}
+
+// RemoveOrderIDs removes the "orders" edge to OrderDetail entities by IDs.
+func (msuo *MerchantStoreUpdateOne) RemoveOrderIDs(ids ...int) *MerchantStoreUpdateOne {
+	msuo.mutation.RemoveOrderIDs(ids...)
+	return msuo
+}
+
+// RemoveOrders removes "orders" edges to OrderDetail entities.
+func (msuo *MerchantStoreUpdateOne) RemoveOrders(o ...*OrderDetail) *MerchantStoreUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return msuo.RemoveOrderIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -650,6 +801,11 @@ func (msuo *MerchantStoreUpdateOne) check() error {
 	if v, ok := msuo.mutation.DefaultAccount(); ok {
 		if err := merchantstore.DefaultAccountValidator(v); err != nil {
 			return &ValidationError{Name: "default_account", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.default_account": %w`, err)}
+		}
+	}
+	if v, ok := msuo.mutation.MerchantType(); ok {
+		if err := merchantstore.MerchantTypeValidator(v); err != nil {
+			return &ValidationError{Name: "merchant_type", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.merchant_type": %w`, err)}
 		}
 	}
 	return nil
@@ -784,6 +940,13 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Column: merchantstore.FieldMomoAccount,
 		})
 	}
+	if value, ok := msuo.mutation.MerchantType(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: merchantstore.FieldMerchantType,
+		})
+	}
 	if msuo.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
@@ -811,6 +974,60 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: merchant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if msuo.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.OrdersTable,
+			Columns: []string{merchantstore.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := msuo.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !msuo.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.OrdersTable,
+			Columns: []string{merchantstore.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := msuo.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.OrdersTable,
+			Columns: []string{merchantstore.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
 				},
 			},
 		}

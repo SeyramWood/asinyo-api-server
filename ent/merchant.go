@@ -48,13 +48,11 @@ type MerchantEdges struct {
 	Addresses []*Address `json:"addresses,omitempty"`
 	// Orders holds the value of the orders edge.
 	Orders []*Order `json:"orders,omitempty"`
-	// Baskets holds the value of the baskets edge.
-	Baskets []*Basket `json:"baskets,omitempty"`
 	// Favourites holds the value of the favourites edge.
 	Favourites []*Favourite `json:"favourites,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [8]bool
+	loadedTypes [7]bool
 }
 
 // SupplierOrErr returns the Supplier value or an error if the edge
@@ -126,19 +124,10 @@ func (e MerchantEdges) OrdersOrErr() ([]*Order, error) {
 	return nil, &NotLoadedError{edge: "orders"}
 }
 
-// BasketsOrErr returns the Baskets value or an error if the edge
-// was not loaded in eager-loading.
-func (e MerchantEdges) BasketsOrErr() ([]*Basket, error) {
-	if e.loadedTypes[6] {
-		return e.Baskets, nil
-	}
-	return nil, &NotLoadedError{edge: "baskets"}
-}
-
 // FavouritesOrErr returns the Favourites value or an error if the edge
 // was not loaded in eager-loading.
 func (e MerchantEdges) FavouritesOrErr() ([]*Favourite, error) {
-	if e.loadedTypes[7] {
+	if e.loadedTypes[6] {
 		return e.Favourites, nil
 	}
 	return nil, &NotLoadedError{edge: "favourites"}
@@ -241,11 +230,6 @@ func (m *Merchant) QueryAddresses() *AddressQuery {
 // QueryOrders queries the "orders" edge of the Merchant entity.
 func (m *Merchant) QueryOrders() *OrderQuery {
 	return (&MerchantClient{config: m.config}).QueryOrders(m)
-}
-
-// QueryBaskets queries the "baskets" edge of the Merchant entity.
-func (m *Merchant) QueryBaskets() *BasketQuery {
-	return (&MerchantClient{config: m.config}).QueryBaskets(m)
 }
 
 // QueryFavourites queries the "favourites" edge of the Merchant entity.

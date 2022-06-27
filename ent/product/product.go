@@ -29,20 +29,32 @@ const (
 	FieldDescription = "description"
 	// FieldImage holds the string denoting the image field in the database.
 	FieldImage = "image"
+	// EdgeOrders holds the string denoting the orders edge name in mutations.
+	EdgeOrders = "orders"
+	// EdgeFavourites holds the string denoting the favourites edge name in mutations.
+	EdgeFavourites = "favourites"
 	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
 	EdgeMerchant = "merchant"
 	// EdgeMajor holds the string denoting the major edge name in mutations.
 	EdgeMajor = "major"
 	// EdgeMinor holds the string denoting the minor edge name in mutations.
 	EdgeMinor = "minor"
-	// EdgeOrders holds the string denoting the orders edge name in mutations.
-	EdgeOrders = "orders"
-	// EdgeBaskets holds the string denoting the baskets edge name in mutations.
-	EdgeBaskets = "baskets"
-	// EdgeFavourites holds the string denoting the favourites edge name in mutations.
-	EdgeFavourites = "favourites"
 	// Table holds the table name of the product in the database.
 	Table = "products"
+	// OrdersTable is the table that holds the orders relation/edge.
+	OrdersTable = "order_details"
+	// OrdersInverseTable is the table name for the OrderDetail entity.
+	// It exists in this package in order to avoid circular dependency with the "orderdetail" package.
+	OrdersInverseTable = "order_details"
+	// OrdersColumn is the table column denoting the orders relation/edge.
+	OrdersColumn = "product_orders"
+	// FavouritesTable is the table that holds the favourites relation/edge.
+	FavouritesTable = "favourites"
+	// FavouritesInverseTable is the table name for the Favourite entity.
+	// It exists in this package in order to avoid circular dependency with the "favourite" package.
+	FavouritesInverseTable = "favourites"
+	// FavouritesColumn is the table column denoting the favourites relation/edge.
+	FavouritesColumn = "product_favourites"
 	// MerchantTable is the table that holds the merchant relation/edge.
 	MerchantTable = "products"
 	// MerchantInverseTable is the table name for the Merchant entity.
@@ -64,27 +76,6 @@ const (
 	MinorInverseTable = "product_category_minors"
 	// MinorColumn is the table column denoting the minor relation/edge.
 	MinorColumn = "product_category_minor_products"
-	// OrdersTable is the table that holds the orders relation/edge.
-	OrdersTable = "orders"
-	// OrdersInverseTable is the table name for the Order entity.
-	// It exists in this package in order to avoid circular dependency with the "order" package.
-	OrdersInverseTable = "orders"
-	// OrdersColumn is the table column denoting the orders relation/edge.
-	OrdersColumn = "product_orders"
-	// BasketsTable is the table that holds the baskets relation/edge.
-	BasketsTable = "baskets"
-	// BasketsInverseTable is the table name for the Basket entity.
-	// It exists in this package in order to avoid circular dependency with the "basket" package.
-	BasketsInverseTable = "baskets"
-	// BasketsColumn is the table column denoting the baskets relation/edge.
-	BasketsColumn = "product_baskets"
-	// FavouritesTable is the table that holds the favourites relation/edge.
-	FavouritesTable = "favourites"
-	// FavouritesInverseTable is the table name for the Favourite entity.
-	// It exists in this package in order to avoid circular dependency with the "favourite" package.
-	FavouritesInverseTable = "favourites"
-	// FavouritesColumn is the table column denoting the favourites relation/edge.
-	FavouritesColumn = "product_favourites"
 )
 
 // Columns holds all SQL columns for product fields.

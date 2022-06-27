@@ -21,7 +21,6 @@ func NewAdminRepo(db *database.Adapter) gateways.AdminRepo {
 	return &repository{db.DB}
 }
 
-//CreateBook is a mongo repository that helps to create books
 func (r *repository) Insert(user *models.Admin) (*ent.Admin, error) {
 	ctx := context.Background()
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 16)

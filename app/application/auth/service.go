@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/SeyramWood/app/adapters/gateways"
@@ -195,6 +196,8 @@ func (s *service) signinCustomer(c *fiber.Ctx, request models.User) error {
 func (s *service) signinAgent(c *fiber.Ctx, request models.User) error {
 
 	if user, err := s.repo.ReadAgent(request.Username, "username"); err != nil {
+		fmt.Println(err)
+
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
 	} else {
 		if s.hashCheck(user.Password, request.Password) {
@@ -216,10 +219,12 @@ func (s *service) signinSupplierMerchant(c *fiber.Ctx, request models.UserMercha
 				})
 			}
 			return c.Status(fiber.StatusOK).JSON(presenters.AuthSupplierMerchantResponse(&presenters.AuthMerchant{
-				ID:        merchant.Edges.Merchant.ID,
-				Username:  merchant.Edges.Merchant.Username,
-				LastName:  merchant.LastName,
-				OtherName: merchant.OtherName,
+				ID:         merchant.Edges.Merchant.ID,
+				Username:   merchant.Edges.Merchant.Username,
+				LastName:   merchant.LastName,
+				OtherName:  merchant.OtherName,
+				Phone:      merchant.Phone,
+				OtherPhone: *merchant.OtherPhone,
 			}))
 		}
 	}
@@ -238,10 +243,12 @@ func (s *service) signinRetailMerchant(c *fiber.Ctx, request models.UserMerchant
 				})
 			}
 			return c.Status(fiber.StatusOK).JSON(presenters.AuthRetailMerchantResponse(&presenters.AuthMerchant{
-				ID:        merchant.Edges.Merchant.ID,
-				Username:  merchant.Edges.Merchant.Username,
-				LastName:  merchant.LastName,
-				OtherName: merchant.OtherName,
+				ID:         merchant.Edges.Merchant.ID,
+				Username:   merchant.Edges.Merchant.Username,
+				LastName:   merchant.LastName,
+				OtherName:  merchant.OtherName,
+				Phone:      merchant.Phone,
+				OtherPhone: *merchant.OtherPhone,
 			}))
 		}
 	}

@@ -20,9 +20,18 @@ func (Order) Mixin() []ent.Mixin {
 // Fields of the Order.
 func (Order) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("order_number").NotEmpty(),
+		field.String("currency").NotEmpty(),
+		field.Float("amount").Default(0.00),
+		field.Float("delivery_fee").Default(0.00),
+		field.String("reference").NotEmpty(),
+		field.String("channel").NotEmpty(),
+		field.String("paid_at").NotEmpty(),
+		field.Enum("delivery_method").
+			Values("HOD", "PSD"),
 		field.Enum("status").
-			Values("in_progress", "shipping", "delivered").
-			Default("in_progress"),
+			Values("pending", "shipping", "delivered").
+			Default("pending"),
 		field.Time("delivered_at").Nillable().Optional(),
 	}
 }
@@ -30,6 +39,7 @@ func (Order) Fields() []ent.Field {
 // Edges of the Order.
 func (Order) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("details", OrderDetail.Type),
 		edge.From("merchant", Merchant.Type).
 			Ref("orders").
 			Unique(),
@@ -42,7 +52,7 @@ func (Order) Edges() []ent.Edge {
 		edge.From("address", Address.Type).
 			Ref("orders").
 			Unique(),
-		edge.From("product", Product.Type).
+		edge.From("pickup", PickupStation.Type).
 			Ref("orders").
 			Unique(),
 	}

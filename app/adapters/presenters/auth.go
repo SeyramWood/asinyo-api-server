@@ -13,18 +13,22 @@ type (
 		OtherName string `json:"otherName"`
 	}
 	AuthCustomer struct {
-		ID        int    `json:"id"`
-		Username  string `json:"username"`
-		LastName  string `json:"lastName"`
-		OtherName string `json:"otherName"`
-		UserType  string `json:"userType"`
+		ID         int    `json:"id"`
+		Username   string `json:"username"`
+		LastName   string `json:"lastName"`
+		OtherName  string `json:"otherName"`
+		Phone      string `json:"phone"`
+		OtherPhone string `json:"otherPhone"`
+		UserType   string `json:"userType"`
 	}
 	AuthMerchant struct {
-		ID        int    `json:"id"`
-		Username  string `json:"username"`
-		LastName  string `json:"lastName"`
-		OtherName string `json:"otherName"`
-		UserType  string `json:"userType"`
+		ID         int    `json:"id"`
+		Username   string `json:"username"`
+		LastName   string `json:"lastName"`
+		OtherName  string `json:"otherName"`
+		Phone      string `json:"phone"`
+		OtherPhone string `json:"otherPhone"`
+		UserType   string `json:"userType"`
 	}
 )
 
@@ -46,29 +50,35 @@ func AuthCustomerResponse(data *ent.Customer) *fiber.Map {
 }
 func AuthAgentResponse(data *ent.Agent) *fiber.Map {
 	return successResponse(&AuthMerchant{
-		ID:        data.ID,
-		Username:  data.Username,
-		OtherName: data.OtherName,
-		LastName:  data.LastName,
-		UserType:  "agent",
+		ID:         data.ID,
+		Username:   data.Username,
+		OtherName:  data.OtherName,
+		LastName:   data.LastName,
+		Phone:      data.Phone,
+		OtherPhone: *data.OtherPhone,
+		UserType:   "agent",
 	})
 }
 func AuthSupplierMerchantResponse(data *AuthMerchant) *fiber.Map {
 	return successResponse(&AuthMerchant{
-		ID:        data.ID,
-		Username:  data.Username,
-		OtherName: data.OtherName,
-		LastName:  data.LastName,
-		UserType:  "supplier",
+		ID:         data.ID,
+		Username:   data.Username,
+		OtherName:  data.OtherName,
+		LastName:   data.LastName,
+		Phone:      data.Phone,
+		OtherPhone: data.OtherPhone,
+		UserType:   "supplier",
 	})
 }
 func AuthRetailMerchantResponse(data *AuthMerchant) *fiber.Map {
 	return successResponse(&AuthMerchant{
-		ID:        data.ID,
-		Username:  data.Username,
-		OtherName: data.OtherName,
-		LastName:  data.LastName,
-		UserType:  "retailer",
+		ID:         data.ID,
+		Username:   data.Username,
+		OtherName:  data.OtherName,
+		LastName:   data.LastName,
+		Phone:      data.Phone,
+		OtherPhone: data.OtherPhone,
+		UserType:   "retailer",
 	})
 }
 

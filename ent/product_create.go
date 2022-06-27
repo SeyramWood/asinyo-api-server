@@ -10,10 +10,9 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
-	"github.com/SeyramWood/ent/order"
+	"github.com/SeyramWood/ent/orderdetail"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -120,6 +119,36 @@ func (pc *ProductCreate) SetImage(s string) *ProductCreate {
 	return pc
 }
 
+// AddOrderIDs adds the "orders" edge to the OrderDetail entity by IDs.
+func (pc *ProductCreate) AddOrderIDs(ids ...int) *ProductCreate {
+	pc.mutation.AddOrderIDs(ids...)
+	return pc
+}
+
+// AddOrders adds the "orders" edges to the OrderDetail entity.
+func (pc *ProductCreate) AddOrders(o ...*OrderDetail) *ProductCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return pc.AddOrderIDs(ids...)
+}
+
+// AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
+func (pc *ProductCreate) AddFavouriteIDs(ids ...int) *ProductCreate {
+	pc.mutation.AddFavouriteIDs(ids...)
+	return pc
+}
+
+// AddFavourites adds the "favourites" edges to the Favourite entity.
+func (pc *ProductCreate) AddFavourites(f ...*Favourite) *ProductCreate {
+	ids := make([]int, len(f))
+	for i := range f {
+		ids[i] = f[i].ID
+	}
+	return pc.AddFavouriteIDs(ids...)
+}
+
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (pc *ProductCreate) SetMerchantID(id int) *ProductCreate {
 	pc.mutation.SetMerchantID(id)
@@ -151,51 +180,6 @@ func (pc *ProductCreate) SetMinorID(id int) *ProductCreate {
 // SetMinor sets the "minor" edge to the ProductCategoryMinor entity.
 func (pc *ProductCreate) SetMinor(p *ProductCategoryMinor) *ProductCreate {
 	return pc.SetMinorID(p.ID)
-}
-
-// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
-func (pc *ProductCreate) AddOrderIDs(ids ...int) *ProductCreate {
-	pc.mutation.AddOrderIDs(ids...)
-	return pc
-}
-
-// AddOrders adds the "orders" edges to the Order entity.
-func (pc *ProductCreate) AddOrders(o ...*Order) *ProductCreate {
-	ids := make([]int, len(o))
-	for i := range o {
-		ids[i] = o[i].ID
-	}
-	return pc.AddOrderIDs(ids...)
-}
-
-// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
-func (pc *ProductCreate) AddBasketIDs(ids ...int) *ProductCreate {
-	pc.mutation.AddBasketIDs(ids...)
-	return pc
-}
-
-// AddBaskets adds the "baskets" edges to the Basket entity.
-func (pc *ProductCreate) AddBaskets(b ...*Basket) *ProductCreate {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return pc.AddBasketIDs(ids...)
-}
-
-// AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
-func (pc *ProductCreate) AddFavouriteIDs(ids ...int) *ProductCreate {
-	pc.mutation.AddFavouriteIDs(ids...)
-	return pc
-}
-
-// AddFavourites adds the "favourites" edges to the Favourite entity.
-func (pc *ProductCreate) AddFavourites(f ...*Favourite) *ProductCreate {
-	ids := make([]int, len(f))
-	for i := range f {
-		ids[i] = f[i].ID
-	}
-	return pc.AddFavouriteIDs(ids...)
 }
 
 // Mutation returns the ProductMutation object of the builder.
@@ -441,6 +425,44 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 		})
 		_node.Image = value
 	}
+	if nodes := pc.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.OrdersTable,
+			Columns: []string{product.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.FavouritesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.FavouritesTable,
+			Columns: []string{product.FavouritesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := pc.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -499,63 +521,6 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.product_category_minor_products = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := pc.mutation.OrdersIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   product.OrdersTable,
-			Columns: []string{product.OrdersColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := pc.mutation.BasketsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   product.BasketsTable,
-			Columns: []string{product.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := pc.mutation.FavouritesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   product.FavouritesTable,
-			Columns: []string{product.FavouritesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

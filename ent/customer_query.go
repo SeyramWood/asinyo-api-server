@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
-	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/order"
@@ -32,7 +31,6 @@ type CustomerQuery struct {
 	// eager-loading edges.
 	withAddresses  *AddressQuery
 	withOrders     *OrderQuery
-	withBaskets    *BasketQuery
 	withFavourites *FavouriteQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -107,28 +105,6 @@ func (cq *CustomerQuery) QueryOrders() *OrderQuery {
 			sqlgraph.From(customer.Table, customer.FieldID, selector),
 			sqlgraph.To(order.Table, order.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, customer.OrdersTable, customer.OrdersColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryBaskets chains the current query on the "baskets" edge.
-func (cq *CustomerQuery) QueryBaskets() *BasketQuery {
-	query := &BasketQuery{config: cq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := cq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := cq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(customer.Table, customer.FieldID, selector),
-			sqlgraph.To(basket.Table, basket.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, customer.BasketsTable, customer.BasketsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -341,7 +317,6 @@ func (cq *CustomerQuery) Clone() *CustomerQuery {
 		predicates:     append([]predicate.Customer{}, cq.predicates...),
 		withAddresses:  cq.withAddresses.Clone(),
 		withOrders:     cq.withOrders.Clone(),
-		withBaskets:    cq.withBaskets.Clone(),
 		withFavourites: cq.withFavourites.Clone(),
 		// clone intermediate query.
 		sql:    cq.sql.Clone(),
@@ -369,17 +344,6 @@ func (cq *CustomerQuery) WithOrders(opts ...func(*OrderQuery)) *CustomerQuery {
 		opt(query)
 	}
 	cq.withOrders = query
-	return cq
-}
-
-// WithBaskets tells the query-builder to eager-load the nodes that are connected to
-// the "baskets" edge. The optional arguments are used to configure the query builder of the edge.
-func (cq *CustomerQuery) WithBaskets(opts ...func(*BasketQuery)) *CustomerQuery {
-	query := &BasketQuery{config: cq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	cq.withBaskets = query
 	return cq
 }
 
@@ -459,10 +423,9 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 	var (
 		nodes       = []*Customer{}
 		_spec       = cq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [3]bool{
 			cq.withAddresses != nil,
 			cq.withOrders != nil,
-			cq.withBaskets != nil,
 			cq.withFavourites != nil,
 		}
 	)
@@ -541,35 +504,6 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "customer_orders" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Orders = append(node.Edges.Orders, n)
-		}
-	}
-
-	if query := cq.withBaskets; query != nil {
-		fks := make([]driver.Value, 0, len(nodes))
-		nodeids := make(map[int]*Customer)
-		for i := range nodes {
-			fks = append(fks, nodes[i].ID)
-			nodeids[nodes[i].ID] = nodes[i]
-			nodes[i].Edges.Baskets = []*Basket{}
-		}
-		query.withFKs = true
-		query.Where(predicate.Basket(func(s *sql.Selector) {
-			s.Where(sql.InValues(customer.BasketsColumn, fks...))
-		}))
-		neighbors, err := query.All(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, n := range neighbors {
-			fk := n.customer_baskets
-			if fk == nil {
-				return nil, fmt.Errorf(`foreign-key "customer_baskets" is nil for node %v`, n.ID)
-			}
-			node, ok := nodeids[*fk]
-			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "customer_baskets" returned %v for node %v`, *fk, n.ID)
-			}
-			node.Edges.Baskets = append(node.Edges.Baskets, n)
 		}
 	}
 

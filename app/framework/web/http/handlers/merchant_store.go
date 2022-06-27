@@ -24,26 +24,41 @@ func NewMerchantStoreHandler(db *database.Adapter) *MerchantStoreHandler {
 
 func (h *MerchantStoreHandler) FetchByID() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		id, _ := c.ParamsInt("merchantId")
+		storeId, _ := c.ParamsInt("storeId")
 
-		result, err := h.service.Fetch(id)
+		result, err := h.service.Fetch(storeId)
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantStoreErrorResponse(err))
 		}
 		return c.JSON(presenters.MerchantStoreSuccessResponse(result))
+
+	}
+}
+func (h *MerchantStoreHandler) FetchByMerchantID() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		merchantId, _ := c.ParamsInt("merchantId")
+
+		result, err := h.service.FetchByMerchant(merchantId)
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantStoreErrorResponse(err))
+		}
+		return c.JSON(presenters.MerchantStoreSuccessResponse(result))
+
 	}
 }
 func (h *MerchantStoreHandler) Fetch() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		merchantType := c.Params("merchantType")
 
-		result, err := h.service.FetchAll()
+		result, err := h.service.FetchAllByMerchant(merchantType)
 
 		if err != nil {
 
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
-		return c.JSON(presenters.MerchantStoresSuccessResponse(result))
+		return c.JSON(presenters.MerchantStorefrontsSuccessResponse(result))
 	}
 }
 
@@ -117,6 +132,22 @@ func (h *MerchantStoreHandler) SaveBankAccount() fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(errors.New("error creating merchant")))
 		}
 		return c.JSON(presenters.MerchantStorefrontSuccessResponse(result))
+	}
+}
+
+func (h *MerchantStoreHandler) SaveDefaultAccount() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		storeId, _ := c.ParamsInt("storeId")
+		accountType := c.Params("type")
+
+		result, err := h.service.SaveDefaultAccount(storeId, accountType)
+
+		if err != nil {
+
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(errors.New("error creating merchant")))
+		}
+		return c.JSON(presenters.MerchantStorefrontSuccessResponse(result))
+
 	}
 }
 

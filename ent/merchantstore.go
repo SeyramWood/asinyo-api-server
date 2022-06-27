@@ -41,6 +41,8 @@ type MerchantStore struct {
 	BankAccount *models.MerchantBankAccount `json:"bank_account,omitempty"`
 	// MomoAccount holds the value of the "momo_account" field.
 	MomoAccount *models.MerchantMomoAccount `json:"momo_account,omitempty"`
+	// MerchantType holds the value of the "merchant_type" field.
+	MerchantType string `json:"merchant_type,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MerchantStoreQuery when eager-loading is set.
 	Edges          MerchantStoreEdges `json:"edges"`
@@ -51,9 +53,11 @@ type MerchantStore struct {
 type MerchantStoreEdges struct {
 	// Merchant holds the value of the merchant edge.
 	Merchant *Merchant `json:"merchant,omitempty"`
+	// Orders holds the value of the orders edge.
+	Orders []*OrderDetail `json:"orders,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // MerchantOrErr returns the Merchant value or an error if the edge
@@ -70,6 +74,15 @@ func (e MerchantStoreEdges) MerchantOrErr() (*Merchant, error) {
 	return nil, &NotLoadedError{edge: "merchant"}
 }
 
+// OrdersOrErr returns the Orders value or an error if the edge
+// was not loaded in eager-loading.
+func (e MerchantStoreEdges) OrdersOrErr() ([]*OrderDetail, error) {
+	if e.loadedTypes[1] {
+		return e.Orders, nil
+	}
+	return nil, &NotLoadedError{edge: "orders"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*MerchantStore) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
@@ -79,7 +92,7 @@ func (*MerchantStore) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new([]byte)
 		case merchantstore.FieldID:
 			values[i] = new(sql.NullInt64)
-		case merchantstore.FieldName, merchantstore.FieldAbout, merchantstore.FieldDescTitle, merchantstore.FieldDescription, merchantstore.FieldLogo, merchantstore.FieldDefaultAccount:
+		case merchantstore.FieldName, merchantstore.FieldAbout, merchantstore.FieldDescTitle, merchantstore.FieldDescription, merchantstore.FieldLogo, merchantstore.FieldDefaultAccount, merchantstore.FieldMerchantType:
 			values[i] = new(sql.NullString)
 		case merchantstore.FieldCreatedAt, merchantstore.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -178,6 +191,12 @@ func (ms *MerchantStore) assignValues(columns []string, values []interface{}) er
 					return fmt.Errorf("unmarshal field momo_account: %w", err)
 				}
 			}
+		case merchantstore.FieldMerchantType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field merchant_type", values[i])
+			} else if value.Valid {
+				ms.MerchantType = value.String
+			}
 		case merchantstore.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field merchant_store", value)
@@ -193,6 +212,11 @@ func (ms *MerchantStore) assignValues(columns []string, values []interface{}) er
 // QueryMerchant queries the "merchant" edge of the MerchantStore entity.
 func (ms *MerchantStore) QueryMerchant() *MerchantQuery {
 	return (&MerchantStoreClient{config: ms.config}).QueryMerchant(ms)
+}
+
+// QueryOrders queries the "orders" edge of the MerchantStore entity.
+func (ms *MerchantStore) QueryOrders() *OrderDetailQuery {
+	return (&MerchantStoreClient{config: ms.config}).QueryOrders(ms)
 }
 
 // Update returns a builder for updating this MerchantStore.
@@ -240,6 +264,8 @@ func (ms *MerchantStore) String() string {
 	builder.WriteString(fmt.Sprintf("%v", ms.BankAccount))
 	builder.WriteString(", momo_account=")
 	builder.WriteString(fmt.Sprintf("%v", ms.MomoAccount))
+	builder.WriteString(", merchant_type=")
+	builder.WriteString(ms.MerchantType)
 	builder.WriteByte(')')
 	return builder.String()
 }

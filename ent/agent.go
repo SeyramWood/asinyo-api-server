@@ -49,13 +49,11 @@ type AgentEdges struct {
 	Addresses []*Address `json:"addresses,omitempty"`
 	// Orders holds the value of the orders edge.
 	Orders []*Order `json:"orders,omitempty"`
-	// Baskets holds the value of the baskets edge.
-	Baskets []*Basket `json:"baskets,omitempty"`
 	// Favourites holds the value of the favourites edge.
 	Favourites []*Favourite `json:"favourites,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [3]bool
 }
 
 // AddressesOrErr returns the Addresses value or an error if the edge
@@ -76,19 +74,10 @@ func (e AgentEdges) OrdersOrErr() ([]*Order, error) {
 	return nil, &NotLoadedError{edge: "orders"}
 }
 
-// BasketsOrErr returns the Baskets value or an error if the edge
-// was not loaded in eager-loading.
-func (e AgentEdges) BasketsOrErr() ([]*Basket, error) {
-	if e.loadedTypes[2] {
-		return e.Baskets, nil
-	}
-	return nil, &NotLoadedError{edge: "baskets"}
-}
-
 // FavouritesOrErr returns the Favourites value or an error if the edge
 // was not loaded in eager-loading.
 func (e AgentEdges) FavouritesOrErr() ([]*Favourite, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[2] {
 		return e.Favourites, nil
 	}
 	return nil, &NotLoadedError{edge: "favourites"}
@@ -208,11 +197,6 @@ func (a *Agent) QueryAddresses() *AddressQuery {
 // QueryOrders queries the "orders" edge of the Agent entity.
 func (a *Agent) QueryOrders() *OrderQuery {
 	return (&AgentClient{config: a.config}).QueryOrders(a)
-}
-
-// QueryBaskets queries the "baskets" edge of the Agent entity.
-func (a *Agent) QueryBaskets() *BasketQuery {
-	return (&AgentClient{config: a.config}).QueryBaskets(a)
 }
 
 // QueryFavourites queries the "favourites" edge of the Agent entity.

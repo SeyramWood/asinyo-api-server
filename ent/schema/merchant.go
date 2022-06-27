@@ -38,7 +38,6 @@ func (Merchant) Edges() []ent.Edge {
 		edge.To("products", Product.Type),
 		edge.To("addresses", Address.Type),
 		edge.To("orders", Order.Type),
-		edge.To("baskets", Basket.Type),
 		edge.To("favourites", Favourite.Type),
 	}
 }

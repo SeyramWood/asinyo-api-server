@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -16,8 +17,9 @@ import (
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/order"
+	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/SeyramWood/ent/pickupstation"
 	"github.com/SeyramWood/ent/predicate"
-	"github.com/SeyramWood/ent/product"
 )
 
 // OrderQuery is the builder for querying Order entities.
@@ -30,11 +32,12 @@ type OrderQuery struct {
 	fields     []string
 	predicates []predicate.Order
 	// eager-loading edges.
+	withDetails  *OrderDetailQuery
 	withMerchant *MerchantQuery
 	withAgent    *AgentQuery
 	withCustomer *CustomerQuery
 	withAddress  *AddressQuery
-	withProduct  *ProductQuery
+	withPickup   *PickupStationQuery
 	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -70,6 +73,28 @@ func (oq *OrderQuery) Unique(unique bool) *OrderQuery {
 func (oq *OrderQuery) Order(o ...OrderFunc) *OrderQuery {
 	oq.order = append(oq.order, o...)
 	return oq
+}
+
+// QueryDetails chains the current query on the "details" edge.
+func (oq *OrderQuery) QueryDetails() *OrderDetailQuery {
+	query := &OrderDetailQuery{config: oq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := oq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := oq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, selector),
+			sqlgraph.To(orderdetail.Table, orderdetail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, order.DetailsTable, order.DetailsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(oq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryMerchant chains the current query on the "merchant" edge.
@@ -160,9 +185,9 @@ func (oq *OrderQuery) QueryAddress() *AddressQuery {
 	return query
 }
 
-// QueryProduct chains the current query on the "product" edge.
-func (oq *OrderQuery) QueryProduct() *ProductQuery {
-	query := &ProductQuery{config: oq.config}
+// QueryPickup chains the current query on the "pickup" edge.
+func (oq *OrderQuery) QueryPickup() *PickupStationQuery {
+	query := &PickupStationQuery{config: oq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := oq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -173,8 +198,8 @@ func (oq *OrderQuery) QueryProduct() *ProductQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(order.Table, order.FieldID, selector),
-			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, order.ProductTable, order.ProductColumn),
+			sqlgraph.To(pickupstation.Table, pickupstation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.PickupTable, order.PickupColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(oq.driver.Dialect(), step)
 		return fromU, nil
@@ -363,16 +388,28 @@ func (oq *OrderQuery) Clone() *OrderQuery {
 		offset:       oq.offset,
 		order:        append([]OrderFunc{}, oq.order...),
 		predicates:   append([]predicate.Order{}, oq.predicates...),
+		withDetails:  oq.withDetails.Clone(),
 		withMerchant: oq.withMerchant.Clone(),
 		withAgent:    oq.withAgent.Clone(),
 		withCustomer: oq.withCustomer.Clone(),
 		withAddress:  oq.withAddress.Clone(),
-		withProduct:  oq.withProduct.Clone(),
+		withPickup:   oq.withPickup.Clone(),
 		// clone intermediate query.
 		sql:    oq.sql.Clone(),
 		path:   oq.path,
 		unique: oq.unique,
 	}
+}
+
+// WithDetails tells the query-builder to eager-load the nodes that are connected to
+// the "details" edge. The optional arguments are used to configure the query builder of the edge.
+func (oq *OrderQuery) WithDetails(opts ...func(*OrderDetailQuery)) *OrderQuery {
+	query := &OrderDetailQuery{config: oq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	oq.withDetails = query
+	return oq
 }
 
 // WithMerchant tells the query-builder to eager-load the nodes that are connected to
@@ -419,14 +456,14 @@ func (oq *OrderQuery) WithAddress(opts ...func(*AddressQuery)) *OrderQuery {
 	return oq
 }
 
-// WithProduct tells the query-builder to eager-load the nodes that are connected to
-// the "product" edge. The optional arguments are used to configure the query builder of the edge.
-func (oq *OrderQuery) WithProduct(opts ...func(*ProductQuery)) *OrderQuery {
-	query := &ProductQuery{config: oq.config}
+// WithPickup tells the query-builder to eager-load the nodes that are connected to
+// the "pickup" edge. The optional arguments are used to configure the query builder of the edge.
+func (oq *OrderQuery) WithPickup(opts ...func(*PickupStationQuery)) *OrderQuery {
+	query := &PickupStationQuery{config: oq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	oq.withProduct = query
+	oq.withPickup = query
 	return oq
 }
 
@@ -496,15 +533,16 @@ func (oq *OrderQuery) sqlAll(ctx context.Context) ([]*Order, error) {
 		nodes       = []*Order{}
 		withFKs     = oq.withFKs
 		_spec       = oq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
+			oq.withDetails != nil,
 			oq.withMerchant != nil,
 			oq.withAgent != nil,
 			oq.withCustomer != nil,
 			oq.withAddress != nil,
-			oq.withProduct != nil,
+			oq.withPickup != nil,
 		}
 	)
-	if oq.withMerchant != nil || oq.withAgent != nil || oq.withCustomer != nil || oq.withAddress != nil || oq.withProduct != nil {
+	if oq.withMerchant != nil || oq.withAgent != nil || oq.withCustomer != nil || oq.withAddress != nil || oq.withPickup != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -528,6 +566,35 @@ func (oq *OrderQuery) sqlAll(ctx context.Context) ([]*Order, error) {
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := oq.withDetails; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Order)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Details = []*OrderDetail{}
+		}
+		query.withFKs = true
+		query.Where(predicate.OrderDetail(func(s *sql.Selector) {
+			s.Where(sql.InValues(order.DetailsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.order_details
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "order_details" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "order_details" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Details = append(node.Edges.Details, n)
+		}
 	}
 
 	if query := oq.withMerchant; query != nil {
@@ -646,20 +713,20 @@ func (oq *OrderQuery) sqlAll(ctx context.Context) ([]*Order, error) {
 		}
 	}
 
-	if query := oq.withProduct; query != nil {
+	if query := oq.withPickup; query != nil {
 		ids := make([]int, 0, len(nodes))
 		nodeids := make(map[int][]*Order)
 		for i := range nodes {
-			if nodes[i].product_orders == nil {
+			if nodes[i].pickup_station_orders == nil {
 				continue
 			}
-			fk := *nodes[i].product_orders
+			fk := *nodes[i].pickup_station_orders
 			if _, ok := nodeids[fk]; !ok {
 				ids = append(ids, fk)
 			}
 			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
-		query.Where(product.IDIn(ids...))
+		query.Where(pickupstation.IDIn(ids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
@@ -667,10 +734,10 @@ func (oq *OrderQuery) sqlAll(ctx context.Context) ([]*Order, error) {
 		for _, n := range neighbors {
 			nodes, ok := nodeids[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "product_orders" returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "pickup_station_orders" returned %v`, n.ID)
 			}
 			for i := range nodes {
-				nodes[i].Edges.Product = n
+				nodes[i].Edges.Pickup = n
 			}
 		}
 	}

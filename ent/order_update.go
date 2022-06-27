@@ -16,8 +16,9 @@ import (
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/order"
+	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/SeyramWood/ent/pickupstation"
 	"github.com/SeyramWood/ent/predicate"
-	"github.com/SeyramWood/ent/product"
 )
 
 // OrderUpdate is the builder for updating Order entities.
@@ -36,6 +37,84 @@ func (ou *OrderUpdate) Where(ps ...predicate.Order) *OrderUpdate {
 // SetUpdatedAt sets the "updated_at" field.
 func (ou *OrderUpdate) SetUpdatedAt(t time.Time) *OrderUpdate {
 	ou.mutation.SetUpdatedAt(t)
+	return ou
+}
+
+// SetOrderNumber sets the "order_number" field.
+func (ou *OrderUpdate) SetOrderNumber(s string) *OrderUpdate {
+	ou.mutation.SetOrderNumber(s)
+	return ou
+}
+
+// SetCurrency sets the "currency" field.
+func (ou *OrderUpdate) SetCurrency(s string) *OrderUpdate {
+	ou.mutation.SetCurrency(s)
+	return ou
+}
+
+// SetAmount sets the "amount" field.
+func (ou *OrderUpdate) SetAmount(f float64) *OrderUpdate {
+	ou.mutation.ResetAmount()
+	ou.mutation.SetAmount(f)
+	return ou
+}
+
+// SetNillableAmount sets the "amount" field if the given value is not nil.
+func (ou *OrderUpdate) SetNillableAmount(f *float64) *OrderUpdate {
+	if f != nil {
+		ou.SetAmount(*f)
+	}
+	return ou
+}
+
+// AddAmount adds f to the "amount" field.
+func (ou *OrderUpdate) AddAmount(f float64) *OrderUpdate {
+	ou.mutation.AddAmount(f)
+	return ou
+}
+
+// SetDeliveryFee sets the "delivery_fee" field.
+func (ou *OrderUpdate) SetDeliveryFee(f float64) *OrderUpdate {
+	ou.mutation.ResetDeliveryFee()
+	ou.mutation.SetDeliveryFee(f)
+	return ou
+}
+
+// SetNillableDeliveryFee sets the "delivery_fee" field if the given value is not nil.
+func (ou *OrderUpdate) SetNillableDeliveryFee(f *float64) *OrderUpdate {
+	if f != nil {
+		ou.SetDeliveryFee(*f)
+	}
+	return ou
+}
+
+// AddDeliveryFee adds f to the "delivery_fee" field.
+func (ou *OrderUpdate) AddDeliveryFee(f float64) *OrderUpdate {
+	ou.mutation.AddDeliveryFee(f)
+	return ou
+}
+
+// SetReference sets the "reference" field.
+func (ou *OrderUpdate) SetReference(s string) *OrderUpdate {
+	ou.mutation.SetReference(s)
+	return ou
+}
+
+// SetChannel sets the "channel" field.
+func (ou *OrderUpdate) SetChannel(s string) *OrderUpdate {
+	ou.mutation.SetChannel(s)
+	return ou
+}
+
+// SetPaidAt sets the "paid_at" field.
+func (ou *OrderUpdate) SetPaidAt(s string) *OrderUpdate {
+	ou.mutation.SetPaidAt(s)
+	return ou
+}
+
+// SetDeliveryMethod sets the "delivery_method" field.
+func (ou *OrderUpdate) SetDeliveryMethod(om order.DeliveryMethod) *OrderUpdate {
+	ou.mutation.SetDeliveryMethod(om)
 	return ou
 }
 
@@ -71,6 +150,21 @@ func (ou *OrderUpdate) SetNillableDeliveredAt(t *time.Time) *OrderUpdate {
 func (ou *OrderUpdate) ClearDeliveredAt() *OrderUpdate {
 	ou.mutation.ClearDeliveredAt()
 	return ou
+}
+
+// AddDetailIDs adds the "details" edge to the OrderDetail entity by IDs.
+func (ou *OrderUpdate) AddDetailIDs(ids ...int) *OrderUpdate {
+	ou.mutation.AddDetailIDs(ids...)
+	return ou
+}
+
+// AddDetails adds the "details" edges to the OrderDetail entity.
+func (ou *OrderUpdate) AddDetails(o ...*OrderDetail) *OrderUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return ou.AddDetailIDs(ids...)
 }
 
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
@@ -149,28 +243,49 @@ func (ou *OrderUpdate) SetAddress(a *Address) *OrderUpdate {
 	return ou.SetAddressID(a.ID)
 }
 
-// SetProductID sets the "product" edge to the Product entity by ID.
-func (ou *OrderUpdate) SetProductID(id int) *OrderUpdate {
-	ou.mutation.SetProductID(id)
+// SetPickupID sets the "pickup" edge to the PickupStation entity by ID.
+func (ou *OrderUpdate) SetPickupID(id int) *OrderUpdate {
+	ou.mutation.SetPickupID(id)
 	return ou
 }
 
-// SetNillableProductID sets the "product" edge to the Product entity by ID if the given value is not nil.
-func (ou *OrderUpdate) SetNillableProductID(id *int) *OrderUpdate {
+// SetNillablePickupID sets the "pickup" edge to the PickupStation entity by ID if the given value is not nil.
+func (ou *OrderUpdate) SetNillablePickupID(id *int) *OrderUpdate {
 	if id != nil {
-		ou = ou.SetProductID(*id)
+		ou = ou.SetPickupID(*id)
 	}
 	return ou
 }
 
-// SetProduct sets the "product" edge to the Product entity.
-func (ou *OrderUpdate) SetProduct(p *Product) *OrderUpdate {
-	return ou.SetProductID(p.ID)
+// SetPickup sets the "pickup" edge to the PickupStation entity.
+func (ou *OrderUpdate) SetPickup(p *PickupStation) *OrderUpdate {
+	return ou.SetPickupID(p.ID)
 }
 
 // Mutation returns the OrderMutation object of the builder.
 func (ou *OrderUpdate) Mutation() *OrderMutation {
 	return ou.mutation
+}
+
+// ClearDetails clears all "details" edges to the OrderDetail entity.
+func (ou *OrderUpdate) ClearDetails() *OrderUpdate {
+	ou.mutation.ClearDetails()
+	return ou
+}
+
+// RemoveDetailIDs removes the "details" edge to OrderDetail entities by IDs.
+func (ou *OrderUpdate) RemoveDetailIDs(ids ...int) *OrderUpdate {
+	ou.mutation.RemoveDetailIDs(ids...)
+	return ou
+}
+
+// RemoveDetails removes "details" edges to OrderDetail entities.
+func (ou *OrderUpdate) RemoveDetails(o ...*OrderDetail) *OrderUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return ou.RemoveDetailIDs(ids...)
 }
 
 // ClearMerchant clears the "merchant" edge to the Merchant entity.
@@ -197,9 +312,9 @@ func (ou *OrderUpdate) ClearAddress() *OrderUpdate {
 	return ou
 }
 
-// ClearProduct clears the "product" edge to the Product entity.
-func (ou *OrderUpdate) ClearProduct() *OrderUpdate {
-	ou.mutation.ClearProduct()
+// ClearPickup clears the "pickup" edge to the PickupStation entity.
+func (ou *OrderUpdate) ClearPickup() *OrderUpdate {
+	ou.mutation.ClearPickup()
 	return ou
 }
 
@@ -274,6 +389,36 @@ func (ou *OrderUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (ou *OrderUpdate) check() error {
+	if v, ok := ou.mutation.OrderNumber(); ok {
+		if err := order.OrderNumberValidator(v); err != nil {
+			return &ValidationError{Name: "order_number", err: fmt.Errorf(`ent: validator failed for field "Order.order_number": %w`, err)}
+		}
+	}
+	if v, ok := ou.mutation.Currency(); ok {
+		if err := order.CurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "currency", err: fmt.Errorf(`ent: validator failed for field "Order.currency": %w`, err)}
+		}
+	}
+	if v, ok := ou.mutation.Reference(); ok {
+		if err := order.ReferenceValidator(v); err != nil {
+			return &ValidationError{Name: "reference", err: fmt.Errorf(`ent: validator failed for field "Order.reference": %w`, err)}
+		}
+	}
+	if v, ok := ou.mutation.Channel(); ok {
+		if err := order.ChannelValidator(v); err != nil {
+			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "Order.channel": %w`, err)}
+		}
+	}
+	if v, ok := ou.mutation.PaidAt(); ok {
+		if err := order.PaidAtValidator(v); err != nil {
+			return &ValidationError{Name: "paid_at", err: fmt.Errorf(`ent: validator failed for field "Order.paid_at": %w`, err)}
+		}
+	}
+	if v, ok := ou.mutation.DeliveryMethod(); ok {
+		if err := order.DeliveryMethodValidator(v); err != nil {
+			return &ValidationError{Name: "delivery_method", err: fmt.Errorf(`ent: validator failed for field "Order.delivery_method": %w`, err)}
+		}
+	}
 	if v, ok := ou.mutation.Status(); ok {
 		if err := order.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Order.status": %w`, err)}
@@ -307,6 +452,76 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: order.FieldUpdatedAt,
 		})
 	}
+	if value, ok := ou.mutation.OrderNumber(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldOrderNumber,
+		})
+	}
+	if value, ok := ou.mutation.Currency(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldCurrency,
+		})
+	}
+	if value, ok := ou.mutation.Amount(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldAmount,
+		})
+	}
+	if value, ok := ou.mutation.AddedAmount(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldAmount,
+		})
+	}
+	if value, ok := ou.mutation.DeliveryFee(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldDeliveryFee,
+		})
+	}
+	if value, ok := ou.mutation.AddedDeliveryFee(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldDeliveryFee,
+		})
+	}
+	if value, ok := ou.mutation.Reference(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldReference,
+		})
+	}
+	if value, ok := ou.mutation.Channel(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldChannel,
+		})
+	}
+	if value, ok := ou.mutation.PaidAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldPaidAt,
+		})
+	}
+	if value, ok := ou.mutation.DeliveryMethod(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: order.FieldDeliveryMethod,
+		})
+	}
 	if value, ok := ou.mutation.Status(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeEnum,
@@ -326,6 +541,60 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeTime,
 			Column: order.FieldDeliveredAt,
 		})
+	}
+	if ou.mutation.DetailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.DetailsTable,
+			Columns: []string{order.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ou.mutation.RemovedDetailsIDs(); len(nodes) > 0 && !ou.mutation.DetailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.DetailsTable,
+			Columns: []string{order.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ou.mutation.DetailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.DetailsTable,
+			Columns: []string{order.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if ou.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -467,33 +736,33 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ou.mutation.ProductCleared() {
+	if ou.mutation.PickupCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.ProductTable,
-			Columns: []string{order.ProductColumn},
+			Table:   order.PickupTable,
+			Columns: []string{order.PickupColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: product.FieldID,
+					Column: pickupstation.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ou.mutation.ProductIDs(); len(nodes) > 0 {
+	if nodes := ou.mutation.PickupIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.ProductTable,
-			Columns: []string{order.ProductColumn},
+			Table:   order.PickupTable,
+			Columns: []string{order.PickupColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: product.FieldID,
+					Column: pickupstation.FieldID,
 				},
 			},
 		}
@@ -524,6 +793,84 @@ type OrderUpdateOne struct {
 // SetUpdatedAt sets the "updated_at" field.
 func (ouo *OrderUpdateOne) SetUpdatedAt(t time.Time) *OrderUpdateOne {
 	ouo.mutation.SetUpdatedAt(t)
+	return ouo
+}
+
+// SetOrderNumber sets the "order_number" field.
+func (ouo *OrderUpdateOne) SetOrderNumber(s string) *OrderUpdateOne {
+	ouo.mutation.SetOrderNumber(s)
+	return ouo
+}
+
+// SetCurrency sets the "currency" field.
+func (ouo *OrderUpdateOne) SetCurrency(s string) *OrderUpdateOne {
+	ouo.mutation.SetCurrency(s)
+	return ouo
+}
+
+// SetAmount sets the "amount" field.
+func (ouo *OrderUpdateOne) SetAmount(f float64) *OrderUpdateOne {
+	ouo.mutation.ResetAmount()
+	ouo.mutation.SetAmount(f)
+	return ouo
+}
+
+// SetNillableAmount sets the "amount" field if the given value is not nil.
+func (ouo *OrderUpdateOne) SetNillableAmount(f *float64) *OrderUpdateOne {
+	if f != nil {
+		ouo.SetAmount(*f)
+	}
+	return ouo
+}
+
+// AddAmount adds f to the "amount" field.
+func (ouo *OrderUpdateOne) AddAmount(f float64) *OrderUpdateOne {
+	ouo.mutation.AddAmount(f)
+	return ouo
+}
+
+// SetDeliveryFee sets the "delivery_fee" field.
+func (ouo *OrderUpdateOne) SetDeliveryFee(f float64) *OrderUpdateOne {
+	ouo.mutation.ResetDeliveryFee()
+	ouo.mutation.SetDeliveryFee(f)
+	return ouo
+}
+
+// SetNillableDeliveryFee sets the "delivery_fee" field if the given value is not nil.
+func (ouo *OrderUpdateOne) SetNillableDeliveryFee(f *float64) *OrderUpdateOne {
+	if f != nil {
+		ouo.SetDeliveryFee(*f)
+	}
+	return ouo
+}
+
+// AddDeliveryFee adds f to the "delivery_fee" field.
+func (ouo *OrderUpdateOne) AddDeliveryFee(f float64) *OrderUpdateOne {
+	ouo.mutation.AddDeliveryFee(f)
+	return ouo
+}
+
+// SetReference sets the "reference" field.
+func (ouo *OrderUpdateOne) SetReference(s string) *OrderUpdateOne {
+	ouo.mutation.SetReference(s)
+	return ouo
+}
+
+// SetChannel sets the "channel" field.
+func (ouo *OrderUpdateOne) SetChannel(s string) *OrderUpdateOne {
+	ouo.mutation.SetChannel(s)
+	return ouo
+}
+
+// SetPaidAt sets the "paid_at" field.
+func (ouo *OrderUpdateOne) SetPaidAt(s string) *OrderUpdateOne {
+	ouo.mutation.SetPaidAt(s)
+	return ouo
+}
+
+// SetDeliveryMethod sets the "delivery_method" field.
+func (ouo *OrderUpdateOne) SetDeliveryMethod(om order.DeliveryMethod) *OrderUpdateOne {
+	ouo.mutation.SetDeliveryMethod(om)
 	return ouo
 }
 
@@ -559,6 +906,21 @@ func (ouo *OrderUpdateOne) SetNillableDeliveredAt(t *time.Time) *OrderUpdateOne 
 func (ouo *OrderUpdateOne) ClearDeliveredAt() *OrderUpdateOne {
 	ouo.mutation.ClearDeliveredAt()
 	return ouo
+}
+
+// AddDetailIDs adds the "details" edge to the OrderDetail entity by IDs.
+func (ouo *OrderUpdateOne) AddDetailIDs(ids ...int) *OrderUpdateOne {
+	ouo.mutation.AddDetailIDs(ids...)
+	return ouo
+}
+
+// AddDetails adds the "details" edges to the OrderDetail entity.
+func (ouo *OrderUpdateOne) AddDetails(o ...*OrderDetail) *OrderUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return ouo.AddDetailIDs(ids...)
 }
 
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
@@ -637,28 +999,49 @@ func (ouo *OrderUpdateOne) SetAddress(a *Address) *OrderUpdateOne {
 	return ouo.SetAddressID(a.ID)
 }
 
-// SetProductID sets the "product" edge to the Product entity by ID.
-func (ouo *OrderUpdateOne) SetProductID(id int) *OrderUpdateOne {
-	ouo.mutation.SetProductID(id)
+// SetPickupID sets the "pickup" edge to the PickupStation entity by ID.
+func (ouo *OrderUpdateOne) SetPickupID(id int) *OrderUpdateOne {
+	ouo.mutation.SetPickupID(id)
 	return ouo
 }
 
-// SetNillableProductID sets the "product" edge to the Product entity by ID if the given value is not nil.
-func (ouo *OrderUpdateOne) SetNillableProductID(id *int) *OrderUpdateOne {
+// SetNillablePickupID sets the "pickup" edge to the PickupStation entity by ID if the given value is not nil.
+func (ouo *OrderUpdateOne) SetNillablePickupID(id *int) *OrderUpdateOne {
 	if id != nil {
-		ouo = ouo.SetProductID(*id)
+		ouo = ouo.SetPickupID(*id)
 	}
 	return ouo
 }
 
-// SetProduct sets the "product" edge to the Product entity.
-func (ouo *OrderUpdateOne) SetProduct(p *Product) *OrderUpdateOne {
-	return ouo.SetProductID(p.ID)
+// SetPickup sets the "pickup" edge to the PickupStation entity.
+func (ouo *OrderUpdateOne) SetPickup(p *PickupStation) *OrderUpdateOne {
+	return ouo.SetPickupID(p.ID)
 }
 
 // Mutation returns the OrderMutation object of the builder.
 func (ouo *OrderUpdateOne) Mutation() *OrderMutation {
 	return ouo.mutation
+}
+
+// ClearDetails clears all "details" edges to the OrderDetail entity.
+func (ouo *OrderUpdateOne) ClearDetails() *OrderUpdateOne {
+	ouo.mutation.ClearDetails()
+	return ouo
+}
+
+// RemoveDetailIDs removes the "details" edge to OrderDetail entities by IDs.
+func (ouo *OrderUpdateOne) RemoveDetailIDs(ids ...int) *OrderUpdateOne {
+	ouo.mutation.RemoveDetailIDs(ids...)
+	return ouo
+}
+
+// RemoveDetails removes "details" edges to OrderDetail entities.
+func (ouo *OrderUpdateOne) RemoveDetails(o ...*OrderDetail) *OrderUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return ouo.RemoveDetailIDs(ids...)
 }
 
 // ClearMerchant clears the "merchant" edge to the Merchant entity.
@@ -685,9 +1068,9 @@ func (ouo *OrderUpdateOne) ClearAddress() *OrderUpdateOne {
 	return ouo
 }
 
-// ClearProduct clears the "product" edge to the Product entity.
-func (ouo *OrderUpdateOne) ClearProduct() *OrderUpdateOne {
-	ouo.mutation.ClearProduct()
+// ClearPickup clears the "pickup" edge to the PickupStation entity.
+func (ouo *OrderUpdateOne) ClearPickup() *OrderUpdateOne {
+	ouo.mutation.ClearPickup()
 	return ouo
 }
 
@@ -769,6 +1152,36 @@ func (ouo *OrderUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (ouo *OrderUpdateOne) check() error {
+	if v, ok := ouo.mutation.OrderNumber(); ok {
+		if err := order.OrderNumberValidator(v); err != nil {
+			return &ValidationError{Name: "order_number", err: fmt.Errorf(`ent: validator failed for field "Order.order_number": %w`, err)}
+		}
+	}
+	if v, ok := ouo.mutation.Currency(); ok {
+		if err := order.CurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "currency", err: fmt.Errorf(`ent: validator failed for field "Order.currency": %w`, err)}
+		}
+	}
+	if v, ok := ouo.mutation.Reference(); ok {
+		if err := order.ReferenceValidator(v); err != nil {
+			return &ValidationError{Name: "reference", err: fmt.Errorf(`ent: validator failed for field "Order.reference": %w`, err)}
+		}
+	}
+	if v, ok := ouo.mutation.Channel(); ok {
+		if err := order.ChannelValidator(v); err != nil {
+			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "Order.channel": %w`, err)}
+		}
+	}
+	if v, ok := ouo.mutation.PaidAt(); ok {
+		if err := order.PaidAtValidator(v); err != nil {
+			return &ValidationError{Name: "paid_at", err: fmt.Errorf(`ent: validator failed for field "Order.paid_at": %w`, err)}
+		}
+	}
+	if v, ok := ouo.mutation.DeliveryMethod(); ok {
+		if err := order.DeliveryMethodValidator(v); err != nil {
+			return &ValidationError{Name: "delivery_method", err: fmt.Errorf(`ent: validator failed for field "Order.delivery_method": %w`, err)}
+		}
+	}
 	if v, ok := ouo.mutation.Status(); ok {
 		if err := order.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Order.status": %w`, err)}
@@ -819,6 +1232,76 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Column: order.FieldUpdatedAt,
 		})
 	}
+	if value, ok := ouo.mutation.OrderNumber(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldOrderNumber,
+		})
+	}
+	if value, ok := ouo.mutation.Currency(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldCurrency,
+		})
+	}
+	if value, ok := ouo.mutation.Amount(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldAmount,
+		})
+	}
+	if value, ok := ouo.mutation.AddedAmount(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldAmount,
+		})
+	}
+	if value, ok := ouo.mutation.DeliveryFee(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldDeliveryFee,
+		})
+	}
+	if value, ok := ouo.mutation.AddedDeliveryFee(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldDeliveryFee,
+		})
+	}
+	if value, ok := ouo.mutation.Reference(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldReference,
+		})
+	}
+	if value, ok := ouo.mutation.Channel(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldChannel,
+		})
+	}
+	if value, ok := ouo.mutation.PaidAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: order.FieldPaidAt,
+		})
+	}
+	if value, ok := ouo.mutation.DeliveryMethod(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: order.FieldDeliveryMethod,
+		})
+	}
 	if value, ok := ouo.mutation.Status(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeEnum,
@@ -838,6 +1321,60 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Type:   field.TypeTime,
 			Column: order.FieldDeliveredAt,
 		})
+	}
+	if ouo.mutation.DetailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.DetailsTable,
+			Columns: []string{order.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ouo.mutation.RemovedDetailsIDs(); len(nodes) > 0 && !ouo.mutation.DetailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.DetailsTable,
+			Columns: []string{order.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ouo.mutation.DetailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.DetailsTable,
+			Columns: []string{order.DetailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: orderdetail.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if ouo.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -979,33 +1516,33 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ouo.mutation.ProductCleared() {
+	if ouo.mutation.PickupCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.ProductTable,
-			Columns: []string{order.ProductColumn},
+			Table:   order.PickupTable,
+			Columns: []string{order.PickupColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: product.FieldID,
+					Column: pickupstation.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ouo.mutation.ProductIDs(); len(nodes) > 0 {
+	if nodes := ouo.mutation.PickupIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.ProductTable,
-			Columns: []string{order.ProductColumn},
+			Table:   order.PickupTable,
+			Columns: []string{order.PickupColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: product.FieldID,
+					Column: pickupstation.FieldID,
 				},
 			},
 		}

@@ -134,6 +134,19 @@ func ValidateMerchant() fiber.Handler {
 	}
 }
 
+func ValidateAddress() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var request models.Address
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+		}
+
+		return c.Next()
+
+	}
+}
+
 func ValidateMerchantStore() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var request models.MerchantStore

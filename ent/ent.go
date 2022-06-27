@@ -11,12 +11,13 @@ import (
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
-	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
+	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/SeyramWood/ent/pickupstation"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -45,12 +46,13 @@ func columnChecker(table string) func(string) error {
 		address.Table:              address.ValidColumn,
 		admin.Table:                admin.ValidColumn,
 		agent.Table:                agent.ValidColumn,
-		basket.Table:               basket.ValidColumn,
 		customer.Table:             customer.ValidColumn,
 		favourite.Table:            favourite.ValidColumn,
 		merchant.Table:             merchant.ValidColumn,
 		merchantstore.Table:        merchantstore.ValidColumn,
 		order.Table:                order.ValidColumn,
+		orderdetail.Table:          orderdetail.ValidColumn,
+		pickupstation.Table:        pickupstation.ValidColumn,
 		product.Table:              product.ValidColumn,
 		productcategorymajor.Table: productcategorymajor.ValidColumn,
 		productcategoryminor.Table: productcategoryminor.ValidColumn,

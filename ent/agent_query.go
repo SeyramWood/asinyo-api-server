@@ -14,7 +14,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
-	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
@@ -32,7 +31,6 @@ type AgentQuery struct {
 	// eager-loading edges.
 	withAddresses  *AddressQuery
 	withOrders     *OrderQuery
-	withBaskets    *BasketQuery
 	withFavourites *FavouriteQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -107,28 +105,6 @@ func (aq *AgentQuery) QueryOrders() *OrderQuery {
 			sqlgraph.From(agent.Table, agent.FieldID, selector),
 			sqlgraph.To(order.Table, order.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, agent.OrdersTable, agent.OrdersColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryBaskets chains the current query on the "baskets" edge.
-func (aq *AgentQuery) QueryBaskets() *BasketQuery {
-	query := &BasketQuery{config: aq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := aq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := aq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(agent.Table, agent.FieldID, selector),
-			sqlgraph.To(basket.Table, basket.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, agent.BasketsTable, agent.BasketsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -341,7 +317,6 @@ func (aq *AgentQuery) Clone() *AgentQuery {
 		predicates:     append([]predicate.Agent{}, aq.predicates...),
 		withAddresses:  aq.withAddresses.Clone(),
 		withOrders:     aq.withOrders.Clone(),
-		withBaskets:    aq.withBaskets.Clone(),
 		withFavourites: aq.withFavourites.Clone(),
 		// clone intermediate query.
 		sql:    aq.sql.Clone(),
@@ -369,17 +344,6 @@ func (aq *AgentQuery) WithOrders(opts ...func(*OrderQuery)) *AgentQuery {
 		opt(query)
 	}
 	aq.withOrders = query
-	return aq
-}
-
-// WithBaskets tells the query-builder to eager-load the nodes that are connected to
-// the "baskets" edge. The optional arguments are used to configure the query builder of the edge.
-func (aq *AgentQuery) WithBaskets(opts ...func(*BasketQuery)) *AgentQuery {
-	query := &BasketQuery{config: aq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	aq.withBaskets = query
 	return aq
 }
 
@@ -459,10 +423,9 @@ func (aq *AgentQuery) sqlAll(ctx context.Context) ([]*Agent, error) {
 	var (
 		nodes       = []*Agent{}
 		_spec       = aq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [3]bool{
 			aq.withAddresses != nil,
 			aq.withOrders != nil,
-			aq.withBaskets != nil,
 			aq.withFavourites != nil,
 		}
 	)
@@ -541,35 +504,6 @@ func (aq *AgentQuery) sqlAll(ctx context.Context) ([]*Agent, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "agent_orders" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Orders = append(node.Edges.Orders, n)
-		}
-	}
-
-	if query := aq.withBaskets; query != nil {
-		fks := make([]driver.Value, 0, len(nodes))
-		nodeids := make(map[int]*Agent)
-		for i := range nodes {
-			fks = append(fks, nodes[i].ID)
-			nodeids[nodes[i].ID] = nodes[i]
-			nodes[i].Edges.Baskets = []*Basket{}
-		}
-		query.withFKs = true
-		query.Where(predicate.Basket(func(s *sql.Selector) {
-			s.Where(sql.InValues(agent.BasketsColumn, fks...))
-		}))
-		neighbors, err := query.All(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, n := range neighbors {
-			fk := n.agent_baskets
-			if fk == nil {
-				return nil, fmt.Errorf(`foreign-key "agent_baskets" is nil for node %v`, n.ID)
-			}
-			node, ok := nodeids[*fk]
-			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "agent_baskets" returned %v for node %v`, *fk, n.ID)
-			}
-			node.Edges.Baskets = append(node.Edges.Baskets, n)
 		}
 	}
 

@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
-	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/order"
@@ -118,21 +117,6 @@ func (cu *CustomerUpdate) AddOrders(o ...*Order) *CustomerUpdate {
 	return cu.AddOrderIDs(ids...)
 }
 
-// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
-func (cu *CustomerUpdate) AddBasketIDs(ids ...int) *CustomerUpdate {
-	cu.mutation.AddBasketIDs(ids...)
-	return cu
-}
-
-// AddBaskets adds the "baskets" edges to the Basket entity.
-func (cu *CustomerUpdate) AddBaskets(b ...*Basket) *CustomerUpdate {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return cu.AddBasketIDs(ids...)
-}
-
 // AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
 func (cu *CustomerUpdate) AddFavouriteIDs(ids ...int) *CustomerUpdate {
 	cu.mutation.AddFavouriteIDs(ids...)
@@ -193,27 +177,6 @@ func (cu *CustomerUpdate) RemoveOrders(o ...*Order) *CustomerUpdate {
 		ids[i] = o[i].ID
 	}
 	return cu.RemoveOrderIDs(ids...)
-}
-
-// ClearBaskets clears all "baskets" edges to the Basket entity.
-func (cu *CustomerUpdate) ClearBaskets() *CustomerUpdate {
-	cu.mutation.ClearBaskets()
-	return cu
-}
-
-// RemoveBasketIDs removes the "baskets" edge to Basket entities by IDs.
-func (cu *CustomerUpdate) RemoveBasketIDs(ids ...int) *CustomerUpdate {
-	cu.mutation.RemoveBasketIDs(ids...)
-	return cu
-}
-
-// RemoveBaskets removes "baskets" edges to Basket entities.
-func (cu *CustomerUpdate) RemoveBaskets(b ...*Basket) *CustomerUpdate {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return cu.RemoveBasketIDs(ids...)
 }
 
 // ClearFavourites clears all "favourites" edges to the Favourite entity.
@@ -517,60 +480,6 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if cu.mutation.BasketsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   customer.BasketsTable,
-			Columns: []string{customer.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cu.mutation.RemovedBasketsIDs(); len(nodes) > 0 && !cu.mutation.BasketsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   customer.BasketsTable,
-			Columns: []string{customer.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cu.mutation.BasketsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   customer.BasketsTable,
-			Columns: []string{customer.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if cu.mutation.FavouritesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -730,21 +639,6 @@ func (cuo *CustomerUpdateOne) AddOrders(o ...*Order) *CustomerUpdateOne {
 	return cuo.AddOrderIDs(ids...)
 }
 
-// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
-func (cuo *CustomerUpdateOne) AddBasketIDs(ids ...int) *CustomerUpdateOne {
-	cuo.mutation.AddBasketIDs(ids...)
-	return cuo
-}
-
-// AddBaskets adds the "baskets" edges to the Basket entity.
-func (cuo *CustomerUpdateOne) AddBaskets(b ...*Basket) *CustomerUpdateOne {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return cuo.AddBasketIDs(ids...)
-}
-
 // AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
 func (cuo *CustomerUpdateOne) AddFavouriteIDs(ids ...int) *CustomerUpdateOne {
 	cuo.mutation.AddFavouriteIDs(ids...)
@@ -805,27 +699,6 @@ func (cuo *CustomerUpdateOne) RemoveOrders(o ...*Order) *CustomerUpdateOne {
 		ids[i] = o[i].ID
 	}
 	return cuo.RemoveOrderIDs(ids...)
-}
-
-// ClearBaskets clears all "baskets" edges to the Basket entity.
-func (cuo *CustomerUpdateOne) ClearBaskets() *CustomerUpdateOne {
-	cuo.mutation.ClearBaskets()
-	return cuo
-}
-
-// RemoveBasketIDs removes the "baskets" edge to Basket entities by IDs.
-func (cuo *CustomerUpdateOne) RemoveBasketIDs(ids ...int) *CustomerUpdateOne {
-	cuo.mutation.RemoveBasketIDs(ids...)
-	return cuo
-}
-
-// RemoveBaskets removes "baskets" edges to Basket entities.
-func (cuo *CustomerUpdateOne) RemoveBaskets(b ...*Basket) *CustomerUpdateOne {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return cuo.RemoveBasketIDs(ids...)
 }
 
 // ClearFavourites clears all "favourites" edges to the Favourite entity.
@@ -1145,60 +1018,6 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: order.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if cuo.mutation.BasketsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   customer.BasketsTable,
-			Columns: []string{customer.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cuo.mutation.RemovedBasketsIDs(); len(nodes) > 0 && !cuo.mutation.BasketsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   customer.BasketsTable,
-			Columns: []string{customer.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := cuo.mutation.BasketsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   customer.BasketsTable,
-			Columns: []string{customer.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
 				},
 			},
 		}

@@ -19,13 +19,13 @@ func NewMerchantRepo(db *database.Adapter) gateways.MerchantRepo {
 	return &repository{db.DB}
 }
 
-func (r *repository) Insert(mercthant *models.MerchantRequest) (*ent.Merchant, error) {
+func (r *repository) Insert(mc *models.MerchantRequest) (*ent.Merchant, error) {
 
-	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(mercthant.Credentials.Password), 16)
+	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(mc.Credentials.Password), 16)
 
 	merchant, err := r.db.Merchant.Create().
-		SetType(mercthant.Info.MerchantType).
-		SetUsername(mercthant.Credentials.Username).
+		SetType(mc.Info.MerchantType).
+		SetUsername(mc.Credentials.Username).
 		SetPassword(hashPassword).
 		Save(context.Background())
 
@@ -33,30 +33,30 @@ func (r *repository) Insert(mercthant *models.MerchantRequest) (*ent.Merchant, e
 		return nil, fmt.Errorf("failed creating merchant: %w", err)
 	}
 
-	if mercthant.Info.MerchantType == "supplier" {
+	if mc.Info.MerchantType == "supplier" {
 		_, err := r.db.SupplierMerchant.Create().
 			SetMerchant(merchant).
-			SetGhanaCard(mercthant.Info.GhanaCard).
-			SetLastName(mercthant.Info.LastName).
-			SetOtherName(mercthant.Info.OtherName).
-			SetPhone(mercthant.Info.Phone).
-			SetOtherPhone(mercthant.Info.OtherPhone).
-			SetAddress(mercthant.Info.Address).
-			SetDigitalAddress(mercthant.Info.DigitalAddress).
+			SetGhanaCard(mc.Info.GhanaCard).
+			SetLastName(mc.Info.LastName).
+			SetOtherName(mc.Info.OtherName).
+			SetPhone(mc.Info.Phone).
+			SetOtherPhone(mc.Info.OtherPhone).
+			SetAddress(mc.Info.Address).
+			SetDigitalAddress(mc.Info.DigitalAddress).
 			Save(context.Background())
 		if err != nil {
 			return nil, fmt.Errorf("failed creating merchant: %w", err)
 		}
-	} else if mercthant.Info.MerchantType == "retailer" {
+	} else if mc.Info.MerchantType == "retailer" {
 		_, err := r.db.RetailMerchant.Create().
 			SetMerchant(merchant).
-			SetGhanaCard(mercthant.Info.GhanaCard).
-			SetLastName(mercthant.Info.LastName).
-			SetOtherName(mercthant.Info.OtherName).
-			SetPhone(mercthant.Info.Phone).
-			SetOtherPhone(mercthant.Info.OtherPhone).
-			SetAddress(mercthant.Info.Address).
-			SetDigitalAddress(mercthant.Info.DigitalAddress).
+			SetGhanaCard(mc.Info.GhanaCard).
+			SetLastName(mc.Info.LastName).
+			SetOtherName(mc.Info.OtherName).
+			SetPhone(mc.Info.Phone).
+			SetOtherPhone(mc.Info.OtherPhone).
+			SetAddress(mc.Info.Address).
+			SetDigitalAddress(mc.Info.DigitalAddress).
 			Save(context.Background())
 		if err != nil {
 			return nil, fmt.Errorf("failed creating merchant: %w", err)

@@ -37,7 +37,6 @@ func (Agent) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("addresses", Address.Type),
 		edge.To("orders", Order.Type),
-		edge.To("baskets", Basket.Type),
 		edge.To("favourites", Favourite.Type),
 	}
 }

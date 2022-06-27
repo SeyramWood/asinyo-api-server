@@ -4,6 +4,7 @@ import (
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent"
 	"github.com/gofiber/fiber/v2"
+	"net/http"
 )
 
 type (
@@ -43,10 +44,13 @@ type (
 		Remove(id string) error
 	}
 	MerchantStoreService interface {
-		Create(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.Merchant, error)
-		SaveAccount(store interface{}, merchantId int, logo string) (*ent.MerchantStore, error)
+		Create(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.MerchantStore, error)
+		SaveAccount(store interface{}, storeId int, logo string) (*ent.MerchantStore, error)
+		SaveDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
 		FetchAll() ([]*ent.MerchantStore, error)
-		Fetch(id int) (*ent.Merchant, error)
+		FetchAllByMerchant(merchantType string) ([]*ent.MerchantStore, error)
+		Fetch(id int) (*ent.MerchantStore, error)
+		FetchByMerchant(merchantId int) (*ent.MerchantStore, error)
 		Update(store *models.MerchantStore) (*models.MerchantStore, error)
 		Remove(id string) error
 	}
@@ -83,6 +87,32 @@ type (
 		Update(merchant *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error)
 		Remove(id string) error
 	}
+	AddressService interface {
+		Create(address *models.Address, userId int, userType string) (*ent.Address, error)
+		FetchAll() ([]*ent.Address, error)
+		FetchAllByUser(userId int, userType string) ([]*ent.Address, error)
+		FetchByUser(userId int, userType string) (*ent.Address, error)
+		Fetch(id int) (*ent.Address, error)
+		Update(addressId int, address *models.Address) (*ent.Address, error)
+		SaveDefaultAddress(userId, addressId int, userType string) ([]*ent.Address, error)
+		Remove(id string) error
+	}
+	PickupStationService interface {
+		Create(station *models.PickupStation) (*ent.PickupStation, error)
+		FetchAll() ([]*ent.PickupStation, error)
+		Fetch(id int) (*ent.PickupStation, error)
+		Update(station *models.PickupStation) (*ent.PickupStation, error)
+		Remove(id string) error
+	}
+	OrderService interface {
+		Create(order *models.OrderResponse) error
+		FetchAll() ([]*ent.Order, error)
+		FetchByAllUser(userType string, id int) ([]*ent.Order, error)
+		Fetch(id int) (*ent.Order, error)
+		FetchByUser(userType string, id int) (*ent.Order, error)
+		Update(order *models.OrderResponse) (*ent.Order, error)
+		Remove(id string) error
+	}
 	AdminService interface {
 		Create(user *models.Admin) (*ent.Admin, error)
 		FetchAll() ([]*ent.Admin, error)
@@ -95,5 +125,10 @@ type (
 		Login(c *fiber.Ctx) error
 		Logout(c *fiber.Ctx) error
 		FetchAuthUser(c *fiber.Ctx) error
+	}
+
+	PaymentService interface {
+		Pay(request interface{}) (*http.Response, error)
+		Verify(reference string) (*http.Response, error)
 	}
 )

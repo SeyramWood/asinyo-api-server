@@ -34,8 +34,12 @@ const (
 	FieldBankAccount = "bank_account"
 	// FieldMomoAccount holds the string denoting the momo_account field in the database.
 	FieldMomoAccount = "momo_account"
+	// FieldMerchantType holds the string denoting the merchant_type field in the database.
+	FieldMerchantType = "merchant_type"
 	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
 	EdgeMerchant = "merchant"
+	// EdgeOrders holds the string denoting the orders edge name in mutations.
+	EdgeOrders = "orders"
 	// Table holds the table name of the merchantstore in the database.
 	Table = "merchant_stores"
 	// MerchantTable is the table that holds the merchant relation/edge.
@@ -45,6 +49,13 @@ const (
 	MerchantInverseTable = "merchants"
 	// MerchantColumn is the table column denoting the merchant relation/edge.
 	MerchantColumn = "merchant_store"
+	// OrdersTable is the table that holds the orders relation/edge.
+	OrdersTable = "order_details"
+	// OrdersInverseTable is the table name for the OrderDetail entity.
+	// It exists in this package in order to avoid circular dependency with the "orderdetail" package.
+	OrdersInverseTable = "order_details"
+	// OrdersColumn is the table column denoting the orders relation/edge.
+	OrdersColumn = "merchant_store_orders"
 )
 
 // Columns holds all SQL columns for merchantstore fields.
@@ -61,6 +72,7 @@ var Columns = []string{
 	FieldDefaultAccount,
 	FieldBankAccount,
 	FieldMomoAccount,
+	FieldMerchantType,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "merchant_stores"
@@ -101,6 +113,8 @@ var (
 	DescriptionValidator func(string) error
 	// LogoValidator is a validator for the "logo" field. It is called by the builders before save.
 	LogoValidator func(string) error
+	// MerchantTypeValidator is a validator for the "merchant_type" field. It is called by the builders before save.
+	MerchantTypeValidator func(string) error
 )
 
 // DefaultAccount defines the type for the "default_account" enum field.

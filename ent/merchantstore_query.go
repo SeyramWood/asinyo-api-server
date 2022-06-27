@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -13,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/orderdetail"
 	"github.com/SeyramWood/ent/predicate"
 )
 
@@ -27,6 +29,7 @@ type MerchantStoreQuery struct {
 	predicates []predicate.MerchantStore
 	// eager-loading edges.
 	withMerchant *MerchantQuery
+	withOrders   *OrderDetailQuery
 	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -79,6 +82,28 @@ func (msq *MerchantStoreQuery) QueryMerchant() *MerchantQuery {
 			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, selector),
 			sqlgraph.To(merchant.Table, merchant.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, merchantstore.MerchantTable, merchantstore.MerchantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(msq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOrders chains the current query on the "orders" edge.
+func (msq *MerchantStoreQuery) QueryOrders() *OrderDetailQuery {
+	query := &OrderDetailQuery{config: msq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := msq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := msq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, selector),
+			sqlgraph.To(orderdetail.Table, orderdetail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchantstore.OrdersTable, merchantstore.OrdersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(msq.driver.Dialect(), step)
 		return fromU, nil
@@ -268,6 +293,7 @@ func (msq *MerchantStoreQuery) Clone() *MerchantStoreQuery {
 		order:        append([]OrderFunc{}, msq.order...),
 		predicates:   append([]predicate.MerchantStore{}, msq.predicates...),
 		withMerchant: msq.withMerchant.Clone(),
+		withOrders:   msq.withOrders.Clone(),
 		// clone intermediate query.
 		sql:    msq.sql.Clone(),
 		path:   msq.path,
@@ -283,6 +309,17 @@ func (msq *MerchantStoreQuery) WithMerchant(opts ...func(*MerchantQuery)) *Merch
 		opt(query)
 	}
 	msq.withMerchant = query
+	return msq
+}
+
+// WithOrders tells the query-builder to eager-load the nodes that are connected to
+// the "orders" edge. The optional arguments are used to configure the query builder of the edge.
+func (msq *MerchantStoreQuery) WithOrders(opts ...func(*OrderDetailQuery)) *MerchantStoreQuery {
+	query := &OrderDetailQuery{config: msq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	msq.withOrders = query
 	return msq
 }
 
@@ -352,8 +389,9 @@ func (msq *MerchantStoreQuery) sqlAll(ctx context.Context) ([]*MerchantStore, er
 		nodes       = []*MerchantStore{}
 		withFKs     = msq.withFKs
 		_spec       = msq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			msq.withMerchant != nil,
+			msq.withOrders != nil,
 		}
 	)
 	if msq.withMerchant != nil {
@@ -408,6 +446,35 @@ func (msq *MerchantStoreQuery) sqlAll(ctx context.Context) ([]*MerchantStore, er
 			for i := range nodes {
 				nodes[i].Edges.Merchant = n
 			}
+		}
+	}
+
+	if query := msq.withOrders; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*MerchantStore)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Orders = []*OrderDetail{}
+		}
+		query.withFKs = true
+		query.Where(predicate.OrderDetail(func(s *sql.Selector) {
+			s.Where(sql.InValues(merchantstore.OrdersColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.merchant_store_orders
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "merchant_store_orders" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "merchant_store_orders" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Orders = append(node.Edges.Orders, n)
 		}
 	}
 

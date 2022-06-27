@@ -10,9 +10,11 @@ import (
 
 type (
 	MerchantResponse struct {
-		Username  string `json:"username"`
-		LastName  string `json:"lastName"`
-		OtherName string `json:"otherName"`
+		Username     string `json:"username"`
+		LastName     string `json:"lastName"`
+		OtherName    string `json:"otherName"`
+		Store        int    `json:"store"`
+		BusinessName string `json:"businessName"`
 	}
 	Product struct {
 		ID          int               `json:"id"`
@@ -20,6 +22,7 @@ type (
 		MinorID     int               `json:"categoryMinorId"`
 		Name        string            `json:"name"`
 		Unit        string            `json:"unit"`
+		Quantity    int               `json:"quantity"`
 		Price       float64           `json:"price"`
 		PromoPrice  float64           `json:"promoPrice"`
 		Description string            `json:"description"`
@@ -56,6 +59,7 @@ func ProductSuccessResponse(data *ent.Product) *fiber.Map {
 		MinorID:     data.Edges.Minor.ID,
 		Name:        data.Name,
 		Unit:        data.Unit,
+		Quantity:    int(data.Quantity),
 		Price:       data.Price,
 		PromoPrice:  *data.PromoPrice,
 		Description: data.Description,
@@ -65,9 +69,11 @@ func ProductSuccessResponse(data *ent.Product) *fiber.Map {
 		CreatedAt:   data.CreatedAt,
 		UpdatedAt:   data.UpdatedAt,
 		Merchant: &MerchantResponse{
-			Username:  data.Edges.Merchant.Username,
-			LastName:  data.Edges.Merchant.Edges.Supplier.LastName,
-			OtherName: data.Edges.Merchant.Edges.Supplier.OtherName,
+			Username:     data.Edges.Merchant.Username,
+			LastName:     data.Edges.Merchant.Edges.Supplier.LastName,
+			OtherName:    data.Edges.Merchant.Edges.Supplier.OtherName,
+			Store:        data.Edges.Merchant.Edges.Store.ID,
+			BusinessName: data.Edges.Merchant.Edges.Store.Name,
 		},
 	})
 }
@@ -80,6 +86,7 @@ func ProductRetailerMerchantSuccessResponse(data *ent.Product) *fiber.Map {
 		MinorID:     data.Edges.Minor.ID,
 		Name:        data.Name,
 		Unit:        data.Unit,
+		Quantity:    int(data.Quantity),
 		Price:       data.Price,
 		PromoPrice:  *data.PromoPrice,
 		Description: data.Description,
@@ -89,9 +96,11 @@ func ProductRetailerMerchantSuccessResponse(data *ent.Product) *fiber.Map {
 		CreatedAt:   data.CreatedAt,
 		UpdatedAt:   data.UpdatedAt,
 		Merchant: &MerchantResponse{
-			Username:  data.Edges.Merchant.Username,
-			LastName:  data.Edges.Merchant.Edges.Retailer.LastName,
-			OtherName: data.Edges.Merchant.Edges.Retailer.OtherName,
+			Username:     data.Edges.Merchant.Username,
+			LastName:     data.Edges.Merchant.Edges.Retailer.LastName,
+			OtherName:    data.Edges.Merchant.Edges.Retailer.OtherName,
+			Store:        data.Edges.Merchant.Edges.Store.ID,
+			BusinessName: data.Edges.Merchant.Edges.Store.Name,
 		},
 	})
 }
@@ -103,6 +112,7 @@ func ProductSupplierResponse(data *ent.Product) *fiber.Map {
 		MinorID:     data.Edges.Minor.ID,
 		Name:        data.Name,
 		Unit:        data.Unit,
+		Quantity:    int(data.Quantity),
 		Price:       data.Price,
 		PromoPrice:  *data.PromoPrice,
 		Description: data.Description,
@@ -112,9 +122,11 @@ func ProductSupplierResponse(data *ent.Product) *fiber.Map {
 		CreatedAt:   data.CreatedAt,
 		UpdatedAt:   data.UpdatedAt,
 		Merchant: &MerchantResponse{
-			Username:  data.Edges.Merchant.Username,
-			LastName:  data.Edges.Merchant.Edges.Supplier.LastName,
-			OtherName: data.Edges.Merchant.Edges.Supplier.OtherName,
+			Username:     data.Edges.Merchant.Username,
+			LastName:     data.Edges.Merchant.Edges.Supplier.LastName,
+			OtherName:    data.Edges.Merchant.Edges.Supplier.OtherName,
+			Store:        data.Edges.Merchant.Edges.Store.ID,
+			BusinessName: data.Edges.Merchant.Edges.Store.Name,
 		},
 	})
 
@@ -127,6 +139,7 @@ func ProductRetailerResponse(data *ent.Product) *fiber.Map {
 		MinorID:     data.Edges.Minor.ID,
 		Name:        data.Name,
 		Unit:        data.Unit,
+		Quantity:    int(data.Quantity),
 		Price:       data.Price,
 		PromoPrice:  *data.PromoPrice,
 		Description: data.Description,
@@ -136,9 +149,11 @@ func ProductRetailerResponse(data *ent.Product) *fiber.Map {
 		CreatedAt:   data.CreatedAt,
 		UpdatedAt:   data.UpdatedAt,
 		Merchant: &MerchantResponse{
-			Username:  data.Edges.Merchant.Username,
-			LastName:  data.Edges.Merchant.Edges.Retailer.LastName,
-			OtherName: data.Edges.Merchant.Edges.Retailer.OtherName,
+			Username:     data.Edges.Merchant.Username,
+			LastName:     data.Edges.Merchant.Edges.Retailer.LastName,
+			OtherName:    data.Edges.Merchant.Edges.Retailer.OtherName,
+			Store:        data.Edges.Merchant.Edges.Store.ID,
+			BusinessName: data.Edges.Merchant.Edges.Store.Name,
 		},
 	})
 
@@ -157,6 +172,7 @@ func ProductsSuccessResponse(data []*ent.Product) *fiber.Map {
 				MinorID:     v.Edges.Minor.ID,
 				Name:        v.Name,
 				Unit:        v.Unit,
+				Quantity:    int(v.Quantity),
 				Price:       v.Price,
 				PromoPrice:  *v.PromoPrice,
 				Description: v.Description,
@@ -166,9 +182,11 @@ func ProductsSuccessResponse(data []*ent.Product) *fiber.Map {
 				CreatedAt:   v.CreatedAt,
 				UpdatedAt:   v.UpdatedAt,
 				Merchant: &MerchantResponse{
-					Username:  v.Edges.Merchant.Username,
-					LastName:  v.Edges.Merchant.Edges.Supplier.LastName,
-					OtherName: v.Edges.Merchant.Edges.Supplier.OtherName,
+					Username:     v.Edges.Merchant.Username,
+					LastName:     v.Edges.Merchant.Edges.Supplier.LastName,
+					OtherName:    v.Edges.Merchant.Edges.Supplier.OtherName,
+					Store:        v.Edges.Merchant.Edges.Store.ID,
+					BusinessName: v.Edges.Merchant.Edges.Store.Name,
 				},
 			})
 		}(v)
@@ -190,6 +208,7 @@ func ProductsSupplierResponse(data []*ent.Product) *fiber.Map {
 				MinorID:     v.Edges.Minor.ID,
 				Name:        v.Name,
 				Unit:        v.Unit,
+				Quantity:    int(v.Quantity),
 				Price:       v.Price,
 				PromoPrice:  *v.PromoPrice,
 				Description: v.Description,
@@ -199,9 +218,11 @@ func ProductsSupplierResponse(data []*ent.Product) *fiber.Map {
 				CreatedAt:   v.CreatedAt,
 				UpdatedAt:   v.UpdatedAt,
 				Merchant: &MerchantResponse{
-					Username:  v.Edges.Merchant.Username,
-					LastName:  v.Edges.Merchant.Edges.Supplier.LastName,
-					OtherName: v.Edges.Merchant.Edges.Supplier.OtherName,
+					Username:     v.Edges.Merchant.Username,
+					LastName:     v.Edges.Merchant.Edges.Supplier.LastName,
+					OtherName:    v.Edges.Merchant.Edges.Supplier.OtherName,
+					Store:        v.Edges.Merchant.Edges.Store.ID,
+					BusinessName: v.Edges.Merchant.Edges.Store.Name,
 				},
 			})
 		}(v)
@@ -223,6 +244,7 @@ func ProductsRetailerResponse(data []*ent.Product) *fiber.Map {
 				MinorID:     v.Edges.Minor.ID,
 				Name:        v.Name,
 				Unit:        v.Unit,
+				Quantity:    int(v.Quantity),
 				Price:       v.Price,
 				PromoPrice:  *v.PromoPrice,
 				Description: v.Description,
@@ -232,9 +254,11 @@ func ProductsRetailerResponse(data []*ent.Product) *fiber.Map {
 				CreatedAt:   v.CreatedAt,
 				UpdatedAt:   v.UpdatedAt,
 				Merchant: &MerchantResponse{
-					Username:  v.Edges.Merchant.Username,
-					LastName:  v.Edges.Merchant.Edges.Retailer.LastName,
-					OtherName: v.Edges.Merchant.Edges.Retailer.OtherName,
+					Username:     v.Edges.Merchant.Username,
+					LastName:     v.Edges.Merchant.Edges.Retailer.LastName,
+					OtherName:    v.Edges.Merchant.Edges.Retailer.OtherName,
+					Store:        v.Edges.Merchant.Edges.Store.ID,
+					BusinessName: v.Edges.Merchant.Edges.Store.Name,
 				},
 			})
 		}(v)
@@ -257,6 +281,7 @@ func ProductsBestSellerResponse(data []*ent.Product) *fiber.Map {
 				MinorID:     v.Edges.Minor.ID,
 				Name:        v.Name,
 				Unit:        v.Unit,
+				Quantity:    int(v.Quantity),
 				Price:       v.Price,
 				PromoPrice:  *v.PromoPrice,
 				Description: v.Description,
@@ -266,9 +291,10 @@ func ProductsBestSellerResponse(data []*ent.Product) *fiber.Map {
 				CreatedAt:   v.CreatedAt,
 				UpdatedAt:   v.UpdatedAt,
 				Merchant: &MerchantResponse{
-					Username:  v.Edges.Merchant.Username,
-					LastName:  v.Edges.Merchant.Edges.Retailer.LastName,
-					OtherName: v.Edges.Merchant.Edges.Retailer.OtherName,
+					Username:     v.Edges.Merchant.Username,
+					LastName:     v.Edges.Merchant.Edges.Retailer.LastName,
+					OtherName:    v.Edges.Merchant.Edges.Retailer.OtherName,
+					BusinessName: v.Edges.Merchant.Edges.Store.Name,
 				},
 			})
 		}(v)
@@ -352,6 +378,7 @@ func formatCategoryProducts(data []*ent.Product, merchant string) []*Product {
 					MinorID:     v.Edges.Minor.ID,
 					Name:        v.Name,
 					Unit:        v.Unit,
+					Quantity:    int(v.Quantity),
 					Price:       v.Price,
 					PromoPrice:  *v.PromoPrice,
 					Description: v.Description,
@@ -361,13 +388,16 @@ func formatCategoryProducts(data []*ent.Product, merchant string) []*Product {
 					CreatedAt:   v.CreatedAt,
 					UpdatedAt:   v.UpdatedAt,
 					Merchant: &MerchantResponse{
-						Username:  v.Edges.Merchant.Username,
-						LastName:  v.Edges.Merchant.Edges.Retailer.LastName,
-						OtherName: v.Edges.Merchant.Edges.Retailer.OtherName,
+						Username:     v.Edges.Merchant.Username,
+						LastName:     v.Edges.Merchant.Edges.Retailer.LastName,
+						OtherName:    v.Edges.Merchant.Edges.Retailer.OtherName,
+						Store:        v.Edges.Merchant.Edges.Store.ID,
+						BusinessName: v.Edges.Merchant.Edges.Store.Name,
 					},
 				})
 			}(v)
 		}
+
 	} else {
 		for _, v := range data {
 			wg.Add(1)
@@ -379,6 +409,7 @@ func formatCategoryProducts(data []*ent.Product, merchant string) []*Product {
 					MinorID:     v.Edges.Minor.ID,
 					Name:        v.Name,
 					Unit:        v.Unit,
+					Quantity:    int(v.Quantity),
 					Price:       v.Price,
 					PromoPrice:  *v.PromoPrice,
 					Description: v.Description,
@@ -388,9 +419,11 @@ func formatCategoryProducts(data []*ent.Product, merchant string) []*Product {
 					CreatedAt:   v.CreatedAt,
 					UpdatedAt:   v.UpdatedAt,
 					Merchant: &MerchantResponse{
-						Username:  v.Edges.Merchant.Username,
-						LastName:  v.Edges.Merchant.Edges.Supplier.LastName,
-						OtherName: v.Edges.Merchant.Edges.Supplier.OtherName,
+						Username:     v.Edges.Merchant.Username,
+						LastName:     v.Edges.Merchant.Edges.Supplier.LastName,
+						OtherName:    v.Edges.Merchant.Edges.Supplier.OtherName,
+						Store:        v.Edges.Merchant.Edges.Store.ID,
+						BusinessName: v.Edges.Merchant.Edges.Store.Name,
 					},
 				})
 			}(v)

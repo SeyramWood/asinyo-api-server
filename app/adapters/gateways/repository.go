@@ -42,10 +42,13 @@ type (
 		Delete(id string) error
 	}
 	MerchantStoreRepo interface {
-		Insert(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.Merchant, error)
-		UpdateAccount(store interface{}, merchantId int, logo string) (*ent.MerchantStore, error)
-		Read(id int) (*ent.Merchant, error)
+		Insert(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.MerchantStore, error)
+		UpdateAccount(store interface{}, storeId int, logo string) (*ent.MerchantStore, error)
+		UpdateDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
+		Read(id int) (*ent.MerchantStore, error)
+		ReadByMerchant(merchantId int) (*ent.MerchantStore, error)
 		ReadAll() ([]*ent.MerchantStore, error)
+		ReadAllByMerchant(merchantType string) ([]*ent.MerchantStore, error)
 		Update(store *models.MerchantStore) (*models.MerchantStore, error)
 		Delete(id string) error
 	}
@@ -88,11 +91,42 @@ type (
 		Update(user *models.Admin) (*models.Admin, error)
 		Delete(id string) error
 	}
+	AddressRepo interface {
+		Insert(user *models.Address, userId int, userType string) (*ent.Address, error)
+		Read(id int) (*ent.Address, error)
+		ReadAll() ([]*ent.Address, error)
+		ReadAllByUser(userId int, userType string) ([]*ent.Address, error)
+		ReadByUser(userId int, userType string) (*ent.Address, error)
+		Update(addressId int, address *models.Address) (*ent.Address, error)
+		UpdateByUserDefaultAddress(userId, addressId int, userType string) ([]*ent.Address, error)
+		Delete(id string) error
+	}
+	PickupStationRepo interface {
+		Insert(station *models.PickupStation) (*ent.PickupStation, error)
+		Read(id int) (*ent.PickupStation, error)
+		ReadAll() ([]*ent.PickupStation, error)
+		Update(stationId int, address *models.PickupStation) (*ent.PickupStation, error)
+		Delete(id string) error
+	}
+
+	OrderRepo interface {
+		Insert(order *models.OrderResponse) error
+		Read(id int) (*ent.Order, error)
+		ReadByUser(userType string, id int) (*ent.Order, error)
+		ReadAll() ([]*ent.Order, error)
+		ReadByAllUser(userType string, id int) ([]*ent.Order, error)
+		Update(order *models.OrderResponse) (*ent.Order, error)
+		Delete(id string) error
+	}
 
 	AuthRepo interface {
 		ReadAdmin(username, field string) (*ent.Admin, error)
 		ReadCustomer(username, field string) (*ent.Customer, error)
 		ReadAgent(username, field string) (*ent.Agent, error)
 		ReadMerchant(username, field string) (*ent.Merchant, error)
+	}
+
+	PaymentRepo interface {
+		Insert(transaction *models.Transaction) (*ent.Order, error)
 	}
 )

@@ -12,12 +12,13 @@ import (
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
-	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
+	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/SeyramWood/ent/pickupstation"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -40,8 +41,6 @@ type Client struct {
 	Admin *AdminClient
 	// Agent is the client for interacting with the Agent builders.
 	Agent *AgentClient
-	// Basket is the client for interacting with the Basket builders.
-	Basket *BasketClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
 	// Favourite is the client for interacting with the Favourite builders.
@@ -52,6 +51,10 @@ type Client struct {
 	MerchantStore *MerchantStoreClient
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
+	// OrderDetail is the client for interacting with the OrderDetail builders.
+	OrderDetail *OrderDetailClient
+	// PickupStation is the client for interacting with the PickupStation builders.
+	PickupStation *PickupStationClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
 	// ProductCategoryMajor is the client for interacting with the ProductCategoryMajor builders.
@@ -78,12 +81,13 @@ func (c *Client) init() {
 	c.Address = NewAddressClient(c.config)
 	c.Admin = NewAdminClient(c.config)
 	c.Agent = NewAgentClient(c.config)
-	c.Basket = NewBasketClient(c.config)
 	c.Customer = NewCustomerClient(c.config)
 	c.Favourite = NewFavouriteClient(c.config)
 	c.Merchant = NewMerchantClient(c.config)
 	c.MerchantStore = NewMerchantStoreClient(c.config)
 	c.Order = NewOrderClient(c.config)
+	c.OrderDetail = NewOrderDetailClient(c.config)
+	c.PickupStation = NewPickupStationClient(c.config)
 	c.Product = NewProductClient(c.config)
 	c.ProductCategoryMajor = NewProductCategoryMajorClient(c.config)
 	c.ProductCategoryMinor = NewProductCategoryMinorClient(c.config)
@@ -125,12 +129,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Address:              NewAddressClient(cfg),
 		Admin:                NewAdminClient(cfg),
 		Agent:                NewAgentClient(cfg),
-		Basket:               NewBasketClient(cfg),
 		Customer:             NewCustomerClient(cfg),
 		Favourite:            NewFavouriteClient(cfg),
 		Merchant:             NewMerchantClient(cfg),
 		MerchantStore:        NewMerchantStoreClient(cfg),
 		Order:                NewOrderClient(cfg),
+		OrderDetail:          NewOrderDetailClient(cfg),
+		PickupStation:        NewPickupStationClient(cfg),
 		Product:              NewProductClient(cfg),
 		ProductCategoryMajor: NewProductCategoryMajorClient(cfg),
 		ProductCategoryMinor: NewProductCategoryMinorClient(cfg),
@@ -158,12 +163,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Address:              NewAddressClient(cfg),
 		Admin:                NewAdminClient(cfg),
 		Agent:                NewAgentClient(cfg),
-		Basket:               NewBasketClient(cfg),
 		Customer:             NewCustomerClient(cfg),
 		Favourite:            NewFavouriteClient(cfg),
 		Merchant:             NewMerchantClient(cfg),
 		MerchantStore:        NewMerchantStoreClient(cfg),
 		Order:                NewOrderClient(cfg),
+		OrderDetail:          NewOrderDetailClient(cfg),
+		PickupStation:        NewPickupStationClient(cfg),
 		Product:              NewProductClient(cfg),
 		ProductCategoryMajor: NewProductCategoryMajorClient(cfg),
 		ProductCategoryMinor: NewProductCategoryMinorClient(cfg),
@@ -201,12 +207,13 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Address.Use(hooks...)
 	c.Admin.Use(hooks...)
 	c.Agent.Use(hooks...)
-	c.Basket.Use(hooks...)
 	c.Customer.Use(hooks...)
 	c.Favourite.Use(hooks...)
 	c.Merchant.Use(hooks...)
 	c.MerchantStore.Use(hooks...)
 	c.Order.Use(hooks...)
+	c.OrderDetail.Use(hooks...)
+	c.PickupStation.Use(hooks...)
 	c.Product.Use(hooks...)
 	c.ProductCategoryMajor.Use(hooks...)
 	c.ProductCategoryMinor.Use(hooks...)
@@ -575,22 +582,6 @@ func (c *AgentClient) QueryOrders(a *Agent) *OrderQuery {
 	return query
 }
 
-// QueryBaskets queries the baskets edge of a Agent.
-func (c *AgentClient) QueryBaskets(a *Agent) *BasketQuery {
-	query := &BasketQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := a.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(agent.Table, agent.FieldID, id),
-			sqlgraph.To(basket.Table, basket.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, agent.BasketsTable, agent.BasketsColumn),
-		)
-		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryFavourites queries the favourites edge of a Agent.
 func (c *AgentClient) QueryFavourites(a *Agent) *FavouriteQuery {
 	query := &FavouriteQuery{config: c.config}
@@ -610,160 +601,6 @@ func (c *AgentClient) QueryFavourites(a *Agent) *FavouriteQuery {
 // Hooks returns the client hooks.
 func (c *AgentClient) Hooks() []Hook {
 	return c.hooks.Agent
-}
-
-// BasketClient is a client for the Basket schema.
-type BasketClient struct {
-	config
-}
-
-// NewBasketClient returns a client for the Basket from the given config.
-func NewBasketClient(c config) *BasketClient {
-	return &BasketClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `basket.Hooks(f(g(h())))`.
-func (c *BasketClient) Use(hooks ...Hook) {
-	c.hooks.Basket = append(c.hooks.Basket, hooks...)
-}
-
-// Create returns a create builder for Basket.
-func (c *BasketClient) Create() *BasketCreate {
-	mutation := newBasketMutation(c.config, OpCreate)
-	return &BasketCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Basket entities.
-func (c *BasketClient) CreateBulk(builders ...*BasketCreate) *BasketCreateBulk {
-	return &BasketCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Basket.
-func (c *BasketClient) Update() *BasketUpdate {
-	mutation := newBasketMutation(c.config, OpUpdate)
-	return &BasketUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *BasketClient) UpdateOne(b *Basket) *BasketUpdateOne {
-	mutation := newBasketMutation(c.config, OpUpdateOne, withBasket(b))
-	return &BasketUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *BasketClient) UpdateOneID(id int) *BasketUpdateOne {
-	mutation := newBasketMutation(c.config, OpUpdateOne, withBasketID(id))
-	return &BasketUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Basket.
-func (c *BasketClient) Delete() *BasketDelete {
-	mutation := newBasketMutation(c.config, OpDelete)
-	return &BasketDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a delete builder for the given entity.
-func (c *BasketClient) DeleteOne(b *Basket) *BasketDeleteOne {
-	return c.DeleteOneID(b.ID)
-}
-
-// DeleteOneID returns a delete builder for the given id.
-func (c *BasketClient) DeleteOneID(id int) *BasketDeleteOne {
-	builder := c.Delete().Where(basket.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &BasketDeleteOne{builder}
-}
-
-// Query returns a query builder for Basket.
-func (c *BasketClient) Query() *BasketQuery {
-	return &BasketQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a Basket entity by its id.
-func (c *BasketClient) Get(ctx context.Context, id int) (*Basket, error) {
-	return c.Query().Where(basket.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *BasketClient) GetX(ctx context.Context, id int) *Basket {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryMerchant queries the merchant edge of a Basket.
-func (c *BasketClient) QueryMerchant(b *Basket) *MerchantQuery {
-	query := &MerchantQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(basket.Table, basket.FieldID, id),
-			sqlgraph.To(merchant.Table, merchant.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, basket.MerchantTable, basket.MerchantColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryAgent queries the agent edge of a Basket.
-func (c *BasketClient) QueryAgent(b *Basket) *AgentQuery {
-	query := &AgentQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(basket.Table, basket.FieldID, id),
-			sqlgraph.To(agent.Table, agent.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, basket.AgentTable, basket.AgentColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryCustomer queries the customer edge of a Basket.
-func (c *BasketClient) QueryCustomer(b *Basket) *CustomerQuery {
-	query := &CustomerQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(basket.Table, basket.FieldID, id),
-			sqlgraph.To(customer.Table, customer.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, basket.CustomerTable, basket.CustomerColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryProduct queries the product edge of a Basket.
-func (c *BasketClient) QueryProduct(b *Basket) *ProductQuery {
-	query := &ProductQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(basket.Table, basket.FieldID, id),
-			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, basket.ProductTable, basket.ProductColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *BasketClient) Hooks() []Hook {
-	return c.hooks.Basket
 }
 
 // CustomerClient is a client for the Customer schema.
@@ -876,22 +713,6 @@ func (c *CustomerClient) QueryOrders(cu *Customer) *OrderQuery {
 			sqlgraph.From(customer.Table, customer.FieldID, id),
 			sqlgraph.To(order.Table, order.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, customer.OrdersTable, customer.OrdersColumn),
-		)
-		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryBaskets queries the baskets edge of a Customer.
-func (c *CustomerClient) QueryBaskets(cu *Customer) *BasketQuery {
-	query := &BasketQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := cu.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(customer.Table, customer.FieldID, id),
-			sqlgraph.To(basket.Table, basket.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, customer.BasketsTable, customer.BasketsColumn),
 		)
 		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
 		return fromV, nil
@@ -1255,22 +1076,6 @@ func (c *MerchantClient) QueryOrders(m *Merchant) *OrderQuery {
 	return query
 }
 
-// QueryBaskets queries the baskets edge of a Merchant.
-func (c *MerchantClient) QueryBaskets(m *Merchant) *BasketQuery {
-	query := &BasketQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(merchant.Table, merchant.FieldID, id),
-			sqlgraph.To(basket.Table, basket.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, merchant.BasketsTable, merchant.BasketsColumn),
-		)
-		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryFavourites queries the favourites edge of a Merchant.
 func (c *MerchantClient) QueryFavourites(m *Merchant) *FavouriteQuery {
 	query := &FavouriteQuery{config: c.config}
@@ -1393,6 +1198,22 @@ func (c *MerchantStoreClient) QueryMerchant(ms *MerchantStore) *MerchantQuery {
 	return query
 }
 
+// QueryOrders queries the orders edge of a MerchantStore.
+func (c *MerchantStoreClient) QueryOrders(ms *MerchantStore) *OrderDetailQuery {
+	query := &OrderDetailQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ms.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, id),
+			sqlgraph.To(orderdetail.Table, orderdetail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchantstore.OrdersTable, merchantstore.OrdersColumn),
+		)
+		fromV = sqlgraph.Neighbors(ms.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *MerchantStoreClient) Hooks() []Hook {
 	return c.hooks.MerchantStore
@@ -1483,6 +1304,22 @@ func (c *OrderClient) GetX(ctx context.Context, id int) *Order {
 	return obj
 }
 
+// QueryDetails queries the details edge of a Order.
+func (c *OrderClient) QueryDetails(o *Order) *OrderDetailQuery {
+	query := &OrderDetailQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(orderdetail.Table, orderdetail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, order.DetailsTable, order.DetailsColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryMerchant queries the merchant edge of a Order.
 func (c *OrderClient) QueryMerchant(o *Order) *MerchantQuery {
 	query := &MerchantQuery{config: c.config}
@@ -1547,15 +1384,15 @@ func (c *OrderClient) QueryAddress(o *Order) *AddressQuery {
 	return query
 }
 
-// QueryProduct queries the product edge of a Order.
-func (c *OrderClient) QueryProduct(o *Order) *ProductQuery {
-	query := &ProductQuery{config: c.config}
+// QueryPickup queries the pickup edge of a Order.
+func (c *OrderClient) QueryPickup(o *Order) *PickupStationQuery {
+	query := &PickupStationQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := o.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(order.Table, order.FieldID, id),
-			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, order.ProductTable, order.ProductColumn),
+			sqlgraph.To(pickupstation.Table, pickupstation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.PickupTable, order.PickupColumn),
 		)
 		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
 		return fromV, nil
@@ -1566,6 +1403,250 @@ func (c *OrderClient) QueryProduct(o *Order) *ProductQuery {
 // Hooks returns the client hooks.
 func (c *OrderClient) Hooks() []Hook {
 	return c.hooks.Order
+}
+
+// OrderDetailClient is a client for the OrderDetail schema.
+type OrderDetailClient struct {
+	config
+}
+
+// NewOrderDetailClient returns a client for the OrderDetail from the given config.
+func NewOrderDetailClient(c config) *OrderDetailClient {
+	return &OrderDetailClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `orderdetail.Hooks(f(g(h())))`.
+func (c *OrderDetailClient) Use(hooks ...Hook) {
+	c.hooks.OrderDetail = append(c.hooks.OrderDetail, hooks...)
+}
+
+// Create returns a create builder for OrderDetail.
+func (c *OrderDetailClient) Create() *OrderDetailCreate {
+	mutation := newOrderDetailMutation(c.config, OpCreate)
+	return &OrderDetailCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OrderDetail entities.
+func (c *OrderDetailClient) CreateBulk(builders ...*OrderDetailCreate) *OrderDetailCreateBulk {
+	return &OrderDetailCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OrderDetail.
+func (c *OrderDetailClient) Update() *OrderDetailUpdate {
+	mutation := newOrderDetailMutation(c.config, OpUpdate)
+	return &OrderDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OrderDetailClient) UpdateOne(od *OrderDetail) *OrderDetailUpdateOne {
+	mutation := newOrderDetailMutation(c.config, OpUpdateOne, withOrderDetail(od))
+	return &OrderDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OrderDetailClient) UpdateOneID(id int) *OrderDetailUpdateOne {
+	mutation := newOrderDetailMutation(c.config, OpUpdateOne, withOrderDetailID(id))
+	return &OrderDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OrderDetail.
+func (c *OrderDetailClient) Delete() *OrderDetailDelete {
+	mutation := newOrderDetailMutation(c.config, OpDelete)
+	return &OrderDetailDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *OrderDetailClient) DeleteOne(od *OrderDetail) *OrderDetailDeleteOne {
+	return c.DeleteOneID(od.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *OrderDetailClient) DeleteOneID(id int) *OrderDetailDeleteOne {
+	builder := c.Delete().Where(orderdetail.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OrderDetailDeleteOne{builder}
+}
+
+// Query returns a query builder for OrderDetail.
+func (c *OrderDetailClient) Query() *OrderDetailQuery {
+	return &OrderDetailQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a OrderDetail entity by its id.
+func (c *OrderDetailClient) Get(ctx context.Context, id int) (*OrderDetail, error) {
+	return c.Query().Where(orderdetail.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OrderDetailClient) GetX(ctx context.Context, id int) *OrderDetail {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryOrder queries the Order edge of a OrderDetail.
+func (c *OrderDetailClient) QueryOrder(od *OrderDetail) *OrderQuery {
+	query := &OrderQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := od.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orderdetail.Table, orderdetail.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, orderdetail.OrderTable, orderdetail.OrderColumn),
+		)
+		fromV = sqlgraph.Neighbors(od.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProduct queries the product edge of a OrderDetail.
+func (c *OrderDetailClient) QueryProduct(od *OrderDetail) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := od.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orderdetail.Table, orderdetail.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, orderdetail.ProductTable, orderdetail.ProductColumn),
+		)
+		fromV = sqlgraph.Neighbors(od.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStore queries the store edge of a OrderDetail.
+func (c *OrderDetailClient) QueryStore(od *OrderDetail) *MerchantStoreQuery {
+	query := &MerchantStoreQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := od.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orderdetail.Table, orderdetail.FieldID, id),
+			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, orderdetail.StoreTable, orderdetail.StoreColumn),
+		)
+		fromV = sqlgraph.Neighbors(od.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OrderDetailClient) Hooks() []Hook {
+	return c.hooks.OrderDetail
+}
+
+// PickupStationClient is a client for the PickupStation schema.
+type PickupStationClient struct {
+	config
+}
+
+// NewPickupStationClient returns a client for the PickupStation from the given config.
+func NewPickupStationClient(c config) *PickupStationClient {
+	return &PickupStationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `pickupstation.Hooks(f(g(h())))`.
+func (c *PickupStationClient) Use(hooks ...Hook) {
+	c.hooks.PickupStation = append(c.hooks.PickupStation, hooks...)
+}
+
+// Create returns a create builder for PickupStation.
+func (c *PickupStationClient) Create() *PickupStationCreate {
+	mutation := newPickupStationMutation(c.config, OpCreate)
+	return &PickupStationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PickupStation entities.
+func (c *PickupStationClient) CreateBulk(builders ...*PickupStationCreate) *PickupStationCreateBulk {
+	return &PickupStationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PickupStation.
+func (c *PickupStationClient) Update() *PickupStationUpdate {
+	mutation := newPickupStationMutation(c.config, OpUpdate)
+	return &PickupStationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PickupStationClient) UpdateOne(ps *PickupStation) *PickupStationUpdateOne {
+	mutation := newPickupStationMutation(c.config, OpUpdateOne, withPickupStation(ps))
+	return &PickupStationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PickupStationClient) UpdateOneID(id int) *PickupStationUpdateOne {
+	mutation := newPickupStationMutation(c.config, OpUpdateOne, withPickupStationID(id))
+	return &PickupStationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PickupStation.
+func (c *PickupStationClient) Delete() *PickupStationDelete {
+	mutation := newPickupStationMutation(c.config, OpDelete)
+	return &PickupStationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *PickupStationClient) DeleteOne(ps *PickupStation) *PickupStationDeleteOne {
+	return c.DeleteOneID(ps.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *PickupStationClient) DeleteOneID(id int) *PickupStationDeleteOne {
+	builder := c.Delete().Where(pickupstation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PickupStationDeleteOne{builder}
+}
+
+// Query returns a query builder for PickupStation.
+func (c *PickupStationClient) Query() *PickupStationQuery {
+	return &PickupStationQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a PickupStation entity by its id.
+func (c *PickupStationClient) Get(ctx context.Context, id int) (*PickupStation, error) {
+	return c.Query().Where(pickupstation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PickupStationClient) GetX(ctx context.Context, id int) *PickupStation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryOrders queries the orders edge of a PickupStation.
+func (c *PickupStationClient) QueryOrders(ps *PickupStation) *OrderQuery {
+	query := &OrderQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ps.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pickupstation.Table, pickupstation.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, pickupstation.OrdersTable, pickupstation.OrdersColumn),
+		)
+		fromV = sqlgraph.Neighbors(ps.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PickupStationClient) Hooks() []Hook {
+	return c.hooks.PickupStation
 }
 
 // ProductClient is a client for the Product schema.
@@ -1653,6 +1734,38 @@ func (c *ProductClient) GetX(ctx context.Context, id int) *Product {
 	return obj
 }
 
+// QueryOrders queries the orders edge of a Product.
+func (c *ProductClient) QueryOrders(pr *Product) *OrderDetailQuery {
+	query := &OrderDetailQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(orderdetail.Table, orderdetail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, product.OrdersTable, product.OrdersColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFavourites queries the favourites edge of a Product.
+func (c *ProductClient) QueryFavourites(pr *Product) *FavouriteQuery {
+	query := &FavouriteQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(favourite.Table, favourite.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, product.FavouritesTable, product.FavouritesColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryMerchant queries the merchant edge of a Product.
 func (c *ProductClient) QueryMerchant(pr *Product) *MerchantQuery {
 	query := &MerchantQuery{config: c.config}
@@ -1694,54 +1807,6 @@ func (c *ProductClient) QueryMinor(pr *Product) *ProductCategoryMinorQuery {
 			sqlgraph.From(product.Table, product.FieldID, id),
 			sqlgraph.To(productcategoryminor.Table, productcategoryminor.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, product.MinorTable, product.MinorColumn),
-		)
-		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryOrders queries the orders edge of a Product.
-func (c *ProductClient) QueryOrders(pr *Product) *OrderQuery {
-	query := &OrderQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := pr.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(product.Table, product.FieldID, id),
-			sqlgraph.To(order.Table, order.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, product.OrdersTable, product.OrdersColumn),
-		)
-		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryBaskets queries the baskets edge of a Product.
-func (c *ProductClient) QueryBaskets(pr *Product) *BasketQuery {
-	query := &BasketQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := pr.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(product.Table, product.FieldID, id),
-			sqlgraph.To(basket.Table, basket.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, product.BasketsTable, product.BasketsColumn),
-		)
-		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryFavourites queries the favourites edge of a Product.
-func (c *ProductClient) QueryFavourites(pr *Product) *FavouriteQuery {
-	query := &FavouriteQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := pr.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(product.Table, product.FieldID, id),
-			sqlgraph.To(favourite.Table, favourite.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, product.FavouritesTable, product.FavouritesColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil

@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
-	"github.com/SeyramWood/ent/basket"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
@@ -174,21 +173,6 @@ func (mc *MerchantCreate) AddOrders(o ...*Order) *MerchantCreate {
 		ids[i] = o[i].ID
 	}
 	return mc.AddOrderIDs(ids...)
-}
-
-// AddBasketIDs adds the "baskets" edge to the Basket entity by IDs.
-func (mc *MerchantCreate) AddBasketIDs(ids ...int) *MerchantCreate {
-	mc.mutation.AddBasketIDs(ids...)
-	return mc
-}
-
-// AddBaskets adds the "baskets" edges to the Basket entity.
-func (mc *MerchantCreate) AddBaskets(b ...*Basket) *MerchantCreate {
-	ids := make([]int, len(b))
-	for i := range b {
-		ids[i] = b[i].ID
-	}
-	return mc.AddBasketIDs(ids...)
 }
 
 // AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
@@ -492,25 +476,6 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: order.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := mc.mutation.BasketsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchant.BasketsTable,
-			Columns: []string{merchant.BasketsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: basket.FieldID,
 				},
 			},
 		}

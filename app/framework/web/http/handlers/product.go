@@ -165,7 +165,7 @@ func (h *ProductHandler) FetchMerchantProducts() fiber.Handler {
 func (h *ProductHandler) FetchBestSellerProducts() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		if c.Params("merchant") == "supplier" {
+		if c.Params("merchantType") == "supplier" {
 			products, err := h.service.FetchBestSellerBySupplier()
 			if err != nil {
 
