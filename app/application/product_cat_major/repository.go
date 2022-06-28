@@ -3,6 +3,7 @@ package product_cat_major
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
@@ -20,9 +21,14 @@ func NewProductCatMajorRepo(db *database.Adapter) gateways.ProductCatMajorRepo {
 
 func (r *repository) Insert(cat *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error) {
 
-	category, err := r.db.ProductCategoryMajor.Create().SetCategory(cat.Category).Save(context.Background())
+	category, err := r.db.ProductCategoryMajor.Create().
+		SetCategory(cat.Category).
+		SetSulg(strings.ToLower(strings.Replace(cat.Category, " ", "-", -1))).
+		Save(context.Background())
 
 	if err != nil {
+		fmt.Println(err)
+
 		return nil, fmt.Errorf("failed creating product category major: %w", err)
 	}
 	return category, nil
