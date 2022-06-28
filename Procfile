@@ -1,1 +1,1 @@
-web: asinyo-api
+web: make run
