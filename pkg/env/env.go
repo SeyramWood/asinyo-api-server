@@ -24,6 +24,9 @@ func Setup() {
 	envFileProd := ".env.production"
 	var err error
 	Env, err = godotenv.Read(envFile)
+	if err != nil {
+		panic(err)
+	}
 	EnvProd, err = godotenv.Read(envFileProd)
 	if err != nil {
 		panic(err)
