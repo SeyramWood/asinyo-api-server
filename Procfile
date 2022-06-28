@@ -1,1 +1,1 @@
-web: make run
+web: bin/asinyo-api make run
