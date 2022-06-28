@@ -20,7 +20,6 @@ func NewProductCatMajorRepo(db *database.Adapter) gateways.ProductCatMajorRepo {
 }
 
 func (r *repository) Insert(cat *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error) {
-
 	category, err := r.db.ProductCategoryMajor.Create().
 		SetCategory(cat.Category).
 		SetSulg(strings.ToLower(strings.Replace(cat.Category, " ", "-", -1))).
