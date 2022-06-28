@@ -2,7 +2,9 @@ package server
 
 import (
 	"fmt"
+	"github.com/SeyramWood/pkg/env"
 	"log"
+	"os"
 
 	"github.com/SeyramWood/config"
 	"github.com/goccy/go-json"
@@ -36,5 +38,15 @@ func NewHTTPServer() *HTTP {
 }
 
 func (http *HTTP) Run() {
-	log.Fatal(http.Server.Listen(fmt.Sprint(config.App().ServerURL)))
+	if env.Get("APP_ENV", "local") == "production" {
+		// Get the PORT from heroku env
+		port := os.Getenv("PORT")
+		// Verify if heroku provided the port or not
+		if os.Getenv("PORT") == "" {
+			port = "8000"
+		}
+		log.Fatal(http.Server.Listen(":" + port))
+	} else {
+		log.Fatal(http.Server.Listen(fmt.Sprint(config.App().ServerURL)))
+	}
 }
