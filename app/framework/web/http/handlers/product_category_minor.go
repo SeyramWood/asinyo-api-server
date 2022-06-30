@@ -6,6 +6,7 @@ import (
 	"github.com/SeyramWood/app/application/product_cat_minor"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
+	"github.com/SeyramWood/pkg/storage"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -59,7 +60,15 @@ func (h *ProductCatMinorHandler) Create() fiber.Handler {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductCatMinorErrorResponse(err))
 		}
 
-		cat, err := h.service.Create(&request)
+		path, err := storage.NewStorage().SaveFile(c, "image", "products/categories")
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"msg": "Bad request",
+			})
+		}
+
+		cat, err := h.service.Create(&request, path.(string))
 
 		if err != nil {
 

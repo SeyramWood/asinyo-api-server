@@ -7,6 +7,7 @@ type (
 	ProductCategoryMinor struct {
 		CategoryMajor int    `json:"categoryMajor" validate:"required"`
 		Category      string `json:"category" validate:"required|string"`
+		Image         []byte `json:"image" form:"image"`
 	}
 	Product struct {
 		CategoryMajor int     `json:"categoryMajor" form:"categoryMajor" validate:"required"`

@@ -78,7 +78,7 @@ type (
 		Delete(id string) error
 	}
 	ProductCatMinorRepo interface {
-		Insert(merchant *models.ProductCategoryMinor) (*ent.ProductCategoryMinor, error)
+		Insert(merchant *models.ProductCategoryMinor, image string) (*ent.ProductCategoryMinor, error)
 		Read(id int) (*ent.ProductCategoryMinor, error)
 		ReadAll() ([]*ent.ProductCategoryMinor, error)
 		Update(merchant *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error)

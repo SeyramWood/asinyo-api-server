@@ -16,9 +16,9 @@ func NewProductCatMinorService(repo gateways.ProductCatMinorRepo) gateways.Produ
 	}
 }
 
-func (s *service) Create(cat *models.ProductCategoryMinor) (*ent.ProductCategoryMinor, error) {
+func (s *service) Create(cat *models.ProductCategoryMinor, image string) (*ent.ProductCategoryMinor, error) {
 
-	return s.repo.Insert(cat)
+	return s.repo.Insert(cat, image)
 }
 
 func (s *service) Fetch(id int) (*ent.ProductCategoryMinor, error) {

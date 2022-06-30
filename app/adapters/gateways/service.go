@@ -81,7 +81,7 @@ type (
 		Remove(id string) error
 	}
 	ProductCatMinorService interface {
-		Create(merchant *models.ProductCategoryMinor) (*ent.ProductCategoryMinor, error)
+		Create(merchant *models.ProductCategoryMinor, image string) (*ent.ProductCategoryMinor, error)
 		FetchAll() ([]*ent.ProductCategoryMinor, error)
 		Fetch(id int) (*ent.ProductCategoryMinor, error)
 		Update(merchant *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error)
