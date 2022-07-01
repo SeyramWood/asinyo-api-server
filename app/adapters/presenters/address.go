@@ -23,37 +23,23 @@ type AddressResponse struct {
 }
 
 func AddressSuccessResponse(data *ent.Address) *fiber.Map {
-	//if data.ID == true {
-	//	return successResponse(&AddressResponse{
-	//		ID:           data.ID,
-	//		LastName:     data.LastName,
-	//		OtherName:    data.OtherName,
-	//		Phone:        data.Phone,
-	//		OtherPhone:   *data.OtherPhone,
-	//		Address:      data.Address,
-	//		OtherAddress: *data.OtherInformation,
-	//		Region:       data.Region,
-	//		City:         data.City,
-	//		Default:      data.Default,
-	//		CreatedAt:    data.CreatedAt,
-	//		UpdatedAt:    data.UpdatedAt,
-	//	})
-	//}
-	//return nil
-	return successResponse(&AddressResponse{
-		ID:           data.ID,
-		LastName:     data.LastName,
-		OtherName:    data.OtherName,
-		Phone:        data.Phone,
-		OtherPhone:   *data.OtherPhone,
-		Address:      data.Address,
-		OtherAddress: *data.OtherInformation,
-		Region:       data.Region,
-		City:         data.City,
-		Default:      data.Default,
-		CreatedAt:    data.CreatedAt,
-		UpdatedAt:    data.UpdatedAt,
-	})
+	if data != nil {
+		return successResponse(&AddressResponse{
+			ID:           data.ID,
+			LastName:     data.LastName,
+			OtherName:    data.OtherName,
+			Phone:        data.Phone,
+			OtherPhone:   *data.OtherPhone,
+			Address:      data.Address,
+			OtherAddress: *data.OtherInformation,
+			Region:       data.Region,
+			City:         data.City,
+			Default:      data.Default,
+			CreatedAt:    data.CreatedAt,
+			UpdatedAt:    data.UpdatedAt,
+		})
+	}
+	return nil
 }
 
 func AddressSuccessResponses(data []*ent.Address) *fiber.Map {

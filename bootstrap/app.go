@@ -23,7 +23,7 @@ func App() *server.HTTP {
 
 	app.Server.Use(cors.New(cors.Config{
 		AllowCredentials: true,
-		//AllowOrigins:     "http://localhost:3000, http://localhost:3001",
+		AllowOrigins:     "*",
 	}))
 
 	app.Server.Use(recover.New())

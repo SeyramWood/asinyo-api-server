@@ -218,9 +218,11 @@ func (h *ProductHandler) Create() fiber.Handler {
 		}
 
 		prod, err := h.service.FetchByRetailMerchant(result.ID)
+
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(errors.New("error fetching supplier merchant product")))
 		}
+
 		return c.JSON(presenters.ProductRetailerResponse(prod))
 	}
 }
