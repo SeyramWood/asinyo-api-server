@@ -6,8 +6,8 @@ import (
 
 func main() {
 
-	app := bootstrap.App()
+	bootstrap.App()
 
-	app.Run()
+	//app.Run()
 
 }

@@ -17,7 +17,7 @@ func DB(driver string) *db {
 	case "mysql":
 		if env.Get("APP_ENV", "local") == "local" {
 			return &db{
-				Driver:   "mysql",
+				Driver:   driver,
 				Host:     env.Get("DB_HOST", "127.0.0.1"),
 				Port:     env.Get("DB_PORT", "3306"),
 				Name:     env.Get("DB_DATABASE", "test_db"),
@@ -26,12 +26,12 @@ func DB(driver string) *db {
 			}
 		}
 		return &db{
-			Driver:   "mysql",
-			Host:     env.GetProd("DB_HOST", "127.0.0.1"),
-			Port:     env.GetProd("DB_PORT", "3306"),
-			Name:     env.GetProd("DB_DATABASE", "test_db"),
-			Username: env.GetProd("DB_USERNAME", "root"),
-			Password: env.GetProd("DB_PASSWORD", ""),
+			Driver:   driver,
+			Host:     env.GetDocker("DB_HOST", "localhost"),
+			Port:     env.GetDocker("DB_PORT", "3306"),
+			Name:     env.GetDocker("DB_DATABASE", "test_db"),
+			Username: env.GetDocker("DB_USERNAME", "root"),
+			Password: env.GetDocker("DB_PASSWORD", ""),
 		}
 	}
 	return nil

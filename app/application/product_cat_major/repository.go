@@ -3,6 +3,7 @@ package product_cat_major
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/SeyramWood/app/adapters/gateways"
@@ -47,8 +48,10 @@ func (r *repository) ReadAll() ([]*ent.ProductCategoryMajor, error) {
 
 	cats, err := r.db.ProductCategoryMajor.Query().WithMinors().All(context.Background())
 	if err != nil {
+		log.Fatalln(err)
 		return nil, err
 	}
+
 	return cats, nil
 }
 

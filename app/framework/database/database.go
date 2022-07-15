@@ -1,6 +1,8 @@
 package database
 
-import "github.com/SeyramWood/ent"
+import (
+	"github.com/SeyramWood/ent"
+)
 
 type Adapter struct {
 	DB *ent.Client

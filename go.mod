@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	entgo.io/ent v0.10.1
+	github.com/Jeffail/gabs v1.4.0
 	github.com/gabriel-vasile/mimetype v1.4.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gofiber/fiber/v2 v2.32.0
@@ -14,7 +15,6 @@ require (
 )
 
 require (
-	github.com/Jeffail/gabs v1.4.0 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

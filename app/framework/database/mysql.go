@@ -1,16 +1,12 @@
 package database
 
 import (
-	"context"
-	"fmt"
-	"log"
-
 	"database/sql"
-
+	"fmt"
 	"github.com/SeyramWood/config"
 	"github.com/SeyramWood/ent"
-	"github.com/SeyramWood/ent/migrate"
 	_ "github.com/go-sql-driver/mysql"
+	"log"
 )
 
 func mysqlConnector() *ent.Client {
@@ -23,15 +19,12 @@ func mysqlConnector() *ent.Client {
 		conf.Port,
 		conf.Name,
 	)
+
+	//time.Sleep(time.Second * 10)
+
 	client, err := ent.Open("mysql", dsn)
 	if err != nil {
 		log.Fatalf("failed connecting to mysql: %v", err)
-	}
-	// defer client.Close()
-	ctx := context.Background()
-	// Run migration.
-	if err := client.Schema.Create(ctx, migrate.WithGlobalUniqueID(true)); err != nil {
-		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
 	return client
@@ -46,6 +39,7 @@ func MysqlConnector2() *sql.DB {
 		conf.Port,
 		conf.Name,
 	)
+
 	db, err := sql.Open("mysql", dsn)
 
 	if err != nil {

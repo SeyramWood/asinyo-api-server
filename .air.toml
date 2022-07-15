@@ -3,15 +3,15 @@ testdata_dir = "testdata"
 tmp_dir = "cmd/tmp"
 
 [build]
-  cmd = "go build -o ./cmd/tmp/main.exe cmd/main.go"
-  bin = "cmd/tmp/main.exe"
+  cmd = "go build -o ./cmd/tmp/main cmd/main.go"
+  bin = "cmd/tmp/main"
+  full_bin = "APP_ENV=dev APP_USER=air ./tmp/main"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = ["rest.http"]
   exclude_regex = ["_test.go"]
   exclude_unchanged = true
   follow_symlink = false
-  full_bin = ""
   include_dir = []
   include_ext = ["go", "tpl", "tmpl", "html"]
   kill_delay = "0s"

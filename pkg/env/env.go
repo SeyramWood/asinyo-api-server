@@ -1,9 +1,12 @@
 package env
 
-import "github.com/joho/godotenv"
+import (
+	"github.com/joho/godotenv"
+	"log"
+)
 
 var Env map[string]string
-var EnvProd map[string]string
+var EnvDocker map[string]string
 
 func Get(key, def string) string {
 	if val, ok := Env[key]; ok {
@@ -12,8 +15,8 @@ func Get(key, def string) string {
 	return def
 }
 
-func GetProd(key, def string) string {
-	if val, ok := EnvProd[key]; ok {
+func GetDocker(key, def string) string {
+	if val, ok := EnvDocker[key]; ok {
 		return val
 	}
 	return def
@@ -21,15 +24,15 @@ func GetProd(key, def string) string {
 
 func Setup() {
 	envFile := ".env"
-	envFileProd := ".env.production"
+	envFileDocker := ".env.docker"
 	var err error
 	Env, err = godotenv.Read(envFile)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
-	EnvProd, err = godotenv.Read(envFileProd)
+	EnvDocker, err = godotenv.Read(envFileDocker)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 }
