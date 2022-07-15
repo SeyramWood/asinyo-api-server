@@ -20,7 +20,7 @@ func init() {
 
 func App() {
 
-	db := database.NewDB("mysql")
+	db := database.NewDB()
 	defer db.DB.Close()
 
 	ctx := context.Background()

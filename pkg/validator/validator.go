@@ -193,13 +193,11 @@ func isUsernameExist(username, field, table string) interface{} {
 	dbField := snakeCase(field)
 	fieldName := formatFieldName(field)
 	queryStr := fmt.Sprintf("SELECT %s FROM %s WHERE %s=?", dbField, table, dbField)
-	db := database.MysqlConnector2()
+	db := database.Connect()
 	err := db.QueryRow(queryStr, username).Scan(&username)
 	if err == nil {
 		return fmt.Sprintf("The %s is already taken", fieldName)
 	}
-
 	defer db.Close()
-
 	return nil
 }

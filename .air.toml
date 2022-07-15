@@ -4,8 +4,7 @@ tmp_dir = "cmd/tmp"
 
 [build]
   cmd = "go build -o ./cmd/tmp/main cmd/main.go"
-  bin = "cmd/tmp/main"
-  full_bin = "APP_ENV=dev APP_USER=air ./tmp/main"
+  full_bin = "APP_ENV=dev APP_USER=air ./cmd/tmp/main"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = ["rest.http"]

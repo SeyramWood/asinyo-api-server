@@ -6,7 +6,7 @@ import (
 )
 
 var Env map[string]string
-var EnvDocker map[string]string
+var EnvProduction map[string]string
 
 func Get(key, def string) string {
 	if val, ok := Env[key]; ok {
@@ -15,8 +15,8 @@ func Get(key, def string) string {
 	return def
 }
 
-func GetDocker(key, def string) string {
-	if val, ok := EnvDocker[key]; ok {
+func GetProduction(key, def string) string {
+	if val, ok := EnvProduction[key]; ok {
 		return val
 	}
 	return def
@@ -24,13 +24,13 @@ func GetDocker(key, def string) string {
 
 func Setup() {
 	envFile := ".env"
-	envFileDocker := ".env.docker"
+	envProduction := ".env.production"
 	var err error
 	Env, err = godotenv.Read(envFile)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	EnvDocker, err = godotenv.Read(envFileDocker)
+	EnvProduction, err = godotenv.Read(envProduction)
 	if err != nil {
 		log.Fatalln(err)
 	}
