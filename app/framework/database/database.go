@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	"log"
+	"os"
 )
 
 type Adapter struct {
@@ -28,14 +29,21 @@ func NewDB() *Adapter {
 
 func Connect() *sql.DB {
 	conf := config.DB()
+	var DbSSLMode string
+	if os.Getenv("APP_ENV") == "production" {
+		DbSSLMode = os.Getenv("DB_SSLMODE")
+	} else {
+		DbSSLMode = env.Get("DB_SSLMODE", "disable")
+	}
 	switch conf.Driver {
 	case "postgres":
-		psDSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		psDSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 			conf.Host,
 			conf.Port,
 			conf.Username,
 			conf.Name,
 			conf.Password,
+			DbSSLMode,
 		)
 		db, err := sql.Open(conf.Driver, psDSN)
 		if err != nil {
