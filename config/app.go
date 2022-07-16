@@ -1,6 +1,9 @@
 package config
 
-import "github.com/SeyramWood/pkg/env"
+import (
+	"github.com/SeyramWood/pkg/env"
+	"os"
+)
 
 // AppConfig - our app specific config
 type app struct {
@@ -22,6 +25,17 @@ type paystack struct {
 }
 
 func App() *app {
+	if os.Getenv("APP_ENV") == "production" {
+		return &app{
+			Name:      os.Getenv("APP_NAME"),
+			Version:   os.Getenv("APP_VERSION"),
+			AppURL:    os.Getenv("APP_URL"),
+			ServerURL: os.Getenv("SERVER_URL"),
+			Key:       os.Getenv("APP_KEY"),
+			TokenName: os.Getenv("API_TOKEN_NAME"),
+			PORT:      os.Getenv("SERVER_PORT"),
+		}
+	}
 	return &app{
 		Name:      env.Get("APP_NAME", "My First API"),
 		Version:   env.Get("APP_VERSION", "0.0.1"),
@@ -34,6 +48,15 @@ func App() *app {
 }
 
 func Paystack() *paystack {
+	if os.Getenv("APP_ENV") == "production" {
+		return &paystack{
+			URL:    os.Getenv("PAYSTACK_URL"),
+			PubKey: os.Getenv("PAYSTACK_PUB_KEY"),
+			SecKey: os.Getenv("PAYSTACK_SEC_KEY"),
+			Email:  os.Getenv("PAYSTACK_EMAIL"),
+			Domain: os.Getenv("PAYSTACK_DOMAIN"),
+		}
+	}
 	return &paystack{
 		URL:    env.Get("PAYSTACK_URL", ""),
 		PubKey: env.Get("PAYSTACK_PUB_KEY", ""),

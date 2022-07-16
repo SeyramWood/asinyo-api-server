@@ -3,6 +3,7 @@ package env
 import (
 	"github.com/joho/godotenv"
 	"log"
+	"os"
 )
 
 var Env map[string]string
@@ -23,16 +24,17 @@ func GetProduction(key, def string) string {
 }
 
 func Setup() {
-	envFile := ".env"
-	envProduction := ".env.production"
-	var err error
-	Env, err = godotenv.Read(envFile)
-	if err != nil {
-		log.Fatalln(err)
+	if os.Getenv("APP_ENV") != "production" {
+		envFile := ".env"
+		envProduction := ".env.production"
+		var err error
+		Env, err = godotenv.Read(envFile)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		EnvProduction, err = godotenv.Read(envProduction)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
-	EnvProduction, err = godotenv.Read(envProduction)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 }

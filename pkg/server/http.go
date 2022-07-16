@@ -36,7 +36,7 @@ func NewHTTPServer() *HTTP {
 }
 
 func (http *HTTP) Run() {
-	if env.Get("APP_ENV", "local") == "docker" {
+	if env.Get("APP_ENV", "local") == "production" {
 		// Get the PORT from heroku env
 		//port := os.Getenv("PORT")
 		// Verify if heroku provided the port or not
