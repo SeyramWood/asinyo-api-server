@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	"github.com/SeyramWood/app/framework/database"
+	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/ent/migrate"
 	"github.com/SeyramWood/pkg/env"
 	"github.com/SeyramWood/pkg/router"
@@ -21,7 +22,9 @@ func init() {
 func App() {
 
 	db := database.NewDB()
-	defer db.DB.Close()
+	defer func(DB *ent.Client) {
+		_ = DB.Close()
+	}(db.DB)
 
 	ctx := context.Background()
 	// Run migration.

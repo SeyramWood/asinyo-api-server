@@ -17,7 +17,12 @@ type Adapter struct {
 }
 
 func NewDB() *Adapter {
-	dBDriver := env.Get("DB_DRIVER", "sqlite")
+	var dBDriver string
+	if os.Getenv("APP_ENV") == "production" {
+		dBDriver = os.Getenv("DB_DRIVER")
+	} else {
+		dBDriver = env.Get("DB_DRIVER", "sqlite")
+	}
 	switch dBDriver {
 	case "mysql":
 		return &Adapter{DB: mysqlConnector(dBDriver)}
