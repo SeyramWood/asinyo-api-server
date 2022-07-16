@@ -3,11 +3,11 @@ package server
 import (
 	"fmt"
 	"github.com/SeyramWood/config"
-	"github.com/SeyramWood/pkg/env"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"log"
+	"os"
 )
 
 type HTTP struct {
@@ -36,14 +36,14 @@ func NewHTTPServer() *HTTP {
 }
 
 func (http *HTTP) Run() {
-	if env.Get("APP_ENV", "local") == "production" {
+	if os.Getenv("APP_ENV") == "production" {
 		// Get the PORT from heroku env
-		//port := os.Getenv("PORT")
+		port := os.Getenv("PORT")
 		// Verify if heroku provided the port or not
-		//if os.Getenv("PORT") == "" {
-		//	port = "9000"
-		//}
-		log.Fatal(http.Server.Listen(":" + config.App().PORT))
+		if port == "" {
+			port = config.App().PORT
+		}
+		log.Fatal(http.Server.Listen(":" + port))
 	} else {
 		log.Fatal(http.Server.Listen(fmt.Sprint(config.App().ServerURL)))
 	}
