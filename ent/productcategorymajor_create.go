@@ -56,9 +56,9 @@ func (pcmc *ProductCategoryMajorCreate) SetCategory(s string) *ProductCategoryMa
 	return pcmc
 }
 
-// SetSulg sets the "sulg" field.
-func (pcmc *ProductCategoryMajorCreate) SetSulg(s string) *ProductCategoryMajorCreate {
-	pcmc.mutation.SetSulg(s)
+// SetSlug sets the "slug" field.
+func (pcmc *ProductCategoryMajorCreate) SetSlug(s string) *ProductCategoryMajorCreate {
+	pcmc.mutation.SetSlug(s)
 	return pcmc
 }
 
@@ -189,12 +189,12 @@ func (pcmc *ProductCategoryMajorCreate) check() error {
 			return &ValidationError{Name: "category", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMajor.category": %w`, err)}
 		}
 	}
-	if _, ok := pcmc.mutation.Sulg(); !ok {
-		return &ValidationError{Name: "sulg", err: errors.New(`ent: missing required field "ProductCategoryMajor.sulg"`)}
+	if _, ok := pcmc.mutation.Slug(); !ok {
+		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "ProductCategoryMajor.slug"`)}
 	}
-	if v, ok := pcmc.mutation.Sulg(); ok {
-		if err := productcategorymajor.SulgValidator(v); err != nil {
-			return &ValidationError{Name: "sulg", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMajor.sulg": %w`, err)}
+	if v, ok := pcmc.mutation.Slug(); ok {
+		if err := productcategorymajor.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMajor.slug": %w`, err)}
 		}
 	}
 	return nil
@@ -248,13 +248,13 @@ func (pcmc *ProductCategoryMajorCreate) createSpec() (*ProductCategoryMajor, *sq
 		})
 		_node.Category = value
 	}
-	if value, ok := pcmc.mutation.Sulg(); ok {
+	if value, ok := pcmc.mutation.Slug(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: productcategorymajor.FieldSulg,
+			Column: productcategorymajor.FieldSlug,
 		})
-		_node.Sulg = value
+		_node.Slug = value
 	}
 	if nodes := pcmc.mutation.MinorsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

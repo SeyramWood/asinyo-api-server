@@ -9,5 +9,4 @@ func NewPaymentService(repo gateways.PaymentRepo, gateway string) gateways.Payme
 	default:
 		return nil
 	}
-
 }

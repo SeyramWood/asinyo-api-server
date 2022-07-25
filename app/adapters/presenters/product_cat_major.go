@@ -12,6 +12,7 @@ type (
 	ProductCatMajor struct {
 		ID        int       `json:"id"`
 		Category  string    `json:"category"`
+		Slug      string    `json:"slug"`
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
 	}
@@ -30,6 +31,7 @@ func ProductCatMajorSuccessResponse(data *ent.ProductCategoryMajor) *fiber.Map {
 	return successResponse(ProductCatMajor{
 		ID:        data.ID,
 		Category:  data.Category,
+		Slug:      data.Slug,
 		CreatedAt: data.CreatedAt,
 		UpdatedAt: data.UpdatedAt,
 	})
@@ -47,6 +49,7 @@ func ProductCatMajorsSuccessResponse(data []*ent.ProductCategoryMajor) *fiber.Ma
 				Data: ProductCatMajor{
 					ID:        v.ID,
 					Category:  v.Category,
+					Slug:      v.Slug,
 					CreatedAt: v.CreatedAt,
 					UpdatedAt: v.UpdatedAt,
 				},
@@ -57,6 +60,7 @@ func ProductCatMajorsSuccessResponse(data []*ent.ProductCategoryMajor) *fiber.Ma
 					Data: ProductCatMajor{
 						ID:        m.ID,
 						Category:  m.Category,
+						Slug:      m.Slug,
 						CreatedAt: m.CreatedAt,
 						UpdatedAt: m.UpdatedAt,
 					}})

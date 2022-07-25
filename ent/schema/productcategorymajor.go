@@ -21,7 +21,7 @@ func (ProductCategoryMajor) Mixin() []ent.Mixin {
 func (ProductCategoryMajor) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("category").NotEmpty().Unique(),
-		field.String("sulg").NotEmpty(),
+		field.String("slug").NotEmpty(),
 	}
 }
 

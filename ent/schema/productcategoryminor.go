@@ -22,7 +22,7 @@ func (ProductCategoryMinor) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("category").NotEmpty().Unique(),
 		field.String("image").NotEmpty(),
-		field.String("sulg").NotEmpty(),
+		field.String("slug").NotEmpty(),
 	}
 }
 

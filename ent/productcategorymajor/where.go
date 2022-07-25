@@ -114,10 +114,10 @@ func Category(v string) predicate.ProductCategoryMajor {
 	})
 }
 
-// Sulg applies equality check predicate on the "sulg" field. It's identical to SulgEQ.
-func Sulg(v string) predicate.ProductCategoryMajor {
+// Slug applies equality check predicate on the "slug" field. It's identical to SlugEQ.
+func Slug(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldSulg), v))
+		s.Where(sql.EQ(s.C(FieldSlug), v))
 	})
 }
 
@@ -384,22 +384,22 @@ func CategoryContainsFold(v string) predicate.ProductCategoryMajor {
 	})
 }
 
-// SulgEQ applies the EQ predicate on the "sulg" field.
-func SulgEQ(v string) predicate.ProductCategoryMajor {
+// SlugEQ applies the EQ predicate on the "slug" field.
+func SlugEQ(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldSulg), v))
+		s.Where(sql.EQ(s.C(FieldSlug), v))
 	})
 }
 
-// SulgNEQ applies the NEQ predicate on the "sulg" field.
-func SulgNEQ(v string) predicate.ProductCategoryMajor {
+// SlugNEQ applies the NEQ predicate on the "slug" field.
+func SlugNEQ(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldSulg), v))
+		s.Where(sql.NEQ(s.C(FieldSlug), v))
 	})
 }
 
-// SulgIn applies the In predicate on the "sulg" field.
-func SulgIn(vs ...string) predicate.ProductCategoryMajor {
+// SlugIn applies the In predicate on the "slug" field.
+func SlugIn(vs ...string) predicate.ProductCategoryMajor {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -411,12 +411,12 @@ func SulgIn(vs ...string) predicate.ProductCategoryMajor {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldSulg), v...))
+		s.Where(sql.In(s.C(FieldSlug), v...))
 	})
 }
 
-// SulgNotIn applies the NotIn predicate on the "sulg" field.
-func SulgNotIn(vs ...string) predicate.ProductCategoryMajor {
+// SlugNotIn applies the NotIn predicate on the "slug" field.
+func SlugNotIn(vs ...string) predicate.ProductCategoryMajor {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -428,70 +428,70 @@ func SulgNotIn(vs ...string) predicate.ProductCategoryMajor {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldSulg), v...))
+		s.Where(sql.NotIn(s.C(FieldSlug), v...))
 	})
 }
 
-// SulgGT applies the GT predicate on the "sulg" field.
-func SulgGT(v string) predicate.ProductCategoryMajor {
+// SlugGT applies the GT predicate on the "slug" field.
+func SlugGT(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldSulg), v))
+		s.Where(sql.GT(s.C(FieldSlug), v))
 	})
 }
 
-// SulgGTE applies the GTE predicate on the "sulg" field.
-func SulgGTE(v string) predicate.ProductCategoryMajor {
+// SlugGTE applies the GTE predicate on the "slug" field.
+func SlugGTE(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldSulg), v))
+		s.Where(sql.GTE(s.C(FieldSlug), v))
 	})
 }
 
-// SulgLT applies the LT predicate on the "sulg" field.
-func SulgLT(v string) predicate.ProductCategoryMajor {
+// SlugLT applies the LT predicate on the "slug" field.
+func SlugLT(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldSulg), v))
+		s.Where(sql.LT(s.C(FieldSlug), v))
 	})
 }
 
-// SulgLTE applies the LTE predicate on the "sulg" field.
-func SulgLTE(v string) predicate.ProductCategoryMajor {
+// SlugLTE applies the LTE predicate on the "slug" field.
+func SlugLTE(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldSulg), v))
+		s.Where(sql.LTE(s.C(FieldSlug), v))
 	})
 }
 
-// SulgContains applies the Contains predicate on the "sulg" field.
-func SulgContains(v string) predicate.ProductCategoryMajor {
+// SlugContains applies the Contains predicate on the "slug" field.
+func SlugContains(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldSulg), v))
+		s.Where(sql.Contains(s.C(FieldSlug), v))
 	})
 }
 
-// SulgHasPrefix applies the HasPrefix predicate on the "sulg" field.
-func SulgHasPrefix(v string) predicate.ProductCategoryMajor {
+// SlugHasPrefix applies the HasPrefix predicate on the "slug" field.
+func SlugHasPrefix(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldSulg), v))
+		s.Where(sql.HasPrefix(s.C(FieldSlug), v))
 	})
 }
 
-// SulgHasSuffix applies the HasSuffix predicate on the "sulg" field.
-func SulgHasSuffix(v string) predicate.ProductCategoryMajor {
+// SlugHasSuffix applies the HasSuffix predicate on the "slug" field.
+func SlugHasSuffix(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldSulg), v))
+		s.Where(sql.HasSuffix(s.C(FieldSlug), v))
 	})
 }
 
-// SulgEqualFold applies the EqualFold predicate on the "sulg" field.
-func SulgEqualFold(v string) predicate.ProductCategoryMajor {
+// SlugEqualFold applies the EqualFold predicate on the "slug" field.
+func SlugEqualFold(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldSulg), v))
+		s.Where(sql.EqualFold(s.C(FieldSlug), v))
 	})
 }
 
-// SulgContainsFold applies the ContainsFold predicate on the "sulg" field.
-func SulgContainsFold(v string) predicate.ProductCategoryMajor {
+// SlugContainsFold applies the ContainsFold predicate on the "slug" field.
+func SlugContainsFold(v string) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldSulg), v))
+		s.Where(sql.ContainsFold(s.C(FieldSlug), v))
 	})
 }
 

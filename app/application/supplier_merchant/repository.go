@@ -19,16 +19,16 @@ func NewSupplierMerchantRepo(db *database.Adapter) gateways.SupplierMerchantRepo
 	return &repository{db.DB}
 }
 
-func (r *repository) Insert(mercthant *models.SupplierMerchant) (*ent.SupplierMerchant, error) {
+func (r *repository) Insert(merchant *models.SupplierMerchant) (*ent.SupplierMerchant, error) {
 
 	result, err := r.db.SupplierMerchant.Create().
-		SetLastName(mercthant.LastName).
-		SetOtherName(mercthant.OtherName).
-		SetPhone(mercthant.Phone).
-		SetOtherPhone(mercthant.OtherPhone).
-		SetAddress(mercthant.Address).
-		SetDigitalAddress(mercthant.DigitalAddress).
-		SetGhanaCard(mercthant.GhanaCard).
+		SetLastName(merchant.LastName).
+		SetOtherName(merchant.OtherName).
+		SetPhone(merchant.Phone).
+		SetOtherPhone(merchant.OtherPhone).
+		SetAddress(merchant.Address).
+		SetDigitalAddress(merchant.DigitalAddress).
+		SetGhanaCard(merchant.GhanaCard).
 		Save(context.Background())
 
 	if err != nil {

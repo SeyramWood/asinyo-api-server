@@ -10850,7 +10850,7 @@ type ProductCategoryMajorMutation struct {
 	created_at      *time.Time
 	updated_at      *time.Time
 	category        *string
-	sulg            *string
+	slug            *string
 	clearedFields   map[string]struct{}
 	minors          map[int]struct{}
 	removedminors   map[int]struct{}
@@ -11069,40 +11069,40 @@ func (m *ProductCategoryMajorMutation) ResetCategory() {
 	m.category = nil
 }
 
-// SetSulg sets the "sulg" field.
-func (m *ProductCategoryMajorMutation) SetSulg(s string) {
-	m.sulg = &s
+// SetSlug sets the "slug" field.
+func (m *ProductCategoryMajorMutation) SetSlug(s string) {
+	m.slug = &s
 }
 
-// Sulg returns the value of the "sulg" field in the mutation.
-func (m *ProductCategoryMajorMutation) Sulg() (r string, exists bool) {
-	v := m.sulg
+// Slug returns the value of the "slug" field in the mutation.
+func (m *ProductCategoryMajorMutation) Slug() (r string, exists bool) {
+	v := m.slug
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldSulg returns the old "sulg" field's value of the ProductCategoryMajor entity.
+// OldSlug returns the old "slug" field's value of the ProductCategoryMajor entity.
 // If the ProductCategoryMajor object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProductCategoryMajorMutation) OldSulg(ctx context.Context) (v string, err error) {
+func (m *ProductCategoryMajorMutation) OldSlug(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSulg is only allowed on UpdateOne operations")
+		return v, errors.New("OldSlug is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSulg requires an ID field in the mutation")
+		return v, errors.New("OldSlug requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSulg: %w", err)
+		return v, fmt.Errorf("querying old value for OldSlug: %w", err)
 	}
-	return oldValue.Sulg, nil
+	return oldValue.Slug, nil
 }
 
-// ResetSulg resets all changes to the "sulg" field.
-func (m *ProductCategoryMajorMutation) ResetSulg() {
-	m.sulg = nil
+// ResetSlug resets all changes to the "slug" field.
+func (m *ProductCategoryMajorMutation) ResetSlug() {
+	m.slug = nil
 }
 
 // AddMinorIDs adds the "minors" edge to the ProductCategoryMinor entity by ids.
@@ -11242,8 +11242,8 @@ func (m *ProductCategoryMajorMutation) Fields() []string {
 	if m.category != nil {
 		fields = append(fields, productcategorymajor.FieldCategory)
 	}
-	if m.sulg != nil {
-		fields = append(fields, productcategorymajor.FieldSulg)
+	if m.slug != nil {
+		fields = append(fields, productcategorymajor.FieldSlug)
 	}
 	return fields
 }
@@ -11259,8 +11259,8 @@ func (m *ProductCategoryMajorMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case productcategorymajor.FieldCategory:
 		return m.Category()
-	case productcategorymajor.FieldSulg:
-		return m.Sulg()
+	case productcategorymajor.FieldSlug:
+		return m.Slug()
 	}
 	return nil, false
 }
@@ -11276,8 +11276,8 @@ func (m *ProductCategoryMajorMutation) OldField(ctx context.Context, name string
 		return m.OldUpdatedAt(ctx)
 	case productcategorymajor.FieldCategory:
 		return m.OldCategory(ctx)
-	case productcategorymajor.FieldSulg:
-		return m.OldSulg(ctx)
+	case productcategorymajor.FieldSlug:
+		return m.OldSlug(ctx)
 	}
 	return nil, fmt.Errorf("unknown ProductCategoryMajor field %s", name)
 }
@@ -11308,12 +11308,12 @@ func (m *ProductCategoryMajorMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetCategory(v)
 		return nil
-	case productcategorymajor.FieldSulg:
+	case productcategorymajor.FieldSlug:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetSulg(v)
+		m.SetSlug(v)
 		return nil
 	}
 	return fmt.Errorf("unknown ProductCategoryMajor field %s", name)
@@ -11373,8 +11373,8 @@ func (m *ProductCategoryMajorMutation) ResetField(name string) error {
 	case productcategorymajor.FieldCategory:
 		m.ResetCategory()
 		return nil
-	case productcategorymajor.FieldSulg:
-		m.ResetSulg()
+	case productcategorymajor.FieldSlug:
+		m.ResetSlug()
 		return nil
 	}
 	return fmt.Errorf("unknown ProductCategoryMajor field %s", name)
@@ -11500,7 +11500,7 @@ type ProductCategoryMinorMutation struct {
 	updated_at      *time.Time
 	category        *string
 	image           *string
-	sulg            *string
+	slug            *string
 	clearedFields   map[string]struct{}
 	major           *int
 	clearedmajor    bool
@@ -11754,40 +11754,40 @@ func (m *ProductCategoryMinorMutation) ResetImage() {
 	m.image = nil
 }
 
-// SetSulg sets the "sulg" field.
-func (m *ProductCategoryMinorMutation) SetSulg(s string) {
-	m.sulg = &s
+// SetSlug sets the "slug" field.
+func (m *ProductCategoryMinorMutation) SetSlug(s string) {
+	m.slug = &s
 }
 
-// Sulg returns the value of the "sulg" field in the mutation.
-func (m *ProductCategoryMinorMutation) Sulg() (r string, exists bool) {
-	v := m.sulg
+// Slug returns the value of the "slug" field in the mutation.
+func (m *ProductCategoryMinorMutation) Slug() (r string, exists bool) {
+	v := m.slug
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldSulg returns the old "sulg" field's value of the ProductCategoryMinor entity.
+// OldSlug returns the old "slug" field's value of the ProductCategoryMinor entity.
 // If the ProductCategoryMinor object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProductCategoryMinorMutation) OldSulg(ctx context.Context) (v string, err error) {
+func (m *ProductCategoryMinorMutation) OldSlug(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSulg is only allowed on UpdateOne operations")
+		return v, errors.New("OldSlug is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSulg requires an ID field in the mutation")
+		return v, errors.New("OldSlug requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSulg: %w", err)
+		return v, fmt.Errorf("querying old value for OldSlug: %w", err)
 	}
-	return oldValue.Sulg, nil
+	return oldValue.Slug, nil
 }
 
-// ResetSulg resets all changes to the "sulg" field.
-func (m *ProductCategoryMinorMutation) ResetSulg() {
-	m.sulg = nil
+// ResetSlug resets all changes to the "slug" field.
+func (m *ProductCategoryMinorMutation) ResetSlug() {
+	m.slug = nil
 }
 
 // SetMajorID sets the "major" edge to the ProductCategoryMajor entity by id.
@@ -11915,8 +11915,8 @@ func (m *ProductCategoryMinorMutation) Fields() []string {
 	if m.image != nil {
 		fields = append(fields, productcategoryminor.FieldImage)
 	}
-	if m.sulg != nil {
-		fields = append(fields, productcategoryminor.FieldSulg)
+	if m.slug != nil {
+		fields = append(fields, productcategoryminor.FieldSlug)
 	}
 	return fields
 }
@@ -11934,8 +11934,8 @@ func (m *ProductCategoryMinorMutation) Field(name string) (ent.Value, bool) {
 		return m.Category()
 	case productcategoryminor.FieldImage:
 		return m.Image()
-	case productcategoryminor.FieldSulg:
-		return m.Sulg()
+	case productcategoryminor.FieldSlug:
+		return m.Slug()
 	}
 	return nil, false
 }
@@ -11953,8 +11953,8 @@ func (m *ProductCategoryMinorMutation) OldField(ctx context.Context, name string
 		return m.OldCategory(ctx)
 	case productcategoryminor.FieldImage:
 		return m.OldImage(ctx)
-	case productcategoryminor.FieldSulg:
-		return m.OldSulg(ctx)
+	case productcategoryminor.FieldSlug:
+		return m.OldSlug(ctx)
 	}
 	return nil, fmt.Errorf("unknown ProductCategoryMinor field %s", name)
 }
@@ -11992,12 +11992,12 @@ func (m *ProductCategoryMinorMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetImage(v)
 		return nil
-	case productcategoryminor.FieldSulg:
+	case productcategoryminor.FieldSlug:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetSulg(v)
+		m.SetSlug(v)
 		return nil
 	}
 	return fmt.Errorf("unknown ProductCategoryMinor field %s", name)
@@ -12060,8 +12060,8 @@ func (m *ProductCategoryMinorMutation) ResetField(name string) error {
 	case productcategoryminor.FieldImage:
 		m.ResetImage()
 		return nil
-	case productcategoryminor.FieldSulg:
-		m.ResetSulg()
+	case productcategoryminor.FieldSlug:
+		m.ResetSlug()
 		return nil
 	}
 	return fmt.Errorf("unknown ProductCategoryMinor field %s", name)

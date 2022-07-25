@@ -18,15 +18,15 @@ func NewRetailMerchantRepo(db *database.Adapter) gateways.RetailMerchantRepo {
 	return &repository{db.DB}
 }
 
-func (r *repository) Insert(mercthant *models.RetailMerchant) (*ent.RetailMerchant, error) {
+func (r *repository) Insert(merchant *models.RetailMerchant) (*ent.RetailMerchant, error) {
 	result, err := r.db.RetailMerchant.Create().
-		SetLastName(mercthant.LastName).
-		SetOtherName(mercthant.OtherName).
-		SetPhone(mercthant.Phone).
-		SetOtherPhone(mercthant.OtherPhone).
-		SetAddress(mercthant.Address).
-		SetDigitalAddress(mercthant.DigitalAddress).
-		SetGhanaCard(mercthant.GhanaCard).
+		SetLastName(merchant.LastName).
+		SetOtherName(merchant.OtherName).
+		SetPhone(merchant.Phone).
+		SetOtherPhone(merchant.OtherPhone).
+		SetAddress(merchant.Address).
+		SetDigitalAddress(merchant.DigitalAddress).
+		SetGhanaCard(merchant.GhanaCard).
 		Save(context.Background())
 
 	if err != nil {

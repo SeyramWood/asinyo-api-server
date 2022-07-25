@@ -19,8 +19,8 @@ const (
 	FieldCategory = "category"
 	// FieldImage holds the string denoting the image field in the database.
 	FieldImage = "image"
-	// FieldSulg holds the string denoting the sulg field in the database.
-	FieldSulg = "sulg"
+	// FieldSlug holds the string denoting the slug field in the database.
+	FieldSlug = "slug"
 	// EdgeMajor holds the string denoting the major edge name in mutations.
 	EdgeMajor = "major"
 	// EdgeProducts holds the string denoting the products edge name in mutations.
@@ -50,7 +50,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldCategory,
 	FieldImage,
-	FieldSulg,
+	FieldSlug,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "product_category_minors"
@@ -85,6 +85,6 @@ var (
 	CategoryValidator func(string) error
 	// ImageValidator is a validator for the "image" field. It is called by the builders before save.
 	ImageValidator func(string) error
-	// SulgValidator is a validator for the "sulg" field. It is called by the builders before save.
-	SulgValidator func(string) error
+	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	SlugValidator func(string) error
 )

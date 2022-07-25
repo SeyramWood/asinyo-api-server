@@ -25,8 +25,8 @@ type ProductCategoryMinor struct {
 	Category string `json:"category,omitempty"`
 	// Image holds the value of the "image" field.
 	Image string `json:"image,omitempty"`
-	// Sulg holds the value of the "sulg" field.
-	Sulg string `json:"sulg,omitempty"`
+	// Slug holds the value of the "slug" field.
+	Slug string `json:"slug,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProductCategoryMinorQuery when eager-loading is set.
 	Edges                         ProductCategoryMinorEdges `json:"edges"`
@@ -74,7 +74,7 @@ func (*ProductCategoryMinor) scanValues(columns []string) ([]interface{}, error)
 		switch columns[i] {
 		case productcategoryminor.FieldID:
 			values[i] = new(sql.NullInt64)
-		case productcategoryminor.FieldCategory, productcategoryminor.FieldImage, productcategoryminor.FieldSulg:
+		case productcategoryminor.FieldCategory, productcategoryminor.FieldImage, productcategoryminor.FieldSlug:
 			values[i] = new(sql.NullString)
 		case productcategoryminor.FieldCreatedAt, productcategoryminor.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -125,11 +125,11 @@ func (pcm *ProductCategoryMinor) assignValues(columns []string, values []interfa
 			} else if value.Valid {
 				pcm.Image = value.String
 			}
-		case productcategoryminor.FieldSulg:
+		case productcategoryminor.FieldSlug:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field sulg", values[i])
+				return fmt.Errorf("unexpected type %T for field slug", values[i])
 			} else if value.Valid {
-				pcm.Sulg = value.String
+				pcm.Slug = value.String
 			}
 		case productcategoryminor.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -184,8 +184,8 @@ func (pcm *ProductCategoryMinor) String() string {
 	builder.WriteString(pcm.Category)
 	builder.WriteString(", image=")
 	builder.WriteString(pcm.Image)
-	builder.WriteString(", sulg=")
-	builder.WriteString(pcm.Sulg)
+	builder.WriteString(", slug=")
+	builder.WriteString(pcm.Slug)
 	builder.WriteByte(')')
 	return builder.String()
 }

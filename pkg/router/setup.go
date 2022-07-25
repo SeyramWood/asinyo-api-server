@@ -7,7 +7,7 @@ import (
 )
 
 func NewRouter(app *fiber.App, db *database.Adapter) {
-	setup(app, routes.NewApiRouter(db), routes.NewHttpRouter(db))
+	setup(app, routes.NewApiRouter(db), routes.NewPageRouter(db))
 }
 func setup(app *fiber.App, routers ...Router) {
 	for _, r := range routers {

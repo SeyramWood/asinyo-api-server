@@ -18,7 +18,7 @@ type (
 		Name          string  `json:"name" form:"name" validate:"required|string"`
 		Price         float64 `json:"price" form:"price" validate:"required"`
 		PromoPrice    float64 `json:"promoPrice" form:"promoPrice" validate:"required"`
-		Description   string  `json:"description" form:"description" validate:"required|string"`
+		Description   string  `json:"description" form:"description" validate:"required"`
 		Image         []byte  `json:"image" form:"image"`
 	}
 )

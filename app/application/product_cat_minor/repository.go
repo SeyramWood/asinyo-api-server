@@ -27,7 +27,7 @@ func (r *repository) Insert(cat *models.ProductCategoryMinor, image string) (*en
 	category, err := r.db.ProductCategoryMinor.Create().SetMajor(major).
 		SetCategory(cat.Category).
 		SetImage(image).
-		SetSulg(strings.ToLower(strings.Replace(cat.Category, " ", "-", -1))).
+		SetSlug(strings.ToLower(strings.Replace(cat.Category, " ", "-", -1))).
 		Save(context.Background())
 
 	if err != nil {

@@ -3,6 +3,7 @@ package merchant
 import (
 	"context"
 	"fmt"
+	"github.com/SeyramWood/app/application"
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
@@ -23,18 +24,22 @@ func (r *repository) Insert(mc *models.MerchantRequest) (*ent.Merchant, error) {
 
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(mc.Credentials.Password), 16)
 
-	merchant, err := r.db.Merchant.Create().
+	ctx := context.Background()
+	tx, err := r.db.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("starting a transaction: %w", err)
+	}
+
+	merchant, err := tx.Merchant.Create().
 		SetType(mc.Info.MerchantType).
 		SetUsername(mc.Credentials.Username).
 		SetPassword(hashPassword).
-		Save(context.Background())
-
+		Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating merchant: %w", err)
+		return nil, application.Rollback(tx, fmt.Errorf("failed creating merchant: %w", err))
 	}
-
 	if mc.Info.MerchantType == "supplier" {
-		_, err := r.db.SupplierMerchant.Create().
+		_, err := tx.SupplierMerchant.Create().
 			SetMerchant(merchant).
 			SetGhanaCard(mc.Info.GhanaCard).
 			SetLastName(mc.Info.LastName).
@@ -43,12 +48,12 @@ func (r *repository) Insert(mc *models.MerchantRequest) (*ent.Merchant, error) {
 			SetOtherPhone(mc.Info.OtherPhone).
 			SetAddress(mc.Info.Address).
 			SetDigitalAddress(mc.Info.DigitalAddress).
-			Save(context.Background())
+			Save(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed creating merchant: %w", err)
+			return nil, application.Rollback(tx, fmt.Errorf("failed creating supplier merchant: %w", err))
 		}
 	} else if mc.Info.MerchantType == "retailer" {
-		_, err := r.db.RetailMerchant.Create().
+		_, err := tx.RetailMerchant.Create().
 			SetMerchant(merchant).
 			SetGhanaCard(mc.Info.GhanaCard).
 			SetLastName(mc.Info.LastName).
@@ -57,12 +62,15 @@ func (r *repository) Insert(mc *models.MerchantRequest) (*ent.Merchant, error) {
 			SetOtherPhone(mc.Info.OtherPhone).
 			SetAddress(mc.Info.Address).
 			SetDigitalAddress(mc.Info.DigitalAddress).
-			Save(context.Background())
+			Save(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed creating merchant: %w", err)
+			return nil, application.Rollback(tx, fmt.Errorf("failed creating retail merchant: %w", err))
 		}
 	}
-	return merchant, nil
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed commiting merchant transaction: %w", err)
+	}
+	return merchant.Unwrap(), nil
 
 }
 

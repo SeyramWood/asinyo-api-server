@@ -47,6 +47,8 @@ type (
 		Create(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.MerchantStore, error)
 		SaveAccount(store interface{}, storeId int, logo string) (*ent.MerchantStore, error)
 		SaveDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
+		SaveLogo(c *fiber.Ctx, field, directory string) (interface{}, error)
+		SavePhotos(c *fiber.Ctx, field, directory string) (interface{}, error)
 		FetchAll() ([]*ent.MerchantStore, error)
 		FetchAllByMerchant(merchantType string) ([]*ent.MerchantStore, error)
 		Fetch(id int) (*ent.MerchantStore, error)
@@ -60,6 +62,8 @@ type (
 		FetchAll() ([]*ent.Product, error)
 		FetchBySlugRetailMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error)
 		FetchBySlugRetailMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
+		FetchBySlugSupplierMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error)
+		FetchBySlugSupplierMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
 		FetchAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
 		FetchAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
 		FetchAllMajorByRetailer(majorId int) ([]*ent.Product, error)
@@ -72,6 +76,7 @@ type (
 		FetchByRetailMerchant(id int) (*ent.Product, error)
 		Update(merchant *models.Product) (*models.Product, error)
 		Remove(id string) error
+		SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error)
 	}
 	ProductCatMajorService interface {
 		Create(merchant *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error)
@@ -82,6 +87,7 @@ type (
 	}
 	ProductCatMinorService interface {
 		Create(merchant *models.ProductCategoryMinor, image string) (*ent.ProductCategoryMinor, error)
+		SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error)
 		FetchAll() ([]*ent.ProductCategoryMinor, error)
 		Fetch(id int) (*ent.ProductCategoryMinor, error)
 		Update(merchant *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error)

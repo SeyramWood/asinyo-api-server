@@ -33,9 +33,9 @@ type (
 	}
 	MerchantStore struct {
 		BusinessName     string `json:"businessName" validate:"required|string"`
-		About            string `json:"about" validate:"required|string"`
+		About            string `json:"about" validate:"required"`
 		DescriptionTitle string `json:"descriptionTitle" validate:"required|string"`
-		Description      string `json:"description" validate:"required|string"`
+		Description      string `json:"description" validate:"required"`
 		Image            []byte `json:"image"`
 		OtherImages      []byte `json:"otherImages"`
 		Account          string `json:"account"`

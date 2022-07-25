@@ -62,9 +62,9 @@ func (pcmc *ProductCategoryMinorCreate) SetImage(s string) *ProductCategoryMinor
 	return pcmc
 }
 
-// SetSulg sets the "sulg" field.
-func (pcmc *ProductCategoryMinorCreate) SetSulg(s string) *ProductCategoryMinorCreate {
-	pcmc.mutation.SetSulg(s)
+// SetSlug sets the "slug" field.
+func (pcmc *ProductCategoryMinorCreate) SetSlug(s string) *ProductCategoryMinorCreate {
+	pcmc.mutation.SetSlug(s)
 	return pcmc
 }
 
@@ -199,12 +199,12 @@ func (pcmc *ProductCategoryMinorCreate) check() error {
 			return &ValidationError{Name: "image", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.image": %w`, err)}
 		}
 	}
-	if _, ok := pcmc.mutation.Sulg(); !ok {
-		return &ValidationError{Name: "sulg", err: errors.New(`ent: missing required field "ProductCategoryMinor.sulg"`)}
+	if _, ok := pcmc.mutation.Slug(); !ok {
+		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "ProductCategoryMinor.slug"`)}
 	}
-	if v, ok := pcmc.mutation.Sulg(); ok {
-		if err := productcategoryminor.SulgValidator(v); err != nil {
-			return &ValidationError{Name: "sulg", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.sulg": %w`, err)}
+	if v, ok := pcmc.mutation.Slug(); ok {
+		if err := productcategoryminor.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.slug": %w`, err)}
 		}
 	}
 	if _, ok := pcmc.mutation.MajorID(); !ok {
@@ -269,13 +269,13 @@ func (pcmc *ProductCategoryMinorCreate) createSpec() (*ProductCategoryMinor, *sq
 		})
 		_node.Image = value
 	}
-	if value, ok := pcmc.mutation.Sulg(); ok {
+	if value, ok := pcmc.mutation.Slug(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: productcategoryminor.FieldSulg,
+			Column: productcategoryminor.FieldSlug,
 		})
-		_node.Sulg = value
+		_node.Slug = value
 	}
 	if nodes := pcmc.mutation.MajorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -60,6 +60,8 @@ type (
 		ReadAll() ([]*ent.Product, error)
 		ReadBySlugRetailMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error)
 		ReadBySlugRetailMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
+		ReadBySlugSupplierMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error)
+		ReadBySlugSupplierMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
 		ReadAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
 		ReadAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
 		ReadAllMajorByRetailer(majorId int) ([]*ent.Product, error)

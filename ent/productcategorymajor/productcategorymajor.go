@@ -17,8 +17,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldCategory holds the string denoting the category field in the database.
 	FieldCategory = "category"
-	// FieldSulg holds the string denoting the sulg field in the database.
-	FieldSulg = "sulg"
+	// FieldSlug holds the string denoting the slug field in the database.
+	FieldSlug = "slug"
 	// EdgeMinors holds the string denoting the minors edge name in mutations.
 	EdgeMinors = "minors"
 	// EdgeProducts holds the string denoting the products edge name in mutations.
@@ -47,7 +47,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldCategory,
-	FieldSulg,
+	FieldSlug,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -69,6 +69,6 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// CategoryValidator is a validator for the "category" field. It is called by the builders before save.
 	CategoryValidator func(string) error
-	// SulgValidator is a validator for the "sulg" field. It is called by the builders before save.
-	SulgValidator func(string) error
+	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	SlugValidator func(string) error
 )

@@ -5,14 +5,70 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"log"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 type storage struct {
+	disk string
+}
+
+var disks = map[string]string{
+	"public": "public/storage",
+	"local":  "storage",
 }
 
 func NewStorage() *storage {
 	return &storage{}
+}
+func (s *storage) Disk(disk string) *storage {
+	if _, ok := disks[strings.ToLower(disk)]; !ok {
+		log.Fatalln(fmt.Sprintf("the [%s] disk is not available.", disk))
+	}
+	return &storage{disk}
+}
+func (s *storage) Exist(path string) bool {
+	if _, err := os.Stat(filepath.Join(disks[s.disk], path)); err != nil {
+		return false
+	}
+	return true
+
+}
+func (s *storage) Delete(path string) error {
+	pth := filepath.Join(disks[s.disk], path)
+	if _, err := os.Stat(pth); err != nil {
+		return err
+	}
+	if err := os.Remove(pth); err != nil {
+		return err
+	}
+	return nil
+}
+func (s *storage) DeleteAll(path string) error {
+	pth := filepath.Join(disks[s.disk], path)
+	if _, err := os.Stat(pth); err != nil {
+		return err
+	}
+	if err := os.RemoveAll(pth); err != nil {
+		return err
+	}
+	return nil
+}
+func (s *storage) MakeDirectory(path string) error {
+	pth := filepath.Join(disks[s.disk], path)
+	if err := os.MkdirAll(pth, 0755); err != nil {
+		return err
+	}
+	return nil
+}
+func (s *storage) GetPath(path string) (string, error) {
+	pth := filepath.Join(disks[s.disk], path)
+	if !s.Exist(path) {
+		return "", fmt.Errorf("the path [%s] dosn't exist", pth)
+	}
+	return pth, nil
 }
 
 func (s *storage) SaveFile(c *fiber.Ctx, field, directory string) (interface{}, error) {

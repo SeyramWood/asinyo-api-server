@@ -15,6 +15,7 @@ type (
 		Major     string    `json:"major"`
 		Image     string    `json:"image"`
 		Category  string    `json:"category"`
+		Slug      string    `json:"slug"`
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
 	}
@@ -26,6 +27,7 @@ func ProductCatMinorSuccessResponse(cat *ent.ProductCategoryMinor) *fiber.Map {
 		MajorID:   cat.Edges.Major.ID,
 		Major:     cat.Edges.Major.Category,
 		Category:  cat.Category,
+		Slug:      cat.Slug,
 		Image:     cat.Image,
 		CreatedAt: cat.CreatedAt,
 		UpdatedAt: cat.UpdatedAt,
@@ -43,6 +45,7 @@ func ProductCatMinorsSuccessResponse(data []*ent.ProductCategoryMinor) *fiber.Ma
 				MajorID:   cat.Edges.Major.ID,
 				Major:     cat.Edges.Major.Category,
 				Category:  cat.Category,
+				Slug:      cat.Slug,
 				Image:     cat.Image,
 				CreatedAt: cat.CreatedAt,
 				UpdatedAt: cat.UpdatedAt,

@@ -1,35 +1,35 @@
 package routes
 
 import (
-	"time"
-
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/SeyramWood/app/framework/web/http/handlers"
+	handler "github.com/SeyramWood/app/framework/web/http/handlers/page"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
+	"time"
 )
 
-type HttpRouter struct {
+type PageRouter struct {
 }
 
-func NewHttpRouter(db *database.Adapter) *HttpRouter {
-	return &HttpRouter{}
+func NewPageRouter(db *database.Adapter) *PageRouter {
+	return &PageRouter{}
 }
 
-func (h *HttpRouter) Router(app *fiber.App) {
-	// Custom config
-	app.Static("/", "./public", fiber.Static{
-		Compress:      true,
-		ByteRange:     true,
-		Browse:        true,
-		CacheDuration: 10 * time.Second,
-		MaxAge:        3600,
-	})
+func (h *PageRouter) Router(app *fiber.App) {
 
 	r := app.Group("")
-	// r.Get("/", handlers.Index())
+
+	r.Get("/", handler.Index())
 
 	pageRouter(r)
 
+	// Custom config
+	r.Static("/", "./public/storage", fiber.Static{
+		Compress:      true,
+		Browse:        false,
+		CacheDuration: 10 * time.Second,
+		MaxAge:        3600,
+	})
 	// 404 Handler
 	app.Use(func(c *fiber.Ctx) error {
 		return c.SendStatus(404) // => 404 "Not Found"
@@ -38,5 +38,8 @@ func (h *HttpRouter) Router(app *fiber.App) {
 }
 
 func pageRouter(r fiber.Router) {
-	r.Get("/", handlers.Index())
+	r.Get("/", handler.Index())
+
+	r.Get("/dashboard", monitor.New())
+	
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/SeyramWood/pkg/server"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"log"
 )
@@ -43,10 +42,7 @@ func App() {
 
 	app.Server.Use(logger.New())
 
-	app.Server.Get("/dashboard", monitor.New())
-
 	router.NewRouter(app.Server, db)
 
 	app.Run()
-	//return app
 }

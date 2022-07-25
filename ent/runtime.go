@@ -419,10 +419,10 @@ func init() {
 	productcategorymajorDescCategory := productcategorymajorFields[0].Descriptor()
 	// productcategorymajor.CategoryValidator is a validator for the "category" field. It is called by the builders before save.
 	productcategorymajor.CategoryValidator = productcategorymajorDescCategory.Validators[0].(func(string) error)
-	// productcategorymajorDescSulg is the schema descriptor for sulg field.
-	productcategorymajorDescSulg := productcategorymajorFields[1].Descriptor()
-	// productcategorymajor.SulgValidator is a validator for the "sulg" field. It is called by the builders before save.
-	productcategorymajor.SulgValidator = productcategorymajorDescSulg.Validators[0].(func(string) error)
+	// productcategorymajorDescSlug is the schema descriptor for slug field.
+	productcategorymajorDescSlug := productcategorymajorFields[1].Descriptor()
+	// productcategorymajor.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	productcategorymajor.SlugValidator = productcategorymajorDescSlug.Validators[0].(func(string) error)
 	productcategoryminorMixin := schema.ProductCategoryMinor{}.Mixin()
 	productcategoryminorMixinFields0 := productcategoryminorMixin[0].Fields()
 	_ = productcategoryminorMixinFields0
@@ -446,10 +446,10 @@ func init() {
 	productcategoryminorDescImage := productcategoryminorFields[1].Descriptor()
 	// productcategoryminor.ImageValidator is a validator for the "image" field. It is called by the builders before save.
 	productcategoryminor.ImageValidator = productcategoryminorDescImage.Validators[0].(func(string) error)
-	// productcategoryminorDescSulg is the schema descriptor for sulg field.
-	productcategoryminorDescSulg := productcategoryminorFields[2].Descriptor()
-	// productcategoryminor.SulgValidator is a validator for the "sulg" field. It is called by the builders before save.
-	productcategoryminor.SulgValidator = productcategoryminorDescSulg.Validators[0].(func(string) error)
+	// productcategoryminorDescSlug is the schema descriptor for slug field.
+	productcategoryminorDescSlug := productcategoryminorFields[2].Descriptor()
+	// productcategoryminor.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	productcategoryminor.SlugValidator = productcategoryminorDescSlug.Validators[0].(func(string) error)
 	retailmerchantMixin := schema.RetailMerchant{}.Mixin()
 	retailmerchantMixinFields0 := retailmerchantMixin[0].Fields()
 	_ = retailmerchantMixinFields0

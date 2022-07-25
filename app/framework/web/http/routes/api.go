@@ -2,7 +2,7 @@ package routes
 
 import (
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/SeyramWood/app/framework/web/http/handlers"
+	handler "github.com/SeyramWood/app/framework/web/http/handlers/api"
 	middleware "github.com/SeyramWood/app/framework/web/http/middlewares"
 	request "github.com/SeyramWood/app/framework/web/http/requests"
 	"github.com/gofiber/fiber/v2"
@@ -46,7 +46,7 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 func customerRouter(r fiber.Router, db *database.Adapter) {
 
-	h := handlers.NewCustomerHandler(db)
+	h := handler.NewCustomerHandler(db)
 
 	router := r.Group("/auth/customers")
 
@@ -68,7 +68,7 @@ func customerRouter(r fiber.Router, db *database.Adapter) {
 }
 func agentRouter(r fiber.Router, db *database.Adapter) {
 
-	h := handlers.NewAgentHandler(db)
+	h := handler.NewAgentHandler(db)
 
 	router := r.Group("/auth/agents")
 
@@ -91,8 +91,8 @@ func agentRouter(r fiber.Router, db *database.Adapter) {
 
 func retailMerchantRouter(r fiber.Router, db *database.Adapter) {
 
-	h := handlers.NewRetailMerchantHandler(db)
-	m := handlers.NewMerchantHandler(db)
+	h := handler.NewRetailMerchantHandler(db)
+	m := handler.NewMerchantHandler(db)
 
 	router := r.Group("/auth/merchant/retailers")
 
@@ -114,8 +114,8 @@ func retailMerchantRouter(r fiber.Router, db *database.Adapter) {
 }
 func supplierMerchantRouter(r fiber.Router, db *database.Adapter) {
 
-	h := handlers.NewSupplierMerchantHandler(db)
-	m := handlers.NewMerchantHandler(db)
+	h := handler.NewSupplierMerchantHandler(db)
+	m := handler.NewMerchantHandler(db)
 
 	router := r.Group("/auth/merchant/suppliers")
 
@@ -139,7 +139,7 @@ func supplierMerchantRouter(r fiber.Router, db *database.Adapter) {
 func merchantRouter(r fiber.Router, db *database.Adapter) {
 
 	//m := handlers.NewMerchantHandler(db)
-	msHandler := handlers.NewMerchantStoreHandler(db)
+	msHandler := handler.NewMerchantStoreHandler(db)
 
 	mRouter := r.Group("/merchants")
 	msRouter := mRouter.Group("/storefront")
@@ -172,7 +172,7 @@ func merchantRouter(r fiber.Router, db *database.Adapter) {
 
 func adminRouter(r fiber.Router, db *database.Adapter) {
 
-	h := handlers.NewAdminHandler(db)
+	h := handler.NewAdminHandler(db)
 
 	router := r.Group("/auth/admins")
 
@@ -196,9 +196,9 @@ func adminRouter(r fiber.Router, db *database.Adapter) {
 
 func productRouter(r fiber.Router, db *database.Adapter) {
 
-	h := handlers.NewProductHandler(db)
-	majorH := handlers.NewProductCatMajorHandler(db)
-	minorH := handlers.NewProductCatMinorHandler(db)
+	h := handler.NewProductHandler(db)
+	majorH := handler.NewProductCatMajorHandler(db)
+	minorH := handler.NewProductCatMinorHandler(db)
 
 	router := r.Group("/products")
 
@@ -243,7 +243,7 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 
 func paymentRouter(router fiber.Router, db *database.Adapter) {
 
-	ph := handlers.NewPaystackHandler(db)
+	ph := handler.NewPaystackHandler(db)
 
 	router.Route("/payment", func(r fiber.Router) {
 
@@ -256,7 +256,7 @@ func paymentRouter(router fiber.Router, db *database.Adapter) {
 }
 func orderRouter(router fiber.Router, db *database.Adapter) {
 
-	h := handlers.NewOrderHandler(db)
+	h := handler.NewOrderHandler(db)
 
 	router.Route("/orders", func(r fiber.Router) {
 
@@ -270,8 +270,8 @@ func orderRouter(router fiber.Router, db *database.Adapter) {
 
 func addressRouter(router fiber.Router, db *database.Adapter) {
 
-	h := handlers.NewAddressHandler(db)
-	psh := handlers.NewPickupStationHandler(db)
+	h := handler.NewAddressHandler(db)
+	psh := handler.NewPickupStationHandler(db)
 
 	router.Route("/address", func(r fiber.Router) {
 
@@ -293,7 +293,7 @@ func addressRouter(router fiber.Router, db *database.Adapter) {
 
 func authRouter(router fiber.Router, db *database.Adapter) {
 
-	h := handlers.NewAuthHandler(db)
+	h := handler.NewAuthHandler(db)
 
 	router.Route("/auth", func(r fiber.Router) {
 

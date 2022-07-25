@@ -22,8 +22,8 @@ type ProductCategoryMajor struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Category holds the value of the "category" field.
 	Category string `json:"category,omitempty"`
-	// Sulg holds the value of the "sulg" field.
-	Sulg string `json:"sulg,omitempty"`
+	// Slug holds the value of the "slug" field.
+	Slug string `json:"slug,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProductCategoryMajorQuery when eager-loading is set.
 	Edges ProductCategoryMajorEdges `json:"edges"`
@@ -65,7 +65,7 @@ func (*ProductCategoryMajor) scanValues(columns []string) ([]interface{}, error)
 		switch columns[i] {
 		case productcategorymajor.FieldID:
 			values[i] = new(sql.NullInt64)
-		case productcategorymajor.FieldCategory, productcategorymajor.FieldSulg:
+		case productcategorymajor.FieldCategory, productcategorymajor.FieldSlug:
 			values[i] = new(sql.NullString)
 		case productcategorymajor.FieldCreatedAt, productcategorymajor.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -108,11 +108,11 @@ func (pcm *ProductCategoryMajor) assignValues(columns []string, values []interfa
 			} else if value.Valid {
 				pcm.Category = value.String
 			}
-		case productcategorymajor.FieldSulg:
+		case productcategorymajor.FieldSlug:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field sulg", values[i])
+				return fmt.Errorf("unexpected type %T for field slug", values[i])
 			} else if value.Valid {
-				pcm.Sulg = value.String
+				pcm.Slug = value.String
 			}
 		}
 	}
@@ -158,8 +158,8 @@ func (pcm *ProductCategoryMajor) String() string {
 	builder.WriteString(pcm.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", category=")
 	builder.WriteString(pcm.Category)
-	builder.WriteString(", sulg=")
-	builder.WriteString(pcm.Sulg)
+	builder.WriteString(", slug=")
+	builder.WriteString(pcm.Slug)
 	builder.WriteByte(')')
 	return builder.String()
 }

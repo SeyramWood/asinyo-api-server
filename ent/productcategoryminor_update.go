@@ -48,9 +48,9 @@ func (pcmu *ProductCategoryMinorUpdate) SetImage(s string) *ProductCategoryMinor
 	return pcmu
 }
 
-// SetSulg sets the "sulg" field.
-func (pcmu *ProductCategoryMinorUpdate) SetSulg(s string) *ProductCategoryMinorUpdate {
-	pcmu.mutation.SetSulg(s)
+// SetSlug sets the "slug" field.
+func (pcmu *ProductCategoryMinorUpdate) SetSlug(s string) *ProductCategoryMinorUpdate {
+	pcmu.mutation.SetSlug(s)
 	return pcmu
 }
 
@@ -193,9 +193,9 @@ func (pcmu *ProductCategoryMinorUpdate) check() error {
 			return &ValidationError{Name: "image", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.image": %w`, err)}
 		}
 	}
-	if v, ok := pcmu.mutation.Sulg(); ok {
-		if err := productcategoryminor.SulgValidator(v); err != nil {
-			return &ValidationError{Name: "sulg", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.sulg": %w`, err)}
+	if v, ok := pcmu.mutation.Slug(); ok {
+		if err := productcategoryminor.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.slug": %w`, err)}
 		}
 	}
 	if _, ok := pcmu.mutation.MajorID(); pcmu.mutation.MajorCleared() && !ok {
@@ -243,11 +243,11 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 			Column: productcategoryminor.FieldImage,
 		})
 	}
-	if value, ok := pcmu.mutation.Sulg(); ok {
+	if value, ok := pcmu.mutation.Slug(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: productcategoryminor.FieldSulg,
+			Column: productcategoryminor.FieldSlug,
 		})
 	}
 	if pcmu.mutation.MajorCleared() {
@@ -376,9 +376,9 @@ func (pcmuo *ProductCategoryMinorUpdateOne) SetImage(s string) *ProductCategoryM
 	return pcmuo
 }
 
-// SetSulg sets the "sulg" field.
-func (pcmuo *ProductCategoryMinorUpdateOne) SetSulg(s string) *ProductCategoryMinorUpdateOne {
-	pcmuo.mutation.SetSulg(s)
+// SetSlug sets the "slug" field.
+func (pcmuo *ProductCategoryMinorUpdateOne) SetSlug(s string) *ProductCategoryMinorUpdateOne {
+	pcmuo.mutation.SetSlug(s)
 	return pcmuo
 }
 
@@ -528,9 +528,9 @@ func (pcmuo *ProductCategoryMinorUpdateOne) check() error {
 			return &ValidationError{Name: "image", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.image": %w`, err)}
 		}
 	}
-	if v, ok := pcmuo.mutation.Sulg(); ok {
-		if err := productcategoryminor.SulgValidator(v); err != nil {
-			return &ValidationError{Name: "sulg", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.sulg": %w`, err)}
+	if v, ok := pcmuo.mutation.Slug(); ok {
+		if err := productcategoryminor.SlugValidator(v); err != nil {
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "ProductCategoryMinor.slug": %w`, err)}
 		}
 	}
 	if _, ok := pcmuo.mutation.MajorID(); pcmuo.mutation.MajorCleared() && !ok {
@@ -595,11 +595,11 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Column: productcategoryminor.FieldImage,
 		})
 	}
-	if value, ok := pcmuo.mutation.Sulg(); ok {
+	if value, ok := pcmuo.mutation.Slug(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: productcategoryminor.FieldSulg,
+			Column: productcategoryminor.FieldSlug,
 		})
 	}
 	if pcmuo.mutation.MajorCleared() {

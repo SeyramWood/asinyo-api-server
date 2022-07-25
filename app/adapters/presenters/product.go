@@ -58,6 +58,7 @@ type (
 	CategoryMajor struct {
 		ID        int        `json:"id"`
 		Category  string     `json:"category"`
+		Slug      string     `json:"slug"`
 		CreatedAt time.Time  `json:"created_at"`
 		UpdatedAt time.Time  `json:"updated_at"`
 		Product   []*Product `json:"products"`
@@ -66,6 +67,7 @@ type (
 	CategoryMinor struct {
 		ID        int        `json:"id"`
 		Category  string     `json:"category"`
+		Slug      string     `json:"slug"`
 		CreatedAt time.Time  `json:"created_at"`
 		UpdatedAt time.Time  `json:"updated_at"`
 		Product   []*Product `json:"products"`
@@ -94,7 +96,7 @@ func ProductSuccessResponse(data *ent.Product) *fiber.Map {
 			LastName:  data.Edges.Merchant.Edges.Supplier.LastName,
 			OtherName: data.Edges.Merchant.Edges.Supplier.OtherName,
 			Store: func() *ProductStore {
-				if s, err := data.Edges.Merchant.Edges.StoreOrErr(); err != nil {
+				if s, err := data.Edges.Merchant.Edges.StoreOrErr(); err == nil {
 					return &ProductStore{
 						ID:           s.ID,
 						BusinessName: s.Name,
@@ -128,7 +130,7 @@ func ProductRetailerMerchantSuccessResponse(data *ent.Product) *fiber.Map {
 			LastName:  data.Edges.Merchant.Edges.Retailer.LastName,
 			OtherName: data.Edges.Merchant.Edges.Retailer.OtherName,
 			Store: func() *ProductStore {
-				if s, err := data.Edges.Merchant.Edges.StoreOrErr(); err != nil {
+				if s, err := data.Edges.Merchant.Edges.StoreOrErr(); err == nil {
 					return &ProductStore{
 						ID:           s.ID,
 						BusinessName: s.Name,
@@ -161,7 +163,7 @@ func ProductSupplierResponse(data *ent.Product) *fiber.Map {
 			LastName:  data.Edges.Merchant.Edges.Supplier.LastName,
 			OtherName: data.Edges.Merchant.Edges.Supplier.OtherName,
 			Store: func() *ProductStore {
-				if s, err := data.Edges.Merchant.Edges.StoreOrErr(); err != nil {
+				if s, err := data.Edges.Merchant.Edges.StoreOrErr(); err == nil {
 					return &ProductStore{
 						ID:           s.ID,
 						BusinessName: s.Name,
@@ -195,7 +197,7 @@ func ProductRetailerResponse(data *ent.Product) *fiber.Map {
 			LastName:  data.Edges.Merchant.Edges.Retailer.LastName,
 			OtherName: data.Edges.Merchant.Edges.Retailer.OtherName,
 			Store: func() *ProductStore {
-				if s, err := data.Edges.Merchant.Edges.StoreOrErr(); err != nil {
+				if s, err := data.Edges.Merchant.Edges.StoreOrErr(); err == nil {
 					return &ProductStore{
 						ID:           s.ID,
 						BusinessName: s.Name,
@@ -231,7 +233,7 @@ func ProductsSuccessResponse(data []*ent.Product) *fiber.Map {
 				CreatedAt:   v.CreatedAt,
 				UpdatedAt:   v.UpdatedAt,
 				Store: func() *ProductStore {
-					if s, err := v.Edges.Merchant.Edges.StoreOrErr(); err != nil {
+					if s, err := v.Edges.Merchant.Edges.StoreOrErr(); err == nil {
 						return &ProductStore{
 							ID:           s.ID,
 							BusinessName: s.Name,
@@ -274,7 +276,7 @@ func ProductsSupplierResponse(data []*ent.Product) *fiber.Map {
 					LastName:  v.Edges.Merchant.Edges.Supplier.LastName,
 					OtherName: v.Edges.Merchant.Edges.Supplier.OtherName,
 					Store: func() *ProductStore {
-						if s, err := v.Edges.Merchant.Edges.StoreOrErr(); err != nil {
+						if s, err := v.Edges.Merchant.Edges.StoreOrErr(); err == nil {
 							return &ProductStore{
 								ID:           s.ID,
 								BusinessName: s.Name,
@@ -388,6 +390,7 @@ func ProductsRetailerCategoryMajorResponse(data []*ent.ProductCategoryMajor) *fi
 			response = append(response, &CategoryMajor{
 				ID:        cat.ID,
 				Category:  cat.Category,
+				Slug:      cat.Slug,
 				CreatedAt: cat.CreatedAt,
 				UpdatedAt: cat.UpdatedAt,
 				Product:   formatCategoryProducts(cat.Edges.Products, "retailer"),
@@ -408,6 +411,7 @@ func ProductsRetailerCategoryMinorResponse(data []*ent.ProductCategoryMinor) *fi
 			response = append(response, &CategoryMajor{
 				ID:        cat.ID,
 				Category:  cat.Category,
+				Slug:      cat.Slug,
 				CreatedAt: cat.CreatedAt,
 				UpdatedAt: cat.UpdatedAt,
 				Product:   formatCategoryProducts(cat.Edges.Products, "retailer"),
@@ -428,6 +432,27 @@ func ProductsSupplierCategoryMajorResponse(data []*ent.ProductCategoryMajor) *fi
 			response = append(response, &CategoryMajor{
 				ID:        cat.ID,
 				Category:  cat.Category,
+				Slug:      cat.Slug,
+				CreatedAt: cat.CreatedAt,
+				UpdatedAt: cat.UpdatedAt,
+				Product:   formatCategoryProducts(cat.Edges.Products, "supplier"),
+			})
+		}(cat)
+	}
+	wg.Wait()
+	return successResponse(response)
+}
+func ProductsSupplierCategoryMinorResponse(data []*ent.ProductCategoryMinor) *fiber.Map {
+	var response []*CategoryMajor
+	wg := sync.WaitGroup{}
+	for _, cat := range data {
+		wg.Add(1)
+		go func(cat *ent.ProductCategoryMinor) {
+			defer wg.Done()
+			response = append(response, &CategoryMajor{
+				ID:        cat.ID,
+				Category:  cat.Category,
+				Slug:      cat.Slug,
 				CreatedAt: cat.CreatedAt,
 				UpdatedAt: cat.UpdatedAt,
 				Product:   formatCategoryProducts(cat.Edges.Products, "supplier"),

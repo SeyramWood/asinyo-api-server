@@ -356,7 +356,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "category", Type: field.TypeString, Unique: true},
-		{Name: "sulg", Type: field.TypeString},
+		{Name: "slug", Type: field.TypeString},
 	}
 	// ProductCategoryMajorsTable holds the schema information for the "product_category_majors" table.
 	ProductCategoryMajorsTable = &schema.Table{
@@ -371,7 +371,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "category", Type: field.TypeString, Unique: true},
 		{Name: "image", Type: field.TypeString},
-		{Name: "sulg", Type: field.TypeString},
+		{Name: "slug", Type: field.TypeString},
 		{Name: "product_category_major_minors", Type: field.TypeInt},
 	}
 	// ProductCategoryMinorsTable holds the schema information for the "product_category_minors" table.
