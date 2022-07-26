@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/merchant_store"
@@ -67,27 +66,41 @@ func (h *MerchantStoreHandler) Create() fiber.Handler {
 		var request models.MerchantStore
 		merchantId, _ := c.ParamsInt("merchantId")
 		err := c.BodyParser(&request)
-
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
 
-		dir := fmt.Sprintf("merchant/stores/%s", c.Params("merchantId"))
-		logo, logoErr := h.service.SaveLogo(c, "image", dir)
-		if logoErr != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Upload error",
-			})
-		}
-		images, imagesErr := h.service.SavePhotos(c, "otherImages", dir)
-		if imagesErr != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Upload error",
-			})
-		}
-		result, err := h.service.Create(&request, merchantId, logo.(string), images.([]string))
+		file, err := c.FormFile("image")
 		if err != nil {
-			_ = storage.NewStorage().Disk("public").DeleteAll(dir)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"msg": "Upload error",
+			})
+		}
+
+		fPath, err := storage.NewUploadCare().Client().Upload(file, "merchant_logo")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"msg": "Upload error",
+			})
+		}
+
+		form, err := c.MultipartForm()
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"msg": "Upload error",
+			})
+		}
+
+		fPaths, err := storage.NewUploadCare().Client().Uploads(form.File["otherImages"], "merchant_store")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"msg": "Upload error",
+			})
+		}
+
+		result, err := h.service.Create(&request, merchantId, fPath, fPaths)
+		if err != nil {
+			//Delete all files from remote server
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(errors.New("error creating merchant")))
 		}
 		return c.JSON(presenters.MerchantStoreSuccessResponse(result))

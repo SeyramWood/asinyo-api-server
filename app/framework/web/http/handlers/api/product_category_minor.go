@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/product_cat_minor"
@@ -57,22 +58,26 @@ func (h *ProductCatMinorHandler) Create() fiber.Handler {
 		err := c.BodyParser(&request)
 
 		if err != nil {
+			fmt.Println(err)
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductCatMinorErrorResponse(err))
 		}
 
-		dir := "product/categories"
-		result, err := h.service.SaveImage(c, "image", dir)
+		file, err := c.FormFile("image")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"msg": "Upload error.",
+			})
+		}
+		fPath, err := storage.NewUploadCare().Client().Upload(file, "category_minor")
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Something went wrong.",
+				"msg": "Upload error.",
 			})
 		}
-
-		cat, err := h.service.Create(&request, result["url"])
-
+		cat, err := h.service.Create(&request, fPath)
 		if err != nil {
-			_ = storage.NewStorage().Disk("public").Delete(result["file"])
+			//Delete file from remote storage
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductCatMinorErrorResponse(err))
 		}
 		return c.JSON(presenters.ProductCatMinorSuccessResponse(cat))

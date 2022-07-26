@@ -23,6 +23,11 @@ type paystack struct {
 	Email  string
 	Domain string
 }
+type uploadcare struct {
+	PubKey string
+	SecKey string
+	URL    string
+}
 
 func App() *app {
 	if os.Getenv("APP_ENV") == "production" {
@@ -63,6 +68,22 @@ func Paystack() *paystack {
 		SecKey: env.Get("PAYSTACK_SEC_KEY", ""),
 		Email:  env.Get("PAYSTACK_EMAIL", ""),
 		Domain: env.Get("PAYSTACK_DOMAIN", ""),
+	}
+
+}
+
+func Uploadcare() *uploadcare {
+	if os.Getenv("APP_ENV") == "production" {
+		return &uploadcare{
+			PubKey: os.Getenv("UPLOADCARE_PUB_KEY"),
+			SecKey: os.Getenv("UPLOADCARE_SEC_KEY"),
+			URL:    os.Getenv("UPLOADCARE_URL"),
+		}
+	}
+	return &uploadcare{
+		PubKey: env.Get("UPLOADCARE_PUB_KEY", ""),
+		SecKey: env.Get("UPLOADCARE_SEC_KEY", ""),
+		URL:    env.Get("UPLOADCARE_URL", ""),
 	}
 
 }

@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/product"
@@ -170,7 +169,6 @@ func (h *ProductHandler) FetchMerchantProducts() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		id, _ := c.ParamsInt("id")
-		fmt.Println(c.Params("merchant"))
 		if c.Params("merchant") == "supplier" {
 			products, err := h.service.FetchAllBySupplier(id)
 			if err != nil {
@@ -223,18 +221,24 @@ func (h *ProductHandler) Create() fiber.Handler {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
 		}
 
-		dir := fmt.Sprintf("product/stores/%d", request.Merchant)
-
-		res, err := h.service.SaveImage(c, "image", dir)
+		file, err := c.FormFile("image")
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Something went wrong.",
+				"msg": "Upload error",
 			})
 		}
-		result, err := h.service.Create(&request, res["url"])
+
+		fPath, err := storage.NewUploadCare().Client().Upload(file, "product")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"msg": "Upload error",
+			})
+		}
+
+		result, err := h.service.Create(&request, fPath)
 
 		if err != nil {
-			_ = storage.NewStorage().Disk("public").Delete(res["file"])
+			//Delete file from remote server
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(errors.New("error creating merchant")))
 		}
 
@@ -246,13 +250,19 @@ func (h *ProductHandler) Create() fiber.Handler {
 			return c.JSON(presenters.ProductSupplierResponse(prod))
 		}
 
-		prod, err := h.service.FetchByRetailMerchant(result.ID)
+		if c.Params("merchant") == "retailer" {
+			prod, err := h.service.FetchByRetailMerchant(result.ID)
 
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(errors.New("error fetching supplier merchant product")))
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(errors.New("error fetching supplier merchant product")))
+			}
+
+			return c.JSON(presenters.ProductRetailerResponse(prod))
 		}
 
-		return c.JSON(presenters.ProductRetailerResponse(prod))
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"msg": "URL not found",
+		})
 	}
 }
 
