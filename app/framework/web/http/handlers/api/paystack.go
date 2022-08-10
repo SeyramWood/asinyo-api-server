@@ -38,9 +38,9 @@ func (h *PaystackHandler) InitiateTransaction() fiber.Handler {
 		err := c.BodyParser(&request)
 
 		if err != nil {
+
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))
 		}
-
 		response, err := h.service.Pay(request)
 		res := response.(*http.Response)
 		defer res.Body.Close()

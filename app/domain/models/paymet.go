@@ -26,6 +26,7 @@ type (
 		OrderNumber    string            `json:"orderNumber"`
 		Address        int               `json:"address"`
 		DeliveryMethod string            `json:"deliveryMethod"`
+		PaymentMethod  string            `json:"paymentMethod"`
 		DeliveryFee    float64           `json:"deliveryFee"`
 		Pickup         int               `json:"pickup"`
 		Products       []*ProductDetails `json:"products"`
