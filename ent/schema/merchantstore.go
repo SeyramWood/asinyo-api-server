@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+
 	"github.com/SeyramWood/app/domain/models"
 )
 
@@ -40,6 +41,7 @@ func (MerchantStore) Edges() []ent.Edge {
 		edge.From("merchant", Merchant.Type).
 			Ref("store").
 			Unique(),
-		edge.To("orders", OrderDetail.Type),
+		edge.To("orders", Order.Type),
+		edge.To("order_details", OrderDetail.Type),
 	}
 }

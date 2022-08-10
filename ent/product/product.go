@@ -29,8 +29,8 @@ const (
 	FieldDescription = "description"
 	// FieldImage holds the string denoting the image field in the database.
 	FieldImage = "image"
-	// EdgeOrders holds the string denoting the orders edge name in mutations.
-	EdgeOrders = "orders"
+	// EdgeOrderDetails holds the string denoting the order_details edge name in mutations.
+	EdgeOrderDetails = "order_details"
 	// EdgeFavourites holds the string denoting the favourites edge name in mutations.
 	EdgeFavourites = "favourites"
 	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
@@ -41,13 +41,13 @@ const (
 	EdgeMinor = "minor"
 	// Table holds the table name of the product in the database.
 	Table = "products"
-	// OrdersTable is the table that holds the orders relation/edge.
-	OrdersTable = "order_details"
-	// OrdersInverseTable is the table name for the OrderDetail entity.
+	// OrderDetailsTable is the table that holds the order_details relation/edge.
+	OrderDetailsTable = "order_details"
+	// OrderDetailsInverseTable is the table name for the OrderDetail entity.
 	// It exists in this package in order to avoid circular dependency with the "orderdetail" package.
-	OrdersInverseTable = "order_details"
-	// OrdersColumn is the table column denoting the orders relation/edge.
-	OrdersColumn = "product_orders"
+	OrderDetailsInverseTable = "order_details"
+	// OrderDetailsColumn is the table column denoting the order_details relation/edge.
+	OrderDetailsColumn = "product_order_details"
 	// FavouritesTable is the table that holds the favourites relation/edge.
 	FavouritesTable = "favourites"
 	// FavouritesInverseTable is the table name for the Favourite entity.

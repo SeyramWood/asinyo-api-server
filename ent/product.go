@@ -47,8 +47,8 @@ type Product struct {
 
 // ProductEdges holds the relations/edges for other nodes in the graph.
 type ProductEdges struct {
-	// Orders holds the value of the orders edge.
-	Orders []*OrderDetail `json:"orders,omitempty"`
+	// OrderDetails holds the value of the order_details edge.
+	OrderDetails []*OrderDetail `json:"order_details,omitempty"`
 	// Favourites holds the value of the favourites edge.
 	Favourites []*Favourite `json:"favourites,omitempty"`
 	// Merchant holds the value of the merchant edge.
@@ -62,13 +62,13 @@ type ProductEdges struct {
 	loadedTypes [5]bool
 }
 
-// OrdersOrErr returns the Orders value or an error if the edge
+// OrderDetailsOrErr returns the OrderDetails value or an error if the edge
 // was not loaded in eager-loading.
-func (e ProductEdges) OrdersOrErr() ([]*OrderDetail, error) {
+func (e ProductEdges) OrderDetailsOrErr() ([]*OrderDetail, error) {
 	if e.loadedTypes[0] {
-		return e.Orders, nil
+		return e.OrderDetails, nil
 	}
-	return nil, &NotLoadedError{edge: "orders"}
+	return nil, &NotLoadedError{edge: "order_details"}
 }
 
 // FavouritesOrErr returns the Favourites value or an error if the edge
@@ -243,9 +243,9 @@ func (pr *Product) assignValues(columns []string, values []interface{}) error {
 	return nil
 }
 
-// QueryOrders queries the "orders" edge of the Product entity.
-func (pr *Product) QueryOrders() *OrderDetailQuery {
-	return (&ProductClient{config: pr.config}).QueryOrders(pr)
+// QueryOrderDetails queries the "order_details" edge of the Product entity.
+func (pr *Product) QueryOrderDetails() *OrderDetailQuery {
+	return (&ProductClient{config: pr.config}).QueryOrderDetails(pr)
 }
 
 // QueryFavourites queries the "favourites" edge of the Product entity.

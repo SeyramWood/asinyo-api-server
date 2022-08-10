@@ -2,13 +2,15 @@ package api
 
 import (
 	"errors"
+
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/product"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/pkg/storage"
-	"github.com/gofiber/fiber/v2"
 )
 
 type ProductHandler struct {
@@ -223,22 +225,26 @@ func (h *ProductHandler) Create() fiber.Handler {
 
 		file, err := c.FormFile("image")
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Upload error",
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
 		}
 
 		fPath, err := storage.NewUploadCare().Client().Upload(file, "product")
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Upload error",
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
 		}
 
 		result, err := h.service.Create(&request, fPath)
 
 		if err != nil {
-			//Delete file from remote server
+			// Delete file from remote server
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(errors.New("error creating merchant")))
 		}
 
@@ -260,9 +266,11 @@ func (h *ProductHandler) Create() fiber.Handler {
 			return c.JSON(presenters.ProductRetailerResponse(prod))
 		}
 
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"msg": "URL not found",
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(
+			fiber.Map{
+				"msg": "Bad Request",
+			},
+		)
 	}
 }
 
@@ -283,9 +291,11 @@ func (h *ProductHandler) Delete() fiber.Handler {
 		if err := h.service.Remove(c.Params("id")); err != nil {
 			return c.Status(fiber.StatusNotFound).JSON(presenters.ProductErrorResponse(err))
 		}
-		return c.Status(fiber.StatusOK).JSON(&fiber.Map{
-			"status": true,
-			"error":  nil,
-		})
+		return c.Status(fiber.StatusOK).JSON(
+			&fiber.Map{
+				"status": true,
+				"error":  nil,
+			},
+		)
 	}
 }

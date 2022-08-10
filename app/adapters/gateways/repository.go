@@ -1,6 +1,8 @@
 package gateways
 
 import (
+	"github.com/Jeffail/gabs"
+
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent"
 )
@@ -112,13 +114,16 @@ type (
 	}
 
 	OrderRepo interface {
-		Insert(order *models.OrderResponse) error
+		Insert(order *models.OrderResponse) (*ent.Order, error)
 		Read(id int) (*ent.Order, error)
 		ReadByUser(userType string, id int) (*ent.Order, error)
 		ReadAll() ([]*ent.Order, error)
-		ReadByAllUser(userType string, id int) ([]*ent.Order, error)
+		ReadAllByUser(userType string, id int) ([]*ent.Order, error)
+		ReadAllByStore(id int) ([]*ent.Order, error)
+		ReadByStore(id, merchantId int) (*ent.Order, error)
 		Update(order *models.OrderResponse) (*ent.Order, error)
 		Delete(id string) error
+		UpdateOrderDetailStatus(requests map[string]*gabs.Container) (*ent.Order, error)
 	}
 
 	AuthRepo interface {

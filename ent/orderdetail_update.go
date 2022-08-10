@@ -121,6 +121,20 @@ func (odu *OrderDetailUpdate) AddQuantity(i int) *OrderDetailUpdate {
 	return odu
 }
 
+// SetStatus sets the "status" field.
+func (odu *OrderDetailUpdate) SetStatus(o orderdetail.Status) *OrderDetailUpdate {
+	odu.mutation.SetStatus(o)
+	return odu
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (odu *OrderDetailUpdate) SetNillableStatus(o *orderdetail.Status) *OrderDetailUpdate {
+	if o != nil {
+		odu.SetStatus(*o)
+	}
+	return odu
+}
+
 // SetOrderID sets the "Order" edge to the Order entity by ID.
 func (odu *OrderDetailUpdate) SetOrderID(id int) *OrderDetailUpdate {
 	odu.mutation.SetOrderID(id)
@@ -248,6 +262,11 @@ func (odu *OrderDetailUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (odu *OrderDetailUpdate) check() error {
+	if v, ok := odu.mutation.Status(); ok {
+		if err := orderdetail.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "OrderDetail.status": %w`, err)}
+		}
+	}
 	if _, ok := odu.mutation.OrderID(); odu.mutation.OrderCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "OrderDetail.Order"`)
 	}
@@ -339,6 +358,13 @@ func (odu *OrderDetailUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeInt,
 			Value:  value,
 			Column: orderdetail.FieldQuantity,
+		})
+	}
+	if value, ok := odu.mutation.Status(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: orderdetail.FieldStatus,
 		})
 	}
 	if odu.mutation.OrderCleared() {
@@ -555,6 +581,20 @@ func (oduo *OrderDetailUpdateOne) AddQuantity(i int) *OrderDetailUpdateOne {
 	return oduo
 }
 
+// SetStatus sets the "status" field.
+func (oduo *OrderDetailUpdateOne) SetStatus(o orderdetail.Status) *OrderDetailUpdateOne {
+	oduo.mutation.SetStatus(o)
+	return oduo
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (oduo *OrderDetailUpdateOne) SetNillableStatus(o *orderdetail.Status) *OrderDetailUpdateOne {
+	if o != nil {
+		oduo.SetStatus(*o)
+	}
+	return oduo
+}
+
 // SetOrderID sets the "Order" edge to the Order entity by ID.
 func (oduo *OrderDetailUpdateOne) SetOrderID(id int) *OrderDetailUpdateOne {
 	oduo.mutation.SetOrderID(id)
@@ -689,6 +729,11 @@ func (oduo *OrderDetailUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (oduo *OrderDetailUpdateOne) check() error {
+	if v, ok := oduo.mutation.Status(); ok {
+		if err := orderdetail.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "OrderDetail.status": %w`, err)}
+		}
+	}
 	if _, ok := oduo.mutation.OrderID(); oduo.mutation.OrderCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "OrderDetail.Order"`)
 	}
@@ -797,6 +842,13 @@ func (oduo *OrderDetailUpdateOne) sqlSave(ctx context.Context) (_node *OrderDeta
 			Type:   field.TypeInt,
 			Value:  value,
 			Column: orderdetail.FieldQuantity,
+		})
+	}
+	if value, ok := oduo.mutation.Status(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: orderdetail.FieldStatus,
 		})
 	}
 	if oduo.mutation.OrderCleared() {

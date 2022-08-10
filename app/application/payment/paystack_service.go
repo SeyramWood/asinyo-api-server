@@ -28,7 +28,7 @@ func NewPaystackService(repo gateways.PaymentRepo) gateways.PaymentService {
 	}
 }
 
-func (p paystackService) Pay(model interface{}) (*http.Response, error) {
+func (p paystackService) Pay(model interface{}) (interface{}, error) {
 	request := model.(models.OrderRequest)
 	data := models.OrderRequest{
 		Amount:   request.Amount,
@@ -40,7 +40,7 @@ func (p paystackService) Pay(model interface{}) (*http.Response, error) {
 	return p.initiateTransaction(data)
 }
 
-func (p paystackService) Verify(reference string) (*http.Response, error) {
+func (p paystackService) Verify(reference string) (interface{}, error) {
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/transaction/verify/%s", p.URL, reference), nil)
 	if err != nil {
@@ -62,7 +62,6 @@ func (p paystackService) initiateTransaction(request models.OrderRequest) (*http
 	payloadBytes, err := json.Marshal(request)
 
 	if err != nil {
-
 		return nil, err
 	}
 

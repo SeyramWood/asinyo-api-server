@@ -287,18 +287,6 @@ func init() {
 	orderDescDeliveryFee := orderFields[3].Descriptor()
 	// order.DefaultDeliveryFee holds the default value on creation for the delivery_fee field.
 	order.DefaultDeliveryFee = orderDescDeliveryFee.Default.(float64)
-	// orderDescReference is the schema descriptor for reference field.
-	orderDescReference := orderFields[4].Descriptor()
-	// order.ReferenceValidator is a validator for the "reference" field. It is called by the builders before save.
-	order.ReferenceValidator = orderDescReference.Validators[0].(func(string) error)
-	// orderDescChannel is the schema descriptor for channel field.
-	orderDescChannel := orderFields[5].Descriptor()
-	// order.ChannelValidator is a validator for the "channel" field. It is called by the builders before save.
-	order.ChannelValidator = orderDescChannel.Validators[0].(func(string) error)
-	// orderDescPaidAt is the schema descriptor for paid_at field.
-	orderDescPaidAt := orderFields[6].Descriptor()
-	// order.PaidAtValidator is a validator for the "paid_at" field. It is called by the builders before save.
-	order.PaidAtValidator = orderDescPaidAt.Validators[0].(func(string) error)
 	orderdetailMixin := schema.OrderDetail{}.Mixin()
 	orderdetailMixinFields0 := orderdetailMixin[0].Fields()
 	_ = orderdetailMixinFields0

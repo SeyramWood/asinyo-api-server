@@ -1199,14 +1199,30 @@ func (c *MerchantStoreClient) QueryMerchant(ms *MerchantStore) *MerchantQuery {
 }
 
 // QueryOrders queries the orders edge of a MerchantStore.
-func (c *MerchantStoreClient) QueryOrders(ms *MerchantStore) *OrderDetailQuery {
+func (c *MerchantStoreClient) QueryOrders(ms *MerchantStore) *OrderQuery {
+	query := &OrderQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ms.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, merchantstore.OrdersTable, merchantstore.OrdersPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(ms.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOrderDetails queries the order_details edge of a MerchantStore.
+func (c *MerchantStoreClient) QueryOrderDetails(ms *MerchantStore) *OrderDetailQuery {
 	query := &OrderDetailQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := ms.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, id),
 			sqlgraph.To(orderdetail.Table, orderdetail.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, merchantstore.OrdersTable, merchantstore.OrdersColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchantstore.OrderDetailsTable, merchantstore.OrderDetailsColumn),
 		)
 		fromV = sqlgraph.Neighbors(ms.driver.Dialect(), step)
 		return fromV, nil
@@ -1393,6 +1409,22 @@ func (c *OrderClient) QueryPickup(o *Order) *PickupStationQuery {
 			sqlgraph.From(order.Table, order.FieldID, id),
 			sqlgraph.To(pickupstation.Table, pickupstation.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, order.PickupTable, order.PickupColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStores queries the stores edge of a Order.
+func (c *OrderClient) QueryStores(o *Order) *MerchantStoreQuery {
+	query := &MerchantStoreQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, order.StoresTable, order.StoresPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
 		return fromV, nil
@@ -1734,15 +1766,15 @@ func (c *ProductClient) GetX(ctx context.Context, id int) *Product {
 	return obj
 }
 
-// QueryOrders queries the orders edge of a Product.
-func (c *ProductClient) QueryOrders(pr *Product) *OrderDetailQuery {
+// QueryOrderDetails queries the order_details edge of a Product.
+func (c *ProductClient) QueryOrderDetails(pr *Product) *OrderDetailQuery {
 	query := &OrderDetailQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := pr.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(product.Table, product.FieldID, id),
 			sqlgraph.To(orderdetail.Table, orderdetail.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, product.OrdersTable, product.OrdersColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, product.OrderDetailsTable, product.OrderDetailsColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil

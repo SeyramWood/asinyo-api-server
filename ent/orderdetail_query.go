@@ -489,10 +489,10 @@ func (odq *OrderDetailQuery) sqlAll(ctx context.Context) ([]*OrderDetail, error)
 		ids := make([]int, 0, len(nodes))
 		nodeids := make(map[int][]*OrderDetail)
 		for i := range nodes {
-			if nodes[i].product_orders == nil {
+			if nodes[i].product_order_details == nil {
 				continue
 			}
-			fk := *nodes[i].product_orders
+			fk := *nodes[i].product_order_details
 			if _, ok := nodeids[fk]; !ok {
 				ids = append(ids, fk)
 			}
@@ -506,7 +506,7 @@ func (odq *OrderDetailQuery) sqlAll(ctx context.Context) ([]*OrderDetail, error)
 		for _, n := range neighbors {
 			nodes, ok := nodeids[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "product_orders" returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "product_order_details" returned %v`, n.ID)
 			}
 			for i := range nodes {
 				nodes[i].Edges.Product = n
@@ -518,10 +518,10 @@ func (odq *OrderDetailQuery) sqlAll(ctx context.Context) ([]*OrderDetail, error)
 		ids := make([]int, 0, len(nodes))
 		nodeids := make(map[int][]*OrderDetail)
 		for i := range nodes {
-			if nodes[i].merchant_store_orders == nil {
+			if nodes[i].merchant_store_order_details == nil {
 				continue
 			}
-			fk := *nodes[i].merchant_store_orders
+			fk := *nodes[i].merchant_store_order_details
 			if _, ok := nodeids[fk]; !ok {
 				ids = append(ids, fk)
 			}
@@ -535,7 +535,7 @@ func (odq *OrderDetailQuery) sqlAll(ctx context.Context) ([]*OrderDetail, error)
 		for _, n := range neighbors {
 			nodes, ok := nodeids[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "merchant_store_orders" returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "merchant_store_order_details" returned %v`, n.ID)
 			}
 			for i := range nodes {
 				nodes[i].Edges.Store = n

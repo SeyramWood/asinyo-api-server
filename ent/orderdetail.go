@@ -31,12 +31,14 @@ type OrderDetail struct {
 	Amount float64 `json:"amount,omitempty"`
 	// Quantity holds the value of the "quantity" field.
 	Quantity int `json:"quantity,omitempty"`
+	// Status holds the value of the "status" field.
+	Status orderdetail.Status `json:"status,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OrderDetailQuery when eager-loading is set.
-	Edges                 OrderDetailEdges `json:"edges"`
-	merchant_store_orders *int
-	order_details         *int
-	product_orders        *int
+	Edges                        OrderDetailEdges `json:"edges"`
+	merchant_store_order_details *int
+	order_details                *int
+	product_order_details        *int
 }
 
 // OrderDetailEdges holds the relations/edges for other nodes in the graph.
@@ -103,13 +105,15 @@ func (*OrderDetail) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullFloat64)
 		case orderdetail.FieldID, orderdetail.FieldQuantity:
 			values[i] = new(sql.NullInt64)
+		case orderdetail.FieldStatus:
+			values[i] = new(sql.NullString)
 		case orderdetail.FieldCreatedAt, orderdetail.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case orderdetail.ForeignKeys[0]: // merchant_store_orders
+		case orderdetail.ForeignKeys[0]: // merchant_store_order_details
 			values[i] = new(sql.NullInt64)
 		case orderdetail.ForeignKeys[1]: // order_details
 			values[i] = new(sql.NullInt64)
-		case orderdetail.ForeignKeys[2]: // product_orders
+		case orderdetail.ForeignKeys[2]: // product_order_details
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type OrderDetail", columns[i])
@@ -168,12 +172,18 @@ func (od *OrderDetail) assignValues(columns []string, values []interface{}) erro
 			} else if value.Valid {
 				od.Quantity = int(value.Int64)
 			}
+		case orderdetail.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				od.Status = orderdetail.Status(value.String)
+			}
 		case orderdetail.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field merchant_store_orders", value)
+				return fmt.Errorf("unexpected type %T for edge-field merchant_store_order_details", value)
 			} else if value.Valid {
-				od.merchant_store_orders = new(int)
-				*od.merchant_store_orders = int(value.Int64)
+				od.merchant_store_order_details = new(int)
+				*od.merchant_store_order_details = int(value.Int64)
 			}
 		case orderdetail.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -184,10 +194,10 @@ func (od *OrderDetail) assignValues(columns []string, values []interface{}) erro
 			}
 		case orderdetail.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field product_orders", value)
+				return fmt.Errorf("unexpected type %T for edge-field product_order_details", value)
 			} else if value.Valid {
-				od.product_orders = new(int)
-				*od.product_orders = int(value.Int64)
+				od.product_order_details = new(int)
+				*od.product_order_details = int(value.Int64)
 			}
 		}
 	}
@@ -244,6 +254,8 @@ func (od *OrderDetail) String() string {
 	builder.WriteString(fmt.Sprintf("%v", od.Amount))
 	builder.WriteString(", quantity=")
 	builder.WriteString(fmt.Sprintf("%v", od.Quantity))
+	builder.WriteString(", status=")
+	builder.WriteString(fmt.Sprintf("%v", od.Status))
 	builder.WriteByte(')')
 	return builder.String()
 }

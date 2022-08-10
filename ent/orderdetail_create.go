@@ -107,6 +107,20 @@ func (odc *OrderDetailCreate) SetNillableQuantity(i *int) *OrderDetailCreate {
 	return odc
 }
 
+// SetStatus sets the "status" field.
+func (odc *OrderDetailCreate) SetStatus(o orderdetail.Status) *OrderDetailCreate {
+	odc.mutation.SetStatus(o)
+	return odc
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (odc *OrderDetailCreate) SetNillableStatus(o *orderdetail.Status) *OrderDetailCreate {
+	if o != nil {
+		odc.SetStatus(*o)
+	}
+	return odc
+}
+
 // SetOrderID sets the "Order" edge to the Order entity by ID.
 func (odc *OrderDetailCreate) SetOrderID(id int) *OrderDetailCreate {
 	odc.mutation.SetOrderID(id)
@@ -235,6 +249,10 @@ func (odc *OrderDetailCreate) defaults() {
 		v := orderdetail.DefaultQuantity
 		odc.mutation.SetQuantity(v)
 	}
+	if _, ok := odc.mutation.Status(); !ok {
+		v := orderdetail.DefaultStatus
+		odc.mutation.SetStatus(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -256,6 +274,14 @@ func (odc *OrderDetailCreate) check() error {
 	}
 	if _, ok := odc.mutation.Quantity(); !ok {
 		return &ValidationError{Name: "quantity", err: errors.New(`ent: missing required field "OrderDetail.quantity"`)}
+	}
+	if _, ok := odc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "OrderDetail.status"`)}
+	}
+	if v, ok := odc.mutation.Status(); ok {
+		if err := orderdetail.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "OrderDetail.status": %w`, err)}
+		}
 	}
 	if _, ok := odc.mutation.OrderID(); !ok {
 		return &ValidationError{Name: "Order", err: errors.New(`ent: missing required edge "OrderDetail.Order"`)}
@@ -341,6 +367,14 @@ func (odc *OrderDetailCreate) createSpec() (*OrderDetail, *sqlgraph.CreateSpec) 
 		})
 		_node.Quantity = value
 	}
+	if value, ok := odc.mutation.Status(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: orderdetail.FieldStatus,
+		})
+		_node.Status = value
+	}
 	if nodes := odc.mutation.OrderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -378,7 +412,7 @@ func (odc *OrderDetailCreate) createSpec() (*OrderDetail, *sqlgraph.CreateSpec) 
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.product_orders = &nodes[0]
+		_node.product_order_details = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := odc.mutation.StoreIDs(); len(nodes) > 0 {
@@ -398,7 +432,7 @@ func (odc *OrderDetailCreate) createSpec() (*OrderDetail, *sqlgraph.CreateSpec) 
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.merchant_store_orders = &nodes[0]
+		_node.merchant_store_order_details = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

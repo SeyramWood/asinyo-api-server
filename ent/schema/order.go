@@ -24,13 +24,16 @@ func (Order) Fields() []ent.Field {
 		field.String("currency").NotEmpty(),
 		field.Float("amount").Default(0.00),
 		field.Float("delivery_fee").Default(0.00),
-		field.String("reference").NotEmpty(),
-		field.String("channel").NotEmpty(),
-		field.String("paid_at").NotEmpty(),
+		field.String("reference").Nillable().Optional(),
+		field.String("channel").Nillable().Optional(),
+		field.String("paid_at").Nillable().Optional(),
 		field.Enum("delivery_method").
 			Values("HOD", "PSD"),
+		field.Enum("payment_method").
+			Values("ONLINE", "POD").
+			Default("ONLINE"),
 		field.Enum("status").
-			Values("pending", "shipping", "delivered").
+			Values("pending", "in_progress", "fulfilled", "canceled").
 			Default("pending"),
 		field.Time("delivered_at").Nillable().Optional(),
 	}
@@ -55,5 +58,7 @@ func (Order) Edges() []ent.Edge {
 		edge.From("pickup", PickupStation.Type).
 			Ref("orders").
 			Unique(),
+		edge.From("stores", MerchantStore.Type).
+			Ref("orders"),
 	}
 }

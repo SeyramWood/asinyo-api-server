@@ -37,6 +37,7 @@ type (
 		OrderNumber    string                    `json:"orderNumber"`
 		Address        string                    `json:"address"`
 		DeliveryMethod string                    `json:"deliveryMethod"`
+		PaymentMethod  string                    `json:"paymentMethod"`
 		DeliveryFee    string                    `json:"deliveryFee"`
 		Pickup         string                    `json:"pickup"`
 		Products       []*ProductDetailsResponse `json:"products"`

@@ -2,34 +2,36 @@ package api
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
+
 	"github.com/Jeffail/gabs"
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/order"
 	"github.com/SeyramWood/app/application/payment"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/gofiber/fiber/v2"
-	"io/ioutil"
-	"strings"
-	"sync"
 )
 
-type PaymentHandler struct {
+type PaystackHandler struct {
 	service   gateways.PaymentService
 	orderServ gateways.OrderService
 }
 
-func NewPaystackHandler(db *database.Adapter) *PaymentHandler {
+func NewPaystackHandler(db *database.Adapter) *PaystackHandler {
 	service := payment.NewPaymentService(payment.NewPaymentRepo(db), "paystack")
 	serv := order.NewOrderService(order.NewOrderRepo(db))
-	return &PaymentHandler{
+	return &PaystackHandler{
 		service:   service,
 		orderServ: serv,
 	}
 }
 
-func (h *PaymentHandler) InitiateTransaction() fiber.Handler {
+func (h *PaystackHandler) InitiateTransaction() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var request models.OrderRequest
 
@@ -40,31 +42,31 @@ func (h *PaymentHandler) InitiateTransaction() fiber.Handler {
 		}
 
 		response, err := h.service.Pay(request)
-
-		defer response.Body.Close()
+		res := response.(*http.Response)
+		defer res.Body.Close()
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.PaymentErrorResponse(err))
 		}
 
-		return c.JSON(presenters.PaystackInitiateTransactionResponse(response))
+		return c.JSON(presenters.PaystackInitiateTransactionResponse(res))
 	}
 }
 
-func (h *PaymentHandler) VerifyTransaction() fiber.Handler {
+func (h *PaystackHandler) VerifyTransaction() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		response, err := h.service.Verify(c.Params("reference"))
-
+		res := response.(*http.Response)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.PaymentErrorResponse(err))
 		}
 
-		body, bErr := ioutil.ReadAll(response.Body)
+		body, bErr := ioutil.ReadAll(res.Body)
 		if bErr != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.PaymentErrorResponse(bErr))
 		}
-		defer response.Body.Close()
+		defer res.Body.Close()
 
 		resBody, err := gabs.ParseJSON(body)
 
@@ -72,68 +74,41 @@ func (h *PaymentHandler) VerifyTransaction() fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.PaymentErrorResponse(err))
 		}
 
-		return c.JSON(fiber.Map{"res": map[string]interface{}{
-			"status":  resBody.Path("status").Data(),
-			"message": resBody.Path("message").Data(),
-		}})
+		return c.JSON(
+			fiber.Map{
+				"res": map[string]interface{}{
+					"status":  resBody.Path("status").Data(),
+					"message": resBody.Path("message").Data(),
+				},
+			},
+		)
 
 	}
 }
 
-func (h *PaymentHandler) WebhookResponse() fiber.Handler {
+func (h *PaystackHandler) SaveOrder() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		resBody, err := gabs.ParseJSON(c.Body())
+		orderData, err := h.orderServ.FormatOrderRequest(c.Body())
 
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))
 		}
 
-		response := models.OrderResponse{
-			Event:     resBody.Path("event").Data().(string),
-			Amount:    resBody.Path("data.amount").Data().(float64),
-			Currency:  resBody.Path("data.currency").Data().(string),
-			Channel:   resBody.Path("data.channel").Data().(string),
-			Reference: resBody.Path("data.reference").Data().(string),
-			PaidAt:    resBody.Path("data.paid_at").Data().(string),
-			MetaData: &models.OrderResponseMetadata{
-				User:           resBody.Path("data.metadata.user").Data().(string),
-				UserType:       resBody.Path("data.metadata.userType").Data().(string),
-				OrderNumber:    resBody.Path("data.metadata.orderNumber").Data().(string),
-				Address:        resBody.Path("data.metadata.address").Data().(string),
-				DeliveryMethod: resBody.Path("data.metadata.deliveryMethod").Data().(string),
-				DeliveryFee:    resBody.Path("data.metadata.deliveryFee").Data().(string),
-				Pickup:         resBody.Path("data.metadata.pickup").Data().(string),
-				Products: func() []*models.ProductDetailsResponse {
-					var products []*models.ProductDetailsResponse
-					children, _ := resBody.Path("data.metadata.products").Children()
-					wg := sync.WaitGroup{}
-					for _, child := range children {
-						wg.Add(1)
-						go func(child *gabs.Container) {
-							defer wg.Done()
-							pro := child.Data().(map[string]interface{})
-							products = append(products, &models.ProductDetailsResponse{
-								ID:         pro["id"].(string),
-								Store:      pro["store"].(string),
-								Quantity:   pro["quantity"].(string),
-								Price:      pro["price"].(string),
-								PromoPrice: pro["promoPrice"].(string),
-							})
-						}(child)
-					}
-					wg.Wait()
-					return products
-				}(),
-			},
-		}
-
-		if strings.Compare(response.Event, "charge.success") == 0 {
-			if err := h.orderServ.Create(&response); err != nil {
+		if strings.Compare(orderData.Event, "charge.success") == 0 {
+			if _, err := h.orderServ.Create(orderData); err != nil {
 				fmt.Println("Ooops! Error while creating order\nERROR:\n", err)
 			}
+			return c.Status(fiber.StatusOK).JSON(
+				fiber.Map{
+					"msg": "Order saved successfully",
+				},
+			)
 		}
-
-		return nil
+		return c.Status(fiber.StatusBadRequest).JSON(
+			fiber.Map{
+				"msg": "Bad Request",
+			},
+		)
 	}
 }

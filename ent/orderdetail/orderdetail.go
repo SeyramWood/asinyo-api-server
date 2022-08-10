@@ -3,6 +3,7 @@
 package orderdetail
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -23,6 +24,8 @@ const (
 	FieldAmount = "amount"
 	// FieldQuantity holds the string denoting the quantity field in the database.
 	FieldQuantity = "quantity"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
 	// EdgeOrder holds the string denoting the order edge name in mutations.
 	EdgeOrder = "Order"
 	// EdgeProduct holds the string denoting the product edge name in mutations.
@@ -44,14 +47,14 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "product" package.
 	ProductInverseTable = "products"
 	// ProductColumn is the table column denoting the product relation/edge.
-	ProductColumn = "product_orders"
+	ProductColumn = "product_order_details"
 	// StoreTable is the table that holds the store relation/edge.
 	StoreTable = "order_details"
 	// StoreInverseTable is the table name for the MerchantStore entity.
 	// It exists in this package in order to avoid circular dependency with the "merchantstore" package.
 	StoreInverseTable = "merchant_stores"
 	// StoreColumn is the table column denoting the store relation/edge.
-	StoreColumn = "merchant_store_orders"
+	StoreColumn = "merchant_store_order_details"
 )
 
 // Columns holds all SQL columns for orderdetail fields.
@@ -63,14 +66,15 @@ var Columns = []string{
 	FieldPromoPrice,
 	FieldAmount,
 	FieldQuantity,
+	FieldStatus,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "order_details"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"merchant_store_orders",
+	"merchant_store_order_details",
 	"order_details",
-	"product_orders",
+	"product_order_details",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -104,3 +108,32 @@ var (
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
 	DefaultQuantity int
 )
+
+// Status defines the type for the "status" enum field.
+type Status string
+
+// StatusPending is the default value of the Status enum.
+const DefaultStatus = StatusPending
+
+// Status values.
+const (
+	StatusPending    Status = "pending"
+	StatusProcessing Status = "processing"
+	StatusDispatched Status = "dispatched"
+	StatusDelivered  Status = "delivered"
+	StatusCanceled   Status = "canceled"
+)
+
+func (s Status) String() string {
+	return string(s)
+}
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s Status) error {
+	switch s {
+	case StatusPending, StatusProcessing, StatusDispatched, StatusDelivered, StatusCanceled:
+		return nil
+	default:
+		return fmt.Errorf("orderdetail: invalid enum value for status field: %q", s)
+	}
+}

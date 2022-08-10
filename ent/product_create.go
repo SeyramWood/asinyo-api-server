@@ -119,19 +119,19 @@ func (pc *ProductCreate) SetImage(s string) *ProductCreate {
 	return pc
 }
 
-// AddOrderIDs adds the "orders" edge to the OrderDetail entity by IDs.
-func (pc *ProductCreate) AddOrderIDs(ids ...int) *ProductCreate {
-	pc.mutation.AddOrderIDs(ids...)
+// AddOrderDetailIDs adds the "order_details" edge to the OrderDetail entity by IDs.
+func (pc *ProductCreate) AddOrderDetailIDs(ids ...int) *ProductCreate {
+	pc.mutation.AddOrderDetailIDs(ids...)
 	return pc
 }
 
-// AddOrders adds the "orders" edges to the OrderDetail entity.
-func (pc *ProductCreate) AddOrders(o ...*OrderDetail) *ProductCreate {
+// AddOrderDetails adds the "order_details" edges to the OrderDetail entity.
+func (pc *ProductCreate) AddOrderDetails(o ...*OrderDetail) *ProductCreate {
 	ids := make([]int, len(o))
 	for i := range o {
 		ids[i] = o[i].ID
 	}
-	return pc.AddOrderIDs(ids...)
+	return pc.AddOrderDetailIDs(ids...)
 }
 
 // AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
@@ -425,12 +425,12 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 		})
 		_node.Image = value
 	}
-	if nodes := pc.mutation.OrdersIDs(); len(nodes) > 0 {
+	if nodes := pc.mutation.OrderDetailsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   product.OrdersTable,
-			Columns: []string{product.OrdersColumn},
+			Table:   product.OrderDetailsTable,
+			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

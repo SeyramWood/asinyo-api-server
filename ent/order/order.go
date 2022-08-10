@@ -32,6 +32,8 @@ const (
 	FieldPaidAt = "paid_at"
 	// FieldDeliveryMethod holds the string denoting the delivery_method field in the database.
 	FieldDeliveryMethod = "delivery_method"
+	// FieldPaymentMethod holds the string denoting the payment_method field in the database.
+	FieldPaymentMethod = "payment_method"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldDeliveredAt holds the string denoting the delivered_at field in the database.
@@ -48,6 +50,8 @@ const (
 	EdgeAddress = "address"
 	// EdgePickup holds the string denoting the pickup edge name in mutations.
 	EdgePickup = "pickup"
+	// EdgeStores holds the string denoting the stores edge name in mutations.
+	EdgeStores = "stores"
 	// Table holds the table name of the order in the database.
 	Table = "orders"
 	// DetailsTable is the table that holds the details relation/edge.
@@ -92,6 +96,11 @@ const (
 	PickupInverseTable = "pickup_stations"
 	// PickupColumn is the table column denoting the pickup relation/edge.
 	PickupColumn = "pickup_station_orders"
+	// StoresTable is the table that holds the stores relation/edge. The primary key declared below.
+	StoresTable = "merchant_store_orders"
+	// StoresInverseTable is the table name for the MerchantStore entity.
+	// It exists in this package in order to avoid circular dependency with the "merchantstore" package.
+	StoresInverseTable = "merchant_stores"
 )
 
 // Columns holds all SQL columns for order fields.
@@ -107,6 +116,7 @@ var Columns = []string{
 	FieldChannel,
 	FieldPaidAt,
 	FieldDeliveryMethod,
+	FieldPaymentMethod,
 	FieldStatus,
 	FieldDeliveredAt,
 }
@@ -120,6 +130,12 @@ var ForeignKeys = []string{
 	"merchant_orders",
 	"pickup_station_orders",
 }
+
+var (
+	// StoresPrimaryKey and StoresColumn2 are the table columns denoting the
+	// primary key for the stores relation (M2M).
+	StoresPrimaryKey = []string{"merchant_store_id", "order_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -151,12 +167,6 @@ var (
 	DefaultAmount float64
 	// DefaultDeliveryFee holds the default value on creation for the "delivery_fee" field.
 	DefaultDeliveryFee float64
-	// ReferenceValidator is a validator for the "reference" field. It is called by the builders before save.
-	ReferenceValidator func(string) error
-	// ChannelValidator is a validator for the "channel" field. It is called by the builders before save.
-	ChannelValidator func(string) error
-	// PaidAtValidator is a validator for the "paid_at" field. It is called by the builders before save.
-	PaidAtValidator func(string) error
 )
 
 // DeliveryMethod defines the type for the "delivery_method" enum field.
@@ -182,6 +192,32 @@ func DeliveryMethodValidator(dm DeliveryMethod) error {
 	}
 }
 
+// PaymentMethod defines the type for the "payment_method" enum field.
+type PaymentMethod string
+
+// PaymentMethodONLINE is the default value of the PaymentMethod enum.
+const DefaultPaymentMethod = PaymentMethodONLINE
+
+// PaymentMethod values.
+const (
+	PaymentMethodONLINE PaymentMethod = "ONLINE"
+	PaymentMethodPOD    PaymentMethod = "POD"
+)
+
+func (pm PaymentMethod) String() string {
+	return string(pm)
+}
+
+// PaymentMethodValidator is a validator for the "payment_method" field enum values. It is called by the builders before save.
+func PaymentMethodValidator(pm PaymentMethod) error {
+	switch pm {
+	case PaymentMethodONLINE, PaymentMethodPOD:
+		return nil
+	default:
+		return fmt.Errorf("order: invalid enum value for payment_method field: %q", pm)
+	}
+}
+
 // Status defines the type for the "status" enum field.
 type Status string
 
@@ -190,9 +226,10 @@ const DefaultStatus = StatusPending
 
 // Status values.
 const (
-	StatusPending   Status = "pending"
-	StatusShipping  Status = "shipping"
-	StatusDelivered Status = "delivered"
+	StatusPending    Status = "pending"
+	StatusInProgress Status = "in_progress"
+	StatusFulfilled  Status = "fulfilled"
+	StatusCanceled   Status = "canceled"
 )
 
 func (s Status) String() string {
@@ -202,7 +239,7 @@ func (s Status) String() string {
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
 func StatusValidator(s Status) error {
 	switch s {
-	case StatusPending, StatusShipping, StatusDelivered:
+	case StatusPending, StatusInProgress, StatusFulfilled, StatusCanceled:
 		return nil
 	default:
 		return fmt.Errorf("order: invalid enum value for status field: %q", s)

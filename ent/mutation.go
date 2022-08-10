@@ -5526,30 +5526,33 @@ func (m *MerchantMutation) ResetEdge(name string) error {
 // MerchantStoreMutation represents an operation that mutates the MerchantStore nodes in the graph.
 type MerchantStoreMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int
-	created_at      *time.Time
-	updated_at      *time.Time
-	name            *string
-	about           *string
-	desc_title      *string
-	description     *string
-	logo            *string
-	images          *[]string
-	default_account *merchantstore.DefaultAccount
-	bank_account    **models.MerchantBankAccount
-	momo_account    **models.MerchantMomoAccount
-	merchant_type   *string
-	clearedFields   map[string]struct{}
-	merchant        *int
-	clearedmerchant bool
-	orders          map[int]struct{}
-	removedorders   map[int]struct{}
-	clearedorders   bool
-	done            bool
-	oldValue        func(context.Context) (*MerchantStore, error)
-	predicates      []predicate.MerchantStore
+	op                   Op
+	typ                  string
+	id                   *int
+	created_at           *time.Time
+	updated_at           *time.Time
+	name                 *string
+	about                *string
+	desc_title           *string
+	description          *string
+	logo                 *string
+	images               *[]string
+	default_account      *merchantstore.DefaultAccount
+	bank_account         **models.MerchantBankAccount
+	momo_account         **models.MerchantMomoAccount
+	merchant_type        *string
+	clearedFields        map[string]struct{}
+	merchant             *int
+	clearedmerchant      bool
+	orders               map[int]struct{}
+	removedorders        map[int]struct{}
+	clearedorders        bool
+	order_details        map[int]struct{}
+	removedorder_details map[int]struct{}
+	clearedorder_details bool
+	done                 bool
+	oldValue             func(context.Context) (*MerchantStore, error)
+	predicates           []predicate.MerchantStore
 }
 
 var _ ent.Mutation = (*MerchantStoreMutation)(nil)
@@ -6173,7 +6176,7 @@ func (m *MerchantStoreMutation) ResetMerchant() {
 	m.clearedmerchant = false
 }
 
-// AddOrderIDs adds the "orders" edge to the OrderDetail entity by ids.
+// AddOrderIDs adds the "orders" edge to the Order entity by ids.
 func (m *MerchantStoreMutation) AddOrderIDs(ids ...int) {
 	if m.orders == nil {
 		m.orders = make(map[int]struct{})
@@ -6183,17 +6186,17 @@ func (m *MerchantStoreMutation) AddOrderIDs(ids ...int) {
 	}
 }
 
-// ClearOrders clears the "orders" edge to the OrderDetail entity.
+// ClearOrders clears the "orders" edge to the Order entity.
 func (m *MerchantStoreMutation) ClearOrders() {
 	m.clearedorders = true
 }
 
-// OrdersCleared reports if the "orders" edge to the OrderDetail entity was cleared.
+// OrdersCleared reports if the "orders" edge to the Order entity was cleared.
 func (m *MerchantStoreMutation) OrdersCleared() bool {
 	return m.clearedorders
 }
 
-// RemoveOrderIDs removes the "orders" edge to the OrderDetail entity by IDs.
+// RemoveOrderIDs removes the "orders" edge to the Order entity by IDs.
 func (m *MerchantStoreMutation) RemoveOrderIDs(ids ...int) {
 	if m.removedorders == nil {
 		m.removedorders = make(map[int]struct{})
@@ -6204,7 +6207,7 @@ func (m *MerchantStoreMutation) RemoveOrderIDs(ids ...int) {
 	}
 }
 
-// RemovedOrders returns the removed IDs of the "orders" edge to the OrderDetail entity.
+// RemovedOrders returns the removed IDs of the "orders" edge to the Order entity.
 func (m *MerchantStoreMutation) RemovedOrdersIDs() (ids []int) {
 	for id := range m.removedorders {
 		ids = append(ids, id)
@@ -6225,6 +6228,60 @@ func (m *MerchantStoreMutation) ResetOrders() {
 	m.orders = nil
 	m.clearedorders = false
 	m.removedorders = nil
+}
+
+// AddOrderDetailIDs adds the "order_details" edge to the OrderDetail entity by ids.
+func (m *MerchantStoreMutation) AddOrderDetailIDs(ids ...int) {
+	if m.order_details == nil {
+		m.order_details = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.order_details[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOrderDetails clears the "order_details" edge to the OrderDetail entity.
+func (m *MerchantStoreMutation) ClearOrderDetails() {
+	m.clearedorder_details = true
+}
+
+// OrderDetailsCleared reports if the "order_details" edge to the OrderDetail entity was cleared.
+func (m *MerchantStoreMutation) OrderDetailsCleared() bool {
+	return m.clearedorder_details
+}
+
+// RemoveOrderDetailIDs removes the "order_details" edge to the OrderDetail entity by IDs.
+func (m *MerchantStoreMutation) RemoveOrderDetailIDs(ids ...int) {
+	if m.removedorder_details == nil {
+		m.removedorder_details = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.order_details, ids[i])
+		m.removedorder_details[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOrderDetails returns the removed IDs of the "order_details" edge to the OrderDetail entity.
+func (m *MerchantStoreMutation) RemovedOrderDetailsIDs() (ids []int) {
+	for id := range m.removedorder_details {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OrderDetailsIDs returns the "order_details" edge IDs in the mutation.
+func (m *MerchantStoreMutation) OrderDetailsIDs() (ids []int) {
+	for id := range m.order_details {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOrderDetails resets all changes to the "order_details" edge.
+func (m *MerchantStoreMutation) ResetOrderDetails() {
+	m.order_details = nil
+	m.clearedorder_details = false
+	m.removedorder_details = nil
 }
 
 // Where appends a list predicates to the MerchantStoreMutation builder.
@@ -6559,12 +6616,15 @@ func (m *MerchantStoreMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *MerchantStoreMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.merchant != nil {
 		edges = append(edges, merchantstore.EdgeMerchant)
 	}
 	if m.orders != nil {
 		edges = append(edges, merchantstore.EdgeOrders)
+	}
+	if m.order_details != nil {
+		edges = append(edges, merchantstore.EdgeOrderDetails)
 	}
 	return edges
 }
@@ -6583,15 +6643,24 @@ func (m *MerchantStoreMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case merchantstore.EdgeOrderDetails:
+		ids := make([]ent.Value, 0, len(m.order_details))
+		for id := range m.order_details {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *MerchantStoreMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedorders != nil {
 		edges = append(edges, merchantstore.EdgeOrders)
+	}
+	if m.removedorder_details != nil {
+		edges = append(edges, merchantstore.EdgeOrderDetails)
 	}
 	return edges
 }
@@ -6606,18 +6675,27 @@ func (m *MerchantStoreMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case merchantstore.EdgeOrderDetails:
+		ids := make([]ent.Value, 0, len(m.removedorder_details))
+		for id := range m.removedorder_details {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *MerchantStoreMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedmerchant {
 		edges = append(edges, merchantstore.EdgeMerchant)
 	}
 	if m.clearedorders {
 		edges = append(edges, merchantstore.EdgeOrders)
+	}
+	if m.clearedorder_details {
+		edges = append(edges, merchantstore.EdgeOrderDetails)
 	}
 	return edges
 }
@@ -6630,6 +6708,8 @@ func (m *MerchantStoreMutation) EdgeCleared(name string) bool {
 		return m.clearedmerchant
 	case merchantstore.EdgeOrders:
 		return m.clearedorders
+	case merchantstore.EdgeOrderDetails:
+		return m.clearedorder_details
 	}
 	return false
 }
@@ -6655,6 +6735,9 @@ func (m *MerchantStoreMutation) ResetEdge(name string) error {
 	case merchantstore.EdgeOrders:
 		m.ResetOrders()
 		return nil
+	case merchantstore.EdgeOrderDetails:
+		m.ResetOrderDetails()
+		return nil
 	}
 	return fmt.Errorf("unknown MerchantStore edge %s", name)
 }
@@ -6677,6 +6760,7 @@ type OrderMutation struct {
 	channel         *string
 	paid_at         *string
 	delivery_method *order.DeliveryMethod
+	payment_method  *order.PaymentMethod
 	status          *order.Status
 	delivered_at    *time.Time
 	clearedFields   map[string]struct{}
@@ -6693,6 +6777,9 @@ type OrderMutation struct {
 	clearedaddress  bool
 	pickup          *int
 	clearedpickup   bool
+	stores          map[int]struct{}
+	removedstores   map[int]struct{}
+	clearedstores   bool
 	done            bool
 	oldValue        func(context.Context) (*Order, error)
 	predicates      []predicate.Order
@@ -7069,7 +7156,7 @@ func (m *OrderMutation) Reference() (r string, exists bool) {
 // OldReference returns the old "reference" field's value of the Order entity.
 // If the Order object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OrderMutation) OldReference(ctx context.Context) (v string, err error) {
+func (m *OrderMutation) OldReference(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldReference is only allowed on UpdateOne operations")
 	}
@@ -7083,9 +7170,22 @@ func (m *OrderMutation) OldReference(ctx context.Context) (v string, err error) 
 	return oldValue.Reference, nil
 }
 
+// ClearReference clears the value of the "reference" field.
+func (m *OrderMutation) ClearReference() {
+	m.reference = nil
+	m.clearedFields[order.FieldReference] = struct{}{}
+}
+
+// ReferenceCleared returns if the "reference" field was cleared in this mutation.
+func (m *OrderMutation) ReferenceCleared() bool {
+	_, ok := m.clearedFields[order.FieldReference]
+	return ok
+}
+
 // ResetReference resets all changes to the "reference" field.
 func (m *OrderMutation) ResetReference() {
 	m.reference = nil
+	delete(m.clearedFields, order.FieldReference)
 }
 
 // SetChannel sets the "channel" field.
@@ -7105,7 +7205,7 @@ func (m *OrderMutation) Channel() (r string, exists bool) {
 // OldChannel returns the old "channel" field's value of the Order entity.
 // If the Order object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OrderMutation) OldChannel(ctx context.Context) (v string, err error) {
+func (m *OrderMutation) OldChannel(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
 	}
@@ -7119,9 +7219,22 @@ func (m *OrderMutation) OldChannel(ctx context.Context) (v string, err error) {
 	return oldValue.Channel, nil
 }
 
+// ClearChannel clears the value of the "channel" field.
+func (m *OrderMutation) ClearChannel() {
+	m.channel = nil
+	m.clearedFields[order.FieldChannel] = struct{}{}
+}
+
+// ChannelCleared returns if the "channel" field was cleared in this mutation.
+func (m *OrderMutation) ChannelCleared() bool {
+	_, ok := m.clearedFields[order.FieldChannel]
+	return ok
+}
+
 // ResetChannel resets all changes to the "channel" field.
 func (m *OrderMutation) ResetChannel() {
 	m.channel = nil
+	delete(m.clearedFields, order.FieldChannel)
 }
 
 // SetPaidAt sets the "paid_at" field.
@@ -7141,7 +7254,7 @@ func (m *OrderMutation) PaidAt() (r string, exists bool) {
 // OldPaidAt returns the old "paid_at" field's value of the Order entity.
 // If the Order object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OrderMutation) OldPaidAt(ctx context.Context) (v string, err error) {
+func (m *OrderMutation) OldPaidAt(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPaidAt is only allowed on UpdateOne operations")
 	}
@@ -7155,9 +7268,22 @@ func (m *OrderMutation) OldPaidAt(ctx context.Context) (v string, err error) {
 	return oldValue.PaidAt, nil
 }
 
+// ClearPaidAt clears the value of the "paid_at" field.
+func (m *OrderMutation) ClearPaidAt() {
+	m.paid_at = nil
+	m.clearedFields[order.FieldPaidAt] = struct{}{}
+}
+
+// PaidAtCleared returns if the "paid_at" field was cleared in this mutation.
+func (m *OrderMutation) PaidAtCleared() bool {
+	_, ok := m.clearedFields[order.FieldPaidAt]
+	return ok
+}
+
 // ResetPaidAt resets all changes to the "paid_at" field.
 func (m *OrderMutation) ResetPaidAt() {
 	m.paid_at = nil
+	delete(m.clearedFields, order.FieldPaidAt)
 }
 
 // SetDeliveryMethod sets the "delivery_method" field.
@@ -7194,6 +7320,42 @@ func (m *OrderMutation) OldDeliveryMethod(ctx context.Context) (v order.Delivery
 // ResetDeliveryMethod resets all changes to the "delivery_method" field.
 func (m *OrderMutation) ResetDeliveryMethod() {
 	m.delivery_method = nil
+}
+
+// SetPaymentMethod sets the "payment_method" field.
+func (m *OrderMutation) SetPaymentMethod(om order.PaymentMethod) {
+	m.payment_method = &om
+}
+
+// PaymentMethod returns the value of the "payment_method" field in the mutation.
+func (m *OrderMutation) PaymentMethod() (r order.PaymentMethod, exists bool) {
+	v := m.payment_method
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaymentMethod returns the old "payment_method" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldPaymentMethod(ctx context.Context) (v order.PaymentMethod, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPaymentMethod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPaymentMethod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaymentMethod: %w", err)
+	}
+	return oldValue.PaymentMethod, nil
+}
+
+// ResetPaymentMethod resets all changes to the "payment_method" field.
+func (m *OrderMutation) ResetPaymentMethod() {
+	m.payment_method = nil
 }
 
 // SetStatus sets the "status" field.
@@ -7530,6 +7692,60 @@ func (m *OrderMutation) ResetPickup() {
 	m.clearedpickup = false
 }
 
+// AddStoreIDs adds the "stores" edge to the MerchantStore entity by ids.
+func (m *OrderMutation) AddStoreIDs(ids ...int) {
+	if m.stores == nil {
+		m.stores = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.stores[ids[i]] = struct{}{}
+	}
+}
+
+// ClearStores clears the "stores" edge to the MerchantStore entity.
+func (m *OrderMutation) ClearStores() {
+	m.clearedstores = true
+}
+
+// StoresCleared reports if the "stores" edge to the MerchantStore entity was cleared.
+func (m *OrderMutation) StoresCleared() bool {
+	return m.clearedstores
+}
+
+// RemoveStoreIDs removes the "stores" edge to the MerchantStore entity by IDs.
+func (m *OrderMutation) RemoveStoreIDs(ids ...int) {
+	if m.removedstores == nil {
+		m.removedstores = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.stores, ids[i])
+		m.removedstores[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedStores returns the removed IDs of the "stores" edge to the MerchantStore entity.
+func (m *OrderMutation) RemovedStoresIDs() (ids []int) {
+	for id := range m.removedstores {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// StoresIDs returns the "stores" edge IDs in the mutation.
+func (m *OrderMutation) StoresIDs() (ids []int) {
+	for id := range m.stores {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetStores resets all changes to the "stores" edge.
+func (m *OrderMutation) ResetStores() {
+	m.stores = nil
+	m.clearedstores = false
+	m.removedstores = nil
+}
+
 // Where appends a list predicates to the OrderMutation builder.
 func (m *OrderMutation) Where(ps ...predicate.Order) {
 	m.predicates = append(m.predicates, ps...)
@@ -7549,7 +7765,7 @@ func (m *OrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, order.FieldCreatedAt)
 	}
@@ -7579,6 +7795,9 @@ func (m *OrderMutation) Fields() []string {
 	}
 	if m.delivery_method != nil {
 		fields = append(fields, order.FieldDeliveryMethod)
+	}
+	if m.payment_method != nil {
+		fields = append(fields, order.FieldPaymentMethod)
 	}
 	if m.status != nil {
 		fields = append(fields, order.FieldStatus)
@@ -7614,6 +7833,8 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 		return m.PaidAt()
 	case order.FieldDeliveryMethod:
 		return m.DeliveryMethod()
+	case order.FieldPaymentMethod:
+		return m.PaymentMethod()
 	case order.FieldStatus:
 		return m.Status()
 	case order.FieldDeliveredAt:
@@ -7647,6 +7868,8 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldPaidAt(ctx)
 	case order.FieldDeliveryMethod:
 		return m.OldDeliveryMethod(ctx)
+	case order.FieldPaymentMethod:
+		return m.OldPaymentMethod(ctx)
 	case order.FieldStatus:
 		return m.OldStatus(ctx)
 	case order.FieldDeliveredAt:
@@ -7730,6 +7953,13 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDeliveryMethod(v)
 		return nil
+	case order.FieldPaymentMethod:
+		v, ok := value.(order.PaymentMethod)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaymentMethod(v)
+		return nil
 	case order.FieldStatus:
 		v, ok := value.(order.Status)
 		if !ok {
@@ -7801,6 +8031,15 @@ func (m *OrderMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *OrderMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(order.FieldReference) {
+		fields = append(fields, order.FieldReference)
+	}
+	if m.FieldCleared(order.FieldChannel) {
+		fields = append(fields, order.FieldChannel)
+	}
+	if m.FieldCleared(order.FieldPaidAt) {
+		fields = append(fields, order.FieldPaidAt)
+	}
 	if m.FieldCleared(order.FieldDeliveredAt) {
 		fields = append(fields, order.FieldDeliveredAt)
 	}
@@ -7818,6 +8057,15 @@ func (m *OrderMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *OrderMutation) ClearField(name string) error {
 	switch name {
+	case order.FieldReference:
+		m.ClearReference()
+		return nil
+	case order.FieldChannel:
+		m.ClearChannel()
+		return nil
+	case order.FieldPaidAt:
+		m.ClearPaidAt()
+		return nil
 	case order.FieldDeliveredAt:
 		m.ClearDeliveredAt()
 		return nil
@@ -7859,6 +8107,9 @@ func (m *OrderMutation) ResetField(name string) error {
 	case order.FieldDeliveryMethod:
 		m.ResetDeliveryMethod()
 		return nil
+	case order.FieldPaymentMethod:
+		m.ResetPaymentMethod()
+		return nil
 	case order.FieldStatus:
 		m.ResetStatus()
 		return nil
@@ -7871,7 +8122,7 @@ func (m *OrderMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OrderMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.details != nil {
 		edges = append(edges, order.EdgeDetails)
 	}
@@ -7889,6 +8140,9 @@ func (m *OrderMutation) AddedEdges() []string {
 	}
 	if m.pickup != nil {
 		edges = append(edges, order.EdgePickup)
+	}
+	if m.stores != nil {
+		edges = append(edges, order.EdgeStores)
 	}
 	return edges
 }
@@ -7923,15 +8177,24 @@ func (m *OrderMutation) AddedIDs(name string) []ent.Value {
 		if id := m.pickup; id != nil {
 			return []ent.Value{*id}
 		}
+	case order.EdgeStores:
+		ids := make([]ent.Value, 0, len(m.stores))
+		for id := range m.stores {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OrderMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removeddetails != nil {
 		edges = append(edges, order.EdgeDetails)
+	}
+	if m.removedstores != nil {
+		edges = append(edges, order.EdgeStores)
 	}
 	return edges
 }
@@ -7946,13 +8209,19 @@ func (m *OrderMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case order.EdgeStores:
+		ids := make([]ent.Value, 0, len(m.removedstores))
+		for id := range m.removedstores {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OrderMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.cleareddetails {
 		edges = append(edges, order.EdgeDetails)
 	}
@@ -7970,6 +8239,9 @@ func (m *OrderMutation) ClearedEdges() []string {
 	}
 	if m.clearedpickup {
 		edges = append(edges, order.EdgePickup)
+	}
+	if m.clearedstores {
+		edges = append(edges, order.EdgeStores)
 	}
 	return edges
 }
@@ -7990,6 +8262,8 @@ func (m *OrderMutation) EdgeCleared(name string) bool {
 		return m.clearedaddress
 	case order.EdgePickup:
 		return m.clearedpickup
+	case order.EdgeStores:
+		return m.clearedstores
 	}
 	return false
 }
@@ -8039,6 +8313,9 @@ func (m *OrderMutation) ResetEdge(name string) error {
 	case order.EdgePickup:
 		m.ResetPickup()
 		return nil
+	case order.EdgeStores:
+		m.ResetStores()
+		return nil
 	}
 	return fmt.Errorf("unknown Order edge %s", name)
 }
@@ -8059,6 +8336,7 @@ type OrderDetailMutation struct {
 	addamount      *float64
 	quantity       *int
 	addquantity    *int
+	status         *orderdetail.Status
 	clearedFields  map[string]struct{}
 	_Order         *int
 	cleared_Order  bool
@@ -8465,6 +8743,42 @@ func (m *OrderDetailMutation) ResetQuantity() {
 	m.addquantity = nil
 }
 
+// SetStatus sets the "status" field.
+func (m *OrderDetailMutation) SetStatus(o orderdetail.Status) {
+	m.status = &o
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *OrderDetailMutation) Status() (r orderdetail.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the OrderDetail entity.
+// If the OrderDetail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderDetailMutation) OldStatus(ctx context.Context) (v orderdetail.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *OrderDetailMutation) ResetStatus() {
+	m.status = nil
+}
+
 // SetOrderID sets the "Order" edge to the Order entity by id.
 func (m *OrderDetailMutation) SetOrderID(id int) {
 	m._Order = &id
@@ -8601,7 +8915,7 @@ func (m *OrderDetailMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderDetailMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, orderdetail.FieldCreatedAt)
 	}
@@ -8619,6 +8933,9 @@ func (m *OrderDetailMutation) Fields() []string {
 	}
 	if m.quantity != nil {
 		fields = append(fields, orderdetail.FieldQuantity)
+	}
+	if m.status != nil {
+		fields = append(fields, orderdetail.FieldStatus)
 	}
 	return fields
 }
@@ -8640,6 +8957,8 @@ func (m *OrderDetailMutation) Field(name string) (ent.Value, bool) {
 		return m.Amount()
 	case orderdetail.FieldQuantity:
 		return m.Quantity()
+	case orderdetail.FieldStatus:
+		return m.Status()
 	}
 	return nil, false
 }
@@ -8661,6 +8980,8 @@ func (m *OrderDetailMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldAmount(ctx)
 	case orderdetail.FieldQuantity:
 		return m.OldQuantity(ctx)
+	case orderdetail.FieldStatus:
+		return m.OldStatus(ctx)
 	}
 	return nil, fmt.Errorf("unknown OrderDetail field %s", name)
 }
@@ -8711,6 +9032,13 @@ func (m *OrderDetailMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetQuantity(v)
+		return nil
+	case orderdetail.FieldStatus:
+		v, ok := value.(orderdetail.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
 		return nil
 	}
 	return fmt.Errorf("unknown OrderDetail field %s", name)
@@ -8829,6 +9157,9 @@ func (m *OrderDetailMutation) ResetField(name string) error {
 		return nil
 	case orderdetail.FieldQuantity:
 		m.ResetQuantity()
+		return nil
+	case orderdetail.FieldStatus:
+		m.ResetStatus()
 		return nil
 	}
 	return fmt.Errorf("unknown OrderDetail field %s", name)
@@ -9623,37 +9954,37 @@ func (m *PickupStationMutation) ResetEdge(name string) error {
 // ProductMutation represents an operation that mutates the Product nodes in the graph.
 type ProductMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	created_at        *time.Time
-	updated_at        *time.Time
-	name              *string
-	price             *float64
-	addprice          *float64
-	promo_price       *float64
-	addpromo_price    *float64
-	quantity          *uint32
-	addquantity       *int32
-	unit              *string
-	description       *string
-	image             *string
-	clearedFields     map[string]struct{}
-	orders            map[int]struct{}
-	removedorders     map[int]struct{}
-	clearedorders     bool
-	favourites        map[int]struct{}
-	removedfavourites map[int]struct{}
-	clearedfavourites bool
-	merchant          *int
-	clearedmerchant   bool
-	major             *int
-	clearedmajor      bool
-	minor             *int
-	clearedminor      bool
-	done              bool
-	oldValue          func(context.Context) (*Product, error)
-	predicates        []predicate.Product
+	op                   Op
+	typ                  string
+	id                   *int
+	created_at           *time.Time
+	updated_at           *time.Time
+	name                 *string
+	price                *float64
+	addprice             *float64
+	promo_price          *float64
+	addpromo_price       *float64
+	quantity             *uint32
+	addquantity          *int32
+	unit                 *string
+	description          *string
+	image                *string
+	clearedFields        map[string]struct{}
+	order_details        map[int]struct{}
+	removedorder_details map[int]struct{}
+	clearedorder_details bool
+	favourites           map[int]struct{}
+	removedfavourites    map[int]struct{}
+	clearedfavourites    bool
+	merchant             *int
+	clearedmerchant      bool
+	major                *int
+	clearedmajor         bool
+	minor                *int
+	clearedminor         bool
+	done                 bool
+	oldValue             func(context.Context) (*Product, error)
+	predicates           []predicate.Product
 }
 
 var _ ent.Mutation = (*ProductMutation)(nil)
@@ -10152,58 +10483,58 @@ func (m *ProductMutation) ResetImage() {
 	m.image = nil
 }
 
-// AddOrderIDs adds the "orders" edge to the OrderDetail entity by ids.
-func (m *ProductMutation) AddOrderIDs(ids ...int) {
-	if m.orders == nil {
-		m.orders = make(map[int]struct{})
+// AddOrderDetailIDs adds the "order_details" edge to the OrderDetail entity by ids.
+func (m *ProductMutation) AddOrderDetailIDs(ids ...int) {
+	if m.order_details == nil {
+		m.order_details = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.orders[ids[i]] = struct{}{}
+		m.order_details[ids[i]] = struct{}{}
 	}
 }
 
-// ClearOrders clears the "orders" edge to the OrderDetail entity.
-func (m *ProductMutation) ClearOrders() {
-	m.clearedorders = true
+// ClearOrderDetails clears the "order_details" edge to the OrderDetail entity.
+func (m *ProductMutation) ClearOrderDetails() {
+	m.clearedorder_details = true
 }
 
-// OrdersCleared reports if the "orders" edge to the OrderDetail entity was cleared.
-func (m *ProductMutation) OrdersCleared() bool {
-	return m.clearedorders
+// OrderDetailsCleared reports if the "order_details" edge to the OrderDetail entity was cleared.
+func (m *ProductMutation) OrderDetailsCleared() bool {
+	return m.clearedorder_details
 }
 
-// RemoveOrderIDs removes the "orders" edge to the OrderDetail entity by IDs.
-func (m *ProductMutation) RemoveOrderIDs(ids ...int) {
-	if m.removedorders == nil {
-		m.removedorders = make(map[int]struct{})
+// RemoveOrderDetailIDs removes the "order_details" edge to the OrderDetail entity by IDs.
+func (m *ProductMutation) RemoveOrderDetailIDs(ids ...int) {
+	if m.removedorder_details == nil {
+		m.removedorder_details = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.orders, ids[i])
-		m.removedorders[ids[i]] = struct{}{}
+		delete(m.order_details, ids[i])
+		m.removedorder_details[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedOrders returns the removed IDs of the "orders" edge to the OrderDetail entity.
-func (m *ProductMutation) RemovedOrdersIDs() (ids []int) {
-	for id := range m.removedorders {
+// RemovedOrderDetails returns the removed IDs of the "order_details" edge to the OrderDetail entity.
+func (m *ProductMutation) RemovedOrderDetailsIDs() (ids []int) {
+	for id := range m.removedorder_details {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// OrdersIDs returns the "orders" edge IDs in the mutation.
-func (m *ProductMutation) OrdersIDs() (ids []int) {
-	for id := range m.orders {
+// OrderDetailsIDs returns the "order_details" edge IDs in the mutation.
+func (m *ProductMutation) OrderDetailsIDs() (ids []int) {
+	for id := range m.order_details {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetOrders resets all changes to the "orders" edge.
-func (m *ProductMutation) ResetOrders() {
-	m.orders = nil
-	m.clearedorders = false
-	m.removedorders = nil
+// ResetOrderDetails resets all changes to the "order_details" edge.
+func (m *ProductMutation) ResetOrderDetails() {
+	m.order_details = nil
+	m.clearedorder_details = false
+	m.removedorder_details = nil
 }
 
 // AddFavouriteIDs adds the "favourites" edge to the Favourite entity by ids.
@@ -10680,8 +11011,8 @@ func (m *ProductMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ProductMutation) AddedEdges() []string {
 	edges := make([]string, 0, 5)
-	if m.orders != nil {
-		edges = append(edges, product.EdgeOrders)
+	if m.order_details != nil {
+		edges = append(edges, product.EdgeOrderDetails)
 	}
 	if m.favourites != nil {
 		edges = append(edges, product.EdgeFavourites)
@@ -10702,9 +11033,9 @@ func (m *ProductMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *ProductMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case product.EdgeOrders:
-		ids := make([]ent.Value, 0, len(m.orders))
-		for id := range m.orders {
+	case product.EdgeOrderDetails:
+		ids := make([]ent.Value, 0, len(m.order_details))
+		for id := range m.order_details {
 			ids = append(ids, id)
 		}
 		return ids
@@ -10733,8 +11064,8 @@ func (m *ProductMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ProductMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 5)
-	if m.removedorders != nil {
-		edges = append(edges, product.EdgeOrders)
+	if m.removedorder_details != nil {
+		edges = append(edges, product.EdgeOrderDetails)
 	}
 	if m.removedfavourites != nil {
 		edges = append(edges, product.EdgeFavourites)
@@ -10746,9 +11077,9 @@ func (m *ProductMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *ProductMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case product.EdgeOrders:
-		ids := make([]ent.Value, 0, len(m.removedorders))
-		for id := range m.removedorders {
+	case product.EdgeOrderDetails:
+		ids := make([]ent.Value, 0, len(m.removedorder_details))
+		for id := range m.removedorder_details {
 			ids = append(ids, id)
 		}
 		return ids
@@ -10765,8 +11096,8 @@ func (m *ProductMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ProductMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 5)
-	if m.clearedorders {
-		edges = append(edges, product.EdgeOrders)
+	if m.clearedorder_details {
+		edges = append(edges, product.EdgeOrderDetails)
 	}
 	if m.clearedfavourites {
 		edges = append(edges, product.EdgeFavourites)
@@ -10787,8 +11118,8 @@ func (m *ProductMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *ProductMutation) EdgeCleared(name string) bool {
 	switch name {
-	case product.EdgeOrders:
-		return m.clearedorders
+	case product.EdgeOrderDetails:
+		return m.clearedorder_details
 	case product.EdgeFavourites:
 		return m.clearedfavourites
 	case product.EdgeMerchant:
@@ -10822,8 +11153,8 @@ func (m *ProductMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ProductMutation) ResetEdge(name string) error {
 	switch name {
-	case product.EdgeOrders:
-		m.ResetOrders()
+	case product.EdgeOrderDetails:
+		m.ResetOrderDetails()
 		return nil
 	case product.EdgeFavourites:
 		m.ResetFavourites()

@@ -31,12 +31,12 @@ type ProductQuery struct {
 	fields     []string
 	predicates []predicate.Product
 	// eager-loading edges.
-	withOrders     *OrderDetailQuery
-	withFavourites *FavouriteQuery
-	withMerchant   *MerchantQuery
-	withMajor      *ProductCategoryMajorQuery
-	withMinor      *ProductCategoryMinorQuery
-	withFKs        bool
+	withOrderDetails *OrderDetailQuery
+	withFavourites   *FavouriteQuery
+	withMerchant     *MerchantQuery
+	withMajor        *ProductCategoryMajorQuery
+	withMinor        *ProductCategoryMinorQuery
+	withFKs          bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -73,8 +73,8 @@ func (pq *ProductQuery) Order(o ...OrderFunc) *ProductQuery {
 	return pq
 }
 
-// QueryOrders chains the current query on the "orders" edge.
-func (pq *ProductQuery) QueryOrders() *OrderDetailQuery {
+// QueryOrderDetails chains the current query on the "order_details" edge.
+func (pq *ProductQuery) QueryOrderDetails() *OrderDetailQuery {
 	query := &OrderDetailQuery{config: pq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
@@ -87,7 +87,7 @@ func (pq *ProductQuery) QueryOrders() *OrderDetailQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(product.Table, product.FieldID, selector),
 			sqlgraph.To(orderdetail.Table, orderdetail.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, product.OrdersTable, product.OrdersColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, product.OrderDetailsTable, product.OrderDetailsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -359,16 +359,16 @@ func (pq *ProductQuery) Clone() *ProductQuery {
 		return nil
 	}
 	return &ProductQuery{
-		config:         pq.config,
-		limit:          pq.limit,
-		offset:         pq.offset,
-		order:          append([]OrderFunc{}, pq.order...),
-		predicates:     append([]predicate.Product{}, pq.predicates...),
-		withOrders:     pq.withOrders.Clone(),
-		withFavourites: pq.withFavourites.Clone(),
-		withMerchant:   pq.withMerchant.Clone(),
-		withMajor:      pq.withMajor.Clone(),
-		withMinor:      pq.withMinor.Clone(),
+		config:           pq.config,
+		limit:            pq.limit,
+		offset:           pq.offset,
+		order:            append([]OrderFunc{}, pq.order...),
+		predicates:       append([]predicate.Product{}, pq.predicates...),
+		withOrderDetails: pq.withOrderDetails.Clone(),
+		withFavourites:   pq.withFavourites.Clone(),
+		withMerchant:     pq.withMerchant.Clone(),
+		withMajor:        pq.withMajor.Clone(),
+		withMinor:        pq.withMinor.Clone(),
 		// clone intermediate query.
 		sql:    pq.sql.Clone(),
 		path:   pq.path,
@@ -376,14 +376,14 @@ func (pq *ProductQuery) Clone() *ProductQuery {
 	}
 }
 
-// WithOrders tells the query-builder to eager-load the nodes that are connected to
-// the "orders" edge. The optional arguments are used to configure the query builder of the edge.
-func (pq *ProductQuery) WithOrders(opts ...func(*OrderDetailQuery)) *ProductQuery {
+// WithOrderDetails tells the query-builder to eager-load the nodes that are connected to
+// the "order_details" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProductQuery) WithOrderDetails(opts ...func(*OrderDetailQuery)) *ProductQuery {
 	query := &OrderDetailQuery{config: pq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	pq.withOrders = query
+	pq.withOrderDetails = query
 	return pq
 }
 
@@ -498,7 +498,7 @@ func (pq *ProductQuery) sqlAll(ctx context.Context) ([]*Product, error) {
 		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
 		loadedTypes = [5]bool{
-			pq.withOrders != nil,
+			pq.withOrderDetails != nil,
 			pq.withFavourites != nil,
 			pq.withMerchant != nil,
 			pq.withMajor != nil,
@@ -531,32 +531,32 @@ func (pq *ProductQuery) sqlAll(ctx context.Context) ([]*Product, error) {
 		return nodes, nil
 	}
 
-	if query := pq.withOrders; query != nil {
+	if query := pq.withOrderDetails; query != nil {
 		fks := make([]driver.Value, 0, len(nodes))
 		nodeids := make(map[int]*Product)
 		for i := range nodes {
 			fks = append(fks, nodes[i].ID)
 			nodeids[nodes[i].ID] = nodes[i]
-			nodes[i].Edges.Orders = []*OrderDetail{}
+			nodes[i].Edges.OrderDetails = []*OrderDetail{}
 		}
 		query.withFKs = true
 		query.Where(predicate.OrderDetail(func(s *sql.Selector) {
-			s.Where(sql.InValues(product.OrdersColumn, fks...))
+			s.Where(sql.InValues(product.OrderDetailsColumn, fks...))
 		}))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			fk := n.product_orders
+			fk := n.product_order_details
 			if fk == nil {
-				return nil, fmt.Errorf(`foreign-key "product_orders" is nil for node %v`, n.ID)
+				return nil, fmt.Errorf(`foreign-key "product_order_details" is nil for node %v`, n.ID)
 			}
 			node, ok := nodeids[*fk]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "product_orders" returned %v for node %v`, *fk, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "product_order_details" returned %v for node %v`, *fk, n.ID)
 			}
-			node.Edges.Orders = append(node.Edges.Orders, n)
+			node.Edges.OrderDetails = append(node.Edges.OrderDetails, n)
 		}
 	}
 

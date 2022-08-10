@@ -1,10 +1,10 @@
 package gateways
 
 import (
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent"
-	"github.com/gofiber/fiber/v2"
-	"net/http"
 )
 
 type (
@@ -111,13 +111,17 @@ type (
 		Remove(id string) error
 	}
 	OrderService interface {
-		Create(order *models.OrderResponse) error
+		Create(order *models.OrderResponse) (*ent.Order, error)
 		FetchAll() ([]*ent.Order, error)
-		FetchByAllUser(userType string, id int) ([]*ent.Order, error)
+		FetchAllByUser(userType string, id int) ([]*ent.Order, error)
+		FetchByStore(id, merchantId int) (*ent.Order, error)
+		FetchAllByStore(merchantId int) ([]*ent.Order, error)
 		Fetch(id int) (*ent.Order, error)
 		FetchByUser(userType string, id int) (*ent.Order, error)
 		Update(order *models.OrderResponse) (*ent.Order, error)
 		Remove(id string) error
+		FormatOrderRequest(request []byte) (*models.OrderResponse, error)
+		UpdateOrderDetailStatus(request []byte) (*ent.Order, error)
 	}
 	AdminService interface {
 		Create(user *models.Admin) (*ent.Admin, error)
@@ -134,7 +138,7 @@ type (
 	}
 
 	PaymentService interface {
-		Pay(request interface{}) (*http.Response, error)
-		Verify(reference string) (*http.Response, error)
+		Pay(request interface{}) (interface{}, error)
+		Verify(reference string) (interface{}, error)
 	}
 )

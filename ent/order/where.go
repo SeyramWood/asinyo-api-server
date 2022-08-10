@@ -786,6 +786,20 @@ func ReferenceHasSuffix(v string) predicate.Order {
 	})
 }
 
+// ReferenceIsNil applies the IsNil predicate on the "reference" field.
+func ReferenceIsNil() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldReference)))
+	})
+}
+
+// ReferenceNotNil applies the NotNil predicate on the "reference" field.
+func ReferenceNotNil() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldReference)))
+	})
+}
+
 // ReferenceEqualFold applies the EqualFold predicate on the "reference" field.
 func ReferenceEqualFold(v string) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
@@ -894,6 +908,20 @@ func ChannelHasPrefix(v string) predicate.Order {
 func ChannelHasSuffix(v string) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
 		s.Where(sql.HasSuffix(s.C(FieldChannel), v))
+	})
+}
+
+// ChannelIsNil applies the IsNil predicate on the "channel" field.
+func ChannelIsNil() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldChannel)))
+	})
+}
+
+// ChannelNotNil applies the NotNil predicate on the "channel" field.
+func ChannelNotNil() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldChannel)))
 	})
 }
 
@@ -1008,6 +1036,20 @@ func PaidAtHasSuffix(v string) predicate.Order {
 	})
 }
 
+// PaidAtIsNil applies the IsNil predicate on the "paid_at" field.
+func PaidAtIsNil() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldPaidAt)))
+	})
+}
+
+// PaidAtNotNil applies the NotNil predicate on the "paid_at" field.
+func PaidAtNotNil() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldPaidAt)))
+	})
+}
+
 // PaidAtEqualFold applies the EqualFold predicate on the "paid_at" field.
 func PaidAtEqualFold(v string) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
@@ -1067,6 +1109,54 @@ func DeliveryMethodNotIn(vs ...DeliveryMethod) predicate.Order {
 			return
 		}
 		s.Where(sql.NotIn(s.C(FieldDeliveryMethod), v...))
+	})
+}
+
+// PaymentMethodEQ applies the EQ predicate on the "payment_method" field.
+func PaymentMethodEQ(v PaymentMethod) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPaymentMethod), v))
+	})
+}
+
+// PaymentMethodNEQ applies the NEQ predicate on the "payment_method" field.
+func PaymentMethodNEQ(v PaymentMethod) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldPaymentMethod), v))
+	})
+}
+
+// PaymentMethodIn applies the In predicate on the "payment_method" field.
+func PaymentMethodIn(vs ...PaymentMethod) predicate.Order {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Order(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldPaymentMethod), v...))
+	})
+}
+
+// PaymentMethodNotIn applies the NotIn predicate on the "payment_method" field.
+func PaymentMethodNotIn(vs ...PaymentMethod) predicate.Order {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Order(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldPaymentMethod), v...))
 	})
 }
 
@@ -1367,6 +1457,34 @@ func HasPickupWith(preds ...predicate.PickupStation) predicate.Order {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(PickupInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, PickupTable, PickupColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasStores applies the HasEdge predicate on the "stores" edge.
+func HasStores() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StoresTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, StoresTable, StoresPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStoresWith applies the HasEdge predicate on the "stores" edge with a given conditions (other predicates).
+func HasStoresWith(preds ...predicate.MerchantStore) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StoresInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, StoresTable, StoresPrimaryKey...),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

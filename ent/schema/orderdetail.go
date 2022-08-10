@@ -24,6 +24,9 @@ func (OrderDetail) Fields() []ent.Field {
 		field.Float("promo_price").Default(0.00),
 		field.Float("amount").Default(0.00),
 		field.Int("quantity").Default(0),
+		field.Enum("status").
+			Values("pending", "processing", "dispatched", "delivered", "canceled").
+			Default("pending"),
 	}
 }
 
@@ -35,11 +38,11 @@ func (OrderDetail) Edges() []ent.Edge {
 			Unique().
 			Required(),
 		edge.From("product", Product.Type).
-			Ref("orders").
+			Ref("order_details").
 			Unique().
 			Required(),
 		edge.From("store", MerchantStore.Type).
-			Ref("orders").
+			Ref("order_details").
 			Unique().
 			Required(),
 	}

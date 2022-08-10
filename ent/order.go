@@ -34,13 +34,15 @@ type Order struct {
 	// DeliveryFee holds the value of the "delivery_fee" field.
 	DeliveryFee float64 `json:"delivery_fee,omitempty"`
 	// Reference holds the value of the "reference" field.
-	Reference string `json:"reference,omitempty"`
+	Reference *string `json:"reference,omitempty"`
 	// Channel holds the value of the "channel" field.
-	Channel string `json:"channel,omitempty"`
+	Channel *string `json:"channel,omitempty"`
 	// PaidAt holds the value of the "paid_at" field.
-	PaidAt string `json:"paid_at,omitempty"`
+	PaidAt *string `json:"paid_at,omitempty"`
 	// DeliveryMethod holds the value of the "delivery_method" field.
 	DeliveryMethod order.DeliveryMethod `json:"delivery_method,omitempty"`
+	// PaymentMethod holds the value of the "payment_method" field.
+	PaymentMethod order.PaymentMethod `json:"payment_method,omitempty"`
 	// Status holds the value of the "status" field.
 	Status order.Status `json:"status,omitempty"`
 	// DeliveredAt holds the value of the "delivered_at" field.
@@ -69,9 +71,11 @@ type OrderEdges struct {
 	Address *Address `json:"address,omitempty"`
 	// Pickup holds the value of the pickup edge.
 	Pickup *PickupStation `json:"pickup,omitempty"`
+	// Stores holds the value of the stores edge.
+	Stores []*MerchantStore `json:"stores,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 }
 
 // DetailsOrErr returns the Details value or an error if the edge
@@ -153,6 +157,15 @@ func (e OrderEdges) PickupOrErr() (*PickupStation, error) {
 	return nil, &NotLoadedError{edge: "pickup"}
 }
 
+// StoresOrErr returns the Stores value or an error if the edge
+// was not loaded in eager-loading.
+func (e OrderEdges) StoresOrErr() ([]*MerchantStore, error) {
+	if e.loadedTypes[6] {
+		return e.Stores, nil
+	}
+	return nil, &NotLoadedError{edge: "stores"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Order) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
@@ -162,7 +175,7 @@ func (*Order) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullFloat64)
 		case order.FieldID:
 			values[i] = new(sql.NullInt64)
-		case order.FieldOrderNumber, order.FieldCurrency, order.FieldReference, order.FieldChannel, order.FieldPaidAt, order.FieldDeliveryMethod, order.FieldStatus:
+		case order.FieldOrderNumber, order.FieldCurrency, order.FieldReference, order.FieldChannel, order.FieldPaidAt, order.FieldDeliveryMethod, order.FieldPaymentMethod, order.FieldStatus:
 			values[i] = new(sql.NullString)
 		case order.FieldCreatedAt, order.FieldUpdatedAt, order.FieldDeliveredAt:
 			values[i] = new(sql.NullTime)
@@ -237,25 +250,34 @@ func (o *Order) assignValues(columns []string, values []interface{}) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field reference", values[i])
 			} else if value.Valid {
-				o.Reference = value.String
+				o.Reference = new(string)
+				*o.Reference = value.String
 			}
 		case order.FieldChannel:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field channel", values[i])
 			} else if value.Valid {
-				o.Channel = value.String
+				o.Channel = new(string)
+				*o.Channel = value.String
 			}
 		case order.FieldPaidAt:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field paid_at", values[i])
 			} else if value.Valid {
-				o.PaidAt = value.String
+				o.PaidAt = new(string)
+				*o.PaidAt = value.String
 			}
 		case order.FieldDeliveryMethod:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field delivery_method", values[i])
 			} else if value.Valid {
 				o.DeliveryMethod = order.DeliveryMethod(value.String)
+			}
+		case order.FieldPaymentMethod:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field payment_method", values[i])
+			} else if value.Valid {
+				o.PaymentMethod = order.PaymentMethod(value.String)
 			}
 		case order.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -340,6 +362,11 @@ func (o *Order) QueryPickup() *PickupStationQuery {
 	return (&OrderClient{config: o.config}).QueryPickup(o)
 }
 
+// QueryStores queries the "stores" edge of the Order entity.
+func (o *Order) QueryStores() *MerchantStoreQuery {
+	return (&OrderClient{config: o.config}).QueryStores(o)
+}
+
 // Update returns a builder for updating this Order.
 // Note that you need to call Order.Unwrap() before calling this method if this Order
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -375,14 +402,22 @@ func (o *Order) String() string {
 	builder.WriteString(fmt.Sprintf("%v", o.Amount))
 	builder.WriteString(", delivery_fee=")
 	builder.WriteString(fmt.Sprintf("%v", o.DeliveryFee))
-	builder.WriteString(", reference=")
-	builder.WriteString(o.Reference)
-	builder.WriteString(", channel=")
-	builder.WriteString(o.Channel)
-	builder.WriteString(", paid_at=")
-	builder.WriteString(o.PaidAt)
+	if v := o.Reference; v != nil {
+		builder.WriteString(", reference=")
+		builder.WriteString(*v)
+	}
+	if v := o.Channel; v != nil {
+		builder.WriteString(", channel=")
+		builder.WriteString(*v)
+	}
+	if v := o.PaidAt; v != nil {
+		builder.WriteString(", paid_at=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", delivery_method=")
 	builder.WriteString(fmt.Sprintf("%v", o.DeliveryMethod))
+	builder.WriteString(", payment_method=")
+	builder.WriteString(fmt.Sprintf("%v", o.PaymentMethod))
 	builder.WriteString(", status=")
 	builder.WriteString(fmt.Sprintf("%v", o.Status))
 	if v := o.DeliveredAt; v != nil {

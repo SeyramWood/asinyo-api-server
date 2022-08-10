@@ -994,25 +994,25 @@ func ImageContainsFold(v string) predicate.Product {
 	})
 }
 
-// HasOrders applies the HasEdge predicate on the "orders" edge.
-func HasOrders() predicate.Product {
+// HasOrderDetails applies the HasEdge predicate on the "order_details" edge.
+func HasOrderDetails() predicate.Product {
 	return predicate.Product(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(OrdersTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+			sqlgraph.To(OrderDetailsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrderDetailsTable, OrderDetailsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasOrdersWith applies the HasEdge predicate on the "orders" edge with a given conditions (other predicates).
-func HasOrdersWith(preds ...predicate.OrderDetail) predicate.Product {
+// HasOrderDetailsWith applies the HasEdge predicate on the "order_details" edge with a given conditions (other predicates).
+func HasOrderDetailsWith(preds ...predicate.OrderDetail) predicate.Product {
 	return predicate.Product(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(OrdersInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+			sqlgraph.To(OrderDetailsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrderDetailsTable, OrderDetailsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

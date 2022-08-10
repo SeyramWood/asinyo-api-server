@@ -132,19 +132,19 @@ func (pu *ProductUpdate) SetImage(s string) *ProductUpdate {
 	return pu
 }
 
-// AddOrderIDs adds the "orders" edge to the OrderDetail entity by IDs.
-func (pu *ProductUpdate) AddOrderIDs(ids ...int) *ProductUpdate {
-	pu.mutation.AddOrderIDs(ids...)
+// AddOrderDetailIDs adds the "order_details" edge to the OrderDetail entity by IDs.
+func (pu *ProductUpdate) AddOrderDetailIDs(ids ...int) *ProductUpdate {
+	pu.mutation.AddOrderDetailIDs(ids...)
 	return pu
 }
 
-// AddOrders adds the "orders" edges to the OrderDetail entity.
-func (pu *ProductUpdate) AddOrders(o ...*OrderDetail) *ProductUpdate {
+// AddOrderDetails adds the "order_details" edges to the OrderDetail entity.
+func (pu *ProductUpdate) AddOrderDetails(o ...*OrderDetail) *ProductUpdate {
 	ids := make([]int, len(o))
 	for i := range o {
 		ids[i] = o[i].ID
 	}
-	return pu.AddOrderIDs(ids...)
+	return pu.AddOrderDetailIDs(ids...)
 }
 
 // AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
@@ -200,25 +200,25 @@ func (pu *ProductUpdate) Mutation() *ProductMutation {
 	return pu.mutation
 }
 
-// ClearOrders clears all "orders" edges to the OrderDetail entity.
-func (pu *ProductUpdate) ClearOrders() *ProductUpdate {
-	pu.mutation.ClearOrders()
+// ClearOrderDetails clears all "order_details" edges to the OrderDetail entity.
+func (pu *ProductUpdate) ClearOrderDetails() *ProductUpdate {
+	pu.mutation.ClearOrderDetails()
 	return pu
 }
 
-// RemoveOrderIDs removes the "orders" edge to OrderDetail entities by IDs.
-func (pu *ProductUpdate) RemoveOrderIDs(ids ...int) *ProductUpdate {
-	pu.mutation.RemoveOrderIDs(ids...)
+// RemoveOrderDetailIDs removes the "order_details" edge to OrderDetail entities by IDs.
+func (pu *ProductUpdate) RemoveOrderDetailIDs(ids ...int) *ProductUpdate {
+	pu.mutation.RemoveOrderDetailIDs(ids...)
 	return pu
 }
 
-// RemoveOrders removes "orders" edges to OrderDetail entities.
-func (pu *ProductUpdate) RemoveOrders(o ...*OrderDetail) *ProductUpdate {
+// RemoveOrderDetails removes "order_details" edges to OrderDetail entities.
+func (pu *ProductUpdate) RemoveOrderDetails(o ...*OrderDetail) *ProductUpdate {
 	ids := make([]int, len(o))
 	for i := range o {
 		ids[i] = o[i].ID
 	}
-	return pu.RemoveOrderIDs(ids...)
+	return pu.RemoveOrderDetailIDs(ids...)
 }
 
 // ClearFavourites clears all "favourites" edges to the Favourite entity.
@@ -464,12 +464,12 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: product.FieldImage,
 		})
 	}
-	if pu.mutation.OrdersCleared() {
+	if pu.mutation.OrderDetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   product.OrdersTable,
-			Columns: []string{product.OrdersColumn},
+			Table:   product.OrderDetailsTable,
+			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -480,12 +480,12 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !pu.mutation.OrdersCleared() {
+	if nodes := pu.mutation.RemovedOrderDetailsIDs(); len(nodes) > 0 && !pu.mutation.OrderDetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   product.OrdersTable,
-			Columns: []string{product.OrdersColumn},
+			Table:   product.OrderDetailsTable,
+			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -499,12 +499,12 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.OrdersIDs(); len(nodes) > 0 {
+	if nodes := pu.mutation.OrderDetailsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   product.OrdersTable,
-			Columns: []string{product.OrdersColumn},
+			Table:   product.OrderDetailsTable,
+			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -795,19 +795,19 @@ func (puo *ProductUpdateOne) SetImage(s string) *ProductUpdateOne {
 	return puo
 }
 
-// AddOrderIDs adds the "orders" edge to the OrderDetail entity by IDs.
-func (puo *ProductUpdateOne) AddOrderIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.AddOrderIDs(ids...)
+// AddOrderDetailIDs adds the "order_details" edge to the OrderDetail entity by IDs.
+func (puo *ProductUpdateOne) AddOrderDetailIDs(ids ...int) *ProductUpdateOne {
+	puo.mutation.AddOrderDetailIDs(ids...)
 	return puo
 }
 
-// AddOrders adds the "orders" edges to the OrderDetail entity.
-func (puo *ProductUpdateOne) AddOrders(o ...*OrderDetail) *ProductUpdateOne {
+// AddOrderDetails adds the "order_details" edges to the OrderDetail entity.
+func (puo *ProductUpdateOne) AddOrderDetails(o ...*OrderDetail) *ProductUpdateOne {
 	ids := make([]int, len(o))
 	for i := range o {
 		ids[i] = o[i].ID
 	}
-	return puo.AddOrderIDs(ids...)
+	return puo.AddOrderDetailIDs(ids...)
 }
 
 // AddFavouriteIDs adds the "favourites" edge to the Favourite entity by IDs.
@@ -863,25 +863,25 @@ func (puo *ProductUpdateOne) Mutation() *ProductMutation {
 	return puo.mutation
 }
 
-// ClearOrders clears all "orders" edges to the OrderDetail entity.
-func (puo *ProductUpdateOne) ClearOrders() *ProductUpdateOne {
-	puo.mutation.ClearOrders()
+// ClearOrderDetails clears all "order_details" edges to the OrderDetail entity.
+func (puo *ProductUpdateOne) ClearOrderDetails() *ProductUpdateOne {
+	puo.mutation.ClearOrderDetails()
 	return puo
 }
 
-// RemoveOrderIDs removes the "orders" edge to OrderDetail entities by IDs.
-func (puo *ProductUpdateOne) RemoveOrderIDs(ids ...int) *ProductUpdateOne {
-	puo.mutation.RemoveOrderIDs(ids...)
+// RemoveOrderDetailIDs removes the "order_details" edge to OrderDetail entities by IDs.
+func (puo *ProductUpdateOne) RemoveOrderDetailIDs(ids ...int) *ProductUpdateOne {
+	puo.mutation.RemoveOrderDetailIDs(ids...)
 	return puo
 }
 
-// RemoveOrders removes "orders" edges to OrderDetail entities.
-func (puo *ProductUpdateOne) RemoveOrders(o ...*OrderDetail) *ProductUpdateOne {
+// RemoveOrderDetails removes "order_details" edges to OrderDetail entities.
+func (puo *ProductUpdateOne) RemoveOrderDetails(o ...*OrderDetail) *ProductUpdateOne {
 	ids := make([]int, len(o))
 	for i := range o {
 		ids[i] = o[i].ID
 	}
-	return puo.RemoveOrderIDs(ids...)
+	return puo.RemoveOrderDetailIDs(ids...)
 }
 
 // ClearFavourites clears all "favourites" edges to the Favourite entity.
@@ -1151,12 +1151,12 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Column: product.FieldImage,
 		})
 	}
-	if puo.mutation.OrdersCleared() {
+	if puo.mutation.OrderDetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   product.OrdersTable,
-			Columns: []string{product.OrdersColumn},
+			Table:   product.OrderDetailsTable,
+			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -1167,12 +1167,12 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !puo.mutation.OrdersCleared() {
+	if nodes := puo.mutation.RemovedOrderDetailsIDs(); len(nodes) > 0 && !puo.mutation.OrderDetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   product.OrdersTable,
-			Columns: []string{product.OrdersColumn},
+			Table:   product.OrderDetailsTable,
+			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -1186,12 +1186,12 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.OrdersIDs(); len(nodes) > 0 {
+	if nodes := puo.mutation.OrderDetailsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   product.OrdersTable,
-			Columns: []string{product.OrdersColumn},
+			Table:   product.OrderDetailsTable,
+			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

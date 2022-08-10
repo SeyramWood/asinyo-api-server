@@ -40,6 +40,8 @@ const (
 	EdgeMerchant = "merchant"
 	// EdgeOrders holds the string denoting the orders edge name in mutations.
 	EdgeOrders = "orders"
+	// EdgeOrderDetails holds the string denoting the order_details edge name in mutations.
+	EdgeOrderDetails = "order_details"
 	// Table holds the table name of the merchantstore in the database.
 	Table = "merchant_stores"
 	// MerchantTable is the table that holds the merchant relation/edge.
@@ -49,13 +51,18 @@ const (
 	MerchantInverseTable = "merchants"
 	// MerchantColumn is the table column denoting the merchant relation/edge.
 	MerchantColumn = "merchant_store"
-	// OrdersTable is the table that holds the orders relation/edge.
-	OrdersTable = "order_details"
-	// OrdersInverseTable is the table name for the OrderDetail entity.
+	// OrdersTable is the table that holds the orders relation/edge. The primary key declared below.
+	OrdersTable = "merchant_store_orders"
+	// OrdersInverseTable is the table name for the Order entity.
+	// It exists in this package in order to avoid circular dependency with the "order" package.
+	OrdersInverseTable = "orders"
+	// OrderDetailsTable is the table that holds the order_details relation/edge.
+	OrderDetailsTable = "order_details"
+	// OrderDetailsInverseTable is the table name for the OrderDetail entity.
 	// It exists in this package in order to avoid circular dependency with the "orderdetail" package.
-	OrdersInverseTable = "order_details"
-	// OrdersColumn is the table column denoting the orders relation/edge.
-	OrdersColumn = "merchant_store_orders"
+	OrderDetailsInverseTable = "order_details"
+	// OrderDetailsColumn is the table column denoting the order_details relation/edge.
+	OrderDetailsColumn = "merchant_store_order_details"
 )
 
 // Columns holds all SQL columns for merchantstore fields.
@@ -80,6 +87,12 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"merchant_store",
 }
+
+var (
+	// OrdersPrimaryKey and OrdersColumn2 are the table columns denoting the
+	// primary key for the orders relation (M2M).
+	OrdersPrimaryKey = []string{"merchant_store_id", "order_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

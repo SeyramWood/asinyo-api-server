@@ -5,19 +5,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/SeyramWood/app/adapters/gateways"
-	"github.com/SeyramWood/app/adapters/presenters"
-	"github.com/SeyramWood/app/domain/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/SeyramWood/app/adapters/gateways"
+	"github.com/SeyramWood/app/adapters/presenters"
+	"github.com/SeyramWood/app/domain/models"
 )
 
 type service struct {
 	repo gateways.AuthRepo
 }
 
-//NewService is used to create a single instance of the service
+// NewService is used to create a single instance of the service
 func NewAuthService(repo gateways.AuthRepo) gateways.AuthService {
 	return &service{
 		repo: repo,
@@ -59,16 +60,20 @@ func (s *service) Login(c *fiber.Ctx) error {
 }
 
 func (s *service) Logout(c *fiber.Ctx) error {
-	c.Cookie(&fiber.Cookie{
-		Name:     "remember",
-		Value:    "",
-		Expires:  time.Now().Add(-time.Hour),
-		HTTPOnly: true,
-		SameSite: "none",
-	})
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status": true,
-	})
+	c.Cookie(
+		&fiber.Cookie{
+			Name:     "remember",
+			Value:    "",
+			Expires:  time.Now().Add(-time.Hour),
+			HTTPOnly: true,
+			SameSite: "none",
+		},
+	)
+	return c.Status(fiber.StatusOK).JSON(
+		fiber.Map{
+			"status": true,
+		},
+	)
 }
 
 func (s *service) FetchAuthUser(c *fiber.Ctx) error {
@@ -84,71 +89,95 @@ func (s *service) FetchAuthUser(c *fiber.Ctx) error {
 	switch userType {
 	case "customer":
 		if user, err := s.repo.ReadCustomer(id, "id"); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"status": false,
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"status": false,
+				},
+			)
 		} else {
 			return c.Status(fiber.StatusOK).JSON(presenters.AuthCustomerResponse(user))
 		}
 	case "agent":
 		if user, err := s.repo.ReadAgent(id, "id"); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"status": false,
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"status": false,
+				},
+			)
 		} else {
 			return c.Status(fiber.StatusOK).JSON(presenters.AuthAgentResponse(user))
 		}
 	case "supplier":
 		if merchant, err := s.repo.ReadMerchant(id, "id"); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"status": false,
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"status": false,
+				},
+			)
 		} else {
 			user, err := merchant.QuerySupplier().WithMerchant().Only(context.Background())
 			if err != nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"status": false,
-				})
+				return c.Status(fiber.StatusInternalServerError).JSON(
+					fiber.Map{
+						"status": false,
+					},
+				)
 			}
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthSupplierMerchantResponse(&presenters.AuthMerchant{
-				ID:        user.Edges.Merchant.ID,
-				Username:  user.Edges.Merchant.Username,
-				LastName:  user.LastName,
-				OtherName: user.OtherName,
-			}))
+			return c.Status(fiber.StatusOK).JSON(
+				presenters.AuthSupplierMerchantResponse(
+					&presenters.AuthMerchant{
+						ID:        user.Edges.Merchant.ID,
+						Username:  user.Edges.Merchant.Username,
+						LastName:  user.LastName,
+						OtherName: user.OtherName,
+					},
+				),
+			)
 
 		}
 	case "retailer":
 		if merchant, err := s.repo.ReadMerchant(id, "id"); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"status": false,
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"status": false,
+				},
+			)
 		} else {
 			user, err := merchant.QueryRetailer().WithMerchant().Only(context.Background())
 			if err != nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"status": false,
-				})
+				return c.Status(fiber.StatusInternalServerError).JSON(
+					fiber.Map{
+						"status": false,
+					},
+				)
 			}
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthRetailMerchantResponse(&presenters.AuthMerchant{
-				ID:        user.Edges.Merchant.ID,
-				Username:  user.Edges.Merchant.Username,
-				LastName:  user.LastName,
-				OtherName: user.OtherName,
-			}))
+			return c.Status(fiber.StatusOK).JSON(
+				presenters.AuthRetailMerchantResponse(
+					&presenters.AuthMerchant{
+						ID:        user.Edges.Merchant.ID,
+						Username:  user.Edges.Merchant.Username,
+						LastName:  user.LastName,
+						OtherName: user.OtherName,
+					},
+				),
+			)
 		}
 	case "asinyo":
 		if user, err := s.repo.ReadAdmin(id, "id"); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"status": false,
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"status": false,
+				},
+			)
 		} else {
 			return c.Status(fiber.StatusOK).JSON(presenters.AuthAdminResponse(user))
 		}
 	default:
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status": false,
-		})
+		return c.Status(fiber.StatusBadRequest).JSON(
+			fiber.Map{
+				"status": false,
+			},
+		)
 
 	}
 
@@ -214,18 +243,24 @@ func (s *service) signinSupplierMerchant(c *fiber.Ctx, request models.UserMercha
 		if s.hashCheck(user.Password, request.Password) {
 			merchant, err := user.QuerySupplier().WithMerchant().Only(context.Background())
 			if err != nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"status": false,
-				})
+				return c.Status(fiber.StatusInternalServerError).JSON(
+					fiber.Map{
+						"status": false,
+					},
+				)
 			}
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthSupplierMerchantResponse(&presenters.AuthMerchant{
-				ID:         merchant.Edges.Merchant.ID,
-				Username:   merchant.Edges.Merchant.Username,
-				LastName:   merchant.LastName,
-				OtherName:  merchant.OtherName,
-				Phone:      merchant.Phone,
-				OtherPhone: *merchant.OtherPhone,
-			}))
+			return c.Status(fiber.StatusOK).JSON(
+				presenters.AuthSupplierMerchantResponse(
+					&presenters.AuthMerchant{
+						ID:         merchant.Edges.Merchant.ID,
+						Username:   merchant.Edges.Merchant.Username,
+						LastName:   merchant.LastName,
+						OtherName:  merchant.OtherName,
+						Phone:      merchant.Phone,
+						OtherPhone: *merchant.OtherPhone,
+					},
+				),
+			)
 		}
 	}
 	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))
@@ -238,18 +273,25 @@ func (s *service) signinRetailMerchant(c *fiber.Ctx, request models.UserMerchant
 		if s.hashCheck(user.Password, request.Password) {
 			merchant, err := user.QueryRetailer().WithMerchant().Only(context.Background())
 			if err != nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"status": false,
-				})
+
+				return c.Status(fiber.StatusInternalServerError).JSON(
+					fiber.Map{
+						"status": false,
+					},
+				)
 			}
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthRetailMerchantResponse(&presenters.AuthMerchant{
-				ID:         merchant.Edges.Merchant.ID,
-				Username:   merchant.Edges.Merchant.Username,
-				LastName:   merchant.LastName,
-				OtherName:  merchant.OtherName,
-				Phone:      merchant.Phone,
-				OtherPhone: *merchant.OtherPhone,
-			}))
+			return c.Status(fiber.StatusOK).JSON(
+				presenters.AuthRetailMerchantResponse(
+					&presenters.AuthMerchant{
+						ID:         merchant.Edges.Merchant.ID,
+						Username:   merchant.Edges.Merchant.Username,
+						LastName:   merchant.LastName,
+						OtherName:  merchant.OtherName,
+						Phone:      merchant.Phone,
+						OtherPhone: *merchant.OtherPhone,
+					},
+				),
+			)
 		}
 	}
 	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))

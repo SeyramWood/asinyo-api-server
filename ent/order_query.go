@@ -16,6 +16,7 @@ import (
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/orderdetail"
 	"github.com/SeyramWood/ent/pickupstation"
@@ -38,6 +39,7 @@ type OrderQuery struct {
 	withCustomer *CustomerQuery
 	withAddress  *AddressQuery
 	withPickup   *PickupStationQuery
+	withStores   *MerchantStoreQuery
 	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -200,6 +202,28 @@ func (oq *OrderQuery) QueryPickup() *PickupStationQuery {
 			sqlgraph.From(order.Table, order.FieldID, selector),
 			sqlgraph.To(pickupstation.Table, pickupstation.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, order.PickupTable, order.PickupColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(oq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryStores chains the current query on the "stores" edge.
+func (oq *OrderQuery) QueryStores() *MerchantStoreQuery {
+	query := &MerchantStoreQuery{config: oq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := oq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := oq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, selector),
+			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, order.StoresTable, order.StoresPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(oq.driver.Dialect(), step)
 		return fromU, nil
@@ -394,6 +418,7 @@ func (oq *OrderQuery) Clone() *OrderQuery {
 		withCustomer: oq.withCustomer.Clone(),
 		withAddress:  oq.withAddress.Clone(),
 		withPickup:   oq.withPickup.Clone(),
+		withStores:   oq.withStores.Clone(),
 		// clone intermediate query.
 		sql:    oq.sql.Clone(),
 		path:   oq.path,
@@ -467,6 +492,17 @@ func (oq *OrderQuery) WithPickup(opts ...func(*PickupStationQuery)) *OrderQuery 
 	return oq
 }
 
+// WithStores tells the query-builder to eager-load the nodes that are connected to
+// the "stores" edge. The optional arguments are used to configure the query builder of the edge.
+func (oq *OrderQuery) WithStores(opts ...func(*MerchantStoreQuery)) *OrderQuery {
+	query := &MerchantStoreQuery{config: oq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	oq.withStores = query
+	return oq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -533,13 +569,14 @@ func (oq *OrderQuery) sqlAll(ctx context.Context) ([]*Order, error) {
 		nodes       = []*Order{}
 		withFKs     = oq.withFKs
 		_spec       = oq.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			oq.withDetails != nil,
 			oq.withMerchant != nil,
 			oq.withAgent != nil,
 			oq.withCustomer != nil,
 			oq.withAddress != nil,
 			oq.withPickup != nil,
+			oq.withStores != nil,
 		}
 	)
 	if oq.withMerchant != nil || oq.withAgent != nil || oq.withCustomer != nil || oq.withAddress != nil || oq.withPickup != nil {
@@ -738,6 +775,71 @@ func (oq *OrderQuery) sqlAll(ctx context.Context) ([]*Order, error) {
 			}
 			for i := range nodes {
 				nodes[i].Edges.Pickup = n
+			}
+		}
+	}
+
+	if query := oq.withStores; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Order, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+			node.Edges.Stores = []*MerchantStore{}
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Order)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: true,
+				Table:   order.StoresTable,
+				Columns: order.StoresPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(order.StoresPrimaryKey[1], fks...))
+			},
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				if _, ok := edges[inValue]; !ok {
+					edgeids = append(edgeids, inValue)
+				}
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, oq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "stores": %w`, err)
+		}
+		query.Where(merchantstore.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "stores" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Stores = append(nodes[i].Edges.Stores, n)
 			}
 		}
 	}

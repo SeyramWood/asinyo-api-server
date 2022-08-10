@@ -13,6 +13,7 @@ import (
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/orderdetail"
 )
 
@@ -138,19 +139,34 @@ func (msc *MerchantStoreCreate) SetMerchant(m *Merchant) *MerchantStoreCreate {
 	return msc.SetMerchantID(m.ID)
 }
 
-// AddOrderIDs adds the "orders" edge to the OrderDetail entity by IDs.
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
 func (msc *MerchantStoreCreate) AddOrderIDs(ids ...int) *MerchantStoreCreate {
 	msc.mutation.AddOrderIDs(ids...)
 	return msc
 }
 
-// AddOrders adds the "orders" edges to the OrderDetail entity.
-func (msc *MerchantStoreCreate) AddOrders(o ...*OrderDetail) *MerchantStoreCreate {
+// AddOrders adds the "orders" edges to the Order entity.
+func (msc *MerchantStoreCreate) AddOrders(o ...*Order) *MerchantStoreCreate {
 	ids := make([]int, len(o))
 	for i := range o {
 		ids[i] = o[i].ID
 	}
 	return msc.AddOrderIDs(ids...)
+}
+
+// AddOrderDetailIDs adds the "order_details" edge to the OrderDetail entity by IDs.
+func (msc *MerchantStoreCreate) AddOrderDetailIDs(ids ...int) *MerchantStoreCreate {
+	msc.mutation.AddOrderDetailIDs(ids...)
+	return msc
+}
+
+// AddOrderDetails adds the "order_details" edges to the OrderDetail entity.
+func (msc *MerchantStoreCreate) AddOrderDetails(o ...*OrderDetail) *MerchantStoreCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return msc.AddOrderDetailIDs(ids...)
 }
 
 // Mutation returns the MerchantStoreMutation object of the builder.
@@ -440,10 +456,29 @@ func (msc *MerchantStoreCreate) createSpec() (*MerchantStore, *sqlgraph.CreateSp
 	}
 	if nodes := msc.mutation.OrdersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   merchantstore.OrdersTable,
-			Columns: []string{merchantstore.OrdersColumn},
+			Columns: merchantstore.OrdersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := msc.mutation.OrderDetailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.OrderDetailsTable,
+			Columns: []string{merchantstore.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

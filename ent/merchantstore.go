@@ -54,10 +54,12 @@ type MerchantStoreEdges struct {
 	// Merchant holds the value of the merchant edge.
 	Merchant *Merchant `json:"merchant,omitempty"`
 	// Orders holds the value of the orders edge.
-	Orders []*OrderDetail `json:"orders,omitempty"`
+	Orders []*Order `json:"orders,omitempty"`
+	// OrderDetails holds the value of the order_details edge.
+	OrderDetails []*OrderDetail `json:"order_details,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // MerchantOrErr returns the Merchant value or an error if the edge
@@ -76,11 +78,20 @@ func (e MerchantStoreEdges) MerchantOrErr() (*Merchant, error) {
 
 // OrdersOrErr returns the Orders value or an error if the edge
 // was not loaded in eager-loading.
-func (e MerchantStoreEdges) OrdersOrErr() ([]*OrderDetail, error) {
+func (e MerchantStoreEdges) OrdersOrErr() ([]*Order, error) {
 	if e.loadedTypes[1] {
 		return e.Orders, nil
 	}
 	return nil, &NotLoadedError{edge: "orders"}
+}
+
+// OrderDetailsOrErr returns the OrderDetails value or an error if the edge
+// was not loaded in eager-loading.
+func (e MerchantStoreEdges) OrderDetailsOrErr() ([]*OrderDetail, error) {
+	if e.loadedTypes[2] {
+		return e.OrderDetails, nil
+	}
+	return nil, &NotLoadedError{edge: "order_details"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -215,8 +226,13 @@ func (ms *MerchantStore) QueryMerchant() *MerchantQuery {
 }
 
 // QueryOrders queries the "orders" edge of the MerchantStore entity.
-func (ms *MerchantStore) QueryOrders() *OrderDetailQuery {
+func (ms *MerchantStore) QueryOrders() *OrderQuery {
 	return (&MerchantStoreClient{config: ms.config}).QueryOrders(ms)
+}
+
+// QueryOrderDetails queries the "order_details" edge of the MerchantStore entity.
+func (ms *MerchantStore) QueryOrderDetails() *OrderDetailQuery {
+	return (&MerchantStoreClient{config: ms.config}).QueryOrderDetails(ms)
 }
 
 // Update returns a builder for updating this MerchantStore.
