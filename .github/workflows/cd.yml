@@ -5,7 +5,7 @@ on:
       - dev
 jobs:
   build-and-publish:
-    if: ${{github.ref == "refs/heads/dev"}}
+    if: ${{github.ref == 'refs/heads/dev'}}
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploying to DEV server on branch $GITHUB_REF"
