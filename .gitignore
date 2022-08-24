@@ -1,6 +1,5 @@
 .gitignore
-.idea
-.vscode
-public
+/.idea
+/.vscode
 .env
 .env*

@@ -62,7 +62,6 @@ func (s service) FormatOrderRequest(request []byte) (*models.OrderResponse, erro
 	if err != nil {
 		return nil, err
 	}
-
 	if strings.Compare(resBody.Path("data.metadata.paymentMethod").Data().(string), "POD") == 0 {
 		response = &models.OrderResponse{
 			Event:     resBody.Path("event").Data().(string),
