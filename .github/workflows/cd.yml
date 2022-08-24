@@ -2,7 +2,7 @@ name: Build and Publish Docker Image
 on:
   push:
     branches:
-      - master
+      - dev
 jobs:
   build-and-publish:
     if: ${{github.ref == "refs/heads/dev"}}
