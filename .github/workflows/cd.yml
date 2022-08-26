@@ -3,15 +3,32 @@ on:
   push:
     branches:
       - dev
+      - master
+  pull_request:
+    branches:
+      - dev
+      - master
 jobs:
-  build-and-publish:
+  build-and-publish-to-development:
     if: ${{github.ref == 'refs/heads/dev'}}
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Deploying to DEV server on branch $GITHUB_REF"
       - uses: actions/checkout@v3
-      - name: Build Docker Image
+      - name: "Build docker image for development server - Branch: ${{ secrets.GITHUB_REF}}"
         run: docker build . -t asinyoapi:dev
+      - name: Publishing to Dockerhub Registry
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: seyramwood/asinyoapi
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+  build-and-publish-to-production:
+    if: ${{github.ref == 'refs/heads/master'}}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Build docker image for production server - Branch: ${{ secrets.GITHUB_REF}}"
+        run: docker build . -t asinyoapi:latest
       - name: Publish to Dockerhub Registry
         uses: elgohr/Publish-Docker-Github-Action@master
         with:

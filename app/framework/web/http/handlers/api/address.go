@@ -2,12 +2,14 @@ package api
 
 import (
 	"errors"
+
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/address"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/gofiber/fiber/v2"
 )
 
 type AddressHandler struct {
@@ -24,14 +26,14 @@ func NewAddressHandler(db *database.Adapter) *AddressHandler {
 
 func (h *AddressHandler) FetchByID() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		//storeId, _ := c.ParamsInt("storeId")
+		// storeId, _ := c.ParamsInt("storeId")
 		//
-		//result, err := h.service.Fetch(storeId)
+		// result, err := h.service.Fetch(storeId)
 		//
-		//if err != nil {
+		// if err != nil {
 		//	return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantStoreErrorResponse(err))
-		//}
-		//return c.JSON(presenters.MerchantStoreSuccessResponse(result))
+		// }
+		// return c.JSON(presenters.MerchantStoreSuccessResponse(result))
 		return nil
 
 	}
@@ -65,15 +67,15 @@ func (h *AddressHandler) FetchAllByUser() fiber.Handler {
 
 func (h *AddressHandler) Fetch() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		//merchantType := c.Params("merchantType")
+		// merchantType := c.Params("merchantType")
 		//
-		//result, err := h.service.FetchAllByMerchant(merchantType)
+		// result, err := h.service.FetchAllByMerchant(merchantType)
 		//
-		//if err != nil {
+		// if err != nil {
 		//
 		//	return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
-		//}
-		//return c.JSON(presenters.MerchantStorefrontsSuccessResponse(result))
+		// }
+		// return c.JSON(presenters.MerchantStorefrontsSuccessResponse(result))
 		return nil
 	}
 }
@@ -140,13 +142,13 @@ func (h *AddressHandler) Update() fiber.Handler {
 }
 func (h *AddressHandler) Delete() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		//if err := h.service.Remove(c.Params("id")); err != nil {
+		// if err := h.service.Remove(c.Params("id")); err != nil {
 		//	return c.Status(fiber.StatusNotFound).JSON(presenters.MerchantErrorResponse(err))
-		//}
-		//return c.Status(fiber.StatusOK).JSON(&fiber.Map{
+		// }
+		// return c.Status(fiber.StatusOK).JSON(&fiber.Map{
 		//	"status": true,
 		//	"error":  nil,
-		//})
+		// })
 		return nil
 	}
 }
