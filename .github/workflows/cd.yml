@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: "Build docker image for development server - Branch: ${{ secrets.GITHUB_REF}}"
+      - name: "Build docker image for development server - Branch: ${{ $GITHUB_REF }}"
         run: docker build . -t asinyoapi:dev
-      - name: Publishing to Dockerhub Registry
+      - name: Publishing to Dockerhub registry
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: seyramwood/asinyoapi
@@ -27,9 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: "Build docker image for production server - Branch: ${{ secrets.GITHUB_REF}}"
+      - name: "Build docker image for production server - Branch: ${{ $GITHUB_REF }}"
         run: docker build . -t asinyoapi:latest
-      - name: Publish to Dockerhub Registry
+      - name: Publishing to Dockerhub registry
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: seyramwood/asinyoapi
