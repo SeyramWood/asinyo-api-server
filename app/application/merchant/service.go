@@ -18,7 +18,13 @@ func NewMerchantService(repo gateways.MerchantRepo) gateways.MerchantService {
 
 func (s *service) Create(merchant *models.MerchantRequest) (*ent.Merchant, error) {
 
-	return s.repo.Insert(merchant)
+	return s.repo.Insert(merchant, false)
+}
+
+func (s *service) Onboard(merchant *models.StoreFinalRequest, agentId int, logo string, images []string) (
+	*ent.Merchant, error,
+) {
+	return s.repo.Onboard(merchant, agentId, logo, images)
 }
 
 func (s *service) Fetch(id int) (*ent.Merchant, error) {
@@ -34,7 +40,6 @@ func (s *service) Update(user *models.Merchant) (*models.Merchant, error) {
 	return s.repo.Update(user)
 }
 
-//RemoveBook is a service layer that helps remove books from BookShop
 func (s *service) Remove(ID string) error {
 	return s.repo.Delete(ID)
 }

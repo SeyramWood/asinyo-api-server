@@ -57,7 +57,7 @@ func (r *repository) ReadAll() ([]*ent.SupplierMerchant, error) {
 	return nil, nil
 }
 
-func (a *repository) Update(i *models.SupplierMerchant) (*models.SupplierMerchant, error) {
+func (r *repository) Update(i *models.SupplierMerchant) (*models.SupplierMerchant, error) {
 	// book.UpdatedAt = time.Now()
 	// _, err := r.Collection.UpdateOne(context.Background(), bson.M{"_id": book.ID}, bson.M{"$set": book})
 	// if err != nil {
@@ -66,7 +66,6 @@ func (a *repository) Update(i *models.SupplierMerchant) (*models.SupplierMerchan
 	return i, nil
 }
 
-//DeleteBook is a mongo repository that helps to delete books
 func (r *repository) Delete(ID string) error {
 	return fmt.Errorf("failed creating book")
 	// return r.Delete(ID).Error

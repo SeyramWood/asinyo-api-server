@@ -23,6 +23,7 @@ func (Merchant) Fields() []ent.Field {
 		field.String("username").NotEmpty().Unique(),
 		field.Bytes("password").NotEmpty().Sensitive(),
 		field.String("type").NotEmpty(),
+		field.Enum("otp").Values("active", "inactive").Optional(),
 	}
 }
 

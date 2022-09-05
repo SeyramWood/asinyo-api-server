@@ -4,12 +4,13 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/agent"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/gofiber/fiber/v2"
 )
 
 type AgentHandler struct {
@@ -47,6 +48,20 @@ func (h *AgentHandler) Fetch() fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.CustomerErrorResponse(err))
 		}
 		return c.JSON(presenters.AgentsSuccessResponse(result))
+	}
+}
+
+func (h *AgentHandler) FetchAllMerchant() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		agentId, _ := c.ParamsInt("agent")
+		results, err := h.service.FetchAllMerchant(agentId)
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.CustomerErrorResponse(err))
+		}
+
+		return c.Status(fiber.StatusOK).JSON(presenters.AgentMerchantStorefrontsSuccessResponse(results))
+
 	}
 }
 
@@ -88,9 +103,11 @@ func (h *AgentHandler) Delete() fiber.Handler {
 		if err := h.service.Remove(c.Params("id")); err != nil {
 			return c.Status(fiber.StatusNotFound).JSON(presenters.CustomerErrorResponse(err))
 		}
-		return c.Status(fiber.StatusOK).JSON(&fiber.Map{
-			"status": true,
-			"error":  nil,
-		})
+		return c.Status(fiber.StatusOK).JSON(
+			&fiber.Map{
+				"status": true,
+				"error":  nil,
+			},
+		)
 	}
 }

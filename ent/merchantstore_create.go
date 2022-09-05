@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -137,6 +138,25 @@ func (msc *MerchantStoreCreate) SetNillableMerchantID(id *int) *MerchantStoreCre
 // SetMerchant sets the "merchant" edge to the Merchant entity.
 func (msc *MerchantStoreCreate) SetMerchant(m *Merchant) *MerchantStoreCreate {
 	return msc.SetMerchantID(m.ID)
+}
+
+// SetAgentID sets the "agent" edge to the Agent entity by ID.
+func (msc *MerchantStoreCreate) SetAgentID(id int) *MerchantStoreCreate {
+	msc.mutation.SetAgentID(id)
+	return msc
+}
+
+// SetNillableAgentID sets the "agent" edge to the Agent entity by ID if the given value is not nil.
+func (msc *MerchantStoreCreate) SetNillableAgentID(id *int) *MerchantStoreCreate {
+	if id != nil {
+		msc = msc.SetAgentID(*id)
+	}
+	return msc
+}
+
+// SetAgent sets the "agent" edge to the Agent entity.
+func (msc *MerchantStoreCreate) SetAgent(a *Agent) *MerchantStoreCreate {
+	return msc.SetAgentID(a.ID)
 }
 
 // AddOrderIDs adds the "orders" edge to the Order entity by IDs.
@@ -452,6 +472,26 @@ func (msc *MerchantStoreCreate) createSpec() (*MerchantStore, *sqlgraph.CreateSp
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.merchant_store = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := msc.mutation.AgentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   merchantstore.AgentTable,
+			Columns: []string{merchantstore.AgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: agent.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.agent_store = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := msc.mutation.OrdersIDs(); len(nodes) > 0 {

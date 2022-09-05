@@ -18,12 +18,14 @@ type (
 	AgentService interface {
 		Create(agent *models.AgentRequest) (*ent.Agent, error)
 		FetchAll() ([]*ent.Agent, error)
+		FetchAllMerchant(agentId int) ([]*ent.MerchantStore, error)
 		Fetch(id int) (*ent.Agent, error)
 		Update(agent *models.Agent) (*models.Agent, error)
 		Remove(id string) error
 	}
 	MerchantService interface {
 		Create(merchant *models.MerchantRequest) (*ent.Merchant, error)
+		Onboard(merchant *models.StoreFinalRequest, agentId int, logo string, images []string) (*ent.Merchant, error)
 		FetchAll() ([]*ent.Merchant, error)
 		Fetch(id int) (*ent.Merchant, error)
 		Update(merchant *models.Merchant) (*models.Merchant, error)
@@ -52,6 +54,7 @@ type (
 		FetchAll() ([]*ent.MerchantStore, error)
 		FetchAllByMerchant(merchantType string) ([]*ent.MerchantStore, error)
 		Fetch(id int) (*ent.MerchantStore, error)
+		FetchAgent(store int) (*ent.Agent, error)
 		FetchByMerchant(merchantId int) (*ent.MerchantStore, error)
 		Update(store *models.MerchantStore) (*models.MerchantStore, error)
 		Remove(id string) error
@@ -135,6 +138,7 @@ type (
 		Login(c *fiber.Ctx) error
 		Logout(c *fiber.Ctx) error
 		FetchAuthUser(c *fiber.Ctx) error
+		SendUserVerificationCode(username string) (string, error)
 	}
 
 	PaymentService interface {

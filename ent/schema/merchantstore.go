@@ -41,6 +41,9 @@ func (MerchantStore) Edges() []ent.Edge {
 		edge.From("merchant", Merchant.Type).
 			Ref("store").
 			Unique(),
+		edge.From("agent", Agent.Type).
+			Ref("store").
+			Unique(),
 		edge.To("orders", Order.Type),
 		edge.To("order_details", OrderDetail.Type),
 	}

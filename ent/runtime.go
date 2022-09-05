@@ -372,20 +372,24 @@ func init() {
 	productDescPrice := productFields[1].Descriptor()
 	// product.DefaultPrice holds the default value on creation for the price field.
 	product.DefaultPrice = productDescPrice.Default.(float64)
+	// productDescWeight is the schema descriptor for weight field.
+	productDescWeight := productFields[3].Descriptor()
+	// product.DefaultWeight holds the default value on creation for the weight field.
+	product.DefaultWeight = productDescWeight.Default.(uint32)
 	// productDescQuantity is the schema descriptor for quantity field.
-	productDescQuantity := productFields[3].Descriptor()
+	productDescQuantity := productFields[4].Descriptor()
 	// product.DefaultQuantity holds the default value on creation for the quantity field.
 	product.DefaultQuantity = productDescQuantity.Default.(uint32)
 	// productDescUnit is the schema descriptor for unit field.
-	productDescUnit := productFields[4].Descriptor()
+	productDescUnit := productFields[5].Descriptor()
 	// product.UnitValidator is a validator for the "unit" field. It is called by the builders before save.
 	product.UnitValidator = productDescUnit.Validators[0].(func(string) error)
 	// productDescDescription is the schema descriptor for description field.
-	productDescDescription := productFields[5].Descriptor()
+	productDescDescription := productFields[6].Descriptor()
 	// product.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
 	product.DescriptionValidator = productDescDescription.Validators[0].(func(string) error)
 	// productDescImage is the schema descriptor for image field.
-	productDescImage := productFields[6].Descriptor()
+	productDescImage := productFields[7].Descriptor()
 	// product.ImageValidator is a validator for the "image" field. It is called by the builders before save.
 	product.ImageValidator = productDescImage.Validators[0].(func(string) error)
 	productcategorymajorMixin := schema.ProductCategoryMajor{}.Mixin()

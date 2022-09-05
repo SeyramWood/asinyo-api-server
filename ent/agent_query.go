@@ -15,6 +15,7 @@ import (
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
@@ -32,6 +33,7 @@ type AgentQuery struct {
 	withAddresses  *AddressQuery
 	withOrders     *OrderQuery
 	withFavourites *FavouriteQuery
+	withStore      *MerchantStoreQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -127,6 +129,28 @@ func (aq *AgentQuery) QueryFavourites() *FavouriteQuery {
 			sqlgraph.From(agent.Table, agent.FieldID, selector),
 			sqlgraph.To(favourite.Table, favourite.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, agent.FavouritesTable, agent.FavouritesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryStore chains the current query on the "store" edge.
+func (aq *AgentQuery) QueryStore() *MerchantStoreQuery {
+	query := &MerchantStoreQuery{config: aq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(agent.Table, agent.FieldID, selector),
+			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, agent.StoreTable, agent.StoreColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -318,6 +342,7 @@ func (aq *AgentQuery) Clone() *AgentQuery {
 		withAddresses:  aq.withAddresses.Clone(),
 		withOrders:     aq.withOrders.Clone(),
 		withFavourites: aq.withFavourites.Clone(),
+		withStore:      aq.withStore.Clone(),
 		// clone intermediate query.
 		sql:    aq.sql.Clone(),
 		path:   aq.path,
@@ -355,6 +380,17 @@ func (aq *AgentQuery) WithFavourites(opts ...func(*FavouriteQuery)) *AgentQuery 
 		opt(query)
 	}
 	aq.withFavourites = query
+	return aq
+}
+
+// WithStore tells the query-builder to eager-load the nodes that are connected to
+// the "store" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AgentQuery) WithStore(opts ...func(*MerchantStoreQuery)) *AgentQuery {
+	query := &MerchantStoreQuery{config: aq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withStore = query
 	return aq
 }
 
@@ -423,10 +459,11 @@ func (aq *AgentQuery) sqlAll(ctx context.Context) ([]*Agent, error) {
 	var (
 		nodes       = []*Agent{}
 		_spec       = aq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			aq.withAddresses != nil,
 			aq.withOrders != nil,
 			aq.withFavourites != nil,
+			aq.withStore != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -533,6 +570,35 @@ func (aq *AgentQuery) sqlAll(ctx context.Context) ([]*Agent, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "agent_favourites" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Favourites = append(node.Edges.Favourites, n)
+		}
+	}
+
+	if query := aq.withStore; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Agent)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Store = []*MerchantStore{}
+		}
+		query.withFKs = true
+		query.Where(predicate.MerchantStore(func(s *sql.Selector) {
+			s.Where(sql.InValues(agent.StoreColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.agent_store
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "agent_store" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "agent_store" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Store = append(node.Edges.Store, n)
 		}
 	}
 

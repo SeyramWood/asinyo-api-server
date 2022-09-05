@@ -29,6 +29,8 @@ type Product struct {
 	Price float64 `json:"price,omitempty"`
 	// PromoPrice holds the value of the "promo_price" field.
 	PromoPrice *float64 `json:"promo_price,omitempty"`
+	// Weight holds the value of the "weight" field.
+	Weight uint32 `json:"weight,omitempty"`
 	// Quantity holds the value of the "quantity" field.
 	Quantity uint32 `json:"quantity,omitempty"`
 	// Unit holds the value of the "unit" field.
@@ -129,7 +131,7 @@ func (*Product) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case product.FieldPrice, product.FieldPromoPrice:
 			values[i] = new(sql.NullFloat64)
-		case product.FieldID, product.FieldQuantity:
+		case product.FieldID, product.FieldWeight, product.FieldQuantity:
 			values[i] = new(sql.NullInt64)
 		case product.FieldName, product.FieldUnit, product.FieldDescription, product.FieldImage:
 			values[i] = new(sql.NullString)
@@ -192,6 +194,12 @@ func (pr *Product) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				pr.PromoPrice = new(float64)
 				*pr.PromoPrice = value.Float64
+			}
+		case product.FieldWeight:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field weight", values[i])
+			} else if value.Valid {
+				pr.Weight = uint32(value.Int64)
 			}
 		case product.FieldQuantity:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -303,6 +311,8 @@ func (pr *Product) String() string {
 		builder.WriteString(", promo_price=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", weight=")
+	builder.WriteString(fmt.Sprintf("%v", pr.Weight))
 	builder.WriteString(", quantity=")
 	builder.WriteString(fmt.Sprintf("%v", pr.Quantity))
 	builder.WriteString(", unit=")

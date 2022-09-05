@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -30,6 +31,7 @@ type MerchantStoreQuery struct {
 	predicates []predicate.MerchantStore
 	// eager-loading edges.
 	withMerchant     *MerchantQuery
+	withAgent        *AgentQuery
 	withOrders       *OrderQuery
 	withOrderDetails *OrderDetailQuery
 	withFKs          bool
@@ -84,6 +86,28 @@ func (msq *MerchantStoreQuery) QueryMerchant() *MerchantQuery {
 			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, selector),
 			sqlgraph.To(merchant.Table, merchant.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, merchantstore.MerchantTable, merchantstore.MerchantColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(msq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAgent chains the current query on the "agent" edge.
+func (msq *MerchantStoreQuery) QueryAgent() *AgentQuery {
+	query := &AgentQuery{config: msq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := msq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := msq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, selector),
+			sqlgraph.To(agent.Table, agent.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, merchantstore.AgentTable, merchantstore.AgentColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(msq.driver.Dialect(), step)
 		return fromU, nil
@@ -317,6 +341,7 @@ func (msq *MerchantStoreQuery) Clone() *MerchantStoreQuery {
 		order:            append([]OrderFunc{}, msq.order...),
 		predicates:       append([]predicate.MerchantStore{}, msq.predicates...),
 		withMerchant:     msq.withMerchant.Clone(),
+		withAgent:        msq.withAgent.Clone(),
 		withOrders:       msq.withOrders.Clone(),
 		withOrderDetails: msq.withOrderDetails.Clone(),
 		// clone intermediate query.
@@ -334,6 +359,17 @@ func (msq *MerchantStoreQuery) WithMerchant(opts ...func(*MerchantQuery)) *Merch
 		opt(query)
 	}
 	msq.withMerchant = query
+	return msq
+}
+
+// WithAgent tells the query-builder to eager-load the nodes that are connected to
+// the "agent" edge. The optional arguments are used to configure the query builder of the edge.
+func (msq *MerchantStoreQuery) WithAgent(opts ...func(*AgentQuery)) *MerchantStoreQuery {
+	query := &AgentQuery{config: msq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	msq.withAgent = query
 	return msq
 }
 
@@ -425,13 +461,14 @@ func (msq *MerchantStoreQuery) sqlAll(ctx context.Context) ([]*MerchantStore, er
 		nodes       = []*MerchantStore{}
 		withFKs     = msq.withFKs
 		_spec       = msq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			msq.withMerchant != nil,
+			msq.withAgent != nil,
 			msq.withOrders != nil,
 			msq.withOrderDetails != nil,
 		}
 	)
-	if msq.withMerchant != nil {
+	if msq.withMerchant != nil || msq.withAgent != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -482,6 +519,35 @@ func (msq *MerchantStoreQuery) sqlAll(ctx context.Context) ([]*MerchantStore, er
 			}
 			for i := range nodes {
 				nodes[i].Edges.Merchant = n
+			}
+		}
+	}
+
+	if query := msq.withAgent; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*MerchantStore)
+		for i := range nodes {
+			if nodes[i].agent_store == nil {
+				continue
+			}
+			fk := *nodes[i].agent_store
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(agent.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "agent_store" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Agent = n
 			}
 		}
 	}

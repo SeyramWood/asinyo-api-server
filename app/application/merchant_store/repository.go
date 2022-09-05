@@ -3,6 +3,7 @@ package merchant_store
 import (
 	"context"
 	"fmt"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
@@ -19,7 +20,9 @@ func NewMerchantStoreRepo(db *database.Adapter) gateways.MerchantStoreRepo {
 	return &repository{db.DB}
 }
 
-func (r repository) Insert(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.MerchantStore, error) {
+func (r repository) Insert(
+	store *models.MerchantStore, merchantId int, logo string, images []string,
+) (*ent.MerchantStore, error) {
 	ctx := context.Background()
 	mq := r.db.Merchant.Query().Where(merchant.ID(merchantId)).OnlyX(ctx)
 	storeResult, err := r.db.MerchantStore.Create().SetMerchant(mq).
@@ -52,12 +55,14 @@ func (r repository) UpdateAccount(store interface{}, storeId int, accountType st
 		if account.DefaultAccount {
 			result, err := r.db.MerchantStore.UpdateOneID(storeId).
 				SetDefaultAccount("momo").
-				SetBankAccount(&models.MerchantBankAccount{
-					Name:   account.AccountName,
-					Number: account.AccountNumber,
-					Bank:   account.Bank,
-					Branch: account.Branch,
-				}).
+				SetBankAccount(
+					&models.MerchantBankAccount{
+						Name:   account.AccountName,
+						Number: account.AccountNumber,
+						Bank:   account.Bank,
+						Branch: account.Branch,
+					},
+				).
 				Save(ctx)
 			if err != nil {
 				return nil, fmt.Errorf("failed update merchant momo account : %w", err)
@@ -65,12 +70,14 @@ func (r repository) UpdateAccount(store interface{}, storeId int, accountType st
 			return result, nil
 		}
 		result, err := r.db.MerchantStore.UpdateOneID(storeId).
-			SetBankAccount(&models.MerchantBankAccount{
-				Name:   account.AccountName,
-				Number: account.AccountNumber,
-				Bank:   account.Bank,
-				Branch: account.Branch,
-			}).
+			SetBankAccount(
+				&models.MerchantBankAccount{
+					Name:   account.AccountName,
+					Number: account.AccountNumber,
+					Bank:   account.Bank,
+					Branch: account.Branch,
+				},
+			).
 			Save(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed update merchant momo account : %w", err)
@@ -82,11 +89,13 @@ func (r repository) UpdateAccount(store interface{}, storeId int, accountType st
 	if account.DefaultAccount {
 		result, err := r.db.MerchantStore.UpdateOneID(storeId).
 			SetDefaultAccount("momo").
-			SetMomoAccount(&models.MerchantMomoAccount{
-				Name:     account.AccountName,
-				Number:   account.PhoneNumber,
-				Provider: account.Provider,
-			}).
+			SetMomoAccount(
+				&models.MerchantMomoAccount{
+					Name:     account.AccountName,
+					Number:   account.PhoneNumber,
+					Provider: account.Provider,
+				},
+			).
 			Save(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed update merchant momo account : %w", err)
@@ -94,11 +103,13 @@ func (r repository) UpdateAccount(store interface{}, storeId int, accountType st
 		return result, nil
 	}
 	result, err := r.db.MerchantStore.UpdateOneID(storeId).
-		SetMomoAccount(&models.MerchantMomoAccount{
-			Name:     account.AccountName,
-			Number:   account.PhoneNumber,
-			Provider: account.Provider,
-		}).
+		SetMomoAccount(
+			&models.MerchantMomoAccount{
+				Name:     account.AccountName,
+				Number:   account.PhoneNumber,
+				Provider: account.Provider,
+			},
+		).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed update merchant bank account : %w", err)
@@ -149,18 +160,30 @@ func (r repository) ReadByMerchant(merchantId int) (*ent.MerchantStore, error) {
 	}
 	return result, nil
 }
+func (r repository) ReadAgent(store int) (*ent.Agent, error) {
+	result, err := r.db.MerchantStore.Query().
+		Where(merchantstore.ID(store)).
+		QueryAgent().
+		Only(context.Background())
 
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
 func (r repository) ReadAll() ([]*ent.MerchantStore, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 func (r repository) ReadAllByMerchant(merchantType string) ([]*ent.MerchantStore, error) {
 	if merchantType == "supplier" {
 		results, err := r.db.MerchantStore.Query().
 			Where(merchantstore.MerchantType(merchantType)).
-			WithMerchant(func(query *ent.MerchantQuery) {
-				query.WithSupplier()
-			}).
+			WithMerchant(
+				func(query *ent.MerchantQuery) {
+					query.WithSupplier()
+				},
+			).
 			All(context.Background())
 		if err != nil {
 			return nil, fmt.Errorf("failed fetching supplier stores : %w", err)
@@ -169,9 +192,11 @@ func (r repository) ReadAllByMerchant(merchantType string) ([]*ent.MerchantStore
 	}
 	results, err := r.db.MerchantStore.Query().
 		Where(merchantstore.MerchantType(merchantType)).
-		WithMerchant(func(query *ent.MerchantQuery) {
-			query.WithRetailer()
-		}).
+		WithMerchant(
+			func(query *ent.MerchantQuery) {
+				query.WithRetailer()
+			},
+		).
 		All(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed fetching retailer stores : %w", err)
@@ -180,11 +205,11 @@ func (r repository) ReadAllByMerchant(merchantType string) ([]*ent.MerchantStore
 }
 
 func (r repository) Update(store *models.MerchantStore) (*models.MerchantStore, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (r repository) Delete(id string) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }

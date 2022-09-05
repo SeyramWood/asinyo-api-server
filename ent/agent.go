@@ -51,9 +51,11 @@ type AgentEdges struct {
 	Orders []*Order `json:"orders,omitempty"`
 	// Favourites holds the value of the favourites edge.
 	Favourites []*Favourite `json:"favourites,omitempty"`
+	// Store holds the value of the store edge.
+	Store []*MerchantStore `json:"store,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // AddressesOrErr returns the Addresses value or an error if the edge
@@ -81,6 +83,15 @@ func (e AgentEdges) FavouritesOrErr() ([]*Favourite, error) {
 		return e.Favourites, nil
 	}
 	return nil, &NotLoadedError{edge: "favourites"}
+}
+
+// StoreOrErr returns the Store value or an error if the edge
+// was not loaded in eager-loading.
+func (e AgentEdges) StoreOrErr() ([]*MerchantStore, error) {
+	if e.loadedTypes[3] {
+		return e.Store, nil
+	}
+	return nil, &NotLoadedError{edge: "store"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -202,6 +213,11 @@ func (a *Agent) QueryOrders() *OrderQuery {
 // QueryFavourites queries the "favourites" edge of the Agent entity.
 func (a *Agent) QueryFavourites() *FavouriteQuery {
 	return (&AgentClient{config: a.config}).QueryFavourites(a)
+}
+
+// QueryStore queries the "store" edge of the Agent entity.
+func (a *Agent) QueryStore() *MerchantStoreQuery {
+	return (&AgentClient{config: a.config}).QueryStore(a)
 }
 
 // Update returns a builder for updating this Agent.

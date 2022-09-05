@@ -16,22 +16,22 @@ import (
 func Validate(i interface{}) interface{} {
 	t := reflect.TypeOf(i)
 	v := reflect.ValueOf(i)
-	var structure = make(map[string]interface{})
-	var errors = make([]string, 0)
+
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem() // Gets the type in the type pointer
+	}
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem() // Get the value in the value address
+	}
+	if t.Kind() != reflect.Struct {
+		log.Fatalln("Please provide a struct type")
+	}
 
 	wg := &sync.WaitGroup{}
 	mut := &sync.Mutex{}
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem() //Gets the type in the type pointer
 
-	}
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem() //Get the value in the value address
-	}
-
-	if t.Kind() != reflect.Struct {
-		log.Fatal("Please provide a struct type")
-	}
+	var structure = make(map[string]interface{})
+	var errors = make([]string, 0, t.NumField())
 
 	for i := 0; i < t.NumField(); i++ {
 		wg.Add(1)
@@ -49,11 +49,13 @@ func Validate(i interface{}) interface{} {
 		}(i)
 	}
 	wg.Wait()
+
 	if len(errors) == t.NumField() {
 		structure = make(map[string]interface{})
 		errors = []string{}
 		return nil
 	}
+
 	return structure
 
 }
@@ -83,20 +85,15 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 					return fmt.Sprintf("The %s must be a valid email address.", formattedField)
 				}
 			case "email_phone":
-				email, _ := regexp.Compile(`^[A-Za-z]+$`)
 				phone, _ := regexp.Compile(`^0\d{9}$`)
-
-				if email.MatchString(value.String()) || strings.Contains(value.String(), "@") {
+				if strings.Contains(value.String(), "@") {
 					if _, err := mail.ParseAddress(value.String()); err != nil {
 						return fmt.Sprintf("The %s must be a valid email address.", formattedField)
 					}
 				} else {
-					if phone.MatchString(value.String()) {
-						if !phone.MatchString(value.String()) {
-							return fmt.Sprintf("The %s field must be a valid phone number.", formattedField)
-						}
+					if !phone.MatchString(value.String()) {
+						return fmt.Sprintf("The %s field must be a valid phone number.", formattedField)
 					}
-					return fmt.Sprintf("The %s field must be a valid phone number.", formattedField)
 				}
 
 			case "id_card":
@@ -196,7 +193,7 @@ func isUsernameExist(username, field, table string) interface{} {
 	db := database.Connect()
 	err := db.QueryRow(queryStr, username).Scan(&username)
 	if err == nil {
-		return fmt.Sprintf("The %s is already taken", fieldName)
+		return fmt.Sprintf("The %s is already taken.", fieldName)
 	}
 	defer db.Close()
 	return nil

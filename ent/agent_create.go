@@ -13,6 +13,7 @@ import (
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 )
 
@@ -156,6 +157,21 @@ func (ac *AgentCreate) AddFavourites(f ...*Favourite) *AgentCreate {
 		ids[i] = f[i].ID
 	}
 	return ac.AddFavouriteIDs(ids...)
+}
+
+// AddStoreIDs adds the "store" edge to the MerchantStore entity by IDs.
+func (ac *AgentCreate) AddStoreIDs(ids ...int) *AgentCreate {
+	ac.mutation.AddStoreIDs(ids...)
+	return ac
+}
+
+// AddStore adds the "store" edges to the MerchantStore entity.
+func (ac *AgentCreate) AddStore(m ...*MerchantStore) *AgentCreate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return ac.AddStoreIDs(ids...)
 }
 
 // Mutation returns the AgentMutation object of the builder.
@@ -475,6 +491,25 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.StoreIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.StoreTable,
+			Columns: []string{agent.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
 				},
 			},
 		}

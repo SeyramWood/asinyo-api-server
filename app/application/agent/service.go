@@ -30,11 +30,14 @@ func (s *service) FetchAll() ([]*ent.Agent, error) {
 	return s.repo.ReadAll()
 }
 
+func (s *service) FetchAllMerchant(agentId int) ([]*ent.MerchantStore, error) {
+	return s.repo.ReadAllMerchant(agentId)
+}
+
 func (s *service) Update(user *models.Agent) (*models.Agent, error) {
 	return s.repo.Update(user)
 }
 
-//RemoveBook is a service layer that helps remove books from BookShop
 func (s *service) Remove(ID string) error {
 	return s.repo.Delete(ID)
 }

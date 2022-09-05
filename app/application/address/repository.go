@@ -3,6 +3,7 @@ package address
 import (
 	"context"
 	"fmt"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
@@ -33,12 +34,12 @@ func (r repository) Insert(address *models.Address, userId int, userType string)
 }
 
 func (r repository) Read(id int) (*ent.Address, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (r repository) ReadAll() ([]*ent.Address, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
@@ -52,13 +53,13 @@ func (r repository) ReadAllByUser(userId int, userType string) ([]*ent.Address, 
 		}
 		return result, nil
 	case "agent":
-		result, err := r.db.Address.Query().Where(address.HasAgentWith(agent.ID(userId))).Order(ent.Desc(address.FieldDefault)).All(ctx)
+		result, err := r.db.Address.Query().Where(address.HasAgentWith(agent.ID(userId))).Order(ent.Asc(address.FieldDefault)).All(ctx)
 		if err != nil {
 			return nil, nil
 		}
 		return result, nil
 	default:
-		result, err := r.db.Address.Query().Where(address.HasCustomerWith(customer.ID(userId))).Order(ent.Desc(address.FieldDefault)).All(ctx)
+		result, err := r.db.Address.Query().Where(address.HasCustomerWith(customer.ID(userId))).Order(ent.Asc(address.FieldDefault)).All(ctx)
 		if err != nil {
 			return nil, nil
 		}
@@ -157,7 +158,7 @@ func (r repository) UpdateByUserDefaultAddress(userId, addressId int, userType s
 }
 
 func (r repository) Delete(id string) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 func (r repository) insertMerchantAddress(addr *models.Address, userId int) (*ent.Address, error) {

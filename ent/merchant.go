@@ -29,6 +29,8 @@ type Merchant struct {
 	Password []byte `json:"-"`
 	// Type holds the value of the "type" field.
 	Type string `json:"type,omitempty"`
+	// Otp holds the value of the "otp" field.
+	Otp merchant.Otp `json:"otp,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MerchantQuery when eager-loading is set.
 	Edges MerchantEdges `json:"edges"`
@@ -142,7 +144,7 @@ func (*Merchant) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new([]byte)
 		case merchant.FieldID:
 			values[i] = new(sql.NullInt64)
-		case merchant.FieldUsername, merchant.FieldType:
+		case merchant.FieldUsername, merchant.FieldType, merchant.FieldOtp:
 			values[i] = new(sql.NullString)
 		case merchant.FieldCreatedAt, merchant.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -196,6 +198,12 @@ func (m *Merchant) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field type", values[i])
 			} else if value.Valid {
 				m.Type = value.String
+			}
+		case merchant.FieldOtp:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field otp", values[i])
+			} else if value.Valid {
+				m.Otp = merchant.Otp(value.String)
 			}
 		}
 	}
@@ -269,6 +277,8 @@ func (m *Merchant) String() string {
 	builder.WriteString(", password=<sensitive>")
 	builder.WriteString(", type=")
 	builder.WriteString(m.Type)
+	builder.WriteString(", otp=")
+	builder.WriteString(fmt.Sprintf("%v", m.Otp))
 	builder.WriteByte(')')
 	return builder.String()
 }

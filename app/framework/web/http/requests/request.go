@@ -1,10 +1,11 @@
 package request
 
 import (
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/pkg/validator"
-	"github.com/gofiber/fiber/v2"
 )
 
 func ValidateUser() fiber.Handler {
@@ -34,6 +35,49 @@ func ValidateUser() fiber.Handler {
 		if er := validator.Validate(&request); er != nil {
 			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 		}
+		return c.Next()
+	}
+}
+func ValidateUserName() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userType := c.Get("userType")
+		if userType == "merchant" {
+			verifyUsername := struct {
+				Username string `json:"username" validate:"required|email_phone|unique:merchants"`
+			}{}
+			err := c.BodyParser(&verifyUsername)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+			}
+			if er := validator.Validate(&verifyUsername); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		}
+		if userType == "customer" {
+			verifyUsername := struct {
+				Username string `json:"username" validate:"required|email_phone|unique:customers"`
+			}{}
+			err := c.BodyParser(&verifyUsername)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+			}
+			if er := validator.Validate(&verifyUsername); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		}
+		if userType == "agent" {
+			verifyUsername := struct {
+				Username string `json:"username" validate:"required|email_phone|unique:agents"`
+			}{}
+			err := c.BodyParser(&verifyUsername)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+			}
+			if er := validator.Validate(&verifyUsername); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		}
+
 		return c.Next()
 	}
 }
@@ -104,19 +148,31 @@ func ValidateAgent() fiber.Handler {
 func ValidateMerchant() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		var info models.MerchantRequestInfo
+		var retailerInfo models.RetailMerchantRequestInfo
+		var supplierInfo models.SupplierMerchantRequestInfo
+
 		var request models.MerchantRequest
 
 		if c.Get("step") == "one" {
-			err := c.BodyParser(&info)
+			var err error
+			if c.Get("merchantType") == "supplier" {
+				err = c.BodyParser(&supplierInfo)
+			} else {
+				err = c.BodyParser(&retailerInfo)
+			}
 			if err != nil {
 				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 			}
 
-			if er := validator.Validate(&info); er != nil {
-				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			if c.Get("merchantType") == "supplier" {
+				if er := validator.Validate(&supplierInfo); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
+			} else {
+				if er := validator.Validate(&retailerInfo); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
 			}
-
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 
 		} else {
@@ -125,6 +181,60 @@ func ValidateMerchant() fiber.Handler {
 				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 			}
 			if er := validator.Validate(&request.Credentials); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+
+			return c.Next()
+		}
+
+	}
+}
+
+func ValidateNewMerchant() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		var retailerInfo models.RetailerStorePersonalInfo
+		var supplierInfo models.SupplierStorePersonalInfo
+
+		if c.Get("step") == "one" {
+			var err error
+			if c.Get("merchantType") == "supplier" {
+				err = c.BodyParser(&supplierInfo)
+			} else {
+				err = c.BodyParser(&retailerInfo)
+			}
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+			}
+			if c.Get("merchantType") == "supplier" {
+				if er := validator.Validate(&supplierInfo); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
+			} else {
+				if er := validator.Validate(&retailerInfo); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
+			}
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
+
+		} else {
+			var allRequest models.StoreFinalRequest
+			err := c.BodyParser(&allRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+			}
+			if er := validator.Validate(
+				&models.MerchantStore{
+					BusinessName:     allRequest.BusinessName,
+					About:            allRequest.About,
+					DescriptionTitle: allRequest.DescriptionTitle,
+					Description:      allRequest.Description,
+					Image:            allRequest.Image,
+					OtherImages:      allRequest.OtherImages,
+					Account:          allRequest.Account,
+					MerchantType:     allRequest.MerchantType,
+				},
+			); er != nil {
 				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 			}
 

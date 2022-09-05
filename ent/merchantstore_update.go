@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -149,6 +150,25 @@ func (msu *MerchantStoreUpdate) SetMerchant(m *Merchant) *MerchantStoreUpdate {
 	return msu.SetMerchantID(m.ID)
 }
 
+// SetAgentID sets the "agent" edge to the Agent entity by ID.
+func (msu *MerchantStoreUpdate) SetAgentID(id int) *MerchantStoreUpdate {
+	msu.mutation.SetAgentID(id)
+	return msu
+}
+
+// SetNillableAgentID sets the "agent" edge to the Agent entity by ID if the given value is not nil.
+func (msu *MerchantStoreUpdate) SetNillableAgentID(id *int) *MerchantStoreUpdate {
+	if id != nil {
+		msu = msu.SetAgentID(*id)
+	}
+	return msu
+}
+
+// SetAgent sets the "agent" edge to the Agent entity.
+func (msu *MerchantStoreUpdate) SetAgent(a *Agent) *MerchantStoreUpdate {
+	return msu.SetAgentID(a.ID)
+}
+
 // AddOrderIDs adds the "orders" edge to the Order entity by IDs.
 func (msu *MerchantStoreUpdate) AddOrderIDs(ids ...int) *MerchantStoreUpdate {
 	msu.mutation.AddOrderIDs(ids...)
@@ -187,6 +207,12 @@ func (msu *MerchantStoreUpdate) Mutation() *MerchantStoreMutation {
 // ClearMerchant clears the "merchant" edge to the Merchant entity.
 func (msu *MerchantStoreUpdate) ClearMerchant() *MerchantStoreUpdate {
 	msu.mutation.ClearMerchant()
+	return msu
+}
+
+// ClearAgent clears the "agent" edge to the Agent entity.
+func (msu *MerchantStoreUpdate) ClearAgent() *MerchantStoreUpdate {
+	msu.mutation.ClearAgent()
 	return msu
 }
 
@@ -495,6 +521,41 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if msu.mutation.AgentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   merchantstore.AgentTable,
+			Columns: []string{merchantstore.AgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: agent.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := msu.mutation.AgentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   merchantstore.AgentTable,
+			Columns: []string{merchantstore.AgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: agent.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if msu.mutation.OrdersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -739,6 +800,25 @@ func (msuo *MerchantStoreUpdateOne) SetMerchant(m *Merchant) *MerchantStoreUpdat
 	return msuo.SetMerchantID(m.ID)
 }
 
+// SetAgentID sets the "agent" edge to the Agent entity by ID.
+func (msuo *MerchantStoreUpdateOne) SetAgentID(id int) *MerchantStoreUpdateOne {
+	msuo.mutation.SetAgentID(id)
+	return msuo
+}
+
+// SetNillableAgentID sets the "agent" edge to the Agent entity by ID if the given value is not nil.
+func (msuo *MerchantStoreUpdateOne) SetNillableAgentID(id *int) *MerchantStoreUpdateOne {
+	if id != nil {
+		msuo = msuo.SetAgentID(*id)
+	}
+	return msuo
+}
+
+// SetAgent sets the "agent" edge to the Agent entity.
+func (msuo *MerchantStoreUpdateOne) SetAgent(a *Agent) *MerchantStoreUpdateOne {
+	return msuo.SetAgentID(a.ID)
+}
+
 // AddOrderIDs adds the "orders" edge to the Order entity by IDs.
 func (msuo *MerchantStoreUpdateOne) AddOrderIDs(ids ...int) *MerchantStoreUpdateOne {
 	msuo.mutation.AddOrderIDs(ids...)
@@ -777,6 +857,12 @@ func (msuo *MerchantStoreUpdateOne) Mutation() *MerchantStoreMutation {
 // ClearMerchant clears the "merchant" edge to the Merchant entity.
 func (msuo *MerchantStoreUpdateOne) ClearMerchant() *MerchantStoreUpdateOne {
 	msuo.mutation.ClearMerchant()
+	return msuo
+}
+
+// ClearAgent clears the "agent" edge to the Agent entity.
+func (msuo *MerchantStoreUpdateOne) ClearAgent() *MerchantStoreUpdateOne {
+	msuo.mutation.ClearAgent()
 	return msuo
 }
 
@@ -1101,6 +1187,41 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: merchant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if msuo.mutation.AgentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   merchantstore.AgentTable,
+			Columns: []string{merchantstore.AgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: agent.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := msuo.mutation.AgentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   merchantstore.AgentTable,
+			Columns: []string{merchantstore.AgentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: agent.FieldID,
 				},
 			},
 		}
