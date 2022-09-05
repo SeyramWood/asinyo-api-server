@@ -87,6 +87,20 @@ func (pc *ProductCreate) SetNillablePromoPrice(f *float64) *ProductCreate {
 	return pc
 }
 
+// SetWeight sets the "weight" field.
+func (pc *ProductCreate) SetWeight(u uint32) *ProductCreate {
+	pc.mutation.SetWeight(u)
+	return pc
+}
+
+// SetNillableWeight sets the "weight" field if the given value is not nil.
+func (pc *ProductCreate) SetNillableWeight(u *uint32) *ProductCreate {
+	if u != nil {
+		pc.SetWeight(*u)
+	}
+	return pc
+}
+
 // SetQuantity sets the "quantity" field.
 func (pc *ProductCreate) SetQuantity(u uint32) *ProductCreate {
 	pc.mutation.SetQuantity(u)
@@ -265,6 +279,10 @@ func (pc *ProductCreate) defaults() {
 		v := product.DefaultPrice
 		pc.mutation.SetPrice(v)
 	}
+	if _, ok := pc.mutation.Weight(); !ok {
+		v := product.DefaultWeight
+		pc.mutation.SetWeight(v)
+	}
 	if _, ok := pc.mutation.Quantity(); !ok {
 		v := product.DefaultQuantity
 		pc.mutation.SetQuantity(v)
@@ -289,6 +307,9 @@ func (pc *ProductCreate) check() error {
 	}
 	if _, ok := pc.mutation.Price(); !ok {
 		return &ValidationError{Name: "price", err: errors.New(`ent: missing required field "Product.price"`)}
+	}
+	if _, ok := pc.mutation.Weight(); !ok {
+		return &ValidationError{Name: "weight", err: errors.New(`ent: missing required field "Product.weight"`)}
 	}
 	if _, ok := pc.mutation.Quantity(); !ok {
 		return &ValidationError{Name: "quantity", err: errors.New(`ent: missing required field "Product.quantity"`)}
@@ -392,6 +413,14 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 			Column: product.FieldPromoPrice,
 		})
 		_node.PromoPrice = &value
+	}
+	if value, ok := pc.mutation.Weight(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Value:  value,
+			Column: product.FieldWeight,
+		})
+		_node.Weight = value
 	}
 	if value, ok := pc.mutation.Quantity(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

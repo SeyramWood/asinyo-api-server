@@ -2,13 +2,15 @@ package api
 
 import (
 	"errors"
+
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/merchant_store"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/pkg/storage"
-	"github.com/gofiber/fiber/v2"
 )
 
 type MerchantStoreHandler struct {
@@ -64,43 +66,40 @@ func (h *MerchantStoreHandler) Fetch() fiber.Handler {
 func (h *MerchantStoreHandler) Create() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var request models.MerchantStore
-		merchantId, _ := c.ParamsInt("merchantId")
 		err := c.BodyParser(&request)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
+		merchantId, _ := c.ParamsInt("merchantId")
 
 		file, err := c.FormFile("image")
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Upload error",
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
 		}
-
-		fPath, err := storage.NewUploadCare().Client().Upload(file, "merchant_logo")
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Upload error",
-			})
-		}
-
 		form, err := c.MultipartForm()
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Upload error",
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
 		}
 
-		fPaths, err := storage.NewUploadCare().Client().Uploads(form.File["otherImages"], "merchant_store")
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Upload error",
-			})
+		logo, images, upErr := storage.NewUploadCare().Client().UploadMerchantStore(file, form)
+		if upErr != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": upErr,
+				},
+			)
 		}
-
-		result, err := h.service.Create(&request, merchantId, fPath, fPaths)
+		result, err := h.service.Create(&request, merchantId, logo, images)
 		if err != nil {
-			//Delete all files from remote server
+			// Delete all files from remote server
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(errors.New("error creating merchant")))
 		}
 		return c.JSON(presenters.MerchantStoreSuccessResponse(result))
@@ -159,6 +158,20 @@ func (h *MerchantStoreHandler) SaveDefaultAccount() fiber.Handler {
 	}
 }
 
+func (h *MerchantStoreHandler) FetchMerchantAgent() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		storeId, _ := c.ParamsInt("storeId")
+
+		result, err := h.service.FetchAgent(storeId)
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
+		}
+		return c.JSON(presenters.MerchantStoreAgentSuccessResponse(result))
+
+	}
+}
+
 func (h *MerchantStoreHandler) Update() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
@@ -176,9 +189,11 @@ func (h *MerchantStoreHandler) Delete() fiber.Handler {
 		if err := h.service.Remove(c.Params("id")); err != nil {
 			return c.Status(fiber.StatusNotFound).JSON(presenters.MerchantErrorResponse(err))
 		}
-		return c.Status(fiber.StatusOK).JSON(&fiber.Map{
-			"status": true,
-			"error":  nil,
-		})
+		return c.Status(fiber.StatusOK).JSON(
+			&fiber.Map{
+				"status": true,
+				"error":  nil,
+			},
+		)
 	}
 }

@@ -1791,6 +1791,9 @@ type AgentMutation struct {
 	favourites        map[int]struct{}
 	removedfavourites map[int]struct{}
 	clearedfavourites bool
+	store             map[int]struct{}
+	removedstore      map[int]struct{}
+	clearedstore      bool
 	done              bool
 	oldValue          func(context.Context) (*Agent, error)
 	predicates        []predicate.Agent
@@ -2465,6 +2468,60 @@ func (m *AgentMutation) ResetFavourites() {
 	m.removedfavourites = nil
 }
 
+// AddStoreIDs adds the "store" edge to the MerchantStore entity by ids.
+func (m *AgentMutation) AddStoreIDs(ids ...int) {
+	if m.store == nil {
+		m.store = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.store[ids[i]] = struct{}{}
+	}
+}
+
+// ClearStore clears the "store" edge to the MerchantStore entity.
+func (m *AgentMutation) ClearStore() {
+	m.clearedstore = true
+}
+
+// StoreCleared reports if the "store" edge to the MerchantStore entity was cleared.
+func (m *AgentMutation) StoreCleared() bool {
+	return m.clearedstore
+}
+
+// RemoveStoreIDs removes the "store" edge to the MerchantStore entity by IDs.
+func (m *AgentMutation) RemoveStoreIDs(ids ...int) {
+	if m.removedstore == nil {
+		m.removedstore = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.store, ids[i])
+		m.removedstore[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedStore returns the removed IDs of the "store" edge to the MerchantStore entity.
+func (m *AgentMutation) RemovedStoreIDs() (ids []int) {
+	for id := range m.removedstore {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// StoreIDs returns the "store" edge IDs in the mutation.
+func (m *AgentMutation) StoreIDs() (ids []int) {
+	for id := range m.store {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetStore resets all changes to the "store" edge.
+func (m *AgentMutation) ResetStore() {
+	m.store = nil
+	m.clearedstore = false
+	m.removedstore = nil
+}
+
 // Where appends a list predicates to the AgentMutation builder.
 func (m *AgentMutation) Where(ps ...predicate.Agent) {
 	m.predicates = append(m.predicates, ps...)
@@ -2762,7 +2819,7 @@ func (m *AgentMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AgentMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.addresses != nil {
 		edges = append(edges, agent.EdgeAddresses)
 	}
@@ -2771,6 +2828,9 @@ func (m *AgentMutation) AddedEdges() []string {
 	}
 	if m.favourites != nil {
 		edges = append(edges, agent.EdgeFavourites)
+	}
+	if m.store != nil {
+		edges = append(edges, agent.EdgeStore)
 	}
 	return edges
 }
@@ -2797,13 +2857,19 @@ func (m *AgentMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case agent.EdgeStore:
+		ids := make([]ent.Value, 0, len(m.store))
+		for id := range m.store {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AgentMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedaddresses != nil {
 		edges = append(edges, agent.EdgeAddresses)
 	}
@@ -2812,6 +2878,9 @@ func (m *AgentMutation) RemovedEdges() []string {
 	}
 	if m.removedfavourites != nil {
 		edges = append(edges, agent.EdgeFavourites)
+	}
+	if m.removedstore != nil {
+		edges = append(edges, agent.EdgeStore)
 	}
 	return edges
 }
@@ -2838,13 +2907,19 @@ func (m *AgentMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case agent.EdgeStore:
+		ids := make([]ent.Value, 0, len(m.removedstore))
+		for id := range m.removedstore {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AgentMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedaddresses {
 		edges = append(edges, agent.EdgeAddresses)
 	}
@@ -2853,6 +2928,9 @@ func (m *AgentMutation) ClearedEdges() []string {
 	}
 	if m.clearedfavourites {
 		edges = append(edges, agent.EdgeFavourites)
+	}
+	if m.clearedstore {
+		edges = append(edges, agent.EdgeStore)
 	}
 	return edges
 }
@@ -2867,6 +2945,8 @@ func (m *AgentMutation) EdgeCleared(name string) bool {
 		return m.clearedorders
 	case agent.EdgeFavourites:
 		return m.clearedfavourites
+	case agent.EdgeStore:
+		return m.clearedstore
 	}
 	return false
 }
@@ -2891,6 +2971,9 @@ func (m *AgentMutation) ResetEdge(name string) error {
 		return nil
 	case agent.EdgeFavourites:
 		m.ResetFavourites()
+		return nil
+	case agent.EdgeStore:
+		m.ResetStore()
 		return nil
 	}
 	return fmt.Errorf("unknown Agent edge %s", name)
@@ -4488,6 +4571,7 @@ type MerchantMutation struct {
 	username          *string
 	password          *[]byte
 	_type             *string
+	otp               *merchant.Otp
 	clearedFields     map[string]struct{}
 	supplier          *int
 	clearedsupplier   bool
@@ -4788,6 +4872,55 @@ func (m *MerchantMutation) OldType(ctx context.Context) (v string, err error) {
 // ResetType resets all changes to the "type" field.
 func (m *MerchantMutation) ResetType() {
 	m._type = nil
+}
+
+// SetOtp sets the "otp" field.
+func (m *MerchantMutation) SetOtp(value merchant.Otp) {
+	m.otp = &value
+}
+
+// Otp returns the value of the "otp" field in the mutation.
+func (m *MerchantMutation) Otp() (r merchant.Otp, exists bool) {
+	v := m.otp
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOtp returns the old "otp" field's value of the Merchant entity.
+// If the Merchant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MerchantMutation) OldOtp(ctx context.Context) (v merchant.Otp, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOtp is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOtp requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOtp: %w", err)
+	}
+	return oldValue.Otp, nil
+}
+
+// ClearOtp clears the value of the "otp" field.
+func (m *MerchantMutation) ClearOtp() {
+	m.otp = nil
+	m.clearedFields[merchant.FieldOtp] = struct{}{}
+}
+
+// OtpCleared returns if the "otp" field was cleared in this mutation.
+func (m *MerchantMutation) OtpCleared() bool {
+	_, ok := m.clearedFields[merchant.FieldOtp]
+	return ok
+}
+
+// ResetOtp resets all changes to the "otp" field.
+func (m *MerchantMutation) ResetOtp() {
+	m.otp = nil
+	delete(m.clearedFields, merchant.FieldOtp)
 }
 
 // SetSupplierID sets the "supplier" edge to the SupplierMerchant entity by id.
@@ -5142,7 +5275,7 @@ func (m *MerchantMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MerchantMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, merchant.FieldCreatedAt)
 	}
@@ -5157,6 +5290,9 @@ func (m *MerchantMutation) Fields() []string {
 	}
 	if m._type != nil {
 		fields = append(fields, merchant.FieldType)
+	}
+	if m.otp != nil {
+		fields = append(fields, merchant.FieldOtp)
 	}
 	return fields
 }
@@ -5176,6 +5312,8 @@ func (m *MerchantMutation) Field(name string) (ent.Value, bool) {
 		return m.Password()
 	case merchant.FieldType:
 		return m.GetType()
+	case merchant.FieldOtp:
+		return m.Otp()
 	}
 	return nil, false
 }
@@ -5195,6 +5333,8 @@ func (m *MerchantMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldPassword(ctx)
 	case merchant.FieldType:
 		return m.OldType(ctx)
+	case merchant.FieldOtp:
+		return m.OldOtp(ctx)
 	}
 	return nil, fmt.Errorf("unknown Merchant field %s", name)
 }
@@ -5239,6 +5379,13 @@ func (m *MerchantMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetType(v)
 		return nil
+	case merchant.FieldOtp:
+		v, ok := value.(merchant.Otp)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOtp(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Merchant field %s", name)
 }
@@ -5268,7 +5415,11 @@ func (m *MerchantMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *MerchantMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(merchant.FieldOtp) {
+		fields = append(fields, merchant.FieldOtp)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -5281,6 +5432,11 @@ func (m *MerchantMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *MerchantMutation) ClearField(name string) error {
+	switch name {
+	case merchant.FieldOtp:
+		m.ClearOtp()
+		return nil
+	}
 	return fmt.Errorf("unknown Merchant nullable field %s", name)
 }
 
@@ -5302,6 +5458,9 @@ func (m *MerchantMutation) ResetField(name string) error {
 		return nil
 	case merchant.FieldType:
 		m.ResetType()
+		return nil
+	case merchant.FieldOtp:
+		m.ResetOtp()
 		return nil
 	}
 	return fmt.Errorf("unknown Merchant field %s", name)
@@ -5544,6 +5703,8 @@ type MerchantStoreMutation struct {
 	clearedFields        map[string]struct{}
 	merchant             *int
 	clearedmerchant      bool
+	agent                *int
+	clearedagent         bool
 	orders               map[int]struct{}
 	removedorders        map[int]struct{}
 	clearedorders        bool
@@ -6176,6 +6337,45 @@ func (m *MerchantStoreMutation) ResetMerchant() {
 	m.clearedmerchant = false
 }
 
+// SetAgentID sets the "agent" edge to the Agent entity by id.
+func (m *MerchantStoreMutation) SetAgentID(id int) {
+	m.agent = &id
+}
+
+// ClearAgent clears the "agent" edge to the Agent entity.
+func (m *MerchantStoreMutation) ClearAgent() {
+	m.clearedagent = true
+}
+
+// AgentCleared reports if the "agent" edge to the Agent entity was cleared.
+func (m *MerchantStoreMutation) AgentCleared() bool {
+	return m.clearedagent
+}
+
+// AgentID returns the "agent" edge ID in the mutation.
+func (m *MerchantStoreMutation) AgentID() (id int, exists bool) {
+	if m.agent != nil {
+		return *m.agent, true
+	}
+	return
+}
+
+// AgentIDs returns the "agent" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AgentID instead. It exists only for internal usage by the builders.
+func (m *MerchantStoreMutation) AgentIDs() (ids []int) {
+	if id := m.agent; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAgent resets all changes to the "agent" edge.
+func (m *MerchantStoreMutation) ResetAgent() {
+	m.agent = nil
+	m.clearedagent = false
+}
+
 // AddOrderIDs adds the "orders" edge to the Order entity by ids.
 func (m *MerchantStoreMutation) AddOrderIDs(ids ...int) {
 	if m.orders == nil {
@@ -6616,9 +6816,12 @@ func (m *MerchantStoreMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *MerchantStoreMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.merchant != nil {
 		edges = append(edges, merchantstore.EdgeMerchant)
+	}
+	if m.agent != nil {
+		edges = append(edges, merchantstore.EdgeAgent)
 	}
 	if m.orders != nil {
 		edges = append(edges, merchantstore.EdgeOrders)
@@ -6635,6 +6838,10 @@ func (m *MerchantStoreMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case merchantstore.EdgeMerchant:
 		if id := m.merchant; id != nil {
+			return []ent.Value{*id}
+		}
+	case merchantstore.EdgeAgent:
+		if id := m.agent; id != nil {
 			return []ent.Value{*id}
 		}
 	case merchantstore.EdgeOrders:
@@ -6655,7 +6862,7 @@ func (m *MerchantStoreMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *MerchantStoreMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedorders != nil {
 		edges = append(edges, merchantstore.EdgeOrders)
 	}
@@ -6687,9 +6894,12 @@ func (m *MerchantStoreMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *MerchantStoreMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedmerchant {
 		edges = append(edges, merchantstore.EdgeMerchant)
+	}
+	if m.clearedagent {
+		edges = append(edges, merchantstore.EdgeAgent)
 	}
 	if m.clearedorders {
 		edges = append(edges, merchantstore.EdgeOrders)
@@ -6706,6 +6916,8 @@ func (m *MerchantStoreMutation) EdgeCleared(name string) bool {
 	switch name {
 	case merchantstore.EdgeMerchant:
 		return m.clearedmerchant
+	case merchantstore.EdgeAgent:
+		return m.clearedagent
 	case merchantstore.EdgeOrders:
 		return m.clearedorders
 	case merchantstore.EdgeOrderDetails:
@@ -6721,6 +6933,9 @@ func (m *MerchantStoreMutation) ClearEdge(name string) error {
 	case merchantstore.EdgeMerchant:
 		m.ClearMerchant()
 		return nil
+	case merchantstore.EdgeAgent:
+		m.ClearAgent()
+		return nil
 	}
 	return fmt.Errorf("unknown MerchantStore unique edge %s", name)
 }
@@ -6731,6 +6946,9 @@ func (m *MerchantStoreMutation) ResetEdge(name string) error {
 	switch name {
 	case merchantstore.EdgeMerchant:
 		m.ResetMerchant()
+		return nil
+	case merchantstore.EdgeAgent:
+		m.ResetAgent()
 		return nil
 	case merchantstore.EdgeOrders:
 		m.ResetOrders()
@@ -9964,6 +10182,8 @@ type ProductMutation struct {
 	addprice             *float64
 	promo_price          *float64
 	addpromo_price       *float64
+	weight               *uint32
+	addweight            *int32
 	quantity             *uint32
 	addquantity          *int32
 	unit                 *string
@@ -10317,6 +10537,62 @@ func (m *ProductMutation) ResetPromoPrice() {
 	m.promo_price = nil
 	m.addpromo_price = nil
 	delete(m.clearedFields, product.FieldPromoPrice)
+}
+
+// SetWeight sets the "weight" field.
+func (m *ProductMutation) SetWeight(u uint32) {
+	m.weight = &u
+	m.addweight = nil
+}
+
+// Weight returns the value of the "weight" field in the mutation.
+func (m *ProductMutation) Weight() (r uint32, exists bool) {
+	v := m.weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeight returns the old "weight" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldWeight(ctx context.Context) (v uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeight: %w", err)
+	}
+	return oldValue.Weight, nil
+}
+
+// AddWeight adds u to the "weight" field.
+func (m *ProductMutation) AddWeight(u int32) {
+	if m.addweight != nil {
+		*m.addweight += u
+	} else {
+		m.addweight = &u
+	}
+}
+
+// AddedWeight returns the value that was added to the "weight" field in this mutation.
+func (m *ProductMutation) AddedWeight() (r int32, exists bool) {
+	v := m.addweight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeight resets all changes to the "weight" field.
+func (m *ProductMutation) ResetWeight() {
+	m.weight = nil
+	m.addweight = nil
 }
 
 // SetQuantity sets the "quantity" field.
@@ -10727,7 +11003,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -10742,6 +11018,9 @@ func (m *ProductMutation) Fields() []string {
 	}
 	if m.promo_price != nil {
 		fields = append(fields, product.FieldPromoPrice)
+	}
+	if m.weight != nil {
+		fields = append(fields, product.FieldWeight)
 	}
 	if m.quantity != nil {
 		fields = append(fields, product.FieldQuantity)
@@ -10773,6 +11052,8 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.Price()
 	case product.FieldPromoPrice:
 		return m.PromoPrice()
+	case product.FieldWeight:
+		return m.Weight()
 	case product.FieldQuantity:
 		return m.Quantity()
 	case product.FieldUnit:
@@ -10800,6 +11081,8 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldPrice(ctx)
 	case product.FieldPromoPrice:
 		return m.OldPromoPrice(ctx)
+	case product.FieldWeight:
+		return m.OldWeight(ctx)
 	case product.FieldQuantity:
 		return m.OldQuantity(ctx)
 	case product.FieldUnit:
@@ -10852,6 +11135,13 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPromoPrice(v)
 		return nil
+	case product.FieldWeight:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeight(v)
+		return nil
 	case product.FieldQuantity:
 		v, ok := value.(uint32)
 		if !ok {
@@ -10894,6 +11184,9 @@ func (m *ProductMutation) AddedFields() []string {
 	if m.addpromo_price != nil {
 		fields = append(fields, product.FieldPromoPrice)
 	}
+	if m.addweight != nil {
+		fields = append(fields, product.FieldWeight)
+	}
 	if m.addquantity != nil {
 		fields = append(fields, product.FieldQuantity)
 	}
@@ -10909,6 +11202,8 @@ func (m *ProductMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPrice()
 	case product.FieldPromoPrice:
 		return m.AddedPromoPrice()
+	case product.FieldWeight:
+		return m.AddedWeight()
 	case product.FieldQuantity:
 		return m.AddedQuantity()
 	}
@@ -10933,6 +11228,13 @@ func (m *ProductMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPromoPrice(v)
+		return nil
+	case product.FieldWeight:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeight(v)
 		return nil
 	case product.FieldQuantity:
 		v, ok := value.(int32)
@@ -10991,6 +11293,9 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldPromoPrice:
 		m.ResetPromoPrice()
+		return nil
+	case product.FieldWeight:
+		m.ResetWeight()
 		return nil
 	case product.FieldQuantity:
 		m.ResetQuantity()

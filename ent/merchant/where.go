@@ -578,6 +578,68 @@ func TypeContainsFold(v string) predicate.Merchant {
 	})
 }
 
+// OtpEQ applies the EQ predicate on the "otp" field.
+func OtpEQ(v Otp) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldOtp), v))
+	})
+}
+
+// OtpNEQ applies the NEQ predicate on the "otp" field.
+func OtpNEQ(v Otp) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldOtp), v))
+	})
+}
+
+// OtpIn applies the In predicate on the "otp" field.
+func OtpIn(vs ...Otp) predicate.Merchant {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Merchant(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldOtp), v...))
+	})
+}
+
+// OtpNotIn applies the NotIn predicate on the "otp" field.
+func OtpNotIn(vs ...Otp) predicate.Merchant {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Merchant(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldOtp), v...))
+	})
+}
+
+// OtpIsNil applies the IsNil predicate on the "otp" field.
+func OtpIsNil() predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldOtp)))
+	})
+}
+
+// OtpNotNil applies the NotNil predicate on the "otp" field.
+func OtpNotNil() predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldOtp)))
+	})
+}
+
 // HasSupplier applies the HasEdge predicate on the "supplier" edge.
 func HasSupplier() predicate.Merchant {
 	return predicate.Merchant(func(s *sql.Selector) {

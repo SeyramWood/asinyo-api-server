@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type repository struct {
@@ -59,7 +60,7 @@ func (r *repository) ReadAll() ([]*ent.Customer, error) {
 	return results, nil
 }
 
-func (a *repository) Update(i *models.Customer) (*models.Customer, error) {
+func (r *repository) Update(i *models.Customer) (*models.Customer, error) {
 	// book.UpdatedAt = time.Now()
 	// _, err := r.Collection.UpdateOne(context.Background(), bson.M{"_id": book.ID}, bson.M{"$set": book})
 	// if err != nil {
@@ -68,7 +69,6 @@ func (a *repository) Update(i *models.Customer) (*models.Customer, error) {
 	return i, nil
 }
 
-//DeleteBook is a mongo repository that helps to delete books
 func (r *repository) Delete(ID string) error {
 	return fmt.Errorf("failed creating book")
 	// return r.Delete(ID).Error

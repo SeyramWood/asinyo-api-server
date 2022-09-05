@@ -31,10 +31,11 @@ type (
 		Region  string `json:"region"`
 	}
 	OrderProductDetail struct {
-		ID    int    `json:"id"`
-		Name  string `json:"name"`
-		Unit  string `json:"unit"`
-		Image string `json:"image"`
+		ID     int    `json:"id"`
+		Name   string `json:"name"`
+		Unit   string `json:"unit"`
+		Image  string `json:"image"`
+		Weight int    `json:"weight"`
 	}
 	OrderProducts struct {
 		ID         int                 `json:"id"`
@@ -262,10 +263,11 @@ func formatOrderDetails(data []*ent.OrderDetail) []*OrderProducts {
 					CreatedAt:  v.CreatedAt,
 					UpdatedAt:  v.UpdatedAt,
 					Product: &OrderProductDetail{
-						ID:    v.Edges.Product.ID,
-						Name:  v.Edges.Product.Name,
-						Unit:  v.Edges.Product.Unit,
-						Image: v.Edges.Product.Image,
+						ID:     v.Edges.Product.ID,
+						Name:   v.Edges.Product.Name,
+						Unit:   v.Edges.Product.Unit,
+						Weight: int(v.Edges.Product.Weight),
+						Image:  v.Edges.Product.Image,
 					},
 					Store: &OrderProductStore{
 						ID:   v.Edges.Store.ID,

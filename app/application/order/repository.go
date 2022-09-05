@@ -81,7 +81,10 @@ func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
 				)
 				odq.WithProduct(
 					func(pq *ent.ProductQuery) {
-						pq.Select(product.FieldID, product.FieldName, product.FieldUnit, product.FieldImage)
+						pq.Select(
+							product.FieldID, product.FieldName, product.FieldUnit, product.FieldImage,
+							product.FieldWeight,
+						)
 					},
 				)
 			},
@@ -136,7 +139,10 @@ func (r repository) Read(id int) (*ent.Order, error) {
 				)
 				odq.WithProduct(
 					func(pq *ent.ProductQuery) {
-						pq.Select(product.FieldID, product.FieldName, product.FieldUnit, product.FieldImage)
+						pq.Select(
+							product.FieldID, product.FieldName, product.FieldUnit, product.FieldImage,
+							product.FieldWeight,
+						)
 					},
 				)
 			},
@@ -323,12 +329,13 @@ func (r repository) insertCustomerOrder(res *models.OrderResponse) (*ent.Order, 
 	addressId, _ := strconv.Atoi(res.MetaData.Address)
 	pickupId, _ := strconv.Atoi(res.MetaData.Pickup)
 	c := r.db.Customer.Query().Where(customer.ID(userId)).OnlyX(ctx)
-
+	stores := r.getNewStores(res.MetaData.Products)
 	if addressId != 0 {
 		addr := r.db.Address.Query().Where(address.ID(addressId)).OnlyX(ctx)
 		o, oErr := r.db.Order.Create().
 			SetCustomer(c).
 			SetAddress(addr).
+			AddStores(stores...).
 			SetAmount(res.Amount / 100).
 			SetDeliveryFee(deliveryFee).
 			SetReference(res.Reference).
@@ -353,6 +360,7 @@ func (r repository) insertCustomerOrder(res *models.OrderResponse) (*ent.Order, 
 		o, oErr := r.db.Order.Create().
 			SetCustomer(c).
 			SetPickup(psd).
+			AddStores(stores...).
 			SetAmount(res.Amount / 100).
 			SetDeliveryFee(deliveryFee).
 			SetReference(res.Reference).
@@ -383,11 +391,14 @@ func (r repository) insertAgentOrder(res *models.OrderResponse) (*ent.Order, err
 	pickupId, _ := strconv.Atoi(res.MetaData.Pickup)
 	c := r.db.Agent.Query().Where(agent.ID(userId)).OnlyX(ctx)
 
+	stores := r.getNewStores(res.MetaData.Products)
+
 	if addressId != 0 {
 		addr := r.db.Address.Query().Where(address.ID(addressId)).OnlyX(ctx)
 		o, oErr := r.db.Order.Create().
 			SetAgent(c).
 			SetAddress(addr).
+			AddStores(stores...).
 			SetAmount(res.Amount / 100).
 			SetDeliveryFee(deliveryFee).
 			SetReference(res.Reference).
@@ -412,6 +423,7 @@ func (r repository) insertAgentOrder(res *models.OrderResponse) (*ent.Order, err
 		o, oErr := r.db.Order.Create().
 			SetAgent(c).
 			SetPickup(psd).
+			AddStores(stores...).
 			SetAmount(res.Amount / 100).
 			SetDeliveryFee(deliveryFee).
 			SetReference(res.Reference).

@@ -38,6 +38,8 @@ const (
 	FieldMerchantType = "merchant_type"
 	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
 	EdgeMerchant = "merchant"
+	// EdgeAgent holds the string denoting the agent edge name in mutations.
+	EdgeAgent = "agent"
 	// EdgeOrders holds the string denoting the orders edge name in mutations.
 	EdgeOrders = "orders"
 	// EdgeOrderDetails holds the string denoting the order_details edge name in mutations.
@@ -51,6 +53,13 @@ const (
 	MerchantInverseTable = "merchants"
 	// MerchantColumn is the table column denoting the merchant relation/edge.
 	MerchantColumn = "merchant_store"
+	// AgentTable is the table that holds the agent relation/edge.
+	AgentTable = "merchant_stores"
+	// AgentInverseTable is the table name for the Agent entity.
+	// It exists in this package in order to avoid circular dependency with the "agent" package.
+	AgentInverseTable = "agents"
+	// AgentColumn is the table column denoting the agent relation/edge.
+	AgentColumn = "agent_store"
 	// OrdersTable is the table that holds the orders relation/edge. The primary key declared below.
 	OrdersTable = "merchant_store_orders"
 	// OrdersInverseTable is the table name for the Order entity.
@@ -85,6 +94,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "merchant_stores"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"agent_store",
 	"merchant_store",
 }
 

@@ -3,6 +3,7 @@
 package merchant
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -21,6 +22,8 @@ const (
 	FieldPassword = "password"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
+	// FieldOtp holds the string denoting the otp field in the database.
+	FieldOtp = "otp"
 	// EdgeSupplier holds the string denoting the supplier edge name in mutations.
 	EdgeSupplier = "supplier"
 	// EdgeRetailer holds the string denoting the retailer edge name in mutations.
@@ -96,6 +99,7 @@ var Columns = []string{
 	FieldUsername,
 	FieldPassword,
 	FieldType,
+	FieldOtp,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -122,3 +126,26 @@ var (
 	// TypeValidator is a validator for the "type" field. It is called by the builders before save.
 	TypeValidator func(string) error
 )
+
+// Otp defines the type for the "otp" enum field.
+type Otp string
+
+// Otp values.
+const (
+	OtpActive   Otp = "active"
+	OtpInactive Otp = "inactive"
+)
+
+func (o Otp) String() string {
+	return string(o)
+}
+
+// OtpValidator is a validator for the "otp" field enum values. It is called by the builders before save.
+func OtpValidator(o Otp) error {
+	switch o {
+	case OtpActive, OtpInactive:
+		return nil
+	default:
+		return fmt.Errorf("merchant: invalid enum value for otp field: %q", o)
+	}
+}

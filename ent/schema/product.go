@@ -23,6 +23,7 @@ func (Product) Fields() []ent.Field {
 		field.String("name").NotEmpty(),
 		field.Float("price").Default(0.00),
 		field.Float("promo_price").Optional().Nillable(),
+		field.Uint32("weight").Default(1),
 		field.Uint32("quantity").Default(1),
 		field.String("unit").NotEmpty(),
 		field.Text("description").NotEmpty(),

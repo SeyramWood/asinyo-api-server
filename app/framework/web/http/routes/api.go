@@ -77,7 +77,7 @@ func agentRouter(r fiber.Router, db *database.Adapter) {
 
 	router := r.Group("/auth/agents")
 
-	authRouter := r.Group("/agents", middleware.Auth())
+	authRouter := r.Group("/agents") // /middleware.Auth()
 
 	router.Route(
 		"/", func(r fiber.Router) {
@@ -91,6 +91,7 @@ func agentRouter(r fiber.Router, db *database.Adapter) {
 		"/", func(r fiber.Router) {
 
 			r.Get("/", h.Fetch()).Name("fetch")
+			r.Get("/my-merchants/:agent", h.FetchAllMerchant())
 			r.Delete("/:id", h.Delete()).Name("delete")
 
 		}, "merchant.retailers.",
@@ -110,9 +111,16 @@ func retailMerchantRouter(r fiber.Router, db *database.Adapter) {
 	router.Route(
 		"/", func(r fiber.Router) {
 
-			r.Post("/sign-up", request.ValidateMerchant(), m.Create()).Name("register")
+			r.Post("/sign-up", request.ValidateMerchant(), m.Create())
 
-		}, "auth.merchant.retailers.",
+		}, "auth.merchant.retailers",
+	)
+	router.Route(
+		"/", func(r fiber.Router) {
+
+			r.Post("/add-new-merchant/:agent", request.ValidateNewMerchant(), m.OnboardMerchant())
+
+		}, "auth.merchant.retailers",
 	)
 
 	authRouter.Route(
@@ -137,9 +145,17 @@ func supplierMerchantRouter(r fiber.Router, db *database.Adapter) {
 	router.Route(
 		"/", func(r fiber.Router) {
 
-			r.Post("/sign-up", request.ValidateMerchant(), m.Create()).Name("register")
+			r.Post("/sign-up", request.ValidateMerchant(), m.Create())
 
-		}, "auth.merchant.suppliers.",
+		}, "auth.merchant.suppliers",
+	)
+
+	router.Route(
+		"/", func(r fiber.Router) {
+
+			r.Post("/add-new-merchant/:agent", request.ValidateNewMerchant(), m.OnboardMerchant())
+
+		}, "auth.merchant.suppliers",
 	)
 
 	authRouter.Route(
@@ -175,6 +191,8 @@ func merchantRouter(r fiber.Router, db *database.Adapter) {
 			r.Get("/:storeId", msHandler.FetchByID())
 
 			r.Get("/:merchantType/all", msHandler.Fetch())
+
+			r.Get("/:storeId/my-agent", msHandler.FetchMerchantAgent())
 
 			r.Get("/:merchantId/:merchant", msHandler.FetchByMerchantID())
 
@@ -341,6 +359,7 @@ func authRouter(router fiber.Router, db *database.Adapter) {
 		"/auth", func(r fiber.Router) {
 
 			r.Post("/signin", request.ValidateUser(), h.Login()).Name("signin")
+			r.Post("/send-user-verification-code", request.ValidateUserName(), h.SendVerificationCode())
 			r.Get("/signout", middleware.Auth(), h.Logout()).Name("signout")
 			r.Get("/user", middleware.Auth(), h.FetchAuthUser()).Name("user")
 

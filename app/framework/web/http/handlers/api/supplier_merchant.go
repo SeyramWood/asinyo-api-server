@@ -3,12 +3,13 @@ package api
 import (
 	"errors"
 
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/supplier_merchant"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/gofiber/fiber/v2"
 )
 
 type SupplierMerchantHandler struct {
@@ -60,15 +61,17 @@ func (h *SupplierMerchantHandler) Create() fiber.Handler {
 
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.SupplierMerchantErrorResponse(err))
 		}
-		_, err = h.service.Create(&models.SupplierMerchant{
-			GhanaCard:      request.Info.GhanaCard,
-			LastName:       request.Info.LastName,
-			OtherName:      request.Info.OtherName,
-			Phone:          request.Info.Phone,
-			OtherPhone:     request.Info.OtherPhone,
-			Address:        request.Info.Address,
-			DigitalAddress: request.Info.DigitalAddress,
-		})
+		_, err = h.service.Create(
+			&models.SupplierMerchant{
+				GhanaCard:      request.Info.GhanaCard,
+				LastName:       request.Info.LastName,
+				OtherName:      request.Info.OtherName,
+				Phone:          request.Info.Phone,
+				OtherPhone:     request.Info.OtherPhone,
+				Address:        request.Info.Address,
+				DigitalAddress: request.Info.DigitalAddress,
+			},
+		)
 
 		if err != nil {
 
@@ -95,9 +98,11 @@ func (h *SupplierMerchantHandler) Delete() fiber.Handler {
 		if err := h.service.Remove(c.Params("id")); err != nil {
 			return c.Status(fiber.StatusNotFound).JSON(presenters.SupplierMerchantErrorResponse(err))
 		}
-		return c.Status(fiber.StatusOK).JSON(&fiber.Map{
-			"status": true,
-			"error":  nil,
-		})
+		return c.Status(fiber.StatusOK).JSON(
+			&fiber.Map{
+				"status": true,
+				"error":  nil,
+			},
+		)
 	}
 }

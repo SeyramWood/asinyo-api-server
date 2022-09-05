@@ -1,13 +1,14 @@
 package server
 
 import (
-	"fmt"
-	"github.com/SeyramWood/config"
+	"log"
+	"os"
+
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
-	"log"
-	"os"
+
+	"github.com/SeyramWood/config"
 )
 
 type HTTP struct {
@@ -21,15 +22,17 @@ func NewHTTPServer() *HTTP {
 		panic(err)
 	}
 	return &HTTP{
-		Server: fiber.New(fiber.Config{
-			Prefork:       config.Server().Prefork,
-			CaseSensitive: config.Server().CaseSensitive,
-			StrictRouting: config.Server().StrictRouting,
-			ServerHeader:  config.Server().ServerHeader,
-			AppName:       config.App().Name,
-			JSONEncoder:   json.Marshal,
-			JSONDecoder:   json.Unmarshal,
-		}),
+		Server: fiber.New(
+			fiber.Config{
+				Prefork:       config.Server().Prefork,
+				CaseSensitive: config.Server().CaseSensitive,
+				StrictRouting: config.Server().StrictRouting,
+				ServerHeader:  config.Server().ServerHeader,
+				AppName:       config.App().Name,
+				JSONEncoder:   json.Marshal,
+				JSONDecoder:   json.Unmarshal,
+			},
+		),
 		Logger: logger,
 	}
 
@@ -37,14 +40,12 @@ func NewHTTPServer() *HTTP {
 
 func (http *HTTP) Run() {
 	if os.Getenv("APP_ENV") == "production" {
-		// Get the PORT from heroku env
 		port := os.Getenv("PORT")
-		// Verify if heroku provided the port or not
 		if port == "" {
 			port = config.App().PORT
 		}
 		log.Fatal(http.Server.Listen(":" + port))
 	} else {
-		log.Fatal(http.Server.Listen(fmt.Sprint(config.App().ServerURL)))
+		log.Fatal(http.Server.Listen(":" + config.App().PORT))
 	}
 }

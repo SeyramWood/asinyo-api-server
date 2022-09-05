@@ -156,6 +156,7 @@ var (
 		{Name: "username", Type: field.TypeString, Unique: true},
 		{Name: "password", Type: field.TypeBytes},
 		{Name: "type", Type: field.TypeString},
+		{Name: "otp", Type: field.TypeEnum, Nullable: true, Enums: []string{"active", "inactive"}},
 	}
 	// MerchantsTable holds the schema information for the "merchants" table.
 	MerchantsTable = &schema.Table{
@@ -178,6 +179,7 @@ var (
 		{Name: "bank_account", Type: field.TypeJSON, Nullable: true},
 		{Name: "momo_account", Type: field.TypeJSON, Nullable: true},
 		{Name: "merchant_type", Type: field.TypeString},
+		{Name: "agent_store", Type: field.TypeInt, Nullable: true},
 		{Name: "merchant_store", Type: field.TypeInt, Unique: true, Nullable: true},
 	}
 	// MerchantStoresTable holds the schema information for the "merchant_stores" table.
@@ -187,8 +189,14 @@ var (
 		PrimaryKey: []*schema.Column{MerchantStoresColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "merchant_stores_merchants_store",
+				Symbol:     "merchant_stores_agents_store",
 				Columns:    []*schema.Column{MerchantStoresColumns[13]},
+				RefColumns: []*schema.Column{AgentsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "merchant_stores_merchants_store",
+				Columns:    []*schema.Column{MerchantStoresColumns[14]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -318,6 +326,7 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "price", Type: field.TypeFloat64, Default: 0},
 		{Name: "promo_price", Type: field.TypeFloat64, Nullable: true},
+		{Name: "weight", Type: field.TypeUint32, Default: 1},
 		{Name: "quantity", Type: field.TypeUint32, Default: 1},
 		{Name: "unit", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Size: 2147483647},
@@ -334,19 +343,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "products_merchants_products",
-				Columns:    []*schema.Column{ProductsColumns[10]},
+				Columns:    []*schema.Column{ProductsColumns[11]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "products_product_category_majors_products",
-				Columns:    []*schema.Column{ProductsColumns[11]},
+				Columns:    []*schema.Column{ProductsColumns[12]},
 				RefColumns: []*schema.Column{ProductCategoryMajorsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "products_product_category_minors_products",
-				Columns:    []*schema.Column{ProductsColumns[12]},
+				Columns:    []*schema.Column{ProductsColumns[13]},
 				RefColumns: []*schema.Column{ProductCategoryMinorsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -500,7 +509,8 @@ func init() {
 	FavouritesTable.ForeignKeys[1].RefTable = CustomersTable
 	FavouritesTable.ForeignKeys[2].RefTable = MerchantsTable
 	FavouritesTable.ForeignKeys[3].RefTable = ProductsTable
-	MerchantStoresTable.ForeignKeys[0].RefTable = MerchantsTable
+	MerchantStoresTable.ForeignKeys[0].RefTable = AgentsTable
+	MerchantStoresTable.ForeignKeys[1].RefTable = MerchantsTable
 	OrdersTable.ForeignKeys[0].RefTable = AddressesTable
 	OrdersTable.ForeignKeys[1].RefTable = AgentsTable
 	OrdersTable.ForeignKeys[2].RefTable = CustomersTable

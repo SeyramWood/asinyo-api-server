@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 )
@@ -46,6 +47,7 @@ type MerchantStore struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MerchantStoreQuery when eager-loading is set.
 	Edges          MerchantStoreEdges `json:"edges"`
+	agent_store    *int
 	merchant_store *int
 }
 
@@ -53,13 +55,15 @@ type MerchantStore struct {
 type MerchantStoreEdges struct {
 	// Merchant holds the value of the merchant edge.
 	Merchant *Merchant `json:"merchant,omitempty"`
+	// Agent holds the value of the agent edge.
+	Agent *Agent `json:"agent,omitempty"`
 	// Orders holds the value of the orders edge.
 	Orders []*Order `json:"orders,omitempty"`
 	// OrderDetails holds the value of the order_details edge.
 	OrderDetails []*OrderDetail `json:"order_details,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // MerchantOrErr returns the Merchant value or an error if the edge
@@ -76,10 +80,24 @@ func (e MerchantStoreEdges) MerchantOrErr() (*Merchant, error) {
 	return nil, &NotLoadedError{edge: "merchant"}
 }
 
+// AgentOrErr returns the Agent value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e MerchantStoreEdges) AgentOrErr() (*Agent, error) {
+	if e.loadedTypes[1] {
+		if e.Agent == nil {
+			// The edge agent was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: agent.Label}
+		}
+		return e.Agent, nil
+	}
+	return nil, &NotLoadedError{edge: "agent"}
+}
+
 // OrdersOrErr returns the Orders value or an error if the edge
 // was not loaded in eager-loading.
 func (e MerchantStoreEdges) OrdersOrErr() ([]*Order, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Orders, nil
 	}
 	return nil, &NotLoadedError{edge: "orders"}
@@ -88,7 +106,7 @@ func (e MerchantStoreEdges) OrdersOrErr() ([]*Order, error) {
 // OrderDetailsOrErr returns the OrderDetails value or an error if the edge
 // was not loaded in eager-loading.
 func (e MerchantStoreEdges) OrderDetailsOrErr() ([]*OrderDetail, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.OrderDetails, nil
 	}
 	return nil, &NotLoadedError{edge: "order_details"}
@@ -107,7 +125,9 @@ func (*MerchantStore) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullString)
 		case merchantstore.FieldCreatedAt, merchantstore.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case merchantstore.ForeignKeys[0]: // merchant_store
+		case merchantstore.ForeignKeys[0]: // agent_store
+			values[i] = new(sql.NullInt64)
+		case merchantstore.ForeignKeys[1]: // merchant_store
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type MerchantStore", columns[i])
@@ -210,6 +230,13 @@ func (ms *MerchantStore) assignValues(columns []string, values []interface{}) er
 			}
 		case merchantstore.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field agent_store", value)
+			} else if value.Valid {
+				ms.agent_store = new(int)
+				*ms.agent_store = int(value.Int64)
+			}
+		case merchantstore.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field merchant_store", value)
 			} else if value.Valid {
 				ms.merchant_store = new(int)
@@ -223,6 +250,11 @@ func (ms *MerchantStore) assignValues(columns []string, values []interface{}) er
 // QueryMerchant queries the "merchant" edge of the MerchantStore entity.
 func (ms *MerchantStore) QueryMerchant() *MerchantQuery {
 	return (&MerchantStoreClient{config: ms.config}).QueryMerchant(ms)
+}
+
+// QueryAgent queries the "agent" edge of the MerchantStore entity.
+func (ms *MerchantStore) QueryAgent() *AgentQuery {
+	return (&MerchantStoreClient{config: ms.config}).QueryAgent(ms)
 }
 
 // QueryOrders queries the "orders" edge of the MerchantStore entity.

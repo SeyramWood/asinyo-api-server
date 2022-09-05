@@ -2,17 +2,19 @@ package merchant_store
 
 import (
 	"fmt"
-	"github.com/SeyramWood/app/adapters/gateways"
-	"github.com/SeyramWood/app/domain/models"
-	"github.com/SeyramWood/ent"
-	"github.com/SeyramWood/pkg/storage"
-	"github.com/gabriel-vasile/mimetype"
-	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	"log"
 	"mime/multipart"
 	"path/filepath"
 	"sync"
+
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+
+	"github.com/SeyramWood/app/adapters/gateways"
+	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/ent"
+	"github.com/SeyramWood/pkg/storage"
 )
 
 type service struct {
@@ -25,7 +27,9 @@ func NewMerchantStoreService(repo gateways.MerchantStoreRepo) gateways.MerchantS
 	}
 }
 
-func (s service) Create(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.MerchantStore, error) {
+func (s service) Create(store *models.MerchantStore, merchantId int, logo string, images []string) (
+	*ent.MerchantStore, error,
+) {
 	return s.repo.Insert(store, merchantId, logo, images)
 }
 
@@ -49,14 +53,16 @@ func (s service) Fetch(id int) (*ent.MerchantStore, error) {
 func (s service) FetchByMerchant(merchantId int) (*ent.MerchantStore, error) {
 	return s.repo.ReadByMerchant(merchantId)
 }
-
+func (s service) FetchAgent(store int) (*ent.Agent, error) {
+	return s.repo.ReadAgent(store)
+}
 func (s service) Update(store *models.MerchantStore) (*models.MerchantStore, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (s service) Remove(id string) error {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 

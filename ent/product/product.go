@@ -21,6 +21,8 @@ const (
 	FieldPrice = "price"
 	// FieldPromoPrice holds the string denoting the promo_price field in the database.
 	FieldPromoPrice = "promo_price"
+	// FieldWeight holds the string denoting the weight field in the database.
+	FieldWeight = "weight"
 	// FieldQuantity holds the string denoting the quantity field in the database.
 	FieldQuantity = "quantity"
 	// FieldUnit holds the string denoting the unit field in the database.
@@ -86,6 +88,7 @@ var Columns = []string{
 	FieldName,
 	FieldPrice,
 	FieldPromoPrice,
+	FieldWeight,
 	FieldQuantity,
 	FieldUnit,
 	FieldDescription,
@@ -126,6 +129,8 @@ var (
 	NameValidator func(string) error
 	// DefaultPrice holds the default value on creation for the "price" field.
 	DefaultPrice float64
+	// DefaultWeight holds the default value on creation for the "weight" field.
+	DefaultWeight uint32
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
 	DefaultQuantity uint32
 	// UnitValidator is a validator for the "unit" field. It is called by the builders before save.

@@ -39,6 +39,8 @@ const (
 	EdgeOrders = "orders"
 	// EdgeFavourites holds the string denoting the favourites edge name in mutations.
 	EdgeFavourites = "favourites"
+	// EdgeStore holds the string denoting the store edge name in mutations.
+	EdgeStore = "store"
 	// Table holds the table name of the agent in the database.
 	Table = "agents"
 	// AddressesTable is the table that holds the addresses relation/edge.
@@ -62,6 +64,13 @@ const (
 	FavouritesInverseTable = "favourites"
 	// FavouritesColumn is the table column denoting the favourites relation/edge.
 	FavouritesColumn = "agent_favourites"
+	// StoreTable is the table that holds the store relation/edge.
+	StoreTable = "merchant_stores"
+	// StoreInverseTable is the table name for the MerchantStore entity.
+	// It exists in this package in order to avoid circular dependency with the "merchantstore" package.
+	StoreInverseTable = "merchant_stores"
+	// StoreColumn is the table column denoting the store relation/edge.
+	StoreColumn = "agent_store"
 )
 
 // Columns holds all SQL columns for agent fields.

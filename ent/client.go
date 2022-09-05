@@ -598,6 +598,22 @@ func (c *AgentClient) QueryFavourites(a *Agent) *FavouriteQuery {
 	return query
 }
 
+// QueryStore queries the store edge of a Agent.
+func (c *AgentClient) QueryStore(a *Agent) *MerchantStoreQuery {
+	query := &MerchantStoreQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(agent.Table, agent.FieldID, id),
+			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, agent.StoreTable, agent.StoreColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AgentClient) Hooks() []Hook {
 	return c.hooks.Agent
@@ -1191,6 +1207,22 @@ func (c *MerchantStoreClient) QueryMerchant(ms *MerchantStore) *MerchantQuery {
 			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, id),
 			sqlgraph.To(merchant.Table, merchant.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, merchantstore.MerchantTable, merchantstore.MerchantColumn),
+		)
+		fromV = sqlgraph.Neighbors(ms.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAgent queries the agent edge of a MerchantStore.
+func (c *MerchantStoreClient) QueryAgent(ms *MerchantStore) *AgentQuery {
+	query := &AgentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ms.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, id),
+			sqlgraph.To(agent.Table, agent.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, merchantstore.AgentTable, merchantstore.AgentColumn),
 		)
 		fromV = sqlgraph.Neighbors(ms.driver.Dialect(), step)
 		return fromV, nil

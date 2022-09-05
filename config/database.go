@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/SeyramWood/pkg/env"
 	"os"
+
+	"github.com/SeyramWood/pkg/env"
 )
 
 // AppConfig - our app specific config
@@ -56,11 +57,11 @@ func DB() *db {
 		}
 		return &db{
 			Driver:   driver,
-			Host:     env.GetProduction("DB_HOST", "127.0.0.1"),
-			Port:     env.GetProduction("DB_PORT", "5432"),
-			Name:     env.GetProduction("DB_DATABASE", "test_db"),
-			Username: env.GetProduction("DB_USERNAME", "postgres"),
-			Password: env.GetProduction("DB_PASSWORD", ""),
+			Host:     env.Get("DB_HOST", "127.0.0.1"),
+			Port:     env.Get("DB_PORT", "5432"),
+			Name:     env.Get("DB_DATABASE", "test_db"),
+			Username: env.Get("DB_USERNAME", "postgres"),
+			Password: env.Get("DB_PASSWORD", ""),
 		}
 	}
 	return nil

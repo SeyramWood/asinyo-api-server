@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/SeyramWood/ent/agent"
+	"github.com/SeyramWood/ent/merchantstore"
 )
 
 type repository struct {
@@ -61,7 +64,23 @@ func (r *repository) ReadAll() ([]*ent.Agent, error) {
 	return nil, nil
 }
 
-func (a *repository) Update(i *models.Agent) (*models.Agent, error) {
+func (r *repository) ReadAllMerchant(agentId int) ([]*ent.MerchantStore, error) {
+	results, err := r.db.MerchantStore.Query().
+		Where(merchantstore.HasAgentWith(agent.ID(agentId))).WithMerchant(
+		func(mq *ent.MerchantQuery) {
+			mq.WithSupplier()
+			mq.WithRetailer()
+		},
+	).
+		All(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed fetching merchant stores : %w", err)
+	}
+
+	return results, nil
+
+}
+func (r *repository) Update(i *models.Agent) (*models.Agent, error) {
 	// book.UpdatedAt = time.Now()
 	// _, err := r.Collection.UpdateOne(context.Background(), bson.M{"_id": book.ID}, bson.M{"$set": book})
 	// if err != nil {
@@ -70,7 +89,6 @@ func (a *repository) Update(i *models.Agent) (*models.Agent, error) {
 	return i, nil
 }
 
-//DeleteBook is a mongo repository that helps to delete books
 func (r *repository) Delete(ID string) error {
 	return fmt.Errorf("failed creating book")
 	// return r.Delete(ID).Error

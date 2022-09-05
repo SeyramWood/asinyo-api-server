@@ -1384,6 +1384,34 @@ func HasFavouritesWith(preds ...predicate.Favourite) predicate.Agent {
 	})
 }
 
+// HasStore applies the HasEdge predicate on the "store" edge.
+func HasStore() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StoreTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, StoreTable, StoreColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStoreWith applies the HasEdge predicate on the "store" edge with a given conditions (other predicates).
+func HasStoreWith(preds ...predicate.MerchantStore) predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StoreInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, StoreTable, StoreColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Agent) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {

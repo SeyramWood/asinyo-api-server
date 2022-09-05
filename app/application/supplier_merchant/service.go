@@ -34,7 +34,6 @@ func (s *service) Update(user *models.SupplierMerchant) (*models.SupplierMerchan
 	return s.repo.Update(user)
 }
 
-//RemoveBook is a service layer that helps remove books from BookShop
 func (s *service) Remove(ID string) error {
 	return s.repo.Delete(ID)
 }

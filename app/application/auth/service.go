@@ -183,6 +183,10 @@ func (s *service) FetchAuthUser(c *fiber.Ctx) error {
 
 }
 
+func (s *service) SendUserVerificationCode(username string) (string, error) {
+	return "123456", nil
+}
+
 func (s *service) hashCheck(hash []byte, plain string) bool {
 	if err := bcrypt.CompareHashAndPassword(hash, []byte(plain)); err != nil {
 		return false

@@ -31,6 +31,7 @@ func (r *repository) Insert(prod *models.Product, imageUrl string) (*ent.Product
 
 	result, err := r.db.Product.Create().SetMerchant(mq).SetMajor(major).SetMinor(minor).
 		SetQuantity(uint32(prod.Quantity)).
+		SetWeight(uint32(prod.Weight)).
 		SetUnit(prod.Unit).
 		SetName(prod.Name).
 		SetPrice(prod.Price).
@@ -49,11 +50,15 @@ func (r *repository) Insert(prod *models.Product, imageUrl string) (*ent.Product
 func (r *repository) Read(id int) (*ent.Product, error) {
 
 	result, err := r.db.Product.Query().Where(product.ID(id)).
-		WithMerchant(func(mq *ent.MerchantQuery) {
-			mq.WithStore(func(query *ent.MerchantStoreQuery) {
-				query.Select("id", "name")
-			})
-		}).
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.WithStore(
+					func(query *ent.MerchantStoreQuery) {
+						query.Select("id", "name")
+					},
+				)
+			},
+		).
 		WithMajor().WithMinor().
 		Only(context.Background())
 
@@ -66,12 +71,16 @@ func (r *repository) Read(id int) (*ent.Product, error) {
 func (r *repository) ReadBySupplierMerchant(id int) (*ent.Product, error) {
 
 	result, err := r.db.Product.Query().Where(product.ID(id)).
-		WithMerchant(func(mq *ent.MerchantQuery) {
-			mq.WithSupplier()
-			mq.WithStore(func(query *ent.MerchantStoreQuery) {
-				query.Select("id", "name")
-			})
-		}).
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.WithSupplier()
+				mq.WithStore(
+					func(query *ent.MerchantStoreQuery) {
+						query.Select("id", "name")
+					},
+				)
+			},
+		).
 		WithMajor().
 		WithMinor().
 		Only(context.Background())
@@ -85,12 +94,16 @@ func (r *repository) ReadBySupplierMerchant(id int) (*ent.Product, error) {
 func (r *repository) ReadByRetailMerchant(id int) (*ent.Product, error) {
 
 	result, err := r.db.Product.Query().Where(product.ID(id)).
-		WithMerchant(func(mq *ent.MerchantQuery) {
-			mq.WithRetailer()
-			mq.WithStore(func(query *ent.MerchantStoreQuery) {
-				query.Select("id", "name")
-			})
-		}).
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.WithRetailer()
+				mq.WithStore(
+					func(query *ent.MerchantStoreQuery) {
+						query.Select("id", "name")
+					},
+				)
+			},
+		).
 		WithMajor().
 		WithMinor().
 		Only(context.Background())
@@ -104,11 +117,15 @@ func (r *repository) ReadByRetailMerchant(id int) (*ent.Product, error) {
 
 func (r *repository) ReadAll() ([]*ent.Product, error) {
 	products, err := r.db.Product.Query().
-		WithMerchant(func(mq *ent.MerchantQuery) {
-			mq.WithStore(func(query *ent.MerchantStoreQuery) {
-				query.Select("id", "name")
-			})
-		}).
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.WithStore(
+					func(query *ent.MerchantStoreQuery) {
+						query.Select("id", "name")
+					},
+				)
+			},
+		).
 		WithMajor().
 		WithMinor().
 		All(context.Background())
@@ -121,20 +138,27 @@ func (r *repository) ReadAll() ([]*ent.Product, error) {
 func (r *repository) ReadBySlugRetailMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error) {
 	products, err := r.db.ProductCategoryMinor.Query().
 		Where(productcategoryminor.Slug(slug)).
-		WithProducts(func(pq *ent.ProductQuery) {
-			pq.Where(product.HasMerchantWith(
-				merchant.Type("retailer"),
-			)).
-				WithMajor().
-				WithMinor().
-				WithMerchant(
-					func(mq *ent.MerchantQuery) {
-						mq.WithRetailer()
-						mq.WithStore(func(query *ent.MerchantStoreQuery) {
-							query.Select("id", "name")
-						})
-					})
-		}).
+		WithProducts(
+			func(pq *ent.ProductQuery) {
+				pq.Where(
+					product.HasMerchantWith(
+						merchant.Type("retailer"),
+					),
+				).
+					WithMajor().
+					WithMinor().
+					WithMerchant(
+						func(mq *ent.MerchantQuery) {
+							mq.WithRetailer()
+							mq.WithStore(
+								func(query *ent.MerchantStoreQuery) {
+									query.Select("id", "name")
+								},
+							)
+						},
+					)
+			},
+		).
 		All(context.Background())
 
 	if err != nil {
@@ -146,20 +170,27 @@ func (r *repository) ReadBySlugRetailMerchantCategoryMinor(slug string) ([]*ent.
 func (r *repository) ReadBySlugRetailMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error) {
 	products, err := r.db.ProductCategoryMajor.Query().
 		Where(productcategorymajor.Slug(slug)).
-		WithProducts(func(pq *ent.ProductQuery) {
-			pq.Where(product.HasMerchantWith(
-				merchant.Type("retailer"),
-			)).
-				WithMajor().
-				WithMinor().
-				WithMerchant(
-					func(mq *ent.MerchantQuery) {
-						mq.WithRetailer()
-						mq.WithStore(func(query *ent.MerchantStoreQuery) {
-							query.Select("id", "name")
-						})
-					})
-		}).
+		WithProducts(
+			func(pq *ent.ProductQuery) {
+				pq.Where(
+					product.HasMerchantWith(
+						merchant.Type("retailer"),
+					),
+				).
+					WithMajor().
+					WithMinor().
+					WithMerchant(
+						func(mq *ent.MerchantQuery) {
+							mq.WithRetailer()
+							mq.WithStore(
+								func(query *ent.MerchantStoreQuery) {
+									query.Select("id", "name")
+								},
+							)
+						},
+					)
+			},
+		).
 		All(context.Background())
 
 	if err != nil {
@@ -172,20 +203,27 @@ func (r *repository) ReadBySlugRetailMerchantCategoryMajor(slug string) ([]*ent.
 func (r *repository) ReadBySlugSupplierMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error) {
 	products, err := r.db.ProductCategoryMinor.Query().
 		Where(productcategoryminor.Slug(slug)).
-		WithProducts(func(pq *ent.ProductQuery) {
-			pq.Where(product.HasMerchantWith(
-				merchant.Type("supplier"),
-			)).
-				WithMajor().
-				WithMinor().
-				WithMerchant(
-					func(mq *ent.MerchantQuery) {
-						mq.WithSupplier()
-						mq.WithStore(func(query *ent.MerchantStoreQuery) {
-							query.Select("id", "name")
-						})
-					})
-		}).
+		WithProducts(
+			func(pq *ent.ProductQuery) {
+				pq.Where(
+					product.HasMerchantWith(
+						merchant.Type("supplier"),
+					),
+				).
+					WithMajor().
+					WithMinor().
+					WithMerchant(
+						func(mq *ent.MerchantQuery) {
+							mq.WithSupplier()
+							mq.WithStore(
+								func(query *ent.MerchantStoreQuery) {
+									query.Select("id", "name")
+								},
+							)
+						},
+					)
+			},
+		).
 		All(context.Background())
 
 	if err != nil {
@@ -197,20 +235,27 @@ func (r *repository) ReadBySlugSupplierMerchantCategoryMinor(slug string) ([]*en
 func (r *repository) ReadBySlugSupplierMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error) {
 	products, err := r.db.ProductCategoryMajor.Query().
 		Where(productcategorymajor.Slug(slug)).
-		WithProducts(func(pq *ent.ProductQuery) {
-			pq.Where(product.HasMerchantWith(
-				merchant.Type("supplier"),
-			)).
-				WithMajor().
-				WithMinor().
-				WithMerchant(
-					func(mq *ent.MerchantQuery) {
-						mq.WithSupplier()
-						mq.WithStore(func(query *ent.MerchantStoreQuery) {
-							query.Select("id", "name")
-						})
-					})
-		}).
+		WithProducts(
+			func(pq *ent.ProductQuery) {
+				pq.Where(
+					product.HasMerchantWith(
+						merchant.Type("supplier"),
+					),
+				).
+					WithMajor().
+					WithMinor().
+					WithMerchant(
+						func(mq *ent.MerchantQuery) {
+							mq.WithSupplier()
+							mq.WithStore(
+								func(query *ent.MerchantStoreQuery) {
+									query.Select("id", "name")
+								},
+							)
+						},
+					)
+			},
+		).
 		All(context.Background())
 
 	if err != nil {
@@ -222,20 +267,27 @@ func (r *repository) ReadBySlugSupplierMerchantCategoryMajor(slug string) ([]*en
 
 func (r *repository) ReadAllRetailMerchantCategoryMinor() ([]*ent.ProductCategoryMinor, error) {
 	products, err := r.db.ProductCategoryMinor.Query().
-		WithProducts(func(pq *ent.ProductQuery) {
-			pq.Where(product.HasMerchantWith(
-				merchant.Type("retailer"),
-			)).
-				WithMajor().
-				WithMinor().
-				WithMerchant(
-					func(mq *ent.MerchantQuery) {
-						mq.WithRetailer()
-						mq.WithStore(func(query *ent.MerchantStoreQuery) {
-							query.Select("id", "name")
-						})
-					})
-		}).
+		WithProducts(
+			func(pq *ent.ProductQuery) {
+				pq.Where(
+					product.HasMerchantWith(
+						merchant.Type("retailer"),
+					),
+				).
+					WithMajor().
+					WithMinor().
+					WithMerchant(
+						func(mq *ent.MerchantQuery) {
+							mq.WithRetailer()
+							mq.WithStore(
+								func(query *ent.MerchantStoreQuery) {
+									query.Select("id", "name")
+								},
+							)
+						},
+					)
+			},
+		).
 		All(context.Background())
 
 	if err != nil {
@@ -246,20 +298,27 @@ func (r *repository) ReadAllRetailMerchantCategoryMinor() ([]*ent.ProductCategor
 }
 func (r *repository) ReadAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error) {
 	products, err := r.db.ProductCategoryMajor.Query().
-		WithProducts(func(pq *ent.ProductQuery) {
-			pq.Where(product.HasMerchantWith(
-				merchant.Type("retailer"),
-			)).
-				WithMajor().
-				WithMinor().
-				WithMerchant(
-					func(mq *ent.MerchantQuery) {
-						mq.WithRetailer()
-						mq.WithStore(func(query *ent.MerchantStoreQuery) {
-							query.Select("id", "name")
-						})
-					})
-		}).
+		WithProducts(
+			func(pq *ent.ProductQuery) {
+				pq.Where(
+					product.HasMerchantWith(
+						merchant.Type("retailer"),
+					),
+				).
+					WithMajor().
+					WithMinor().
+					WithMerchant(
+						func(mq *ent.MerchantQuery) {
+							mq.WithRetailer()
+							mq.WithStore(
+								func(query *ent.MerchantStoreQuery) {
+									query.Select("id", "name")
+								},
+							)
+						},
+					)
+			},
+		).
 		All(context.Background())
 
 	if err != nil {
@@ -270,20 +329,27 @@ func (r *repository) ReadAllRetailMerchantCategoryMajor() ([]*ent.ProductCategor
 }
 func (r *repository) ReadAllSupplierMerchantCategoryMinor() ([]*ent.ProductCategoryMinor, error) {
 	products, err := r.db.ProductCategoryMinor.Query().
-		WithProducts(func(pq *ent.ProductQuery) {
-			pq.Where(product.HasMerchantWith(
-				merchant.Type("supplier"),
-			)).
-				WithMajor().
-				WithMinor().
-				WithMerchant(
-					func(mq *ent.MerchantQuery) {
-						mq.WithSupplier()
-						mq.WithStore(func(query *ent.MerchantStoreQuery) {
-							query.Select("id", "name")
-						})
-					})
-		}).
+		WithProducts(
+			func(pq *ent.ProductQuery) {
+				pq.Where(
+					product.HasMerchantWith(
+						merchant.Type("supplier"),
+					),
+				).
+					WithMajor().
+					WithMinor().
+					WithMerchant(
+						func(mq *ent.MerchantQuery) {
+							mq.WithSupplier()
+							mq.WithStore(
+								func(query *ent.MerchantStoreQuery) {
+									query.Select("id", "name")
+								},
+							)
+						},
+					)
+			},
+		).
 		All(context.Background())
 
 	if err != nil {
@@ -294,20 +360,27 @@ func (r *repository) ReadAllSupplierMerchantCategoryMinor() ([]*ent.ProductCateg
 }
 func (r *repository) ReadAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error) {
 	products, err := r.db.ProductCategoryMajor.Query().
-		WithProducts(func(pq *ent.ProductQuery) {
-			pq.Where(product.HasMerchantWith(
-				merchant.Type("supplier"),
-			)).
-				WithMajor().
-				WithMinor().
-				WithMerchant(
-					func(mq *ent.MerchantQuery) {
-						mq.WithSupplier()
-						mq.WithStore(func(query *ent.MerchantStoreQuery) {
-							query.Select("id", "name")
-						})
-					})
-		}).
+		WithProducts(
+			func(pq *ent.ProductQuery) {
+				pq.Where(
+					product.HasMerchantWith(
+						merchant.Type("supplier"),
+					),
+				).
+					WithMajor().
+					WithMinor().
+					WithMerchant(
+						func(mq *ent.MerchantQuery) {
+							mq.WithSupplier()
+							mq.WithStore(
+								func(query *ent.MerchantStoreQuery) {
+									query.Select("id", "name")
+								},
+							)
+						},
+					)
+			},
+		).
 		All(context.Background())
 
 	if err != nil {
@@ -321,12 +394,16 @@ func (r *repository) ReadAllBySupplierMerchant(merchantId int) ([]*ent.Product, 
 
 	products, err := r.db.Product.Query().
 		Where(product.HasMerchantWith(merchant.ID(merchantId))).
-		WithMerchant(func(mq *ent.MerchantQuery) {
-			mq.WithSupplier()
-			mq.WithStore(func(query *ent.MerchantStoreQuery) {
-				query.Select("id", "name")
-			})
-		}).
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.WithSupplier()
+				mq.WithStore(
+					func(query *ent.MerchantStoreQuery) {
+						query.Select("id", "name")
+					},
+				)
+			},
+		).
 		WithMajor().
 		WithMinor().
 		All(context.Background())
@@ -344,12 +421,16 @@ func (r *repository) ReadAllMajorByRetailer(majorId int) ([]*ent.Product, error)
 	products, err := r.db.ProductCategoryMajor.Query().
 		Where(productcategorymajor.ID(majorId)).
 		QueryProducts().
-		WithMerchant(func(mq *ent.MerchantQuery) {
-			mq.WithRetailer()
-			mq.WithStore(func(query *ent.MerchantStoreQuery) {
-				query.Select("id", "name")
-			})
-		}).
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.WithRetailer()
+				mq.WithStore(
+					func(query *ent.MerchantStoreQuery) {
+						query.Select("id", "name")
+					},
+				)
+			},
+		).
 		WithMinor().
 		WithMajor().
 		All(context.Background())
@@ -366,12 +447,16 @@ func (r *repository) ReadAllByRetailMerchant(merchantId int) ([]*ent.Product, er
 
 	products, err := r.db.Product.Query().
 		Where(product.HasMerchantWith(merchant.ID(merchantId))).
-		WithMerchant(func(mq *ent.MerchantQuery) {
-			mq.WithRetailer()
-			mq.WithStore(func(query *ent.MerchantStoreQuery) {
-				query.Select("id", "name")
-			})
-		}).
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.WithRetailer()
+				mq.WithStore(
+					func(query *ent.MerchantStoreQuery) {
+						query.Select("id", "name")
+					},
+				)
+			},
+		).
 		WithMajor().
 		WithMinor().
 		All(context.Background())
@@ -388,12 +473,16 @@ func (r *repository) ReadBestSellerBySupplierMerchant() ([]*ent.Product, error) 
 
 	products, err := r.db.Product.Query().
 		Where(product.HasMerchantWith(merchant.Type("supplier"))).
-		WithMerchant(func(mq *ent.MerchantQuery) {
-			mq.WithSupplier()
-			mq.WithStore(func(query *ent.MerchantStoreQuery) {
-				query.Select("id", "name")
-			})
-		}).
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.WithSupplier()
+				mq.WithStore(
+					func(query *ent.MerchantStoreQuery) {
+						query.Select("id", "name")
+					},
+				)
+			},
+		).
 		WithMajor().
 		WithMinor().
 		All(context.Background())
@@ -410,12 +499,16 @@ func (r *repository) ReadBestSellerRetailMerchant() ([]*ent.Product, error) {
 
 	products, err := r.db.Product.Query().
 		Where(product.HasMerchantWith(merchant.Type("retailer"))).
-		WithMerchant(func(mq *ent.MerchantQuery) {
-			mq.WithRetailer()
-			mq.WithStore(func(query *ent.MerchantStoreQuery) {
-				query.Select("id", "name")
-			})
-		}).
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.WithRetailer()
+				mq.WithStore(
+					func(query *ent.MerchantStoreQuery) {
+						query.Select("id", "name")
+					},
+				)
+			},
+		).
 		WithMajor().
 		WithMinor().
 		All(context.Background())

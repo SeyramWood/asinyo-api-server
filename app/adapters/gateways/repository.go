@@ -19,11 +19,13 @@ type (
 		Insert(agent *models.AgentRequest) (*ent.Agent, error)
 		Read(id int) (*ent.Agent, error)
 		ReadAll() ([]*ent.Agent, error)
+		ReadAllMerchant(agentId int) ([]*ent.MerchantStore, error)
 		Update(agent *models.Agent) (*models.Agent, error)
 		Delete(id string) error
 	}
 	MerchantRepo interface {
-		Insert(merchant *models.MerchantRequest) (*ent.Merchant, error)
+		Insert(merchant *models.MerchantRequest, onboard bool) (*ent.Merchant, error)
+		Onboard(merchant *models.StoreFinalRequest, agentId int, logo string, images []string) (*ent.Merchant, error)
 		Read(id int) (*ent.Merchant, error)
 		ReadAll() ([]*ent.Merchant, error)
 		Update(merchant *models.Merchant) (*models.Merchant, error)
@@ -49,6 +51,7 @@ type (
 		UpdateDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
 		Read(id int) (*ent.MerchantStore, error)
 		ReadByMerchant(merchantId int) (*ent.MerchantStore, error)
+		ReadAgent(store int) (*ent.Agent, error)
 		ReadAll() ([]*ent.MerchantStore, error)
 		ReadAllByMerchant(merchantType string) ([]*ent.MerchantStore, error)
 		Update(store *models.MerchantStore) (*models.MerchantStore, error)

@@ -14,6 +14,7 @@ import (
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
@@ -150,6 +151,21 @@ func (au *AgentUpdate) AddFavourites(f ...*Favourite) *AgentUpdate {
 	return au.AddFavouriteIDs(ids...)
 }
 
+// AddStoreIDs adds the "store" edge to the MerchantStore entity by IDs.
+func (au *AgentUpdate) AddStoreIDs(ids ...int) *AgentUpdate {
+	au.mutation.AddStoreIDs(ids...)
+	return au
+}
+
+// AddStore adds the "store" edges to the MerchantStore entity.
+func (au *AgentUpdate) AddStore(m ...*MerchantStore) *AgentUpdate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return au.AddStoreIDs(ids...)
+}
+
 // Mutation returns the AgentMutation object of the builder.
 func (au *AgentUpdate) Mutation() *AgentMutation {
 	return au.mutation
@@ -216,6 +232,27 @@ func (au *AgentUpdate) RemoveFavourites(f ...*Favourite) *AgentUpdate {
 		ids[i] = f[i].ID
 	}
 	return au.RemoveFavouriteIDs(ids...)
+}
+
+// ClearStore clears all "store" edges to the MerchantStore entity.
+func (au *AgentUpdate) ClearStore() *AgentUpdate {
+	au.mutation.ClearStore()
+	return au
+}
+
+// RemoveStoreIDs removes the "store" edge to MerchantStore entities by IDs.
+func (au *AgentUpdate) RemoveStoreIDs(ids ...int) *AgentUpdate {
+	au.mutation.RemoveStoreIDs(ids...)
+	return au
+}
+
+// RemoveStore removes "store" edges to MerchantStore entities.
+func (au *AgentUpdate) RemoveStore(m ...*MerchantStore) *AgentUpdate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return au.RemoveStoreIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -588,6 +625,60 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if au.mutation.StoreCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.StoreTable,
+			Columns: []string{agent.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedStoreIDs(); len(nodes) > 0 && !au.mutation.StoreCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.StoreTable,
+			Columns: []string{agent.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.StoreIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.StoreTable,
+			Columns: []string{agent.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{agent.Label}
@@ -726,6 +817,21 @@ func (auo *AgentUpdateOne) AddFavourites(f ...*Favourite) *AgentUpdateOne {
 	return auo.AddFavouriteIDs(ids...)
 }
 
+// AddStoreIDs adds the "store" edge to the MerchantStore entity by IDs.
+func (auo *AgentUpdateOne) AddStoreIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.AddStoreIDs(ids...)
+	return auo
+}
+
+// AddStore adds the "store" edges to the MerchantStore entity.
+func (auo *AgentUpdateOne) AddStore(m ...*MerchantStore) *AgentUpdateOne {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return auo.AddStoreIDs(ids...)
+}
+
 // Mutation returns the AgentMutation object of the builder.
 func (auo *AgentUpdateOne) Mutation() *AgentMutation {
 	return auo.mutation
@@ -792,6 +898,27 @@ func (auo *AgentUpdateOne) RemoveFavourites(f ...*Favourite) *AgentUpdateOne {
 		ids[i] = f[i].ID
 	}
 	return auo.RemoveFavouriteIDs(ids...)
+}
+
+// ClearStore clears all "store" edges to the MerchantStore entity.
+func (auo *AgentUpdateOne) ClearStore() *AgentUpdateOne {
+	auo.mutation.ClearStore()
+	return auo
+}
+
+// RemoveStoreIDs removes the "store" edge to MerchantStore entities by IDs.
+func (auo *AgentUpdateOne) RemoveStoreIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.RemoveStoreIDs(ids...)
+	return auo
+}
+
+// RemoveStore removes "store" edges to MerchantStore entities.
+func (auo *AgentUpdateOne) RemoveStore(m ...*MerchantStore) *AgentUpdateOne {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return auo.RemoveStoreIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -1180,6 +1307,60 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: favourite.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.StoreCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.StoreTable,
+			Columns: []string{agent.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedStoreIDs(); len(nodes) > 0 && !auo.mutation.StoreCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.StoreTable,
+			Columns: []string{agent.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.StoreIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   agent.StoreTable,
+			Columns: []string{agent.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
 				},
 			},
 		}

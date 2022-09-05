@@ -93,6 +93,27 @@ func (pu *ProductUpdate) ClearPromoPrice() *ProductUpdate {
 	return pu
 }
 
+// SetWeight sets the "weight" field.
+func (pu *ProductUpdate) SetWeight(u uint32) *ProductUpdate {
+	pu.mutation.ResetWeight()
+	pu.mutation.SetWeight(u)
+	return pu
+}
+
+// SetNillableWeight sets the "weight" field if the given value is not nil.
+func (pu *ProductUpdate) SetNillableWeight(u *uint32) *ProductUpdate {
+	if u != nil {
+		pu.SetWeight(*u)
+	}
+	return pu
+}
+
+// AddWeight adds u to the "weight" field.
+func (pu *ProductUpdate) AddWeight(u int32) *ProductUpdate {
+	pu.mutation.AddWeight(u)
+	return pu
+}
+
 // SetQuantity sets the "quantity" field.
 func (pu *ProductUpdate) SetQuantity(u uint32) *ProductUpdate {
 	pu.mutation.ResetQuantity()
@@ -429,6 +450,20 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: product.FieldPromoPrice,
 		})
 	}
+	if value, ok := pu.mutation.Weight(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Value:  value,
+			Column: product.FieldWeight,
+		})
+	}
+	if value, ok := pu.mutation.AddedWeight(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Value:  value,
+			Column: product.FieldWeight,
+		})
+	}
 	if value, ok := pu.mutation.Quantity(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
@@ -753,6 +788,27 @@ func (puo *ProductUpdateOne) AddPromoPrice(f float64) *ProductUpdateOne {
 // ClearPromoPrice clears the value of the "promo_price" field.
 func (puo *ProductUpdateOne) ClearPromoPrice() *ProductUpdateOne {
 	puo.mutation.ClearPromoPrice()
+	return puo
+}
+
+// SetWeight sets the "weight" field.
+func (puo *ProductUpdateOne) SetWeight(u uint32) *ProductUpdateOne {
+	puo.mutation.ResetWeight()
+	puo.mutation.SetWeight(u)
+	return puo
+}
+
+// SetNillableWeight sets the "weight" field if the given value is not nil.
+func (puo *ProductUpdateOne) SetNillableWeight(u *uint32) *ProductUpdateOne {
+	if u != nil {
+		puo.SetWeight(*u)
+	}
+	return puo
+}
+
+// AddWeight adds u to the "weight" field.
+func (puo *ProductUpdateOne) AddWeight(u int32) *ProductUpdateOne {
+	puo.mutation.AddWeight(u)
 	return puo
 }
 
@@ -1114,6 +1170,20 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeFloat64,
 			Column: product.FieldPromoPrice,
+		})
+	}
+	if value, ok := puo.mutation.Weight(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Value:  value,
+			Column: product.FieldWeight,
+		})
+	}
+	if value, ok := puo.mutation.AddedWeight(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Value:  value,
+			Column: product.FieldWeight,
 		})
 	}
 	if value, ok := puo.mutation.Quantity(); ok {
