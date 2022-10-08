@@ -41,3 +41,9 @@ func (s *service) Update(user *models.Agent) (*models.Agent, error) {
 func (s *service) Remove(ID string) error {
 	return s.repo.Delete(ID)
 }
+
+func (s *service) CreateCompliance(
+	request *models.AgentComplianceRequest, id int, report string, personal []string, guarantor []string,
+) (*ent.Agent, error) {
+	return s.repo.CreateCompliance(request, id, report, personal, guarantor)
+}

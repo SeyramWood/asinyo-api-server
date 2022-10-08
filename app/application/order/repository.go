@@ -3,6 +3,7 @@ package order
 import (
 	"context"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/Jeffail/gabs"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/ent/address"
@@ -50,13 +52,12 @@ func (r repository) ReadAllByUser(userType string, id int) ([]*ent.Order, error)
 }
 func (r repository) ReadAllByStore(merchantId int) ([]*ent.Order, error) {
 	ctx := context.Background()
-	store := r.db.Merchant.Query().Where(merchant.ID(merchantId)).QueryStore().OnlyIDX(ctx)
-	results, err := r.db.Order.Query().
-		Where(order.HasStoresWith(merchantstore.ID(store))).
+	results, err := r.db.Merchant.Query().Where(merchant.ID(merchantId)).QueryStore().
+		QueryOrders().
 		Order(ent.Asc(order.FieldCreatedAt)).
 		WithDetails(
 			func(odq *ent.OrderDetailQuery) {
-				odq.Where(orderdetail.HasStoreWith(merchantstore.ID(store)))
+				odq.Where(orderdetail.HasStore())
 				odq.Select(orderdetail.FieldAmount, orderdetail.FieldStatus)
 			},
 		).
@@ -66,14 +67,37 @@ func (r repository) ReadAllByStore(merchantId int) ([]*ent.Order, error) {
 	}
 	return results, nil
 }
-func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
+func (r repository) ReadAllByAgentStore(agentId int) ([]*ent.Order, error) {
 	ctx := context.Background()
-	store := r.db.Merchant.Query().Where(merchant.ID(merchantId)).QueryStore().OnlyIDX(ctx)
-	result, err := r.db.Order.Query().
+	results, err := r.db.Agent.Query().Where(agent.ID(agentId)).
+		QueryStore().
+		QueryOrders().
+		Order(ent.Asc(order.FieldCreatedAt)).
+		WithDetails(
+			func(odq *ent.OrderDetailQuery) {
+				odq.Where(orderdetail.HasStore())
+				odq.Select(orderdetail.FieldAmount, orderdetail.FieldStatus)
+			},
+		).
+		WithStores(
+			func(msq *ent.MerchantStoreQuery) {
+				msq.Select(merchantstore.FieldID, merchantstore.FieldName)
+			},
+		).
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
+	result, err := r.db.Merchant.Query().Where(merchant.ID(merchantId)).QueryStore().
+		QueryOrders().
 		Where(order.ID(id)).
 		WithDetails(
 			func(odq *ent.OrderDetailQuery) {
-				odq.Where(orderdetail.HasStoreWith(merchantstore.ID(store)))
+				odq.Where(orderdetail.HasStore())
 				odq.WithStore(
 					func(msq *ent.MerchantStoreQuery) {
 						msq.Select(merchantstore.FieldID, merchantstore.FieldName)
@@ -106,7 +130,6 @@ func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
 				)
 			},
 		).
-		Order(ent.Asc(order.FieldCreatedAt)).
 		Only(context.Background())
 	if err != nil {
 		return nil, err
@@ -114,8 +137,60 @@ func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
 	return result, nil
 }
 
-func (r repository) Insert(res *models.OrderResponse) (*ent.Order, error) {
-	switch res.MetaData.UserType {
+func (r repository) ReadByAgentStore(id, agentId int) (*ent.Order, error) {
+	result, err := r.db.Agent.Query().Where(agent.ID(agentId)).QueryStore().
+		Select(merchantstore.FieldID, merchantstore.FieldName).
+		QueryOrders().
+		Where(order.ID(id)).
+		WithDetails(
+			func(odq *ent.OrderDetailQuery) {
+				odq.Where(orderdetail.HasStore())
+				odq.WithStore(
+					func(msq *ent.MerchantStoreQuery) {
+						msq.Select(merchantstore.FieldID, merchantstore.FieldName)
+					},
+				)
+				odq.WithProduct(
+					func(pq *ent.ProductQuery) {
+						pq.Select(
+							product.FieldID, product.FieldName, product.FieldUnit, product.FieldImage,
+							product.FieldWeight,
+						)
+					},
+				)
+			},
+		).
+		WithAddress(
+			func(aq *ent.AddressQuery) {
+				aq.Select(
+					address.FieldID, address.FieldLastName, address.FieldOtherName, address.FieldAddress,
+					address.FieldCity, address.FieldRegion,
+				)
+			},
+		).
+		WithPickup(
+			func(pq *ent.PickupStationQuery) {
+				pq.Select(
+					pickupstation.FieldID, pickupstation.FieldName, pickupstation.FieldAddress,
+					pickupstation.FieldCity,
+					pickupstation.FieldRegion,
+				)
+			},
+		).
+		WithStores(
+			func(msq *ent.MerchantStoreQuery) {
+				msq.Select(merchantstore.FieldID, merchantstore.FieldName)
+			},
+		).
+		Only(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r repository) Insert(res *models.OrderPayload) (*ent.Order, error) {
+	switch res.Metadata.UserType {
 	case "retailer", "supplier":
 		return r.insertMerchantOrder(res)
 	case "customer":
@@ -164,7 +239,6 @@ func (r repository) Read(id int) (*ent.Order, error) {
 				)
 			},
 		).
-		Order(ent.Asc(order.FieldCreatedAt)).
 		Only(context.Background())
 	if err != nil {
 		return nil, err
@@ -178,7 +252,7 @@ func (r repository) ReadAll() ([]*ent.Order, error) {
 	panic("implement me")
 }
 
-func (r repository) Update(order *models.OrderResponse) (*ent.Order, error) {
+func (r repository) Update(order *services.PaystackResponse) (*ent.Order, error) {
 	// TODO implement me
 	panic("implement me")
 }
@@ -226,6 +300,9 @@ func (r repository) UpdateOrderDetailStatus(requests map[string]*gabs.Container)
 		return nil, err
 	}
 	_ = r.db.Order.UpdateOneID(oId).SetStatus(r.checkOrderStatus(results)).SaveX(ctx)
+	if strings.Compare(requests["userType"].Data().(string), "agent") == 0 {
+		return r.ReadByAgentStore(oId, mId)
+	}
 	return r.ReadByStore(oId, mId)
 }
 func (r repository) checkOrderStatus(data []*ent.OrderDetail) order.Status {
@@ -258,62 +335,56 @@ func (r repository) checkOrderStatus(data []*ent.OrderDetail) order.Status {
 
 	return status
 }
-func (r repository) insertMerchantOrder(res *models.OrderResponse) (*ent.Order, error) {
+func (r repository) insertMerchantOrder(res *models.OrderPayload) (*ent.Order, error) {
 	ctx := context.Background()
-	deliveryFee, _ := strconv.ParseFloat(res.MetaData.DeliveryFee, 32)
-	userId, _ := strconv.Atoi(res.MetaData.User)
-	addressId, _ := strconv.Atoi(res.MetaData.Address)
-	pickupId, _ := strconv.Atoi(res.MetaData.Pickup)
-	c := r.db.Merchant.Query().Where(merchant.ID(userId)).OnlyX(ctx)
-
-	stores := r.getNewStores(res.MetaData.Products)
-
-	if addressId != 0 {
-		addr := r.db.Address.Query().Where(address.ID(addressId)).OnlyX(ctx)
+	c := r.db.Merchant.Query().Where(merchant.ID(res.Metadata.User)).OnlyX(ctx)
+	stores := r.getNewStores(res.Metadata.Products)
+	if res.Metadata.Address != 0 {
+		addr := r.db.Address.Query().Where(address.ID(res.Metadata.Address)).OnlyX(ctx)
 		o, oErr := r.db.Order.Create().
 			SetMerchant(c).
 			SetAddress(addr).
 			AddStores(stores...).
 			SetAmount(res.Amount / 100).
-			SetDeliveryFee(deliveryFee).
+			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
 			SetChannel(res.Channel).
 			SetCurrency(res.Currency).
 			SetPaidAt(res.PaidAt).
-			SetOrderNumber(res.MetaData.OrderNumber).
-			SetDeliveryMethod(order.DeliveryMethod(res.MetaData.DeliveryMethod)).
-			SetPaymentMethod(order.PaymentMethod(res.MetaData.PaymentMethod)).
+			SetOrderNumber(res.Metadata.OrderNumber).
+			SetDeliveryMethod(order.DeliveryMethod(res.Metadata.DeliveryMethod)).
+			SetPaymentMethod(order.PaymentMethod(res.Metadata.PaymentMethod)).
 			SetStatus("pending").
 			Save(ctx)
 		if oErr != nil {
 			return nil, oErr
 		}
-		if err := r.insertOrderDetails(res.MetaData, o); err != nil {
+		if err := r.insertOrderDetails(res.Metadata, o); err != nil {
 			return nil, err
 		}
 		return o, nil
 	}
-	if pickupId != 0 {
-		psd := r.db.PickupStation.Query().Where(pickupstation.ID(pickupId)).OnlyX(ctx)
+	if res.Metadata.Pickup != 0 {
+		psd := r.db.PickupStation.Query().Where(pickupstation.ID(res.Metadata.Pickup)).OnlyX(ctx)
 		o, oErr := r.db.Order.Create().
 			SetMerchant(c).
 			SetPickup(psd).
 			AddStores(stores...).
 			SetAmount(res.Amount / 100).
-			SetDeliveryFee(deliveryFee).
+			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
 			SetChannel(res.Channel).
 			SetCurrency(res.Currency).
 			SetPaidAt(res.PaidAt).
-			SetOrderNumber(res.MetaData.OrderNumber).
-			SetDeliveryMethod(order.DeliveryMethod(res.MetaData.DeliveryMethod)).
-			SetPaymentMethod(order.PaymentMethod(res.MetaData.PaymentMethod)).
+			SetOrderNumber(res.Metadata.OrderNumber).
+			SetDeliveryMethod(order.DeliveryMethod(res.Metadata.DeliveryMethod)).
+			SetPaymentMethod(order.PaymentMethod(res.Metadata.PaymentMethod)).
 			SetStatus("pending").
 			Save(ctx)
 		if oErr != nil {
 			return nil, oErr
 		}
-		if err := r.insertOrderDetails(res.MetaData, o); err != nil {
+		if err := r.insertOrderDetails(res.Metadata, o); err != nil {
 			return nil, err
 		}
 		return o, nil
@@ -322,60 +393,56 @@ func (r repository) insertMerchantOrder(res *models.OrderResponse) (*ent.Order, 
 	return nil, nil
 
 }
-func (r repository) insertCustomerOrder(res *models.OrderResponse) (*ent.Order, error) {
+func (r repository) insertCustomerOrder(res *models.OrderPayload) (*ent.Order, error) {
 	ctx := context.Background()
-	deliveryFee, _ := strconv.ParseFloat(res.MetaData.DeliveryFee, 32)
-	userId, _ := strconv.Atoi(res.MetaData.User)
-	addressId, _ := strconv.Atoi(res.MetaData.Address)
-	pickupId, _ := strconv.Atoi(res.MetaData.Pickup)
-	c := r.db.Customer.Query().Where(customer.ID(userId)).OnlyX(ctx)
-	stores := r.getNewStores(res.MetaData.Products)
-	if addressId != 0 {
-		addr := r.db.Address.Query().Where(address.ID(addressId)).OnlyX(ctx)
+	c := r.db.Customer.Query().Where(customer.ID(res.Metadata.User)).OnlyX(ctx)
+	stores := r.getNewStores(res.Metadata.Products)
+	if res.Metadata.Address != 0 {
+		addr := r.db.Address.Query().Where(address.ID(res.Metadata.Address)).OnlyX(ctx)
 		o, oErr := r.db.Order.Create().
 			SetCustomer(c).
 			SetAddress(addr).
 			AddStores(stores...).
 			SetAmount(res.Amount / 100).
-			SetDeliveryFee(deliveryFee).
+			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
 			SetChannel(res.Channel).
 			SetCurrency(res.Currency).
 			SetPaidAt(res.PaidAt).
-			SetOrderNumber(res.MetaData.OrderNumber).
-			SetDeliveryMethod(order.DeliveryMethod(res.MetaData.DeliveryMethod)).
-			SetPaymentMethod(order.PaymentMethod(res.MetaData.PaymentMethod)).
+			SetOrderNumber(res.Metadata.OrderNumber).
+			SetDeliveryMethod(order.DeliveryMethod(res.Metadata.DeliveryMethod)).
+			SetPaymentMethod(order.PaymentMethod(res.Metadata.PaymentMethod)).
 			SetStatus("pending").
 			Save(ctx)
 		if oErr != nil {
 			return nil, oErr
 		}
-		if err := r.insertOrderDetails(res.MetaData, o); err != nil {
+		if err := r.insertOrderDetails(res.Metadata, o); err != nil {
 			return nil, err
 		}
 		return o, nil
 	}
-	if pickupId != 0 {
-		psd := r.db.PickupStation.Query().Where(pickupstation.ID(pickupId)).OnlyX(ctx)
+	if res.Metadata.Pickup != 0 {
+		psd := r.db.PickupStation.Query().Where(pickupstation.ID(res.Metadata.Pickup)).OnlyX(ctx)
 		o, oErr := r.db.Order.Create().
 			SetCustomer(c).
 			SetPickup(psd).
 			AddStores(stores...).
 			SetAmount(res.Amount / 100).
-			SetDeliveryFee(deliveryFee).
+			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
 			SetChannel(res.Channel).
 			SetCurrency(res.Currency).
 			SetPaidAt(res.PaidAt).
-			SetOrderNumber(res.MetaData.OrderNumber).
-			SetDeliveryMethod(order.DeliveryMethod(res.MetaData.DeliveryMethod)).
-			SetPaymentMethod(order.PaymentMethod(res.MetaData.PaymentMethod)).
+			SetOrderNumber(res.Metadata.OrderNumber).
+			SetDeliveryMethod(order.DeliveryMethod(res.Metadata.DeliveryMethod)).
+			SetPaymentMethod(order.PaymentMethod(res.Metadata.PaymentMethod)).
 			SetStatus("pending").
 			Save(ctx)
 		if oErr != nil {
 			return nil, oErr
 		}
-		if err := r.insertOrderDetails(res.MetaData, o); err != nil {
+		if err := r.insertOrderDetails(res.Metadata, o); err != nil {
 			return nil, err
 		}
 		return o, nil
@@ -383,62 +450,56 @@ func (r repository) insertCustomerOrder(res *models.OrderResponse) (*ent.Order, 
 
 	return nil, nil
 }
-func (r repository) insertAgentOrder(res *models.OrderResponse) (*ent.Order, error) {
+func (r repository) insertAgentOrder(res *models.OrderPayload) (*ent.Order, error) {
 	ctx := context.Background()
-	deliveryFee, _ := strconv.ParseFloat(res.MetaData.DeliveryFee, 32)
-	userId, _ := strconv.Atoi(res.MetaData.User)
-	addressId, _ := strconv.Atoi(res.MetaData.Address)
-	pickupId, _ := strconv.Atoi(res.MetaData.Pickup)
-	c := r.db.Agent.Query().Where(agent.ID(userId)).OnlyX(ctx)
-
-	stores := r.getNewStores(res.MetaData.Products)
-
-	if addressId != 0 {
-		addr := r.db.Address.Query().Where(address.ID(addressId)).OnlyX(ctx)
+	c := r.db.Agent.Query().Where(agent.ID(res.Metadata.User)).OnlyX(ctx)
+	stores := r.getNewStores(res.Metadata.Products)
+	if res.Metadata.Address != 0 {
+		addr := r.db.Address.Query().Where(address.ID(res.Metadata.Address)).OnlyX(ctx)
 		o, oErr := r.db.Order.Create().
 			SetAgent(c).
 			SetAddress(addr).
 			AddStores(stores...).
 			SetAmount(res.Amount / 100).
-			SetDeliveryFee(deliveryFee).
+			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
 			SetChannel(res.Channel).
 			SetCurrency(res.Currency).
 			SetPaidAt(res.PaidAt).
-			SetOrderNumber(res.MetaData.OrderNumber).
-			SetDeliveryMethod(order.DeliveryMethod(res.MetaData.DeliveryMethod)).
-			SetPaymentMethod(order.PaymentMethod(res.MetaData.PaymentMethod)).
+			SetOrderNumber(res.Metadata.OrderNumber).
+			SetDeliveryMethod(order.DeliveryMethod(res.Metadata.DeliveryMethod)).
+			SetPaymentMethod(order.PaymentMethod(res.Metadata.PaymentMethod)).
 			SetStatus("pending").
 			Save(ctx)
 		if oErr != nil {
 			return nil, oErr
 		}
-		if err := r.insertOrderDetails(res.MetaData, o); err != nil {
+		if err := r.insertOrderDetails(res.Metadata, o); err != nil {
 			return nil, err
 		}
 		return o, nil
 	}
-	if pickupId != 0 {
-		psd := r.db.PickupStation.Query().Where(pickupstation.ID(pickupId)).OnlyX(ctx)
+	if res.Metadata.Pickup != 0 {
+		psd := r.db.PickupStation.Query().Where(pickupstation.ID(res.Metadata.Pickup)).OnlyX(ctx)
 		o, oErr := r.db.Order.Create().
 			SetAgent(c).
 			SetPickup(psd).
 			AddStores(stores...).
 			SetAmount(res.Amount / 100).
-			SetDeliveryFee(deliveryFee).
+			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
 			SetChannel(res.Channel).
 			SetCurrency(res.Currency).
 			SetPaidAt(res.PaidAt).
-			SetOrderNumber(res.MetaData.OrderNumber).
-			SetDeliveryMethod(order.DeliveryMethod(res.MetaData.DeliveryMethod)).
-			SetPaymentMethod(order.PaymentMethod(res.MetaData.PaymentMethod)).
+			SetOrderNumber(res.Metadata.OrderNumber).
+			SetDeliveryMethod(order.DeliveryMethod(res.Metadata.DeliveryMethod)).
+			SetPaymentMethod(order.PaymentMethod(res.Metadata.PaymentMethod)).
 			SetStatus("pending").
 			Save(ctx)
 		if oErr != nil {
 			return nil, oErr
 		}
-		if err := r.insertOrderDetails(res.MetaData, o); err != nil {
+		if err := r.insertOrderDetails(res.Metadata, o); err != nil {
 			return nil, err
 		}
 		return o, nil
@@ -447,17 +508,13 @@ func (r repository) insertAgentOrder(res *models.OrderResponse) (*ent.Order, err
 	return nil, nil
 
 }
-func (r repository) calculateAmount(product *models.ProductDetailsResponse) float64 {
+func (r repository) calculateAmount(product *services.ProductDetails) float64 {
 	var amount float64
-	price, _ := strconv.ParseFloat(product.Price, 32)
-	promoPrice, _ := strconv.ParseFloat(product.PromoPrice, 32)
-	qty, _ := strconv.ParseFloat(product.Quantity, 32)
-	if promoPrice > 0 {
-		amount = promoPrice * qty
+	if product.PromoPrice > 0 {
+		amount = product.PromoPrice * float64(product.Quantity)
 	} else {
-		amount = price * qty
+		amount = product.Price * float64(product.Quantity)
 	}
-
 	return amount
 }
 
@@ -493,30 +550,27 @@ func (r repository) readMerchantOrders(id int) ([]*ent.Order, error) {
 	return results, nil
 }
 
-func (r repository) insertOrderDetails(metadata *models.OrderResponseMetadata, o *ent.Order) error {
+func (r repository) insertOrderDetails(metadata *models.OrderPayloadMetadata, o *ent.Order) error {
 	ctx := context.Background()
 	bulk := make([]*ent.OrderDetailCreate, len(metadata.Products))
 	wg := sync.WaitGroup{}
 	for i, item := range metadata.Products {
 		wg.Add(1)
-		go func(item *models.ProductDetailsResponse, i int) {
+		go func(item *services.ProductDetails, i int) {
 			defer wg.Done()
-			price, _ := strconv.ParseFloat(item.Price, 32)
-			promoPrice, _ := strconv.ParseFloat(item.PromoPrice, 32)
-			qty, _ := strconv.Atoi(item.Quantity)
+
 			amount := r.calculateAmount(item)
-			pId, _ := strconv.Atoi(item.ID)
-			sId, _ := strconv.Atoi(item.Store)
-			prod := r.db.Product.Query().Where(product.ID(pId)).OnlyX(ctx)
-			store := r.db.MerchantStore.Query().Where(merchantstore.ID(sId)).OnlyX(ctx)
+
+			prod := r.db.Product.Query().Where(product.ID(item.ID)).OnlyX(ctx)
+			store := r.db.MerchantStore.Query().Where(merchantstore.ID(item.Store)).OnlyX(ctx)
 			bulk[i] = r.db.OrderDetail.Create().
 				SetOrder(o).
 				SetProduct(prod).
 				SetStore(store).
-				SetPrice(price).
-				SetPromoPrice(promoPrice).
+				SetPrice(item.Price).
+				SetPromoPrice(item.PromoPrice).
 				SetAmount(amount).
-				SetQuantity(qty)
+				SetQuantity(item.Quantity)
 		}(item, i)
 	}
 	wg.Wait()
@@ -527,18 +581,17 @@ func (r repository) insertOrderDetails(metadata *models.OrderResponseMetadata, o
 	return nil
 }
 
-func (r repository) getNewStores(products []*models.ProductDetailsResponse) []*ent.MerchantStore {
+func (r repository) getNewStores(products []*services.ProductDetails) []*ent.MerchantStore {
 	stores := map[string]interface{}{
 		"ids":       []int{},
 		"instances": []*ent.MerchantStore{},
 	}
 	for _, p := range products {
-		id, _ := strconv.Atoi(p.Store)
-		if !lo.Contains[int](stores["ids"].([]int), id) {
-			stores["ids"] = append(stores["ids"].([]int), id)
+		if !lo.Contains[int](stores["ids"].([]int), p.Store) {
+			stores["ids"] = append(stores["ids"].([]int), p.Store)
 			stores["instances"] = append(
 				stores["instances"].([]*ent.MerchantStore),
-				r.db.MerchantStore.Query().Where(merchantstore.ID(id)).OnlyX(context.Background()),
+				r.db.MerchantStore.Query().Where(merchantstore.ID(p.Store)).OnlyX(context.Background()),
 			)
 		}
 	}

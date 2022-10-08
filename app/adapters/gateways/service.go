@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent"
 )
 
@@ -22,6 +23,9 @@ type (
 		Fetch(id int) (*ent.Agent, error)
 		Update(agent *models.Agent) (*models.Agent, error)
 		Remove(id string) error
+		CreateCompliance(
+			request *models.AgentComplianceRequest, id int, report string, personal []string, guarantor []string,
+		) (*ent.Agent, error)
 	}
 	MerchantService interface {
 		Create(merchant *models.MerchantRequest) (*ent.Merchant, error)
@@ -49,6 +53,7 @@ type (
 		Create(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.MerchantStore, error)
 		SaveAccount(store interface{}, storeId int, logo string) (*ent.MerchantStore, error)
 		SaveDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
+		SaveAgentPermission(request bool, storeId int) (*ent.MerchantStore, error)
 		SaveLogo(c *fiber.Ctx, field, directory string) (interface{}, error)
 		SavePhotos(c *fiber.Ctx, field, directory string) (interface{}, error)
 		FetchAll() ([]*ent.MerchantStore, error)
@@ -114,16 +119,16 @@ type (
 		Remove(id string) error
 	}
 	OrderService interface {
-		Create(order *models.OrderResponse) (*ent.Order, error)
+		Create(order *models.OrderPayload) (*ent.Order, error)
 		FetchAll() ([]*ent.Order, error)
 		FetchAllByUser(userType string, id int) ([]*ent.Order, error)
-		FetchByStore(id, merchantId int) (*ent.Order, error)
+		FetchByStore(id, userId int, userType string) (*ent.Order, error)
 		FetchAllByStore(merchantId int) ([]*ent.Order, error)
+		FetchAllByAgentStore(agentId int) ([]*ent.Order, error)
 		Fetch(id int) (*ent.Order, error)
 		FetchByUser(userType string, id int) (*ent.Order, error)
-		Update(order *models.OrderResponse) (*ent.Order, error)
+		Update(order *services.PaystackResponse) (*ent.Order, error)
 		Remove(id string) error
-		FormatOrderRequest(request []byte) (*models.OrderResponse, error)
 		UpdateOrderDetailStatus(request []byte) (*ent.Order, error)
 	}
 	AdminService interface {
@@ -142,7 +147,18 @@ type (
 	}
 
 	PaymentService interface {
-		Pay(request interface{}) (interface{}, error)
-		Verify(reference string) (interface{}, error)
+		Pay(request any) (any, error)
+		Verify(reference string) (any, error)
+		FormatPayload(request any) (*models.OrderPayload, error)
+	}
+	SMSService interface {
+		Send(request *services.SMSPayload) (any, error)
+	}
+
+	EmailService interface {
+		Listen()
+		Send(msg *services.Message)
+		Done()
+		CloseChannels()
 	}
 )

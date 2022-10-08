@@ -1,13 +1,15 @@
 package router
 
 import (
+	"github.com/gofiber/fiber/v2"
+
+	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/app/framework/web/http/routes"
-	"github.com/gofiber/fiber/v2"
 )
 
-func NewRouter(app *fiber.App, db *database.Adapter) {
-	setup(app, routes.NewApiRouter(db), routes.NewPageRouter(db))
+func NewRouter(app *fiber.App, db *database.Adapter, mail gateways.EmailService) {
+	setup(app, routes.NewApiRouter(db, mail), routes.NewPageRouter(db, mail))
 }
 func setup(app *fiber.App, routers ...Router) {
 	for _, r := range routers {

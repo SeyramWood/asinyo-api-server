@@ -4,6 +4,7 @@ import (
 	"github.com/Jeffail/gabs"
 
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent"
 )
 
@@ -22,10 +23,15 @@ type (
 		ReadAllMerchant(agentId int) ([]*ent.MerchantStore, error)
 		Update(agent *models.Agent) (*models.Agent, error)
 		Delete(id string) error
+		CreateCompliance(
+			request *models.AgentComplianceRequest, id int, report string, personal []string, guarantor []string,
+		) (*ent.Agent, error)
 	}
 	MerchantRepo interface {
 		Insert(merchant *models.MerchantRequest, onboard bool) (*ent.Merchant, error)
-		Onboard(merchant *models.StoreFinalRequest, agentId int, logo string, images []string) (*ent.Merchant, error)
+		Onboard(
+			merchant *models.StoreFinalRequest, agentId int, logo string, images []string, password string,
+		) (*ent.Merchant, error)
 		Read(id int) (*ent.Merchant, error)
 		ReadAll() ([]*ent.Merchant, error)
 		Update(merchant *models.Merchant) (*models.Merchant, error)
@@ -49,6 +55,7 @@ type (
 		Insert(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.MerchantStore, error)
 		UpdateAccount(store interface{}, storeId int, logo string) (*ent.MerchantStore, error)
 		UpdateDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
+		UpdateAgentPermission(permission bool, storeId int) (*ent.MerchantStore, error)
 		Read(id int) (*ent.MerchantStore, error)
 		ReadByMerchant(merchantId int) (*ent.MerchantStore, error)
 		ReadAgent(store int) (*ent.Agent, error)
@@ -117,14 +124,16 @@ type (
 	}
 
 	OrderRepo interface {
-		Insert(order *models.OrderResponse) (*ent.Order, error)
+		Insert(order *models.OrderPayload) (*ent.Order, error)
 		Read(id int) (*ent.Order, error)
 		ReadByUser(userType string, id int) (*ent.Order, error)
 		ReadAll() ([]*ent.Order, error)
 		ReadAllByUser(userType string, id int) ([]*ent.Order, error)
-		ReadAllByStore(id int) ([]*ent.Order, error)
+		ReadAllByStore(merchantId int) ([]*ent.Order, error)
+		ReadAllByAgentStore(agentId int) ([]*ent.Order, error)
 		ReadByStore(id, merchantId int) (*ent.Order, error)
-		Update(order *models.OrderResponse) (*ent.Order, error)
+		ReadByAgentStore(id, agentId int) (*ent.Order, error)
+		Update(order *services.PaystackResponse) (*ent.Order, error)
 		Delete(id string) error
 		UpdateOrderDetailStatus(requests map[string]*gabs.Container) (*ent.Order, error)
 	}
@@ -137,6 +146,6 @@ type (
 	}
 
 	PaymentRepo interface {
-		Insert(transaction *models.Transaction) (*ent.Order, error)
+		Insert(transaction *services.Transaction) (*ent.Order, error)
 	}
 )

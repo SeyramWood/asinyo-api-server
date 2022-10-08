@@ -1,10 +1,13 @@
 package presenters
 
 import (
+	"sync"
 	"time"
 
-	"github.com/SeyramWood/ent"
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/ent"
 )
 
 type (
@@ -17,43 +20,92 @@ type (
 		OtherPhone     *string   `json:"otherPhone"`
 		Address        string    `json:"address"`
 		DigitalAddress string    `json:"digitalAddress"`
-		Username       string    `json:"terms"`
+		Username       string    `json:"username"`
 		CreatedAt      time.Time `json:"created_at"`
 		UpdatedAt      time.Time `json:"updated_at"`
+	}
+	AgentComplianceData struct {
+		ID           int                         `json:"id"`
+		Region       string                      `json:"region"`
+		District     string                      `json:"district"`
+		City         string                      `json:"city"`
+		GhanaCard    []string                    `json:"ghanaCard"`
+		PoliceReport string                      `json:"policeReport"`
+		Verified     bool                        `json:"verified"`
+		Guarantor    *models.AgentGuarantorModel `json:"guarantor"`
+		CreatedAt    time.Time                   `json:"created_at"`
+		UpdatedAt    time.Time                   `json:"updated_at"`
 	}
 )
 
 func AgentSuccessResponse(data *ent.Agent) *fiber.Map {
-	return successResponse(Agent{
-		ID:             data.ID,
-		GhanaCard:      data.GhanaCard,
-		LastName:       data.LastName,
-		OtherName:      data.OtherName,
-		Phone:          data.Phone,
-		OtherPhone:     data.OtherPhone,
-		Address:        data.Address,
-		DigitalAddress: data.DigitalAddress,
-		Username:       data.Username,
-		CreatedAt:      data.CreatedAt,
-		UpdatedAt:      data.UpdatedAt,
-	})
+	return successResponse(
+		Agent{
+			ID:             data.ID,
+			GhanaCard:      data.GhanaCard,
+			LastName:       data.LastName,
+			OtherName:      data.OtherName,
+			Phone:          data.Phone,
+			OtherPhone:     data.OtherPhone,
+			Address:        data.Address,
+			DigitalAddress: data.DigitalAddress,
+			Username:       data.Username,
+			CreatedAt:      data.CreatedAt,
+			UpdatedAt:      data.UpdatedAt,
+		},
+	)
+}
+func AgentsComplianceSuccessResponse(data *ent.Agent) *fiber.Map {
+	return successResponse(
+		AgentComplianceData{
+			ID:           data.ID,
+			Region:       *data.Region,
+			District:     *data.District,
+			City:         *data.City,
+			GhanaCard:    data.Compliance.GhanaCard,
+			PoliceReport: data.Compliance.PoliceReport,
+			Verified:     data.Verified,
+			Guarantor: &models.AgentGuarantorModel{
+				GhanaCard:      data.Compliance.Guarantor.GhanaCard,
+				LastName:       data.Compliance.Guarantor.LastName,
+				OtherName:      data.Compliance.Guarantor.OtherName,
+				Phone:          data.Compliance.Guarantor.Phone,
+				OtherPhone:     data.Compliance.Guarantor.OtherPhone,
+				Address:        data.Compliance.Guarantor.Address,
+				DigitalAddress: data.Compliance.Guarantor.DigitalAddress,
+				Relation:       data.Compliance.Guarantor.Relation,
+				Occupation:     data.Compliance.Guarantor.Occupation,
+			},
+			CreatedAt: data.CreatedAt,
+			UpdatedAt: data.UpdatedAt,
+		},
+	)
 }
 func AgentsSuccessResponse(data []*ent.Agent) *fiber.Map {
-	var response []Customer
-	// wg := sync.WaitGroup{}
-	// for _, v := range data {
-	// 	wg.Add(1)
-	// 	go func(v *ent.Customer) {
-	// 		defer wg.Done()
-	// 		response = append(response, User{
-	// 			ID:        v.ID,
-	// 			Username:  v.Username,
-	// 			CreatedAt: v.CreatedAt,
-	// 			UpdatedAt: v.UpdatedAt,
-	// 		})
-	// 	}(v)
-	// }
-	// wg.Wait()
+	var response []Agent
+	wg := sync.WaitGroup{}
+	for _, v := range data {
+		wg.Add(1)
+		go func(v *ent.Agent) {
+			defer wg.Done()
+			response = append(
+				response, Agent{
+					ID:             v.ID,
+					GhanaCard:      v.GhanaCard,
+					LastName:       v.LastName,
+					OtherName:      v.OtherName,
+					Phone:          v.Phone,
+					OtherPhone:     v.OtherPhone,
+					Address:        v.Address,
+					DigitalAddress: v.DigitalAddress,
+					Username:       v.Username,
+					CreatedAt:      v.CreatedAt,
+					UpdatedAt:      v.UpdatedAt,
+				},
+			)
+		}(v)
+	}
+	wg.Wait()
 	return successResponse(response)
 }
 

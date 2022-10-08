@@ -4,6 +4,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+
+	"github.com/SeyramWood/app/domain/models"
 )
 
 // Agent holds the schema definition for the Agent entity.
@@ -29,6 +31,14 @@ func (Agent) Fields() []ent.Field {
 		field.String("other_phone").Optional().Nillable(),
 		field.String("address").NotEmpty(),
 		field.String("digital_address").NotEmpty(),
+		field.String("region").NotEmpty().Nillable(),
+		field.String("district").NotEmpty().Nillable(),
+		field.String("city").NotEmpty().Nillable(),
+		field.Enum("default_account").Values("bank", "momo").Optional(),
+		field.JSON("bank_account", &models.MerchantBankAccount{}).Optional(),
+		field.JSON("momo_account", &models.MerchantMomoAccount{}).Optional(),
+		field.Bool("verified").Default(false),
+		field.JSON("compliance", &models.AgentComplianceModel{}).Optional(),
 	}
 }
 
@@ -39,5 +49,6 @@ func (Agent) Edges() []ent.Edge {
 		edge.To("orders", Order.Type),
 		edge.To("favourites", Favourite.Type),
 		edge.To("store", MerchantStore.Type),
+		edge.To("requests", AgentRequest.Type),
 	}
 }

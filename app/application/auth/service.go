@@ -11,17 +11,24 @@ import (
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
+	"github.com/SeyramWood/app/application"
+	"github.com/SeyramWood/app/application/sms"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 )
 
 type service struct {
 	repo gateways.AuthRepo
+	sms  gateways.SMSService
+	mail gateways.EmailService
 }
 
-// NewService is used to create a single instance of the service
-func NewAuthService(repo gateways.AuthRepo) gateways.AuthService {
+func NewAuthService(repo gateways.AuthRepo, mail gateways.EmailService) gateways.AuthService {
+	smsService := sms.NewSMSService()
 	return &service{
 		repo: repo,
+		sms:  smsService,
+		mail: mail,
 	}
 }
 
@@ -184,7 +191,33 @@ func (s *service) FetchAuthUser(c *fiber.Ctx) error {
 }
 
 func (s *service) SendUserVerificationCode(username string) (string, error) {
-	return "123456", nil
+	code, _ := application.GenerateOTP(6)
+	msg := fmt.Sprintf(
+		"Congratulations for your attempt to join Asinyo! Please enter the OTP Code to proceed with your sign up. %s",
+		code,
+	)
+	if application.UsernameType(username, "phone") {
+		_, err := s.sms.Send(
+			&services.SMSPayload{
+				Recipients: []string{username},
+				Message:    msg,
+			},
+		)
+		if err != nil {
+			return "", err
+		}
+	}
+	if application.UsernameType(username, "email") {
+
+		s.mail.Send(
+			&services.Message{
+				To:      username,
+				Subject: "ASINYO SIGN UP VERIFICATION",
+				Data:    msg,
+			},
+		)
+	}
+	return code, nil
 }
 
 func (s *service) hashCheck(hash []byte, plain string) bool {

@@ -36,6 +36,11 @@ func (s service) Create(store *models.MerchantStore, merchantId int, logo string
 func (s service) SaveAccount(store interface{}, storeId int, accountType string) (*ent.MerchantStore, error) {
 	return s.repo.UpdateAccount(store, storeId, accountType)
 }
+
+func (s service) SaveAgentPermission(permission bool, storeId int) (*ent.MerchantStore, error) {
+	return s.repo.UpdateAgentPermission(permission, storeId)
+}
+
 func (s service) SaveDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error) {
 	return s.repo.UpdateDefaultAccount(storeId, accountType)
 }

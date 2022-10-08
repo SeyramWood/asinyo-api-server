@@ -11,6 +11,7 @@ import (
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/ent/agent"
+	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 )
 
@@ -47,31 +48,33 @@ func (r *repository) Insert(agent *models.AgentRequest) (*ent.Agent, error) {
 
 func (r *repository) Read(id int) (*ent.Agent, error) {
 
-	// b, err := r.db.User.Query().Where(user.ID(id)).First(context.Background())
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+	result, err := r.db.Agent.Query().Where(agent.ID(id)).First(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (r *repository) ReadAll() ([]*ent.Agent, error) {
 
-	// b, err := r.db.User.Query().
-	// 	All(context.Background())
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+	results, err := r.db.Agent.Query().
+		All(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 func (r *repository) ReadAllMerchant(agentId int) ([]*ent.MerchantStore, error) {
 	results, err := r.db.MerchantStore.Query().
-		Where(merchantstore.HasAgentWith(agent.ID(agentId))).WithMerchant(
-		func(mq *ent.MerchantQuery) {
-			mq.WithSupplier()
-			mq.WithRetailer()
-		},
-	).
+		Where(merchantstore.HasAgentWith(agent.ID(agentId))).
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.Select(merchant.FieldID, merchant.FieldType)
+				mq.WithSupplier()
+				mq.WithRetailer()
+			},
+		).
 		All(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed fetching merchant stores : %w", err)
@@ -92,4 +95,37 @@ func (r *repository) Update(i *models.Agent) (*models.Agent, error) {
 func (r *repository) Delete(ID string) error {
 	return fmt.Errorf("failed creating book")
 	// return r.Delete(ID).Error
+}
+
+func (r *repository) CreateCompliance(
+	request *models.AgentComplianceRequest, id int, report string, personal []string, guarantor []string,
+) (*ent.Agent, error) {
+	ctx := context.Background()
+	result, err := r.db.Agent.UpdateOneID(id).
+		SetRegion(request.Region).
+		SetDistrict(request.District).
+		SetCity(request.City).
+		SetCompliance(
+			&models.AgentComplianceModel{
+				GhanaCard:    personal,
+				PoliceReport: report,
+				Guarantor: &models.AgentGuarantorModel{
+					GhanaCard:      guarantor,
+					LastName:       request.LastName,
+					OtherName:      request.OtherName,
+					Phone:          request.Phone,
+					OtherPhone:     request.OtherPhone,
+					Address:        request.Address,
+					DigitalAddress: request.DigitalAddress,
+					Relation:       request.Relation,
+					Occupation:     request.Occupation,
+				},
+			},
+		).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed update merchant momo account : %w", err)
+	}
+	return result, nil
+
 }

@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/framework/database"
 	handler "github.com/SeyramWood/app/framework/web/http/handlers/api"
 	middleware "github.com/SeyramWood/app/framework/web/http/middlewares"
@@ -10,26 +11,27 @@ import (
 )
 
 type ApiRouter struct {
-	db *database.Adapter
+	db   *database.Adapter
+	mail gateways.EmailService
 }
 
-func NewApiRouter(db *database.Adapter) *ApiRouter {
-	return &ApiRouter{db}
+func NewApiRouter(db *database.Adapter, mail gateways.EmailService) *ApiRouter {
+	return &ApiRouter{db, mail}
 }
 
 func (h *ApiRouter) Router(app *fiber.App) {
 
 	r := app.Group("/api") // limiter.New()
 
-	authRouter(r, h.db)
+	authRouter(r, h.db, h.mail)
 
 	agentRouter(r, h.db)
 
 	merchantRouter(r, h.db)
 
-	retailMerchantRouter(r, h.db)
+	retailMerchantRouter(r, h.db, h.mail)
 
-	supplierMerchantRouter(r, h.db)
+	supplierMerchantRouter(r, h.db, h.mail)
 
 	customerRouter(r, h.db)
 
@@ -89,20 +91,21 @@ func agentRouter(r fiber.Router, db *database.Adapter) {
 
 	authRouter.Route(
 		"/", func(r fiber.Router) {
-
-			r.Get("/", h.Fetch()).Name("fetch")
+			r.Get("/", h.Fetch())
 			r.Get("/my-merchants/:agent", h.FetchAllMerchant())
+			r.Get("/compliance/:agent/get", h.FetchComplianceByID())
+			r.Post("/add-compliance/:agent", request.ValidateAgentCompliance(), h.CreateCompliance())
 			r.Delete("/:id", h.Delete()).Name("delete")
 
-		}, "merchant.retailers.",
+		}, "agents.",
 	)
 
 }
 
-func retailMerchantRouter(r fiber.Router, db *database.Adapter) {
+func retailMerchantRouter(r fiber.Router, db *database.Adapter, mail gateways.EmailService) {
 
-	h := handler.NewRetailMerchantHandler(db)
-	m := handler.NewMerchantHandler(db)
+	h := handler.NewRetailMerchantHandler(db, mail)
+	m := handler.NewMerchantHandler(db, mail)
 
 	router := r.Group("/auth/merchant/retailers")
 
@@ -133,10 +136,11 @@ func retailMerchantRouter(r fiber.Router, db *database.Adapter) {
 	)
 
 }
-func supplierMerchantRouter(r fiber.Router, db *database.Adapter) {
+
+func supplierMerchantRouter(r fiber.Router, db *database.Adapter, mail gateways.EmailService) {
 
 	h := handler.NewSupplierMerchantHandler(db)
-	m := handler.NewMerchantHandler(db)
+	m := handler.NewMerchantHandler(db, mail)
 
 	router := r.Group("/auth/merchant/suppliers")
 
@@ -192,7 +196,7 @@ func merchantRouter(r fiber.Router, db *database.Adapter) {
 
 			r.Get("/:merchantType/all", msHandler.Fetch())
 
-			r.Get("/:storeId/my-agent", msHandler.FetchMerchantAgent())
+			r.Get("/:storeId/agent/my-agent", msHandler.FetchMerchantAgent())
 
 			r.Get("/:merchantId/:merchant", msHandler.FetchByMerchantID())
 
@@ -201,6 +205,8 @@ func merchantRouter(r fiber.Router, db *database.Adapter) {
 			r.Put("/:storeId/account/momo", request.ValidateMerchantMomoAccount(), msHandler.SaveMomoAccount())
 
 			r.Put("/:storeId/account/bank", request.ValidateMerchantBankAccount(), msHandler.SaveBankAccount())
+
+			r.Put("/:storeId/update-agent-permission/:permission", msHandler.SaveAgentPermission())
 
 			r.Put("/:storeId/default-account/:type", msHandler.SaveDefaultAccount())
 
@@ -306,6 +312,7 @@ func paymentRouter(router fiber.Router, db *database.Adapter) {
 	)
 
 }
+
 func orderRouter(router fiber.Router, db *database.Adapter) {
 
 	h := handler.NewOrderHandler(db)
@@ -315,6 +322,7 @@ func orderRouter(router fiber.Router, db *database.Adapter) {
 
 			r.Get("/:id", h.FetchById())
 			r.Get("/:merchant/store", h.FetchAllByStore())
+			r.Get("/agent/store/:agent", h.FetchAllByAgentStore())
 			r.Get("/:merchant/store/:order", h.FetchByStore())
 
 			r.Get("/:id/:userType", h.FetchByUser())
@@ -351,9 +359,9 @@ func addressRouter(router fiber.Router, db *database.Adapter) {
 
 }
 
-func authRouter(router fiber.Router, db *database.Adapter) {
+func authRouter(router fiber.Router, db *database.Adapter, mail gateways.EmailService) {
 
-	h := handler.NewAuthHandler(db)
+	h := handler.NewAuthHandler(db, mail)
 
 	router.Route(
 		"/auth", func(r fiber.Router) {

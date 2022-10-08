@@ -2,24 +2,27 @@ package api
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/order"
+	"github.com/SeyramWood/app/application/payment"
 	"github.com/SeyramWood/app/framework/database"
 )
 
 type OrderHandler struct {
-	service gateways.OrderService
+	service        gateways.OrderService
+	paymentService gateways.PaymentService
 }
 
 func NewOrderHandler(db *database.Adapter) *OrderHandler {
 	service := order.NewOrderService(order.NewOrderRepo(db))
+	paymentService := payment.NewPaymentService(payment.NewPaymentRepo(db))
 	return &OrderHandler{
-		service: service,
+		service:        service,
+		paymentService: paymentService,
 	}
 }
 
@@ -49,17 +52,35 @@ func (h *OrderHandler) FetchAllByStore() fiber.Handler {
 		)
 	}
 }
-func (h *OrderHandler) FetchByStore() fiber.Handler {
+func (h *OrderHandler) FetchAllByAgentStore() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		merchantId, _ := c.ParamsInt("merchant")
-		orderId, _ := c.ParamsInt("order")
+		agentId, _ := c.ParamsInt("agent")
 
-		result, err := h.service.FetchByStore(orderId, merchantId)
+		results, err := h.service.FetchAllByAgentStore(agentId)
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.OrderErrorResponse(err))
 		}
+		return c.JSON(
+			presenters.AgentStoreOrdersSuccessResponse(results),
+		)
+	}
+}
+func (h *OrderHandler) FetchByStore() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		merchantId, _ := c.ParamsInt("merchant")
+		orderId, _ := c.ParamsInt("order")
+		userType := c.Get("userType")
+		result, err := h.service.FetchByStore(orderId, merchantId, userType)
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.OrderErrorResponse(err))
+		}
+		if userType == "agent" {
+			return c.JSON(presenters.AgentStoreOrderSuccessResponse(result))
+		}
 		return c.JSON(presenters.StoreOrderSuccessResponse(result))
+
 	}
 }
 
@@ -93,22 +114,20 @@ func (h *OrderHandler) Fetch() fiber.Handler {
 func (h *OrderHandler) SaveOrder() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		orderData, err := h.service.FormatOrderRequest(c.Body())
-
+		orderData, err := h.paymentService.FormatPayload(c.Body())
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))
 		}
-		if strings.Compare(orderData.Event, "charge.success") == 0 {
-			o, err := h.service.Create(orderData)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))
-			}
-			return c.JSON(presenters.OrderSuccessResponse(o))
+		_, err = h.service.Create(orderData)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))
 		}
-
-		return c.Status(fiber.StatusBadRequest).JSON(
+		return c.Status(fiber.StatusOK).JSON(
 			fiber.Map{
-				"msg": "Bad Request",
+				"data": map[string]any{
+					"status": true,
+					"msg":    "Order successfully placed",
+				},
 			},
 		)
 	}

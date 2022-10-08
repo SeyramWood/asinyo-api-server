@@ -113,6 +113,7 @@ func ValidateCustomer() fiber.Handler {
 		return c.Next()
 	}
 }
+
 func ValidateAgent() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
@@ -137,6 +138,38 @@ func ValidateAgent() fiber.Handler {
 				return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
 			}
 			if er := validator.Validate(&request.Credentials); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+
+			return c.Next()
+		}
+	}
+}
+
+func ValidateAgentCompliance() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		var compliance models.AgentCompliance
+		var guarantor models.AgentGuarantor
+
+		if c.Get("step") == "personal" {
+			err := c.BodyParser(&compliance)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
+			}
+
+			if er := validator.Validate(&compliance); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
+
+		} else {
+			err := c.BodyParser(&guarantor)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
+			}
+			if er := validator.Validate(&guarantor); er != nil {
 				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 			}
 
@@ -269,6 +302,7 @@ func ValidateMerchantStore() fiber.Handler {
 
 	}
 }
+
 func ValidateMerchantMomoAccount() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var request models.MerchantMomoAccountRequest

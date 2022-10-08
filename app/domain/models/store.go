@@ -38,6 +38,9 @@ type (
 		Description      string `json:"description" validate:"required"`
 		Image            []byte `json:"image"`
 		OtherImages      []byte `json:"otherImages"`
+		Region           string `json:"region" validate:"required|string"`
+		District         string `json:"district" validate:"required|string"`
+		City             string `json:"city" validate:"required|string"`
 		Account          string `json:"account"`
 		MerchantType     string `json:"merchantType" validate:"required|string"`
 	}

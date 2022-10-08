@@ -28,10 +28,14 @@ func (MerchantStore) Fields() []ent.Field {
 		field.Text("description").NotEmpty(),
 		field.String("logo").NotEmpty(),
 		field.JSON("images", []string{}).Optional(),
+		field.String("region").NotEmpty().Nillable(),
+		field.String("district").NotEmpty().Nillable(),
+		field.String("city").NotEmpty().Nillable(),
 		field.Enum("default_account").Values("bank", "momo").Optional(),
 		field.JSON("bank_account", &models.MerchantBankAccount{}).Optional(),
 		field.JSON("momo_account", &models.MerchantMomoAccount{}).Optional(),
 		field.String("merchant_type").NotEmpty(),
+		field.Bool("permit_agent").Default(false),
 	}
 }
 
@@ -44,6 +48,7 @@ func (MerchantStore) Edges() []ent.Edge {
 		edge.From("agent", Agent.Type).
 			Ref("store").
 			Unique(),
+		edge.To("requests", AgentRequest.Type),
 		edge.To("orders", Order.Type),
 		edge.To("order_details", OrderDetail.Type),
 	}

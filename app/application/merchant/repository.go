@@ -20,7 +20,9 @@ type repository struct {
 }
 
 func NewMerchantRepo(db *database.Adapter) gateways.MerchantRepo {
-	return &repository{db.DB}
+	return &repository{
+		db: db.DB,
+	}
 }
 
 func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merchant, error) {
@@ -124,9 +126,12 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 
 }
 
-func (r *repository) Onboard(merc *models.StoreFinalRequest, agentId int, logo string, images []string) (
+func (r *repository) Onboard(
+	merc *models.StoreFinalRequest, agentId int, logo string, images []string, password string,
+) (
 	*ent.Merchant, error,
 ) {
+
 	mr := &models.MerchantRequest{
 		Info: models.RetailMerchantRequestInfo{
 			MerchantType:   merc.MerchantType,
@@ -140,8 +145,8 @@ func (r *repository) Onboard(merc *models.StoreFinalRequest, agentId int, logo s
 		},
 		Credentials: models.MerchantRequestCredentials{
 			Username:        merc.Username,
-			Password:        "123456789",
-			ConfirmPassword: "123456789",
+			Password:        password,
+			ConfirmPassword: password,
 			Terms:           true,
 		},
 	}
@@ -162,12 +167,9 @@ func (r *repository) Onboard(merc *models.StoreFinalRequest, agentId int, logo s
 		SetMerchantType(merc.MerchantType).
 		Save(ctx)
 	if err != nil {
-		fmt.Println(err)
 		return nil, fmt.Errorf("failed creating merchant store: %w", err)
 	}
-
 	return m, nil
-
 }
 
 func (r *repository) Read(id int) (*ent.Merchant, error) {

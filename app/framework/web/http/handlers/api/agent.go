@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/SeyramWood/app/application/agent"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
+	"github.com/SeyramWood/pkg/storage"
 )
 
 type AgentHandler struct {
@@ -38,16 +38,28 @@ func (h *AgentHandler) FetchByID() fiber.Handler {
 		return c.JSON(presenters.AgentSuccessResponse(result))
 	}
 }
+func (h *AgentHandler) FetchComplianceByID() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		id, _ := c.ParamsInt("agent")
+		result, err := h.service.Fetch(id)
+
+		if err != nil {
+
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.AgentErrorResponse(err))
+		}
+		return c.JSON(presenters.AgentsComplianceSuccessResponse(result))
+	}
+}
 func (h *AgentHandler) Fetch() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		result, err := h.service.FetchAll()
+		results, err := h.service.FetchAll()
 
 		if err != nil {
 
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.CustomerErrorResponse(err))
 		}
-		return c.JSON(presenters.AgentsSuccessResponse(result))
+		return c.JSON(presenters.AgentsSuccessResponse(results))
 	}
 }
 
@@ -79,10 +91,50 @@ func (h *AgentHandler) Create() fiber.Handler {
 		_, err = h.service.Create(&request)
 
 		if err != nil {
-			fmt.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.AgentErrorResponse(errors.New("error creating agent")))
 		}
 		return c.JSON(presenters.EmptySuccessResponse())
+	}
+}
+func (h *AgentHandler) CreateCompliance() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		var request models.AgentComplianceRequest
+
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
+		}
+		agentId, _ := c.ParamsInt("agent")
+		file, err := c.FormFile("policeReport")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		form, err := c.MultipartForm()
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		report, personal, guarantor, upErr := storage.NewUploadCare().Client().UploadAgentCompliance(file, form)
+		if upErr != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": upErr,
+				},
+			)
+		}
+		result, err := h.service.CreateCompliance(&request, agentId, report, personal, guarantor)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.AgentErrorResponse(errors.New("error creating agent")))
+		}
+		return c.JSON(presenters.AgentsComplianceSuccessResponse(result))
 	}
 }
 

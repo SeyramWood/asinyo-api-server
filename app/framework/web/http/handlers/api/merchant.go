@@ -17,9 +17,9 @@ type MerchantHandler struct {
 	service gateways.MerchantService
 }
 
-func NewMerchantHandler(db *database.Adapter) *MerchantHandler {
+func NewMerchantHandler(db *database.Adapter, mail gateways.EmailService) *MerchantHandler {
 	repo := merchant.NewMerchantRepo(db)
-	service := merchant.NewMerchantService(repo)
+	service := merchant.NewMerchantService(repo, mail)
 
 	return &MerchantHandler{
 		service: service,

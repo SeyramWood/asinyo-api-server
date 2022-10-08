@@ -1,6 +1,8 @@
 package config
 
-import "github.com/SeyramWood/pkg/env"
+import (
+	"github.com/SeyramWood/pkg/env"
+)
 
 type server struct {
 	Prefork           bool
@@ -21,7 +23,7 @@ func Server() *server {
 		StreamRequestBody: true,
 		EnablePrintRoutes: true,
 		Concurrency:       256 * 2048,
-		ServerHeader:      "Asinyo Corporations",
-		AppName:           env.Get("APP_NAME", "Asinyo API Server"),
+		ServerHeader:      "Asinyo Agro-Commerce LTD.",
+		AppName:           env.Get("APP_NAME", "Asinyo Agro-Commerce"),
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/Jeffail/gabs"
 	"github.com/gofiber/fiber/v2"
@@ -13,7 +12,7 @@ import (
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/order"
 	"github.com/SeyramWood/app/application/payment"
-	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/app/framework/database"
 )
 
@@ -23,7 +22,7 @@ type PaystackHandler struct {
 }
 
 func NewPaystackHandler(db *database.Adapter) *PaystackHandler {
-	service := payment.NewPaymentService(payment.NewPaymentRepo(db), "paystack")
+	service := payment.NewPaymentService(payment.NewPaymentRepo(db))
 	serv := order.NewOrderService(order.NewOrderRepo(db))
 	return &PaystackHandler{
 		service:   service,
@@ -33,7 +32,7 @@ func NewPaystackHandler(db *database.Adapter) *PaystackHandler {
 
 func (h *PaystackHandler) InitiateTransaction() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var request models.OrderRequest
+		var request services.PaystackPayload
 
 		err := c.BodyParser(&request)
 
@@ -41,13 +40,11 @@ func (h *PaystackHandler) InitiateTransaction() fiber.Handler {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))
 		}
 		response, err := h.service.Pay(request)
-		res := response.(*http.Response)
-		defer res.Body.Close()
-
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.PaymentErrorResponse(err))
 		}
-
+		res := response.(*http.Response)
+		defer res.Body.Close()
 		return c.JSON(presenters.PaystackInitiateTransactionResponse(res))
 	}
 }
@@ -72,7 +69,6 @@ func (h *PaystackHandler) VerifyTransaction() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.PaymentErrorResponse(err))
 		}
-
 		return c.JSON(
 			fiber.Map{
 				"res": map[string]interface{}{
@@ -87,27 +83,18 @@ func (h *PaystackHandler) VerifyTransaction() fiber.Handler {
 
 func (h *PaystackHandler) SaveOrder() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
-		orderData, err := h.orderServ.FormatOrderRequest(c.Body())
-
+		orderData, err := h.service.FormatPayload(c.Body())
+		fmt.Println(orderData)
 		if err != nil {
+			fmt.Println(err)
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))
 		}
-
-		if strings.Compare(orderData.Event, "charge.success") == 0 {
-			if _, err := h.orderServ.Create(orderData); err != nil {
-				fmt.Println("Ooops! Error while creating order\nERROR:\n", err)
-			}
-			return c.Status(fiber.StatusOK).JSON(
-				fiber.Map{
-					"msg": "Order saved successfully",
-				},
-			)
+		_, err = h.orderServ.Create(orderData)
+		if err != nil {
+			fmt.Println(err)
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))
 		}
-		return c.Status(fiber.StatusBadRequest).JSON(
-			fiber.Map{
-				"msg": "Bad Request",
-			},
-		)
+		return nil
+
 	}
 }

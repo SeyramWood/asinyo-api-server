@@ -2,16 +2,23 @@ package bootstrap
 
 import (
 	"context"
-	"github.com/SeyramWood/app/framework/database"
-	"github.com/SeyramWood/ent"
-	"github.com/SeyramWood/ent/migrate"
-	"github.com/SeyramWood/pkg/env"
-	"github.com/SeyramWood/pkg/router"
-	"github.com/SeyramWood/pkg/server"
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"log"
+
+	"github.com/SeyramWood/app/application/mailer"
+	"github.com/SeyramWood/app/framework/database"
+	"github.com/SeyramWood/ent"
+	"github.com/SeyramWood/ent/migrate"
+	"github.com/SeyramWood/pkg/app"
+	"github.com/SeyramWood/pkg/env"
+	"github.com/SeyramWood/pkg/router"
 )
 
 func init() {
@@ -31,18 +38,47 @@ func App() {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
-	app := server.NewHTTPServer()
+	newApp := app.New()
 
-	app.Server.Use(cors.New(cors.Config{
-		AllowCredentials: true,
-		AllowOrigins:     "*",
-	}))
+	newApp.HTTP.Use(
+		cors.New(
+			cors.Config{
+				AllowCredentials: true,
+				AllowOrigins:     "*",
+			},
+		),
+	)
 
-	app.Server.Use(recover.New())
+	newApp.HTTP.Use(recover.New())
 
-	app.Server.Use(logger.New())
+	newApp.HTTP.Use(logger.New())
 
-	router.NewRouter(app.Server, db)
+	mail := mailer.NewEmail(newApp.Mailer)
 
-	app.Run()
+	router.NewRouter(newApp.HTTP, db, mail)
+
+	go mail.Listen()
+
+	go newApp.Run()
+
+	c := make(chan os.Signal, 1) // Create channel to signify a signal being sent
+	signal.Notify(
+		c, os.Interrupt, syscall.SIGTERM,
+	) // When an interrupt or termination signal is sent, notify the channel
+
+	_ = <-c // This blocks the main thread until an interrupt is received
+	fmt.Println("Gracefully shutting down...")
+
+	newApp.WG.Wait()
+
+	_ = newApp.HTTP.Shutdown()
+
+	fmt.Println("Running cleanup tasks...")
+
+	// Your cleanup tasks go here
+	_ = db.DB.Close()
+	mail.Done()
+	mail.CloseChannels()
+
+	fmt.Println("Fiber was successful shutdown.")
 }

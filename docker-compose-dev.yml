@@ -17,6 +17,7 @@ services:
     volumes:
       - .:/app
       - ./mnt/public:/app/public
+      - ./mnt/cache:/app/mnt/cache
     env_file:
       - ./.env
     networks:
@@ -67,8 +68,10 @@ services:
       - "8000:8000"
     networks:
       - "api.network"
+
 networks:
   api.network:
 volumes:
   mysql:
   public:
+  cache:

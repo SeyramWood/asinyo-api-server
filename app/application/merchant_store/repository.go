@@ -112,11 +112,24 @@ func (r repository) UpdateAccount(store interface{}, storeId int, accountType st
 		).
 		Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed update merchant bank account : %w", err)
+		return nil, fmt.Errorf("failed to update merchant bank account : %w", err)
 	}
 	return result, nil
 
 }
+
+func (r repository) UpdateAgentPermission(permission bool, storeId int) (*ent.MerchantStore, error) {
+
+	result, err := r.db.MerchantStore.UpdateOneID(storeId).
+		SetPermitAgent(permission).
+		Save(context.Background())
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to update agent store permission : %w", err)
+	}
+	return result, nil
+}
+
 func (r repository) UpdateDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error) {
 	ctx := context.Background()
 	if accountType == "bank" {
@@ -154,6 +167,7 @@ func (r repository) ReadByMerchant(merchantId int) (*ent.MerchantStore, error) {
 		Where(merchant.ID(merchantId)).
 		QueryStore().
 		WithMerchant().
+		WithAgent().
 		Only(context.Background())
 	if err != nil {
 		return nil, nil
