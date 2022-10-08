@@ -17,11 +17,14 @@ jobs:
       - name: "Build docker image for development server - Branch: DEV"
         run: docker build . -t asinyoapi:dev
       - name: Publishing to Dockerhub registry
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v4
         with:
           name: seyramwood/asinyoapi
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          default_branch: dev
+          tags: "dev"
+
   build-and-publish-to-production-server:
     if: ${{github.ref == 'refs/heads/master'}}
     runs-on: ubuntu-latest
@@ -30,8 +33,10 @@ jobs:
       - name: "Build docker image for production server - Branch: Master"
         run: docker build . -t asinyoapi:latest
       - name: Publishing to Dockerhub registry
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v4
         with:
           name: seyramwood/asinyoapi
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          default_branch: master
+          tags: "latest"

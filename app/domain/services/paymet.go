@@ -1,4 +1,4 @@
-package models
+package services
 
 type (
 	ProductDetails struct {
@@ -33,17 +33,17 @@ type (
 		CustomFields   []*CustomFields   `json:"custom_fields"`
 	}
 	OrderResponseMetadata struct {
-		User           string                    `json:"user"`
-		UserType       string                    `json:"userType"`
-		OrderNumber    string                    `json:"orderNumber"`
-		Address        string                    `json:"address"`
-		DeliveryMethod string                    `json:"deliveryMethod"`
-		PaymentMethod  string                    `json:"paymentMethod"`
-		DeliveryFee    string                    `json:"deliveryFee"`
-		Pickup         string                    `json:"pickup"`
-		Products       []*ProductDetailsResponse `json:"products"`
+		User           string            `json:"user"`
+		UserType       string            `json:"userType"`
+		OrderNumber    string            `json:"orderNumber"`
+		Address        string            `json:"address"`
+		DeliveryMethod string            `json:"deliveryMethod"`
+		PaymentMethod  string            `json:"paymentMethod"`
+		DeliveryFee    string            `json:"deliveryFee"`
+		Pickup         string            `json:"pickup"`
+		Products       []*ProductDetails `json:"products"`
 	}
-	OrderRequest struct {
+	PaystackPayload struct {
 		Amount      float64               `json:"amount" validate:"required"`
 		Email       string                `json:"email" validate:"required|string"`
 		Currency    string                `json:"currency" validate:"required|string"`
@@ -52,7 +52,7 @@ type (
 		MetaData    *OrderRequestMetadata `json:"metadata"`
 	}
 
-	OrderResponse struct {
+	PaystackResponse struct {
 		Event     string                 `json:"event"`
 		Amount    float64                `json:"amount"`
 		Currency  string                 `json:"currency"`

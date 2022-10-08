@@ -61,6 +61,7 @@ type (
 		Channel        *string          `json:"channel"`
 		PaidAt         *string          `json:"paidAt"`
 		Status         string           `json:"status"`
+		Store          string           `json:"store"`
 		DeliveredAt    *time.Time       `json:"deliveredAt"`
 		CreatedAt      time.Time        `json:"createdAt"`
 		UpdatedAt      time.Time        `json:"updatedAt"`
@@ -77,6 +78,7 @@ type (
 		PaymentMethod string    `json:"paymentMethod"`
 		PaidAt        *string   `json:"paidAt"`
 		Status        string    `json:"status"`
+		Store         string    `json:"store"`
 		CreatedAt     time.Time `json:"createdAt"`
 		UpdatedAt     time.Time `json:"updatedAt"`
 	}
@@ -89,6 +91,7 @@ type (
 		PaymentMethod string    `json:"paymentMethod"`
 		PaidAt        *string   `json:"paidAt"`
 		Status        string    `json:"status"`
+		Store         string    `json:"store"`
 		CreatedAt     time.Time `json:"createdAt"`
 		UpdatedAt     time.Time `json:"updatedAt"`
 	}
@@ -104,6 +107,7 @@ func OrderSuccessResponse(data *ent.Order) *fiber.Map {
 			Channel:        data.Channel,
 			PaidAt:         data.PaidAt,
 			Status:         string(data.Status),
+			Store:          "",
 			DeliveryFee:    data.DeliveryFee,
 			DeliveryMethod: string(data.DeliveryMethod),
 			PaymentMethod:  string(data.PaymentMethod),
@@ -157,6 +161,7 @@ func OrdersSuccessResponse(data []*ent.Order) *fiber.Map {
 					PaymentMethod: string(v.PaymentMethod),
 					PaidAt:        v.PaidAt,
 					Status:        string(v.Status),
+					Store:         "",
 					CreatedAt:     v.CreatedAt,
 					UpdatedAt:     v.UpdatedAt,
 				},
@@ -166,6 +171,7 @@ func OrdersSuccessResponse(data []*ent.Order) *fiber.Map {
 	wg.Wait()
 	return successResponse(response)
 }
+
 func StoreOrderSuccessResponse(data *ent.Order) *fiber.Map {
 	detail := calculateStoreAmountOrderDetails(data.Edges.Details)
 	return successResponse(
@@ -177,6 +183,56 @@ func StoreOrderSuccessResponse(data *ent.Order) *fiber.Map {
 			Channel:        data.Channel,
 			PaidAt:         data.PaidAt,
 			Status:         detail["status"].(string),
+			Store:          "",
+			DeliveryFee:    data.DeliveryFee,
+			DeliveryMethod: string(data.DeliveryMethod),
+			PaymentMethod:  string(data.PaymentMethod),
+			Reference:      data.Reference,
+			DeliveredAt:    data.DeliveredAt,
+			CreatedAt:      data.CreatedAt,
+			UpdatedAt:      data.UpdatedAt,
+			Products:       formatOrderDetails(data.Edges.Details),
+			Address: func(edges *ent.Order) *OrderAddress {
+				if add, err := edges.Edges.AddressOrErr(); err == nil {
+					return &OrderAddress{
+						ID:        add.ID,
+						LastName:  add.LastName,
+						OtherName: add.OtherName,
+						Address:   add.Address,
+						City:      add.City,
+						Region:    add.Region,
+					}
+				}
+				return nil
+			}(data),
+			Pickup: func(edges *ent.Order) *OrderPickup {
+				if pick, err := edges.Edges.PickupOrErr(); err == nil {
+					return &OrderPickup{
+						ID:      pick.ID,
+						Name:    pick.Name,
+						Address: pick.Address,
+						City:    pick.City,
+						Region:  pick.Region,
+					}
+				}
+				return nil
+			}(data),
+		},
+	)
+}
+
+func AgentStoreOrderSuccessResponse(data *ent.Order) *fiber.Map {
+	detail := calculateStoreAmountOrderDetails(data.Edges.Details)
+	return successResponse(
+		DetailOrder{
+			ID:             data.ID,
+			OrderNumber:    data.OrderNumber,
+			Amount:         detail["subtotal"].(float64),
+			Currency:       data.Currency,
+			Channel:        data.Channel,
+			PaidAt:         data.PaidAt,
+			Status:         detail["status"].(string),
+			Store:          data.Edges.Stores[0].Name,
 			DeliveryFee:    data.DeliveryFee,
 			DeliveryMethod: string(data.DeliveryMethod),
 			PaymentMethod:  string(data.PaymentMethod),
@@ -231,6 +287,35 @@ func StoreOrdersSuccessResponse(data []*ent.Order) *fiber.Map {
 					PaymentMethod: string(v.PaymentMethod),
 					PaidAt:        v.PaidAt,
 					Status:        detail["status"].(string),
+					Store:         "",
+					CreatedAt:     v.CreatedAt,
+					UpdatedAt:     v.UpdatedAt,
+				},
+			)
+		}(v)
+	}
+	wg.Wait()
+	return successResponse(response)
+}
+func AgentStoreOrdersSuccessResponse(data []*ent.Order) *fiber.Map {
+	var response []Order
+	wg := sync.WaitGroup{}
+	for _, v := range data {
+		wg.Add(1)
+		go func(v *ent.Order) {
+			defer wg.Done()
+			detail := calculateStoreAmountOrderDetails(v.Edges.Details)
+			response = append(
+				response, Order{
+					ID:            v.ID,
+					OrderNumber:   v.OrderNumber,
+					Amount:        detail["subtotal"].(float64),
+					Currency:      v.Currency,
+					Channel:       v.Channel,
+					PaymentMethod: string(v.PaymentMethod),
+					PaidAt:        v.PaidAt,
+					Status:        detail["status"].(string),
+					Store:         v.Edges.Stores[0].Name,
 					CreatedAt:     v.CreatedAt,
 					UpdatedAt:     v.UpdatedAt,
 				},

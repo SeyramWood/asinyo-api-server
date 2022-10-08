@@ -166,6 +166,109 @@ func (c *uploadcare) UploadMerchantStore(file *multipart.FileHeader, form *multi
 
 	return resLogo.FP, resImages.FP, nil
 }
+func (c *uploadcare) UploadAgentCompliance(file *multipart.FileHeader, form *multipart.Form) (
+	string, []string, []string, error,
+) {
+	type (
+		policeReport struct {
+			FP  string
+			Err error
+		}
+		ghanaCardPersonal struct {
+			FP  []string
+			Err error
+		}
+		ghanaCard struct {
+			FP  []string
+			Err error
+		}
+	)
+	res := map[string]interface{}{
+		"policeReport":      policeReport{},
+		"ghanaCardPersonal": ghanaCardPersonal{},
+		"ghanaCard":         ghanaCard{},
+	}
+	wg := &sync.WaitGroup{}
+	mut := &sync.Mutex{}
+
+	// log.Fatalln(form.File["ghanaCardPersonal"])
+	// log.Fatalln(form.File["ghanaCard"])
+
+	for key := range res {
+		wg.Add(1)
+		go func(key string, form *multipart.Form) {
+			defer wg.Done()
+			if key == "policeReport" {
+				fPath, err := c.Upload(file, "agent_police_report")
+				if err != nil {
+					mut.Lock()
+					res[key] = policeReport{
+						FP:  "",
+						Err: err,
+					}
+					mut.Unlock()
+				} else {
+					mut.Lock()
+					res[key] = policeReport{
+						FP:  fPath,
+						Err: nil,
+					}
+					mut.Unlock()
+				}
+
+			}
+			if key == "ghanaCardPersonal" {
+				fPaths, err := c.Uploads(form.File["ghanaCardPersonal"], "agent_id")
+				if err != nil {
+					mut.Lock()
+					res[key] = ghanaCardPersonal{
+						FP:  []string{},
+						Err: err,
+					}
+					mut.Unlock()
+				} else {
+					mut.Lock()
+					res[key] = ghanaCardPersonal{
+						FP:  fPaths,
+						Err: nil,
+					}
+					mut.Unlock()
+				}
+
+			}
+			if key == "ghanaCard" {
+				fPaths, err := c.Uploads(form.File["ghanaCard"], "guarantor_id")
+				if err != nil {
+					mut.Lock()
+					res[key] = ghanaCard{
+						FP:  []string{},
+						Err: err,
+					}
+					mut.Unlock()
+				} else {
+					mut.Lock()
+					res[key] = ghanaCard{
+						FP:  fPaths,
+						Err: nil,
+					}
+					mut.Unlock()
+				}
+
+			}
+		}(key, form)
+	}
+	wg.Wait()
+
+	resReport, _ := res["policeReport"].(policeReport)
+	resPersonal, _ := res["ghanaCardPersonal"].(ghanaCardPersonal)
+	resGuarantor, _ := res["ghanaCard"].(ghanaCard)
+
+	if resPersonal.Err != nil || resGuarantor.Err != nil {
+		return "", []string{}, []string{}, fmt.Errorf("upload error")
+	}
+
+	return resReport.FP, resPersonal.FP, resGuarantor.FP, nil
+}
 
 func (c *uploadcare) getFileInfo(f *multipart.FileHeader, prefix string) (map[string]string, error) {
 	buffer, err := f.Open()

@@ -18,15 +18,20 @@ type (
 		DescriptionTitle string                      `json:"descTitle"`
 		Description      string                      `json:"description"`
 		Logo             string                      `json:"logo"`
+		Region           string                      `json:"region"`
+		District         string                      `json:"district"`
+		City             string                      `json:"city"`
 		Images           []string                    `json:"images"`
 		DefaultAccount   string                      `json:"defaultAccount"`
 		BankAccount      *models.MerchantBankAccount `json:"bankAccount"`
 		MomoAccount      *models.MerchantMomoAccount `json:"momoAccount"`
+		PermitAgent      bool                        `json:"permitAgent"`
+		Agent            *agentMerchantTypeDetails   `json:"agent"`
 		CreatedAt        time.Time                   `json:"created_at"`
 		UpdatedAt        time.Time                   `json:"updated_at"`
 		MerchantInfo     *MerchantInfo               `json:"merchant"`
 	}
-	agentMerchantDetails struct {
+	agentMerchantTypeDetails struct {
 		ID             int    `json:"id"`
 		LastName       string `json:"lastName"`
 		OtherName      string `json:"otherName"`
@@ -40,6 +45,7 @@ type (
 		BusinessName string    `json:"businessName"`
 		About        string    `json:"about"`
 		Logo         string    `json:"logo"`
+		PermitAgent  bool      `json:"permitAgent"`
 		CreatedAt    time.Time `json:"created_at"`
 		UpdatedAt    time.Time `json:"updated_at"`
 	}
@@ -49,15 +55,20 @@ type (
 	AllMerchantStore struct {
 		*store
 	}
+	AgentMerchantDetail struct {
+		ID      int                       `json:"id"`
+		Type    string                    `json:"type"`
+		Profile *agentMerchantTypeDetails `json:"profile"`
+	}
 	AgentAllMerchantStore struct {
-		ID           int                   `json:"id"`
-		BusinessName string                `json:"businessName"`
-		About        string                `json:"about"`
-		Logo         string                `json:"logo"`
-		CreatedAt    time.Time             `json:"created_at"`
-		UpdatedAt    time.Time             `json:"updated_at"`
-		Supplier     *agentMerchantDetails `json:"supplier"`
-		Retailer     *agentMerchantDetails `json:"retailer"`
+		ID           int                  `json:"id"`
+		BusinessName string               `json:"businessName"`
+		About        string               `json:"about"`
+		Logo         string               `json:"logo"`
+		PermitAgent  bool                 `json:"permitAgent"`
+		CreatedAt    time.Time            `json:"created_at"`
+		UpdatedAt    time.Time            `json:"updated_at"`
+		Merchant     *AgentMerchantDetail `json:"merchant"`
 	}
 )
 
@@ -74,15 +85,33 @@ func MerchantStoreSuccessResponse(data *ent.MerchantStore) *fiber.Map {
 			DescriptionTitle: data.DescTitle,
 			Description:      data.Description,
 			Logo:             data.Logo,
+			Region:           *data.Region,
+			District:         *data.District,
+			City:             *data.City,
 			Images:           data.Images,
 			DefaultAccount:   string(data.DefaultAccount),
 			BankAccount:      data.BankAccount,
 			MomoAccount:      data.MomoAccount,
+			PermitAgent:      data.PermitAgent,
 			CreatedAt:        data.CreatedAt,
 			UpdatedAt:        data.UpdatedAt,
 			MerchantInfo: &MerchantInfo{
 				ID: data.Edges.Merchant.ID,
 			},
+			Agent: func() *agentMerchantTypeDetails {
+				if a, err := data.Edges.AgentOrErr(); err == nil {
+					return &agentMerchantTypeDetails{
+						ID:             a.ID,
+						LastName:       a.LastName,
+						OtherName:      a.OtherName,
+						Phone:          a.Phone,
+						OtherPhone:     *a.OtherPhone,
+						Address:        a.Address,
+						DigitalAddress: a.DigitalAddress,
+					}
+				}
+				return nil
+			}(),
 		},
 	)
 }
@@ -96,10 +125,14 @@ func MerchantStorefrontSuccessResponse(data *ent.MerchantStore) *fiber.Map {
 			DescriptionTitle: data.DescTitle,
 			Description:      data.Description,
 			Logo:             data.Logo,
+			Region:           *data.Region,
+			District:         *data.District,
+			City:             *data.City,
 			Images:           data.Images,
 			DefaultAccount:   string(data.DefaultAccount),
 			BankAccount:      data.BankAccount,
 			MomoAccount:      data.MomoAccount,
+			PermitAgent:      data.PermitAgent,
 			CreatedAt:        data.CreatedAt,
 			UpdatedAt:        data.UpdatedAt,
 		},
@@ -108,7 +141,7 @@ func MerchantStorefrontSuccessResponse(data *ent.MerchantStore) *fiber.Map {
 
 func MerchantStoreAgentSuccessResponse(data *ent.Agent) *fiber.Map {
 	return successResponse(
-		&agentMerchantDetails{
+		&agentMerchantTypeDetails{
 			ID:             data.ID,
 			LastName:       data.LastName,
 			OtherName:      data.OtherName,
@@ -119,6 +152,7 @@ func MerchantStoreAgentSuccessResponse(data *ent.Agent) *fiber.Map {
 		},
 	)
 }
+
 func MerchantStorefrontsSuccessResponse(data []*ent.MerchantStore) *fiber.Map {
 	var response []AllMerchantStore
 	wg := sync.WaitGroup{}
@@ -133,6 +167,7 @@ func MerchantStorefrontsSuccessResponse(data []*ent.MerchantStore) *fiber.Map {
 						BusinessName: v.Name,
 						About:        v.About,
 						Logo:         v.Logo,
+						PermitAgent:  v.PermitAgent,
 						CreatedAt:    v.CreatedAt,
 						UpdatedAt:    v.UpdatedAt,
 					},
@@ -157,36 +192,38 @@ func AgentMerchantStorefrontsSuccessResponse(data []*ent.MerchantStore) *fiber.M
 					BusinessName: v.Name,
 					About:        v.About,
 					Logo:         v.Logo,
+					PermitAgent:  v.PermitAgent,
 					CreatedAt:    v.CreatedAt,
 					UpdatedAt:    v.UpdatedAt,
-					Supplier: func() *agentMerchantDetails {
-						if s, err := v.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
-							return &agentMerchantDetails{
-								ID:             s.ID,
-								LastName:       s.LastName,
-								OtherName:      s.OtherName,
-								Phone:          s.Phone,
-								OtherPhone:     *s.OtherPhone,
-								Address:        s.Address,
-								DigitalAddress: s.DigitalAddress,
+					Merchant: &AgentMerchantDetail{
+						ID:   v.Edges.Merchant.ID,
+						Type: v.Edges.Merchant.Type,
+						Profile: func() *agentMerchantTypeDetails {
+							if s, err := v.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
+								return &agentMerchantTypeDetails{
+									ID:             s.ID,
+									LastName:       s.LastName,
+									OtherName:      s.OtherName,
+									Phone:          s.Phone,
+									OtherPhone:     *s.OtherPhone,
+									Address:        s.Address,
+									DigitalAddress: s.DigitalAddress,
+								}
 							}
-						}
-						return nil
-					}(),
-					Retailer: func() *agentMerchantDetails {
-						if s, err := v.Edges.Merchant.Edges.RetailerOrErr(); err == nil {
-							return &agentMerchantDetails{
-								ID:             s.ID,
-								LastName:       s.LastName,
-								OtherName:      s.OtherName,
-								Phone:          s.Phone,
-								OtherPhone:     *s.OtherPhone,
-								Address:        s.Address,
-								DigitalAddress: s.DigitalAddress,
+							if s, err := v.Edges.Merchant.Edges.RetailerOrErr(); err == nil {
+								return &agentMerchantTypeDetails{
+									ID:             s.ID,
+									LastName:       s.LastName,
+									OtherName:      s.OtherName,
+									Phone:          s.Phone,
+									OtherPhone:     *s.OtherPhone,
+									Address:        s.Address,
+									DigitalAddress: s.DigitalAddress,
+								}
 							}
-						}
-						return nil
-					}(),
+							return nil
+						}(),
+					},
 				},
 			)
 		}(v)

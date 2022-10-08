@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -154,6 +155,22 @@ func (h *MerchantStoreHandler) SaveDefaultAccount() fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(errors.New("error creating merchant")))
 		}
 		return c.JSON(presenters.MerchantStorefrontSuccessResponse(result))
+
+	}
+}
+func (h *MerchantStoreHandler) SaveAgentPermission() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		storeId, _ := c.ParamsInt("storeId")
+		permission, _ := strconv.ParseBool(c.Params("permission"))
+
+		_, err := h.service.SaveAgentPermission(permission, storeId)
+
+		if err != nil {
+
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(errors.New("error creating merchant")))
+		}
+
+		return c.JSON(fiber.Map{"status": true, "msg": "Permission"})
 
 	}
 }
