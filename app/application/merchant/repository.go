@@ -164,6 +164,9 @@ func (r *repository) Onboard(
 		SetDescription(merc.Description).
 		SetLogo(logo).
 		SetImages(images).
+		SetRegion(merc.Region).
+		SetDistrict(merc.District).
+		SetCity(merc.City).
 		SetMerchantType(merc.MerchantType).
 		Save(ctx)
 	if err != nil {

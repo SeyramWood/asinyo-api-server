@@ -33,8 +33,10 @@ func (r repository) Insert(
 		SetLogo(logo).
 		SetImages(images).
 		SetMerchantType(store.MerchantType).
+		SetRegion(store.Region).
+		SetDistrict(store.District).
+		SetCity(store.City).
 		Save(ctx)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed creating merchant store: %w", err)
 	}
