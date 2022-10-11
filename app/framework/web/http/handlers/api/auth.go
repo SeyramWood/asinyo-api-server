@@ -41,6 +41,20 @@ func (auth *authHandler) FetchAuthUser() fiber.Handler {
 		return auth.service.FetchAuthUser(c)
 	}
 }
+func (auth *authHandler) ChangePassword() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		request := struct {
+			CurrentPassword string
+			Password        string
+		}{}
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+		}
+
+		return nil
+	}
+}
 func (auth *authHandler) SendVerificationCode() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		request := struct {
