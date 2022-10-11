@@ -366,10 +366,13 @@ func authRouter(router fiber.Router, db *database.Adapter, mail gateways.EmailSe
 	router.Route(
 		"/auth", func(r fiber.Router) {
 
-			r.Post("/signin", request.ValidateUser(), h.Login()).Name("signin")
-			r.Post("/send-user-verification-code", request.ValidateUserName(), h.SendVerificationCode())
 			r.Get("/signout", middleware.Auth(), h.Logout()).Name("signout")
 			r.Get("/user", middleware.Auth(), h.FetchAuthUser()).Name("user")
+
+			r.Post("/signin", request.ValidateUser(), h.Login()).Name("signin")
+			r.Post("/send-user-verification-code", request.ValidateUserName(), h.SendVerificationCode())
+
+			r.Put("/change-password/:user/:userType", request.ValidateChangePassword(), h.ChangePassword())
 
 		}, "auth.",
 	)

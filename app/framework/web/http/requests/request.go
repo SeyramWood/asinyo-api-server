@@ -38,6 +38,24 @@ func ValidateUser() fiber.Handler {
 		return c.Next()
 	}
 }
+func ValidateChangePassword() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		request := struct {
+			CurrentPassword string `json:"currentPassword,omitempty" validate:"required|min:8"`
+			Password        string `json:"password" validate:"required|min:8"`
+			ConfirmPassword string `json:"confirmPassword" validate:"required|min:8|match:password"`
+		}{}
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+		}
+		if er := validator.Validate(&request); er != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
+		return c.Next()
+	}
+}
 func ValidateUserName() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userType := c.Get("userType")
@@ -264,6 +282,9 @@ func ValidateNewMerchant() fiber.Handler {
 					Description:      allRequest.Description,
 					Image:            allRequest.Image,
 					OtherImages:      allRequest.OtherImages,
+					Region:           allRequest.Region,
+					District:         allRequest.District,
+					City:             allRequest.City,
 					Account:          allRequest.Account,
 					MerchantType:     allRequest.MerchantType,
 				},
