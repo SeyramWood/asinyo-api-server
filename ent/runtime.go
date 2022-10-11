@@ -141,6 +141,7 @@ func init() {
 	agentDescDigitalAddress := agentFields[8].Descriptor()
 	// agent.DigitalAddressValidator is a validator for the "digital_address" field. It is called by the builders before save.
 	agent.DigitalAddressValidator = agentDescDigitalAddress.Validators[0].(func(string) error)
+<<<<<<< HEAD
 	// agentDescRegion is the schema descriptor for region field.
 	agentDescRegion := agentFields[9].Descriptor()
 	// agent.RegionValidator is a validator for the "region" field. It is called by the builders before save.
@@ -153,6 +154,8 @@ func init() {
 	agentDescCity := agentFields[11].Descriptor()
 	// agent.CityValidator is a validator for the "city" field. It is called by the builders before save.
 	agent.CityValidator = agentDescCity.Validators[0].(func(string) error)
+=======
+>>>>>>> dev
 	// agentDescVerified is the schema descriptor for verified field.
 	agentDescVerified := agentFields[15].Descriptor()
 	// agent.DefaultVerified holds the default value on creation for the verified field.

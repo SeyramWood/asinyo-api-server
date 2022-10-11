@@ -96,18 +96,51 @@ func (msc *MerchantStoreCreate) SetRegion(s string) *MerchantStoreCreate {
 	return msc
 }
 
+<<<<<<< HEAD
+=======
+// SetNillableRegion sets the "region" field if the given value is not nil.
+func (msc *MerchantStoreCreate) SetNillableRegion(s *string) *MerchantStoreCreate {
+	if s != nil {
+		msc.SetRegion(*s)
+	}
+	return msc
+}
+
+>>>>>>> dev
 // SetDistrict sets the "district" field.
 func (msc *MerchantStoreCreate) SetDistrict(s string) *MerchantStoreCreate {
 	msc.mutation.SetDistrict(s)
 	return msc
 }
 
+<<<<<<< HEAD
+=======
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (msc *MerchantStoreCreate) SetNillableDistrict(s *string) *MerchantStoreCreate {
+	if s != nil {
+		msc.SetDistrict(*s)
+	}
+	return msc
+}
+
+>>>>>>> dev
 // SetCity sets the "city" field.
 func (msc *MerchantStoreCreate) SetCity(s string) *MerchantStoreCreate {
 	msc.mutation.SetCity(s)
 	return msc
 }
 
+<<<<<<< HEAD
+=======
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (msc *MerchantStoreCreate) SetNillableCity(s *string) *MerchantStoreCreate {
+	if s != nil {
+		msc.SetCity(*s)
+	}
+	return msc
+}
+
+>>>>>>> dev
 // SetDefaultAccount sets the "default_account" field.
 func (msc *MerchantStoreCreate) SetDefaultAccount(ma merchantstore.DefaultAccount) *MerchantStoreCreate {
 	msc.mutation.SetDefaultAccount(ma)

@@ -122,18 +122,51 @@ func (ac *AgentCreate) SetRegion(s string) *AgentCreate {
 	return ac
 }
 
+<<<<<<< HEAD
+=======
+// SetNillableRegion sets the "region" field if the given value is not nil.
+func (ac *AgentCreate) SetNillableRegion(s *string) *AgentCreate {
+	if s != nil {
+		ac.SetRegion(*s)
+	}
+	return ac
+}
+
+>>>>>>> dev
 // SetDistrict sets the "district" field.
 func (ac *AgentCreate) SetDistrict(s string) *AgentCreate {
 	ac.mutation.SetDistrict(s)
 	return ac
 }
 
+<<<<<<< HEAD
+=======
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (ac *AgentCreate) SetNillableDistrict(s *string) *AgentCreate {
+	if s != nil {
+		ac.SetDistrict(*s)
+	}
+	return ac
+}
+
+>>>>>>> dev
 // SetCity sets the "city" field.
 func (ac *AgentCreate) SetCity(s string) *AgentCreate {
 	ac.mutation.SetCity(s)
 	return ac
 }
 
+<<<<<<< HEAD
+=======
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (ac *AgentCreate) SetNillableCity(s *string) *AgentCreate {
+	if s != nil {
+		ac.SetCity(*s)
+	}
+	return ac
+}
+
+>>>>>>> dev
 // SetDefaultAccount sets the "default_account" field.
 func (ac *AgentCreate) SetDefaultAccount(aa agent.DefaultAccount) *AgentCreate {
 	ac.mutation.SetDefaultAccount(aa)
@@ -418,6 +451,7 @@ func (ac *AgentCreate) check() error {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "Agent.digital_address": %w`, err)}
 		}
 	}
+<<<<<<< HEAD
 	if _, ok := ac.mutation.Region(); !ok {
 		return &ValidationError{Name: "region", err: errors.New(`ent: missing required field "Agent.region"`)}
 	}
@@ -442,6 +476,8 @@ func (ac *AgentCreate) check() error {
 			return &ValidationError{Name: "city", err: fmt.Errorf(`ent: validator failed for field "Agent.city": %w`, err)}
 		}
 	}
+=======
+>>>>>>> dev
 	if v, ok := ac.mutation.DefaultAccount(); ok {
 		if err := agent.DefaultAccountValidator(v); err != nil {
 			return &ValidationError{Name: "default_account", err: fmt.Errorf(`ent: validator failed for field "Agent.default_account": %w`, err)}

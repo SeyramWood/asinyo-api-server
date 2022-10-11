@@ -40,6 +40,7 @@ func (r *repository) Insert(agent *models.AgentRequest) (*ent.Agent, error) {
 		Save(context.Background())
 
 	if err != nil {
+		fmt.Println(err)
 		return nil, fmt.Errorf("failed creating agent: %w", err)
 	}
 

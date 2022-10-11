@@ -28,14 +28,24 @@ func (MerchantStore) Fields() []ent.Field {
 		field.Text("description").NotEmpty(),
 		field.String("logo").NotEmpty(),
 		field.JSON("images", []string{}).Optional(),
+<<<<<<< HEAD
 		field.String("region").NotEmpty().Nillable(),
 		field.String("district").NotEmpty().Nillable(),
 		field.String("city").NotEmpty().Nillable(),
+=======
+		field.String("region").Optional().Nillable(),
+		field.String("district").Optional().Nillable(),
+		field.String("city").Optional().Nillable(),
+>>>>>>> dev
 		field.Enum("default_account").Values("bank", "momo").Optional(),
 		field.JSON("bank_account", &models.MerchantBankAccount{}).Optional(),
 		field.JSON("momo_account", &models.MerchantMomoAccount{}).Optional(),
 		field.String("merchant_type").NotEmpty(),
+<<<<<<< HEAD
 		field.Bool("permit_agent").Default(false),
+=======
+		field.Bool("permit_agent").Default(true),
+>>>>>>> dev
 	}
 }
 

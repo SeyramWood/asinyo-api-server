@@ -32,6 +32,9 @@ func (r repository) Insert(
 		SetDescription(store.Description).
 		SetLogo(logo).
 		SetImages(images).
+		SetRegion(store.Region).
+		SetDistrict(store.District).
+		SetCity(store.City).
 		SetMerchantType(store.MerchantType).
 		SetRegion(store.Region).
 		SetDistrict(store.District).

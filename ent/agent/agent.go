@@ -156,12 +156,15 @@ var (
 	AddressValidator func(string) error
 	// DigitalAddressValidator is a validator for the "digital_address" field. It is called by the builders before save.
 	DigitalAddressValidator func(string) error
+<<<<<<< HEAD
 	// RegionValidator is a validator for the "region" field. It is called by the builders before save.
 	RegionValidator func(string) error
 	// DistrictValidator is a validator for the "district" field. It is called by the builders before save.
 	DistrictValidator func(string) error
 	// CityValidator is a validator for the "city" field. It is called by the builders before save.
 	CityValidator func(string) error
+=======
+>>>>>>> dev
 	// DefaultVerified holds the default value on creation for the "verified" field.
 	DefaultVerified bool
 )

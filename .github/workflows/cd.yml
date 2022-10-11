@@ -39,4 +39,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
           default_branch: master
+<<<<<<< HEAD
           tags: "latest"
+=======
+          tags: "latest"
+>>>>>>> dev

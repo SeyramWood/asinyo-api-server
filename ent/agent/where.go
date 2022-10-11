@@ -1269,6 +1269,23 @@ func RegionHasSuffix(v string) predicate.Agent {
 	})
 }
 
+<<<<<<< HEAD
+=======
+// RegionIsNil applies the IsNil predicate on the "region" field.
+func RegionIsNil() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldRegion)))
+	})
+}
+
+// RegionNotNil applies the NotNil predicate on the "region" field.
+func RegionNotNil() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldRegion)))
+	})
+}
+
+>>>>>>> dev
 // RegionEqualFold applies the EqualFold predicate on the "region" field.
 func RegionEqualFold(v string) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
@@ -1368,6 +1385,23 @@ func DistrictHasSuffix(v string) predicate.Agent {
 	})
 }
 
+<<<<<<< HEAD
+=======
+// DistrictIsNil applies the IsNil predicate on the "district" field.
+func DistrictIsNil() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldDistrict)))
+	})
+}
+
+// DistrictNotNil applies the NotNil predicate on the "district" field.
+func DistrictNotNil() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldDistrict)))
+	})
+}
+
+>>>>>>> dev
 // DistrictEqualFold applies the EqualFold predicate on the "district" field.
 func DistrictEqualFold(v string) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
@@ -1467,6 +1501,23 @@ func CityHasSuffix(v string) predicate.Agent {
 	})
 }
 
+<<<<<<< HEAD
+=======
+// CityIsNil applies the IsNil predicate on the "city" field.
+func CityIsNil() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldCity)))
+	})
+}
+
+// CityNotNil applies the NotNil predicate on the "city" field.
+func CityNotNil() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldCity)))
+	})
+}
+
+>>>>>>> dev
 // CityEqualFold applies the EqualFold predicate on the "city" field.
 func CityEqualFold(v string) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {

@@ -52,6 +52,10 @@ func (auth *authHandler) SendVerificationCode() fiber.Handler {
 		}
 
 		cache := file.New("./mnt/cache/otp/")
+<<<<<<< HEAD
+=======
+
+>>>>>>> dev
 		if cache.Contains(request.Username) {
 			userCode, err := cache.Fetch(request.Username)
 			if err != nil {
@@ -75,7 +79,16 @@ func (auth *authHandler) SendVerificationCode() fiber.Handler {
 			)
 		}
 		if err := cache.Save(request.Username, code, 24*time.Hour); err != nil {
+<<<<<<< HEAD
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+=======
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"status": false,
+					"msg":    "Could not saved OTP in cache",
+				},
+			)
+>>>>>>> dev
 		}
 		return c.Status(fiber.StatusOK).JSON(
 			fiber.Map{
