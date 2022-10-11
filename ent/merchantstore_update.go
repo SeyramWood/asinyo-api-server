@@ -88,15 +88,57 @@ func (msu *MerchantStoreUpdate) SetRegion(s string) *MerchantStoreUpdate {
 	return msu
 }
 
+// SetNillableRegion sets the "region" field if the given value is not nil.
+func (msu *MerchantStoreUpdate) SetNillableRegion(s *string) *MerchantStoreUpdate {
+	if s != nil {
+		msu.SetRegion(*s)
+	}
+	return msu
+}
+
+// ClearRegion clears the value of the "region" field.
+func (msu *MerchantStoreUpdate) ClearRegion() *MerchantStoreUpdate {
+	msu.mutation.ClearRegion()
+	return msu
+}
+
 // SetDistrict sets the "district" field.
 func (msu *MerchantStoreUpdate) SetDistrict(s string) *MerchantStoreUpdate {
 	msu.mutation.SetDistrict(s)
 	return msu
 }
 
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (msu *MerchantStoreUpdate) SetNillableDistrict(s *string) *MerchantStoreUpdate {
+	if s != nil {
+		msu.SetDistrict(*s)
+	}
+	return msu
+}
+
+// ClearDistrict clears the value of the "district" field.
+func (msu *MerchantStoreUpdate) ClearDistrict() *MerchantStoreUpdate {
+	msu.mutation.ClearDistrict()
+	return msu
+}
+
 // SetCity sets the "city" field.
 func (msu *MerchantStoreUpdate) SetCity(s string) *MerchantStoreUpdate {
 	msu.mutation.SetCity(s)
+	return msu
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (msu *MerchantStoreUpdate) SetNillableCity(s *string) *MerchantStoreUpdate {
+	if s != nil {
+		msu.SetCity(*s)
+	}
+	return msu
+}
+
+// ClearCity clears the value of the "city" field.
+func (msu *MerchantStoreUpdate) ClearCity() *MerchantStoreUpdate {
+	msu.mutation.ClearCity()
 	return msu
 }
 
@@ -423,21 +465,6 @@ func (msu *MerchantStoreUpdate) check() error {
 			return &ValidationError{Name: "logo", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.logo": %w`, err)}
 		}
 	}
-	if v, ok := msu.mutation.Region(); ok {
-		if err := merchantstore.RegionValidator(v); err != nil {
-			return &ValidationError{Name: "region", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.region": %w`, err)}
-		}
-	}
-	if v, ok := msu.mutation.District(); ok {
-		if err := merchantstore.DistrictValidator(v); err != nil {
-			return &ValidationError{Name: "district", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.district": %w`, err)}
-		}
-	}
-	if v, ok := msu.mutation.City(); ok {
-		if err := merchantstore.CityValidator(v); err != nil {
-			return &ValidationError{Name: "city", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.city": %w`, err)}
-		}
-	}
 	if v, ok := msu.mutation.DefaultAccount(); ok {
 		if err := merchantstore.DefaultAccountValidator(v); err != nil {
 			return &ValidationError{Name: "default_account", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.default_account": %w`, err)}
@@ -531,6 +558,12 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Column: merchantstore.FieldRegion,
 		})
 	}
+	if msu.mutation.RegionCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: merchantstore.FieldRegion,
+		})
+	}
 	if value, ok := msu.mutation.District(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -538,10 +571,22 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Column: merchantstore.FieldDistrict,
 		})
 	}
+	if msu.mutation.DistrictCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: merchantstore.FieldDistrict,
+		})
+	}
 	if value, ok := msu.mutation.City(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: merchantstore.FieldCity,
+		})
+	}
+	if msu.mutation.CityCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: merchantstore.FieldCity,
 		})
 	}
@@ -903,15 +948,57 @@ func (msuo *MerchantStoreUpdateOne) SetRegion(s string) *MerchantStoreUpdateOne 
 	return msuo
 }
 
+// SetNillableRegion sets the "region" field if the given value is not nil.
+func (msuo *MerchantStoreUpdateOne) SetNillableRegion(s *string) *MerchantStoreUpdateOne {
+	if s != nil {
+		msuo.SetRegion(*s)
+	}
+	return msuo
+}
+
+// ClearRegion clears the value of the "region" field.
+func (msuo *MerchantStoreUpdateOne) ClearRegion() *MerchantStoreUpdateOne {
+	msuo.mutation.ClearRegion()
+	return msuo
+}
+
 // SetDistrict sets the "district" field.
 func (msuo *MerchantStoreUpdateOne) SetDistrict(s string) *MerchantStoreUpdateOne {
 	msuo.mutation.SetDistrict(s)
 	return msuo
 }
 
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (msuo *MerchantStoreUpdateOne) SetNillableDistrict(s *string) *MerchantStoreUpdateOne {
+	if s != nil {
+		msuo.SetDistrict(*s)
+	}
+	return msuo
+}
+
+// ClearDistrict clears the value of the "district" field.
+func (msuo *MerchantStoreUpdateOne) ClearDistrict() *MerchantStoreUpdateOne {
+	msuo.mutation.ClearDistrict()
+	return msuo
+}
+
 // SetCity sets the "city" field.
 func (msuo *MerchantStoreUpdateOne) SetCity(s string) *MerchantStoreUpdateOne {
 	msuo.mutation.SetCity(s)
+	return msuo
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (msuo *MerchantStoreUpdateOne) SetNillableCity(s *string) *MerchantStoreUpdateOne {
+	if s != nil {
+		msuo.SetCity(*s)
+	}
+	return msuo
+}
+
+// ClearCity clears the value of the "city" field.
+func (msuo *MerchantStoreUpdateOne) ClearCity() *MerchantStoreUpdateOne {
+	msuo.mutation.ClearCity()
 	return msuo
 }
 
@@ -1251,21 +1338,6 @@ func (msuo *MerchantStoreUpdateOne) check() error {
 			return &ValidationError{Name: "logo", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.logo": %w`, err)}
 		}
 	}
-	if v, ok := msuo.mutation.Region(); ok {
-		if err := merchantstore.RegionValidator(v); err != nil {
-			return &ValidationError{Name: "region", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.region": %w`, err)}
-		}
-	}
-	if v, ok := msuo.mutation.District(); ok {
-		if err := merchantstore.DistrictValidator(v); err != nil {
-			return &ValidationError{Name: "district", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.district": %w`, err)}
-		}
-	}
-	if v, ok := msuo.mutation.City(); ok {
-		if err := merchantstore.CityValidator(v); err != nil {
-			return &ValidationError{Name: "city", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.city": %w`, err)}
-		}
-	}
 	if v, ok := msuo.mutation.DefaultAccount(); ok {
 		if err := merchantstore.DefaultAccountValidator(v); err != nil {
 			return &ValidationError{Name: "default_account", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.default_account": %w`, err)}
@@ -1376,6 +1448,12 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Column: merchantstore.FieldRegion,
 		})
 	}
+	if msuo.mutation.RegionCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: merchantstore.FieldRegion,
+		})
+	}
 	if value, ok := msuo.mutation.District(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -1383,10 +1461,22 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Column: merchantstore.FieldDistrict,
 		})
 	}
+	if msuo.mutation.DistrictCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: merchantstore.FieldDistrict,
+		})
+	}
 	if value, ok := msuo.mutation.City(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: merchantstore.FieldCity,
+		})
+	}
+	if msuo.mutation.CityCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: merchantstore.FieldCity,
 		})
 	}

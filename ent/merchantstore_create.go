@@ -96,15 +96,39 @@ func (msc *MerchantStoreCreate) SetRegion(s string) *MerchantStoreCreate {
 	return msc
 }
 
+// SetNillableRegion sets the "region" field if the given value is not nil.
+func (msc *MerchantStoreCreate) SetNillableRegion(s *string) *MerchantStoreCreate {
+	if s != nil {
+		msc.SetRegion(*s)
+	}
+	return msc
+}
+
 // SetDistrict sets the "district" field.
 func (msc *MerchantStoreCreate) SetDistrict(s string) *MerchantStoreCreate {
 	msc.mutation.SetDistrict(s)
 	return msc
 }
 
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (msc *MerchantStoreCreate) SetNillableDistrict(s *string) *MerchantStoreCreate {
+	if s != nil {
+		msc.SetDistrict(*s)
+	}
+	return msc
+}
+
 // SetCity sets the "city" field.
 func (msc *MerchantStoreCreate) SetCity(s string) *MerchantStoreCreate {
 	msc.mutation.SetCity(s)
+	return msc
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (msc *MerchantStoreCreate) SetNillableCity(s *string) *MerchantStoreCreate {
+	if s != nil {
+		msc.SetCity(*s)
+	}
 	return msc
 }
 
@@ -374,30 +398,6 @@ func (msc *MerchantStoreCreate) check() error {
 	if v, ok := msc.mutation.Logo(); ok {
 		if err := merchantstore.LogoValidator(v); err != nil {
 			return &ValidationError{Name: "logo", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.logo": %w`, err)}
-		}
-	}
-	if _, ok := msc.mutation.Region(); !ok {
-		return &ValidationError{Name: "region", err: errors.New(`ent: missing required field "MerchantStore.region"`)}
-	}
-	if v, ok := msc.mutation.Region(); ok {
-		if err := merchantstore.RegionValidator(v); err != nil {
-			return &ValidationError{Name: "region", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.region": %w`, err)}
-		}
-	}
-	if _, ok := msc.mutation.District(); !ok {
-		return &ValidationError{Name: "district", err: errors.New(`ent: missing required field "MerchantStore.district"`)}
-	}
-	if v, ok := msc.mutation.District(); ok {
-		if err := merchantstore.DistrictValidator(v); err != nil {
-			return &ValidationError{Name: "district", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.district": %w`, err)}
-		}
-	}
-	if _, ok := msc.mutation.City(); !ok {
-		return &ValidationError{Name: "city", err: errors.New(`ent: missing required field "MerchantStore.city"`)}
-	}
-	if v, ok := msc.mutation.City(); ok {
-		if err := merchantstore.CityValidator(v); err != nil {
-			return &ValidationError{Name: "city", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.city": %w`, err)}
 		}
 	}
 	if v, ok := msc.mutation.DefaultAccount(); ok {

@@ -114,15 +114,57 @@ func (au *AgentUpdate) SetRegion(s string) *AgentUpdate {
 	return au
 }
 
+// SetNillableRegion sets the "region" field if the given value is not nil.
+func (au *AgentUpdate) SetNillableRegion(s *string) *AgentUpdate {
+	if s != nil {
+		au.SetRegion(*s)
+	}
+	return au
+}
+
+// ClearRegion clears the value of the "region" field.
+func (au *AgentUpdate) ClearRegion() *AgentUpdate {
+	au.mutation.ClearRegion()
+	return au
+}
+
 // SetDistrict sets the "district" field.
 func (au *AgentUpdate) SetDistrict(s string) *AgentUpdate {
 	au.mutation.SetDistrict(s)
 	return au
 }
 
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (au *AgentUpdate) SetNillableDistrict(s *string) *AgentUpdate {
+	if s != nil {
+		au.SetDistrict(*s)
+	}
+	return au
+}
+
+// ClearDistrict clears the value of the "district" field.
+func (au *AgentUpdate) ClearDistrict() *AgentUpdate {
+	au.mutation.ClearDistrict()
+	return au
+}
+
 // SetCity sets the "city" field.
 func (au *AgentUpdate) SetCity(s string) *AgentUpdate {
 	au.mutation.SetCity(s)
+	return au
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (au *AgentUpdate) SetNillableCity(s *string) *AgentUpdate {
+	if s != nil {
+		au.SetCity(*s)
+	}
+	return au
+}
+
+// ClearCity clears the value of the "city" field.
+func (au *AgentUpdate) ClearCity() *AgentUpdate {
+	au.mutation.ClearCity()
 	return au
 }
 
@@ -492,21 +534,6 @@ func (au *AgentUpdate) check() error {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "Agent.digital_address": %w`, err)}
 		}
 	}
-	if v, ok := au.mutation.Region(); ok {
-		if err := agent.RegionValidator(v); err != nil {
-			return &ValidationError{Name: "region", err: fmt.Errorf(`ent: validator failed for field "Agent.region": %w`, err)}
-		}
-	}
-	if v, ok := au.mutation.District(); ok {
-		if err := agent.DistrictValidator(v); err != nil {
-			return &ValidationError{Name: "district", err: fmt.Errorf(`ent: validator failed for field "Agent.district": %w`, err)}
-		}
-	}
-	if v, ok := au.mutation.City(); ok {
-		if err := agent.CityValidator(v); err != nil {
-			return &ValidationError{Name: "city", err: fmt.Errorf(`ent: validator failed for field "Agent.city": %w`, err)}
-		}
-	}
 	if v, ok := au.mutation.DefaultAccount(); ok {
 		if err := agent.DefaultAccountValidator(v); err != nil {
 			return &ValidationError{Name: "default_account", err: fmt.Errorf(`ent: validator failed for field "Agent.default_account": %w`, err)}
@@ -616,6 +643,12 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: agent.FieldRegion,
 		})
 	}
+	if au.mutation.RegionCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: agent.FieldRegion,
+		})
+	}
 	if value, ok := au.mutation.District(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -623,10 +656,22 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: agent.FieldDistrict,
 		})
 	}
+	if au.mutation.DistrictCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: agent.FieldDistrict,
+		})
+	}
 	if value, ok := au.mutation.City(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: agent.FieldCity,
+		})
+	}
+	if au.mutation.CityCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: agent.FieldCity,
 		})
 	}
@@ -1058,15 +1103,57 @@ func (auo *AgentUpdateOne) SetRegion(s string) *AgentUpdateOne {
 	return auo
 }
 
+// SetNillableRegion sets the "region" field if the given value is not nil.
+func (auo *AgentUpdateOne) SetNillableRegion(s *string) *AgentUpdateOne {
+	if s != nil {
+		auo.SetRegion(*s)
+	}
+	return auo
+}
+
+// ClearRegion clears the value of the "region" field.
+func (auo *AgentUpdateOne) ClearRegion() *AgentUpdateOne {
+	auo.mutation.ClearRegion()
+	return auo
+}
+
 // SetDistrict sets the "district" field.
 func (auo *AgentUpdateOne) SetDistrict(s string) *AgentUpdateOne {
 	auo.mutation.SetDistrict(s)
 	return auo
 }
 
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (auo *AgentUpdateOne) SetNillableDistrict(s *string) *AgentUpdateOne {
+	if s != nil {
+		auo.SetDistrict(*s)
+	}
+	return auo
+}
+
+// ClearDistrict clears the value of the "district" field.
+func (auo *AgentUpdateOne) ClearDistrict() *AgentUpdateOne {
+	auo.mutation.ClearDistrict()
+	return auo
+}
+
 // SetCity sets the "city" field.
 func (auo *AgentUpdateOne) SetCity(s string) *AgentUpdateOne {
 	auo.mutation.SetCity(s)
+	return auo
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (auo *AgentUpdateOne) SetNillableCity(s *string) *AgentUpdateOne {
+	if s != nil {
+		auo.SetCity(*s)
+	}
+	return auo
+}
+
+// ClearCity clears the value of the "city" field.
+func (auo *AgentUpdateOne) ClearCity() *AgentUpdateOne {
+	auo.mutation.ClearCity()
 	return auo
 }
 
@@ -1449,21 +1536,6 @@ func (auo *AgentUpdateOne) check() error {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "Agent.digital_address": %w`, err)}
 		}
 	}
-	if v, ok := auo.mutation.Region(); ok {
-		if err := agent.RegionValidator(v); err != nil {
-			return &ValidationError{Name: "region", err: fmt.Errorf(`ent: validator failed for field "Agent.region": %w`, err)}
-		}
-	}
-	if v, ok := auo.mutation.District(); ok {
-		if err := agent.DistrictValidator(v); err != nil {
-			return &ValidationError{Name: "district", err: fmt.Errorf(`ent: validator failed for field "Agent.district": %w`, err)}
-		}
-	}
-	if v, ok := auo.mutation.City(); ok {
-		if err := agent.CityValidator(v); err != nil {
-			return &ValidationError{Name: "city", err: fmt.Errorf(`ent: validator failed for field "Agent.city": %w`, err)}
-		}
-	}
 	if v, ok := auo.mutation.DefaultAccount(); ok {
 		if err := agent.DefaultAccountValidator(v); err != nil {
 			return &ValidationError{Name: "default_account", err: fmt.Errorf(`ent: validator failed for field "Agent.default_account": %w`, err)}
@@ -1590,6 +1662,12 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Column: agent.FieldRegion,
 		})
 	}
+	if auo.mutation.RegionCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: agent.FieldRegion,
+		})
+	}
 	if value, ok := auo.mutation.District(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -1597,10 +1675,22 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Column: agent.FieldDistrict,
 		})
 	}
+	if auo.mutation.DistrictCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: agent.FieldDistrict,
+		})
+	}
 	if value, ok := auo.mutation.City(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: agent.FieldCity,
+		})
+	}
+	if auo.mutation.CityCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: agent.FieldCity,
 		})
 	}

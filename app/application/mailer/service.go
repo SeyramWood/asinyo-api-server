@@ -114,7 +114,7 @@ func (m *mailer) sendMail(msg *services.Message, errorChan chan error) {
 
 	err = email.Send(smtpClient)
 	if err != nil {
-		fmt.Println(err)
+		// fmt.Println("Send email error:", err)
 		errorChan <- err
 	}
 }

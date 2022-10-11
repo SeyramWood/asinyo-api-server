@@ -2350,9 +2350,22 @@ func (m *AgentMutation) OldRegion(ctx context.Context) (v *string, err error) {
 	return oldValue.Region, nil
 }
 
+// ClearRegion clears the value of the "region" field.
+func (m *AgentMutation) ClearRegion() {
+	m.region = nil
+	m.clearedFields[agent.FieldRegion] = struct{}{}
+}
+
+// RegionCleared returns if the "region" field was cleared in this mutation.
+func (m *AgentMutation) RegionCleared() bool {
+	_, ok := m.clearedFields[agent.FieldRegion]
+	return ok
+}
+
 // ResetRegion resets all changes to the "region" field.
 func (m *AgentMutation) ResetRegion() {
 	m.region = nil
+	delete(m.clearedFields, agent.FieldRegion)
 }
 
 // SetDistrict sets the "district" field.
@@ -2386,9 +2399,22 @@ func (m *AgentMutation) OldDistrict(ctx context.Context) (v *string, err error) 
 	return oldValue.District, nil
 }
 
+// ClearDistrict clears the value of the "district" field.
+func (m *AgentMutation) ClearDistrict() {
+	m.district = nil
+	m.clearedFields[agent.FieldDistrict] = struct{}{}
+}
+
+// DistrictCleared returns if the "district" field was cleared in this mutation.
+func (m *AgentMutation) DistrictCleared() bool {
+	_, ok := m.clearedFields[agent.FieldDistrict]
+	return ok
+}
+
 // ResetDistrict resets all changes to the "district" field.
 func (m *AgentMutation) ResetDistrict() {
 	m.district = nil
+	delete(m.clearedFields, agent.FieldDistrict)
 }
 
 // SetCity sets the "city" field.
@@ -2422,9 +2448,22 @@ func (m *AgentMutation) OldCity(ctx context.Context) (v *string, err error) {
 	return oldValue.City, nil
 }
 
+// ClearCity clears the value of the "city" field.
+func (m *AgentMutation) ClearCity() {
+	m.city = nil
+	m.clearedFields[agent.FieldCity] = struct{}{}
+}
+
+// CityCleared returns if the "city" field was cleared in this mutation.
+func (m *AgentMutation) CityCleared() bool {
+	_, ok := m.clearedFields[agent.FieldCity]
+	return ok
+}
+
 // ResetCity resets all changes to the "city" field.
 func (m *AgentMutation) ResetCity() {
 	m.city = nil
+	delete(m.clearedFields, agent.FieldCity)
 }
 
 // SetDefaultAccount sets the "default_account" field.
@@ -3274,6 +3313,15 @@ func (m *AgentMutation) ClearedFields() []string {
 	if m.FieldCleared(agent.FieldOtherPhone) {
 		fields = append(fields, agent.FieldOtherPhone)
 	}
+	if m.FieldCleared(agent.FieldRegion) {
+		fields = append(fields, agent.FieldRegion)
+	}
+	if m.FieldCleared(agent.FieldDistrict) {
+		fields = append(fields, agent.FieldDistrict)
+	}
+	if m.FieldCleared(agent.FieldCity) {
+		fields = append(fields, agent.FieldCity)
+	}
 	if m.FieldCleared(agent.FieldDefaultAccount) {
 		fields = append(fields, agent.FieldDefaultAccount)
 	}
@@ -3302,6 +3350,15 @@ func (m *AgentMutation) ClearField(name string) error {
 	switch name {
 	case agent.FieldOtherPhone:
 		m.ClearOtherPhone()
+		return nil
+	case agent.FieldRegion:
+		m.ClearRegion()
+		return nil
+	case agent.FieldDistrict:
+		m.ClearDistrict()
+		return nil
+	case agent.FieldCity:
+		m.ClearCity()
 		return nil
 	case agent.FieldDefaultAccount:
 		m.ClearDefaultAccount()
@@ -7109,9 +7166,22 @@ func (m *MerchantStoreMutation) OldRegion(ctx context.Context) (v *string, err e
 	return oldValue.Region, nil
 }
 
+// ClearRegion clears the value of the "region" field.
+func (m *MerchantStoreMutation) ClearRegion() {
+	m.region = nil
+	m.clearedFields[merchantstore.FieldRegion] = struct{}{}
+}
+
+// RegionCleared returns if the "region" field was cleared in this mutation.
+func (m *MerchantStoreMutation) RegionCleared() bool {
+	_, ok := m.clearedFields[merchantstore.FieldRegion]
+	return ok
+}
+
 // ResetRegion resets all changes to the "region" field.
 func (m *MerchantStoreMutation) ResetRegion() {
 	m.region = nil
+	delete(m.clearedFields, merchantstore.FieldRegion)
 }
 
 // SetDistrict sets the "district" field.
@@ -7145,9 +7215,22 @@ func (m *MerchantStoreMutation) OldDistrict(ctx context.Context) (v *string, err
 	return oldValue.District, nil
 }
 
+// ClearDistrict clears the value of the "district" field.
+func (m *MerchantStoreMutation) ClearDistrict() {
+	m.district = nil
+	m.clearedFields[merchantstore.FieldDistrict] = struct{}{}
+}
+
+// DistrictCleared returns if the "district" field was cleared in this mutation.
+func (m *MerchantStoreMutation) DistrictCleared() bool {
+	_, ok := m.clearedFields[merchantstore.FieldDistrict]
+	return ok
+}
+
 // ResetDistrict resets all changes to the "district" field.
 func (m *MerchantStoreMutation) ResetDistrict() {
 	m.district = nil
+	delete(m.clearedFields, merchantstore.FieldDistrict)
 }
 
 // SetCity sets the "city" field.
@@ -7181,9 +7264,22 @@ func (m *MerchantStoreMutation) OldCity(ctx context.Context) (v *string, err err
 	return oldValue.City, nil
 }
 
+// ClearCity clears the value of the "city" field.
+func (m *MerchantStoreMutation) ClearCity() {
+	m.city = nil
+	m.clearedFields[merchantstore.FieldCity] = struct{}{}
+}
+
+// CityCleared returns if the "city" field was cleared in this mutation.
+func (m *MerchantStoreMutation) CityCleared() bool {
+	_, ok := m.clearedFields[merchantstore.FieldCity]
+	return ok
+}
+
 // ResetCity resets all changes to the "city" field.
 func (m *MerchantStoreMutation) ResetCity() {
 	m.city = nil
+	delete(m.clearedFields, merchantstore.FieldCity)
 }
 
 // SetDefaultAccount sets the "default_account" field.
@@ -7948,6 +8044,15 @@ func (m *MerchantStoreMutation) ClearedFields() []string {
 	if m.FieldCleared(merchantstore.FieldImages) {
 		fields = append(fields, merchantstore.FieldImages)
 	}
+	if m.FieldCleared(merchantstore.FieldRegion) {
+		fields = append(fields, merchantstore.FieldRegion)
+	}
+	if m.FieldCleared(merchantstore.FieldDistrict) {
+		fields = append(fields, merchantstore.FieldDistrict)
+	}
+	if m.FieldCleared(merchantstore.FieldCity) {
+		fields = append(fields, merchantstore.FieldCity)
+	}
 	if m.FieldCleared(merchantstore.FieldDefaultAccount) {
 		fields = append(fields, merchantstore.FieldDefaultAccount)
 	}
@@ -7973,6 +8078,15 @@ func (m *MerchantStoreMutation) ClearField(name string) error {
 	switch name {
 	case merchantstore.FieldImages:
 		m.ClearImages()
+		return nil
+	case merchantstore.FieldRegion:
+		m.ClearRegion()
+		return nil
+	case merchantstore.FieldDistrict:
+		m.ClearDistrict()
+		return nil
+	case merchantstore.FieldCity:
+		m.ClearCity()
 		return nil
 	case merchantstore.FieldDefaultAccount:
 		m.ClearDefaultAccount()

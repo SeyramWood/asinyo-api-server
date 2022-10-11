@@ -217,6 +217,7 @@ func (s *service) SendUserVerificationCode(username string) (string, error) {
 			},
 		)
 	}
+
 	return code, nil
 }
 

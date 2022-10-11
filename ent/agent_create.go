@@ -122,15 +122,39 @@ func (ac *AgentCreate) SetRegion(s string) *AgentCreate {
 	return ac
 }
 
+// SetNillableRegion sets the "region" field if the given value is not nil.
+func (ac *AgentCreate) SetNillableRegion(s *string) *AgentCreate {
+	if s != nil {
+		ac.SetRegion(*s)
+	}
+	return ac
+}
+
 // SetDistrict sets the "district" field.
 func (ac *AgentCreate) SetDistrict(s string) *AgentCreate {
 	ac.mutation.SetDistrict(s)
 	return ac
 }
 
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (ac *AgentCreate) SetNillableDistrict(s *string) *AgentCreate {
+	if s != nil {
+		ac.SetDistrict(*s)
+	}
+	return ac
+}
+
 // SetCity sets the "city" field.
 func (ac *AgentCreate) SetCity(s string) *AgentCreate {
 	ac.mutation.SetCity(s)
+	return ac
+}
+
+// SetNillableCity sets the "city" field if the given value is not nil.
+func (ac *AgentCreate) SetNillableCity(s *string) *AgentCreate {
+	if s != nil {
+		ac.SetCity(*s)
+	}
 	return ac
 }
 
@@ -416,30 +440,6 @@ func (ac *AgentCreate) check() error {
 	if v, ok := ac.mutation.DigitalAddress(); ok {
 		if err := agent.DigitalAddressValidator(v); err != nil {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "Agent.digital_address": %w`, err)}
-		}
-	}
-	if _, ok := ac.mutation.Region(); !ok {
-		return &ValidationError{Name: "region", err: errors.New(`ent: missing required field "Agent.region"`)}
-	}
-	if v, ok := ac.mutation.Region(); ok {
-		if err := agent.RegionValidator(v); err != nil {
-			return &ValidationError{Name: "region", err: fmt.Errorf(`ent: validator failed for field "Agent.region": %w`, err)}
-		}
-	}
-	if _, ok := ac.mutation.District(); !ok {
-		return &ValidationError{Name: "district", err: errors.New(`ent: missing required field "Agent.district"`)}
-	}
-	if v, ok := ac.mutation.District(); ok {
-		if err := agent.DistrictValidator(v); err != nil {
-			return &ValidationError{Name: "district", err: fmt.Errorf(`ent: validator failed for field "Agent.district": %w`, err)}
-		}
-	}
-	if _, ok := ac.mutation.City(); !ok {
-		return &ValidationError{Name: "city", err: errors.New(`ent: missing required field "Agent.city"`)}
-	}
-	if v, ok := ac.mutation.City(); ok {
-		if err := agent.CityValidator(v); err != nil {
-			return &ValidationError{Name: "city", err: fmt.Errorf(`ent: validator failed for field "Agent.city": %w`, err)}
 		}
 	}
 	if v, ok := ac.mutation.DefaultAccount(); ok {
