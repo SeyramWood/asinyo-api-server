@@ -141,21 +141,6 @@ func init() {
 	agentDescDigitalAddress := agentFields[8].Descriptor()
 	// agent.DigitalAddressValidator is a validator for the "digital_address" field. It is called by the builders before save.
 	agent.DigitalAddressValidator = agentDescDigitalAddress.Validators[0].(func(string) error)
-<<<<<<< HEAD
-	// agentDescRegion is the schema descriptor for region field.
-	agentDescRegion := agentFields[9].Descriptor()
-	// agent.RegionValidator is a validator for the "region" field. It is called by the builders before save.
-	agent.RegionValidator = agentDescRegion.Validators[0].(func(string) error)
-	// agentDescDistrict is the schema descriptor for district field.
-	agentDescDistrict := agentFields[10].Descriptor()
-	// agent.DistrictValidator is a validator for the "district" field. It is called by the builders before save.
-	agent.DistrictValidator = agentDescDistrict.Validators[0].(func(string) error)
-	// agentDescCity is the schema descriptor for city field.
-	agentDescCity := agentFields[11].Descriptor()
-	// agent.CityValidator is a validator for the "city" field. It is called by the builders before save.
-	agent.CityValidator = agentDescCity.Validators[0].(func(string) error)
-=======
->>>>>>> dev
 	// agentDescVerified is the schema descriptor for verified field.
 	agentDescVerified := agentFields[15].Descriptor()
 	// agent.DefaultVerified holds the default value on creation for the verified field.
@@ -287,18 +272,6 @@ func init() {
 	merchantstoreDescLogo := merchantstoreFields[4].Descriptor()
 	// merchantstore.LogoValidator is a validator for the "logo" field. It is called by the builders before save.
 	merchantstore.LogoValidator = merchantstoreDescLogo.Validators[0].(func(string) error)
-	// merchantstoreDescRegion is the schema descriptor for region field.
-	merchantstoreDescRegion := merchantstoreFields[6].Descriptor()
-	// merchantstore.RegionValidator is a validator for the "region" field. It is called by the builders before save.
-	merchantstore.RegionValidator = merchantstoreDescRegion.Validators[0].(func(string) error)
-	// merchantstoreDescDistrict is the schema descriptor for district field.
-	merchantstoreDescDistrict := merchantstoreFields[7].Descriptor()
-	// merchantstore.DistrictValidator is a validator for the "district" field. It is called by the builders before save.
-	merchantstore.DistrictValidator = merchantstoreDescDistrict.Validators[0].(func(string) error)
-	// merchantstoreDescCity is the schema descriptor for city field.
-	merchantstoreDescCity := merchantstoreFields[8].Descriptor()
-	// merchantstore.CityValidator is a validator for the "city" field. It is called by the builders before save.
-	merchantstore.CityValidator = merchantstoreDescCity.Validators[0].(func(string) error)
 	// merchantstoreDescMerchantType is the schema descriptor for merchant_type field.
 	merchantstoreDescMerchantType := merchantstoreFields[12].Descriptor()
 	// merchantstore.MerchantTypeValidator is a validator for the "merchant_type" field. It is called by the builders before save.

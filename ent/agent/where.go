@@ -1269,8 +1269,6 @@ func RegionHasSuffix(v string) predicate.Agent {
 	})
 }
 
-<<<<<<< HEAD
-=======
 // RegionIsNil applies the IsNil predicate on the "region" field.
 func RegionIsNil() predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
@@ -1285,7 +1283,6 @@ func RegionNotNil() predicate.Agent {
 	})
 }
 
->>>>>>> dev
 // RegionEqualFold applies the EqualFold predicate on the "region" field.
 func RegionEqualFold(v string) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
@@ -1385,8 +1382,6 @@ func DistrictHasSuffix(v string) predicate.Agent {
 	})
 }
 
-<<<<<<< HEAD
-=======
 // DistrictIsNil applies the IsNil predicate on the "district" field.
 func DistrictIsNil() predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
@@ -1401,7 +1396,6 @@ func DistrictNotNil() predicate.Agent {
 	})
 }
 
->>>>>>> dev
 // DistrictEqualFold applies the EqualFold predicate on the "district" field.
 func DistrictEqualFold(v string) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
@@ -1501,8 +1495,6 @@ func CityHasSuffix(v string) predicate.Agent {
 	})
 }
 
-<<<<<<< HEAD
-=======
 // CityIsNil applies the IsNil predicate on the "city" field.
 func CityIsNil() predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
@@ -1517,7 +1509,6 @@ func CityNotNil() predicate.Agent {
 	})
 }
 
->>>>>>> dev
 // CityEqualFold applies the EqualFold predicate on the "city" field.
 func CityEqualFold(v string) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {

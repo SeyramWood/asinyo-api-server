@@ -81,15 +81,9 @@ var (
 		{Name: "other_phone", Type: field.TypeString, Nullable: true},
 		{Name: "address", Type: field.TypeString},
 		{Name: "digital_address", Type: field.TypeString},
-<<<<<<< HEAD
-		{Name: "region", Type: field.TypeString},
-		{Name: "district", Type: field.TypeString},
-		{Name: "city", Type: field.TypeString},
-=======
 		{Name: "region", Type: field.TypeString, Nullable: true},
 		{Name: "district", Type: field.TypeString, Nullable: true},
 		{Name: "city", Type: field.TypeString, Nullable: true},
->>>>>>> dev
 		{Name: "default_account", Type: field.TypeEnum, Nullable: true, Enums: []string{"bank", "momo"}},
 		{Name: "bank_account", Type: field.TypeJSON, Nullable: true},
 		{Name: "momo_account", Type: field.TypeJSON, Nullable: true},
@@ -217,24 +211,14 @@ var (
 		{Name: "description", Type: field.TypeString, Size: 2147483647},
 		{Name: "logo", Type: field.TypeString},
 		{Name: "images", Type: field.TypeJSON, Nullable: true},
-<<<<<<< HEAD
-		{Name: "region", Type: field.TypeString},
-		{Name: "district", Type: field.TypeString},
-		{Name: "city", Type: field.TypeString},
-=======
 		{Name: "region", Type: field.TypeString, Nullable: true},
 		{Name: "district", Type: field.TypeString, Nullable: true},
 		{Name: "city", Type: field.TypeString, Nullable: true},
->>>>>>> dev
 		{Name: "default_account", Type: field.TypeEnum, Nullable: true, Enums: []string{"bank", "momo"}},
 		{Name: "bank_account", Type: field.TypeJSON, Nullable: true},
 		{Name: "momo_account", Type: field.TypeJSON, Nullable: true},
 		{Name: "merchant_type", Type: field.TypeString},
-<<<<<<< HEAD
-		{Name: "permit_agent", Type: field.TypeBool, Default: false},
-=======
 		{Name: "permit_agent", Type: field.TypeBool, Default: true},
->>>>>>> dev
 		{Name: "agent_store", Type: field.TypeInt, Nullable: true},
 		{Name: "merchant_store", Type: field.TypeInt, Unique: true, Nullable: true},
 	}

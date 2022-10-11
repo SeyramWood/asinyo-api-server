@@ -114,8 +114,6 @@ func (au *AgentUpdate) SetRegion(s string) *AgentUpdate {
 	return au
 }
 
-<<<<<<< HEAD
-=======
 // SetNillableRegion sets the "region" field if the given value is not nil.
 func (au *AgentUpdate) SetNillableRegion(s *string) *AgentUpdate {
 	if s != nil {
@@ -130,15 +128,12 @@ func (au *AgentUpdate) ClearRegion() *AgentUpdate {
 	return au
 }
 
->>>>>>> dev
 // SetDistrict sets the "district" field.
 func (au *AgentUpdate) SetDistrict(s string) *AgentUpdate {
 	au.mutation.SetDistrict(s)
 	return au
 }
 
-<<<<<<< HEAD
-=======
 // SetNillableDistrict sets the "district" field if the given value is not nil.
 func (au *AgentUpdate) SetNillableDistrict(s *string) *AgentUpdate {
 	if s != nil {
@@ -153,15 +148,12 @@ func (au *AgentUpdate) ClearDistrict() *AgentUpdate {
 	return au
 }
 
->>>>>>> dev
 // SetCity sets the "city" field.
 func (au *AgentUpdate) SetCity(s string) *AgentUpdate {
 	au.mutation.SetCity(s)
 	return au
 }
 
-<<<<<<< HEAD
-=======
 // SetNillableCity sets the "city" field if the given value is not nil.
 func (au *AgentUpdate) SetNillableCity(s *string) *AgentUpdate {
 	if s != nil {
@@ -176,7 +168,6 @@ func (au *AgentUpdate) ClearCity() *AgentUpdate {
 	return au
 }
 
->>>>>>> dev
 // SetDefaultAccount sets the "default_account" field.
 func (au *AgentUpdate) SetDefaultAccount(aa agent.DefaultAccount) *AgentUpdate {
 	au.mutation.SetDefaultAccount(aa)
@@ -543,24 +534,6 @@ func (au *AgentUpdate) check() error {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "Agent.digital_address": %w`, err)}
 		}
 	}
-<<<<<<< HEAD
-	if v, ok := au.mutation.Region(); ok {
-		if err := agent.RegionValidator(v); err != nil {
-			return &ValidationError{Name: "region", err: fmt.Errorf(`ent: validator failed for field "Agent.region": %w`, err)}
-		}
-	}
-	if v, ok := au.mutation.District(); ok {
-		if err := agent.DistrictValidator(v); err != nil {
-			return &ValidationError{Name: "district", err: fmt.Errorf(`ent: validator failed for field "Agent.district": %w`, err)}
-		}
-	}
-	if v, ok := au.mutation.City(); ok {
-		if err := agent.CityValidator(v); err != nil {
-			return &ValidationError{Name: "city", err: fmt.Errorf(`ent: validator failed for field "Agent.city": %w`, err)}
-		}
-	}
-=======
->>>>>>> dev
 	if v, ok := au.mutation.DefaultAccount(); ok {
 		if err := agent.DefaultAccountValidator(v); err != nil {
 			return &ValidationError{Name: "default_account", err: fmt.Errorf(`ent: validator failed for field "Agent.default_account": %w`, err)}
@@ -670,15 +643,12 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: agent.FieldRegion,
 		})
 	}
-<<<<<<< HEAD
-=======
 	if au.mutation.RegionCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: agent.FieldRegion,
 		})
 	}
->>>>>>> dev
 	if value, ok := au.mutation.District(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -686,15 +656,12 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: agent.FieldDistrict,
 		})
 	}
-<<<<<<< HEAD
-=======
 	if au.mutation.DistrictCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: agent.FieldDistrict,
 		})
 	}
->>>>>>> dev
 	if value, ok := au.mutation.City(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -702,15 +669,12 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: agent.FieldCity,
 		})
 	}
-<<<<<<< HEAD
-=======
 	if au.mutation.CityCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: agent.FieldCity,
 		})
 	}
->>>>>>> dev
 	if value, ok := au.mutation.DefaultAccount(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeEnum,
@@ -1139,8 +1103,6 @@ func (auo *AgentUpdateOne) SetRegion(s string) *AgentUpdateOne {
 	return auo
 }
 
-<<<<<<< HEAD
-=======
 // SetNillableRegion sets the "region" field if the given value is not nil.
 func (auo *AgentUpdateOne) SetNillableRegion(s *string) *AgentUpdateOne {
 	if s != nil {
@@ -1155,15 +1117,12 @@ func (auo *AgentUpdateOne) ClearRegion() *AgentUpdateOne {
 	return auo
 }
 
->>>>>>> dev
 // SetDistrict sets the "district" field.
 func (auo *AgentUpdateOne) SetDistrict(s string) *AgentUpdateOne {
 	auo.mutation.SetDistrict(s)
 	return auo
 }
 
-<<<<<<< HEAD
-=======
 // SetNillableDistrict sets the "district" field if the given value is not nil.
 func (auo *AgentUpdateOne) SetNillableDistrict(s *string) *AgentUpdateOne {
 	if s != nil {
@@ -1178,15 +1137,12 @@ func (auo *AgentUpdateOne) ClearDistrict() *AgentUpdateOne {
 	return auo
 }
 
->>>>>>> dev
 // SetCity sets the "city" field.
 func (auo *AgentUpdateOne) SetCity(s string) *AgentUpdateOne {
 	auo.mutation.SetCity(s)
 	return auo
 }
 
-<<<<<<< HEAD
-=======
 // SetNillableCity sets the "city" field if the given value is not nil.
 func (auo *AgentUpdateOne) SetNillableCity(s *string) *AgentUpdateOne {
 	if s != nil {
@@ -1201,7 +1157,6 @@ func (auo *AgentUpdateOne) ClearCity() *AgentUpdateOne {
 	return auo
 }
 
->>>>>>> dev
 // SetDefaultAccount sets the "default_account" field.
 func (auo *AgentUpdateOne) SetDefaultAccount(aa agent.DefaultAccount) *AgentUpdateOne {
 	auo.mutation.SetDefaultAccount(aa)
@@ -1581,24 +1536,6 @@ func (auo *AgentUpdateOne) check() error {
 			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "Agent.digital_address": %w`, err)}
 		}
 	}
-<<<<<<< HEAD
-	if v, ok := auo.mutation.Region(); ok {
-		if err := agent.RegionValidator(v); err != nil {
-			return &ValidationError{Name: "region", err: fmt.Errorf(`ent: validator failed for field "Agent.region": %w`, err)}
-		}
-	}
-	if v, ok := auo.mutation.District(); ok {
-		if err := agent.DistrictValidator(v); err != nil {
-			return &ValidationError{Name: "district", err: fmt.Errorf(`ent: validator failed for field "Agent.district": %w`, err)}
-		}
-	}
-	if v, ok := auo.mutation.City(); ok {
-		if err := agent.CityValidator(v); err != nil {
-			return &ValidationError{Name: "city", err: fmt.Errorf(`ent: validator failed for field "Agent.city": %w`, err)}
-		}
-	}
-=======
->>>>>>> dev
 	if v, ok := auo.mutation.DefaultAccount(); ok {
 		if err := agent.DefaultAccountValidator(v); err != nil {
 			return &ValidationError{Name: "default_account", err: fmt.Errorf(`ent: validator failed for field "Agent.default_account": %w`, err)}
@@ -1725,15 +1662,12 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Column: agent.FieldRegion,
 		})
 	}
-<<<<<<< HEAD
-=======
 	if auo.mutation.RegionCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: agent.FieldRegion,
 		})
 	}
->>>>>>> dev
 	if value, ok := auo.mutation.District(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -1741,15 +1675,12 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Column: agent.FieldDistrict,
 		})
 	}
-<<<<<<< HEAD
-=======
 	if auo.mutation.DistrictCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: agent.FieldDistrict,
 		})
 	}
->>>>>>> dev
 	if value, ok := auo.mutation.City(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -1757,15 +1688,12 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Column: agent.FieldCity,
 		})
 	}
-<<<<<<< HEAD
-=======
 	if auo.mutation.CityCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: agent.FieldCity,
 		})
 	}
->>>>>>> dev
 	if value, ok := auo.mutation.DefaultAccount(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeEnum,

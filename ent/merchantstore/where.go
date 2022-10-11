@@ -887,8 +887,6 @@ func RegionHasSuffix(v string) predicate.MerchantStore {
 	})
 }
 
-<<<<<<< HEAD
-=======
 // RegionIsNil applies the IsNil predicate on the "region" field.
 func RegionIsNil() predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
@@ -903,7 +901,6 @@ func RegionNotNil() predicate.MerchantStore {
 	})
 }
 
->>>>>>> dev
 // RegionEqualFold applies the EqualFold predicate on the "region" field.
 func RegionEqualFold(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
@@ -1003,8 +1000,6 @@ func DistrictHasSuffix(v string) predicate.MerchantStore {
 	})
 }
 
-<<<<<<< HEAD
-=======
 // DistrictIsNil applies the IsNil predicate on the "district" field.
 func DistrictIsNil() predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
@@ -1019,7 +1014,6 @@ func DistrictNotNil() predicate.MerchantStore {
 	})
 }
 
->>>>>>> dev
 // DistrictEqualFold applies the EqualFold predicate on the "district" field.
 func DistrictEqualFold(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
@@ -1119,8 +1113,6 @@ func CityHasSuffix(v string) predicate.MerchantStore {
 	})
 }
 
-<<<<<<< HEAD
-=======
 // CityIsNil applies the IsNil predicate on the "city" field.
 func CityIsNil() predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
@@ -1135,7 +1127,6 @@ func CityNotNil() predicate.MerchantStore {
 	})
 }
 
->>>>>>> dev
 // CityEqualFold applies the EqualFold predicate on the "city" field.
 func CityEqualFold(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {

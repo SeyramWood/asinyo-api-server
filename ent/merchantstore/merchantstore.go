@@ -157,12 +157,6 @@ var (
 	DescriptionValidator func(string) error
 	// LogoValidator is a validator for the "logo" field. It is called by the builders before save.
 	LogoValidator func(string) error
-	// RegionValidator is a validator for the "region" field. It is called by the builders before save.
-	RegionValidator func(string) error
-	// DistrictValidator is a validator for the "district" field. It is called by the builders before save.
-	DistrictValidator func(string) error
-	// CityValidator is a validator for the "city" field. It is called by the builders before save.
-	CityValidator func(string) error
 	// MerchantTypeValidator is a validator for the "merchant_type" field. It is called by the builders before save.
 	MerchantTypeValidator func(string) error
 	// DefaultPermitAgent holds the default value on creation for the "permit_agent" field.
