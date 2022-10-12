@@ -17,12 +17,10 @@ type repository struct {
 	db *ent.Client
 }
 
-//NewRepo is the single instance repo that is being created.
 func NewAuthRepo(db *database.Adapter) gateways.AuthRepo {
 	return &repository{db.DB}
 }
 
-//ReadUser is a mongo repository that helps to fetch books
 func (r *repository) ReadAdmin(username, field string) (*ent.Admin, error) {
 	if field == "id" {
 		id, _ := strconv.Atoi(username)
@@ -84,4 +82,8 @@ func (r *repository) ReadMerchant(username, field string) (*ent.Merchant, error)
 		return nil, err
 	}
 	return user, nil
+}
+func (r *repository) UpdatePassword(id string, request any, userType string) (bool, error) {
+	// TODO implement me
+	panic("implement me")
 }

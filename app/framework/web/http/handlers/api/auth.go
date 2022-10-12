@@ -9,6 +9,7 @@ import (
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/auth"
+	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 )
 
@@ -43,16 +44,23 @@ func (auth *authHandler) FetchAuthUser() fiber.Handler {
 }
 func (auth *authHandler) ChangePassword() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		request := struct {
-			CurrentPassword string
-			Password        string
-		}{}
+		var request models.ChangePassword
 		err := c.BodyParser(&request)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
-
-		return nil
+		id := c.Params("user")
+		userType := c.Params("userType")
+		_, err = auth.service.UpdatePassword(id, &request, userType)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+		}
+		return c.Status(fiber.StatusOK).JSON(
+			fiber.Map{
+				"status": true,
+				"msg":    "Password Updated.",
+			},
+		)
 	}
 }
 func (auth *authHandler) SendVerificationCode() fiber.Handler {

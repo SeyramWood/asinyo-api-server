@@ -143,6 +143,7 @@ type (
 		ReadCustomer(username, field string) (*ent.Customer, error)
 		ReadAgent(username, field string) (*ent.Agent, error)
 		ReadMerchant(username, field string) (*ent.Merchant, error)
+		UpdatePassword(id string, request any, userType string) (bool, error)
 	}
 
 	PaymentRepo interface {

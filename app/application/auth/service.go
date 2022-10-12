@@ -190,6 +190,19 @@ func (s *service) FetchAuthUser(c *fiber.Ctx) error {
 
 }
 
+func (s *service) UpdatePassword(id string, request any, userType string) (bool, error) {
+
+	// data := request.(*models.ChangePassword)
+	user, err := s.repo.ReadAgent(id, "id")
+	if err != nil {
+		return false, err
+	}
+
+	fmt.Println(user)
+
+	panic("implement me")
+}
+
 func (s *service) SendUserVerificationCode(username string) (string, error) {
 	code, _ := application.GenerateOTP(6)
 	msg := fmt.Sprintf(
@@ -263,8 +276,6 @@ func (s *service) signinCustomer(c *fiber.Ctx, request models.User) error {
 func (s *service) signinAgent(c *fiber.Ctx, request models.User) error {
 
 	if user, err := s.repo.ReadAgent(request.Username, "username"); err != nil {
-		fmt.Println(err)
-
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
 	} else {
 		if s.hashCheck(user.Password, request.Password) {

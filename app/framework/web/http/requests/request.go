@@ -41,11 +41,7 @@ func ValidateUser() fiber.Handler {
 func ValidateChangePassword() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		request := struct {
-			CurrentPassword string `json:"currentPassword,omitempty" validate:"required|min:8"`
-			Password        string `json:"password" validate:"required|min:8"`
-			ConfirmPassword string `json:"confirmPassword" validate:"required|min:8|match:password"`
-		}{}
+		var request models.ChangePassword
 		err := c.BodyParser(&request)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))

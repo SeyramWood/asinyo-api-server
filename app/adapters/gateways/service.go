@@ -143,6 +143,7 @@ type (
 		Login(c *fiber.Ctx) error
 		Logout(c *fiber.Ctx) error
 		FetchAuthUser(c *fiber.Ctx) error
+		UpdatePassword(id string, request any, userType string) (bool, error)
 		SendUserVerificationCode(username string) (string, error)
 	}
 

@@ -1,42 +1,42 @@
-name: Build and Publish Docker Image
-on:
-  push:
-    branches:
-      - dev
-      - master
-  pull_request:
-    branches:
-      - dev
-      - master
-jobs:
-  build-and-publish-to-development-server:
-    if: ${{github.ref == 'refs/heads/dev'}}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: "Build docker image for development server - Branch: DEV"
-        run: docker build . -t asinyoapi:dev
-      - name: Publishing to Dockerhub registry
-        uses: elgohr/Publish-Docker-Github-Action@v4
-        with:
-          name: seyramwood/asinyoapi
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          default_branch: dev
-          tags: "dev"
-
-  build-and-publish-to-production-server:
-    if: ${{github.ref == 'refs/heads/master'}}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: "Build docker image for production server - Branch: Master"
-        run: docker build . -t asinyoapi:latest
-      - name: Publishing to Dockerhub registry
-        uses: elgohr/Publish-Docker-Github-Action@v4
-        with:
-          name: seyramwood/asinyoapi
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          default_branch: master
-          tags: "latest"
+#name: Build and Publish Docker Image
+#on:
+#  push:
+#    branches:
+#      - dev
+#      - master
+#  pull_request:
+#    branches:
+#      - dev
+#      - master
+#jobs:
+#  build-and-publish-to-development-server:
+#    if: ${{github.ref == 'refs/heads/dev'}}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - name: "Build docker image for development server - Branch: DEV"
+#        run: docker build . -t asinyoapi:dev
+#      - name: Publishing to Dockerhub registry
+#        uses: elgohr/Publish-Docker-Github-Action@v4
+#        with:
+#          name: seyramwood/asinyoapi
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#          default_branch: dev
+#          tags: "dev"
+#
+#  build-and-publish-to-production-server:
+#    if: ${{github.ref == 'refs/heads/master'}}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - name: "Build docker image for production server - Branch: Master"
+#        run: docker build . -t asinyoapi:latest
+#      - name: Publishing to Dockerhub registry
+#        uses: elgohr/Publish-Docker-Github-Action@v4
+#        with:
+#          name: seyramwood/asinyoapi
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#          default_branch: master
+#          tags: "latest"
