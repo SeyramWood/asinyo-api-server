@@ -59,6 +59,7 @@ func (r *repository) Read(id int) (*ent.Agent, error) {
 func (r *repository) ReadAll() ([]*ent.Agent, error) {
 
 	results, err := r.db.Agent.Query().
+		Order(ent.Desc(agent.FieldCreatedAt)).
 		All(context.Background())
 	if err != nil {
 		return nil, err

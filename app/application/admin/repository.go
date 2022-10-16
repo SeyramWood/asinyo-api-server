@@ -4,19 +4,19 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/ent/admin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type repository struct {
 	db *ent.Client
 }
 
-//NewRepo is the single instance repo that is being created.
 func NewAdminRepo(db *database.Adapter) gateways.AdminRepo {
 	return &repository{db.DB}
 }
@@ -37,7 +37,6 @@ func (r *repository) Insert(user *models.Admin) (*ent.Admin, error) {
 	return u, nil
 }
 
-//ReadUser is a mongo repository that helps to fetch books
 func (r *repository) Read(id int) (*ent.Admin, error) {
 
 	b, err := r.db.Admin.Query().Where(admin.ID(id)).First(context.Background())
@@ -47,10 +46,10 @@ func (r *repository) Read(id int) (*ent.Admin, error) {
 	return b, nil
 }
 
-//ReadUser is a mongo repository that helps to fetch books
 func (r *repository) ReadAll() ([]*ent.Admin, error) {
 
 	b, err := r.db.Admin.Query().
+		Order(ent.Desc(admin.FieldCreatedAt)).
 		All(context.Background())
 	if err != nil {
 		return nil, err
@@ -58,7 +57,6 @@ func (r *repository) ReadAll() ([]*ent.Admin, error) {
 	return b, nil
 }
 
-//UpdateBook is a mongo repository that helps to update books
 func (a *repository) Update(i *models.Admin) (*models.Admin, error) {
 	// book.UpdatedAt = time.Now()
 	// _, err := r.Collection.UpdateOne(context.Background(), bson.M{"_id": book.ID}, bson.M{"$set": book})
@@ -68,7 +66,6 @@ func (a *repository) Update(i *models.Admin) (*models.Admin, error) {
 	return i, nil
 }
 
-//DeleteBook is a mongo repository that helps to delete books
 func (r *repository) Delete(ID string) error {
 	return fmt.Errorf("failed creating book")
 	// return r.Delete(ID).Error

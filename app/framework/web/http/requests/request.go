@@ -38,57 +38,128 @@ func ValidateUser() fiber.Handler {
 		return c.Next()
 	}
 }
-func ValidateChangePassword() fiber.Handler {
+func ValidateChangePassword(changeType string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		var request models.ChangePassword
-		err := c.BodyParser(&request)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+		var updateRequest models.ChangePassword
+		var resetRequest models.ResetPassword
+		if changeType == "update" {
+			err := c.BodyParser(&updateRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+			}
+			if er := validator.Validate(&updateRequest); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
 		}
-		if er := validator.Validate(&request); er != nil {
-			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		if changeType == "reset" {
+			err := c.BodyParser(&resetRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+			}
+			if er := validator.Validate(&resetRequest); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
 		}
+
 		return c.Next()
 	}
 }
-func ValidateUserName() fiber.Handler {
+func ValidateUserName(checkUsernameExists bool) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userType := c.Get("userType")
+
+		verifyUsername := struct {
+			Username string `json:"username" validate:"required|email_phone"`
+		}{}
+
 		if userType == "merchant" {
-			verifyUsername := struct {
-				Username string `json:"username" validate:"required|email_phone|unique:merchants"`
-			}{}
-			err := c.BodyParser(&verifyUsername)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
-			}
-			if er := validator.Validate(&verifyUsername); er != nil {
-				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			if checkUsernameExists {
+				verifyUsernameExist := struct {
+					Username string `json:"username" validate:"required|email_phone|unique:merchants"`
+				}{}
+				err := c.BodyParser(&verifyUsernameExist)
+				if err != nil {
+					return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+				}
+				if er := validator.Validate(&verifyUsernameExist); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
+			} else {
+				err := c.BodyParser(&verifyUsername)
+				if err != nil {
+					return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+				}
+				if er := validator.Validate(&verifyUsername); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
 			}
 		}
 		if userType == "customer" {
-			verifyUsername := struct {
-				Username string `json:"username" validate:"required|email_phone|unique:customers"`
-			}{}
-			err := c.BodyParser(&verifyUsername)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
-			}
-			if er := validator.Validate(&verifyUsername); er != nil {
-				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			if checkUsernameExists {
+				verifyUsernameExist := struct {
+					Username string `json:"username" validate:"required|email_phone|unique:customers"`
+				}{}
+				err := c.BodyParser(&verifyUsernameExist)
+				if err != nil {
+					return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+				}
+				if er := validator.Validate(&verifyUsernameExist); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
+			} else {
+				err := c.BodyParser(&verifyUsername)
+				if err != nil {
+					return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+				}
+				if er := validator.Validate(&verifyUsername); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
 			}
 		}
 		if userType == "agent" {
-			verifyUsername := struct {
-				Username string `json:"username" validate:"required|email_phone|unique:agents"`
-			}{}
-			err := c.BodyParser(&verifyUsername)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+			if checkUsernameExists {
+				verifyUsernameExist := struct {
+					Username string `json:"username" validate:"required|email_phone|unique:agents"`
+				}{}
+				err := c.BodyParser(&verifyUsernameExist)
+				if err != nil {
+					return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+				}
+				if er := validator.Validate(&verifyUsernameExist); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
+			} else {
+				err := c.BodyParser(&verifyUsername)
+				if err != nil {
+					return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+				}
+				if er := validator.Validate(&verifyUsername); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
 			}
-			if er := validator.Validate(&verifyUsername); er != nil {
-				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
+
+		if userType == "admin" {
+			if checkUsernameExists {
+				verifyUsernameExist := struct {
+					Username string `json:"username" validate:"required|email_phone|unique:admins"`
+				}{}
+				err := c.BodyParser(&verifyUsernameExist)
+				if err != nil {
+					return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+				}
+				if er := validator.Validate(&verifyUsernameExist); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
+			} else {
+				err := c.BodyParser(&verifyUsername)
+				if err != nil {
+					return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
+				}
+				if er := validator.Validate(&verifyUsername); er != nil {
+					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+				}
 			}
 		}
 

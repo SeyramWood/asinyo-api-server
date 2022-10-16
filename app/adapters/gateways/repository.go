@@ -76,10 +76,9 @@ type (
 		ReadBySlugSupplierMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
 		ReadAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
 		ReadAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
-		ReadAllMajorByRetailer(majorId int) ([]*ent.Product, error)
 		ReadAllBySupplierMerchant(merchant int) ([]*ent.Product, error)
 		ReadAllByRetailMerchant(merchant int) ([]*ent.Product, error)
-		ReadBestSellerBySupplierMerchant() ([]*ent.Product, error)
+		ReadBestSellerBySupplierMerchant(limit, offset int) ([]*ent.Product, error)
 		ReadBestSellerRetailMerchant() ([]*ent.Product, error)
 		Update(merchant *models.Product) (*models.Product, error)
 		Delete(id string) error
@@ -143,7 +142,8 @@ type (
 		ReadCustomer(username, field string) (*ent.Customer, error)
 		ReadAgent(username, field string) (*ent.Agent, error)
 		ReadMerchant(username, field string) (*ent.Merchant, error)
-		UpdatePassword(id string, request any, userType string) (bool, error)
+		UpdatePassword(id int, password string, userType string, isOTP bool) (bool, error)
+		ResetPassword(id int, password, userType string) (bool, error)
 	}
 
 	PaymentRepo interface {

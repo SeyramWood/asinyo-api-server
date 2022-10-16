@@ -2,7 +2,10 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/framework/database"
@@ -83,7 +86,81 @@ func (r *repository) ReadMerchant(username, field string) (*ent.Merchant, error)
 	}
 	return user, nil
 }
-func (r *repository) UpdatePassword(id string, request any, userType string) (bool, error) {
-	// TODO implement me
-	panic("implement me")
+func (r *repository) UpdatePassword(id int, password string, userType string, isOTP bool) (bool, error) {
+	ctx := context.Background()
+	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 16)
+	switch userType {
+	case "customer":
+		_, err := r.db.Customer.UpdateOneID(id).SetPassword(hashPassword).Save(ctx)
+		if err != nil {
+			return false, fmt.Errorf("failed to update password")
+		}
+		return true, nil
+	case "agent":
+		_, err := r.db.Agent.UpdateOneID(id).SetPassword(hashPassword).Save(ctx)
+		if err != nil {
+			return false, fmt.Errorf("failed to update password")
+		}
+		return true, nil
+	case "supplier", "retailer":
+		if isOTP {
+			_, err := r.db.Merchant.UpdateOneID(id).
+				SetPassword(hashPassword).
+				SetOtp(false).
+				Save(ctx)
+			if err != nil {
+				return false, fmt.Errorf("failed to update password")
+			}
+			return true, nil
+		}
+		_, err := r.db.Merchant.UpdateOneID(id).
+			SetPassword(hashPassword).
+			Save(ctx)
+		if err != nil {
+			return false, fmt.Errorf("failed to update password")
+		}
+		return true, nil
+	case "asinyo":
+		_, err := r.db.Admin.UpdateOneID(id).SetPassword(hashPassword).Save(ctx)
+		if err != nil {
+			return false, fmt.Errorf("failed to update password")
+		}
+		return true, nil
+	default:
+		return false, nil
+	}
+}
+func (r *repository) ResetPassword(id int, password, userType string) (bool, error) {
+	ctx := context.Background()
+	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 16)
+	switch userType {
+	case "customer":
+		_, err := r.db.Customer.UpdateOneID(id).SetPassword(hashPassword).Save(ctx)
+		if err != nil {
+			return false, fmt.Errorf("failed to update password")
+		}
+		return true, nil
+	case "agent":
+		_, err := r.db.Agent.UpdateOneID(id).SetPassword(hashPassword).Save(ctx)
+		if err != nil {
+			return false, fmt.Errorf("failed to update password")
+		}
+		return true, nil
+	case "merchant":
+		_, err := r.db.Merchant.UpdateOneID(id).
+			SetPassword(hashPassword).
+			Save(ctx)
+		if err != nil {
+			return false, fmt.Errorf("failed to update password")
+		}
+		return true, nil
+	case "asinyo":
+		_, err := r.db.Admin.UpdateOneID(id).SetPassword(hashPassword).Save(ctx)
+		if err != nil {
+			return false, fmt.Errorf("failed to update password")
+		}
+		return true, nil
+	default:
+		return false, nil
+	}
 }

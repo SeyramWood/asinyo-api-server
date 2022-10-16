@@ -40,7 +40,7 @@ func (s *service) Onboard(merchant *models.StoreFinalRequest, agentId int, logo 
 		return nil, err
 	}
 	msg := fmt.Sprintf(
-		"Congratulations for joining Asinyo! Please enter the OTP (password) to continue with Asinyo. Make sure to change your password when you successfuly sign in.%s",
+		"Congratulations for joining Asinyo! Please enter the OTP (password) to continue with Asinyo. Make sure to change your password when you successfuly sign in. %s",
 		password,
 	)
 	if application.UsernameType(merchant.Username, "phone") {

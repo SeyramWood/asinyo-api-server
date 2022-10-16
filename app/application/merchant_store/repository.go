@@ -68,7 +68,7 @@ func (r repository) UpdateAccount(store interface{}, storeId int, accountType st
 				).
 				Save(ctx)
 			if err != nil {
-				return nil, fmt.Errorf("failed update merchant momo account : %w", err)
+				return nil, fmt.Errorf("failed to update merchant momo account : %w", err)
 			}
 			return result, nil
 		}
@@ -195,6 +195,7 @@ func (r repository) ReadAll() ([]*ent.MerchantStore, error) {
 func (r repository) ReadAllByMerchant(merchantType string) ([]*ent.MerchantStore, error) {
 	if merchantType == "supplier" {
 		results, err := r.db.MerchantStore.Query().
+			Order(ent.Desc(merchantstore.FieldCreatedAt)).
 			Where(merchantstore.MerchantType(merchantType)).
 			WithMerchant(
 				func(query *ent.MerchantQuery) {
@@ -208,6 +209,7 @@ func (r repository) ReadAllByMerchant(merchantType string) ([]*ent.MerchantStore
 		return results, nil
 	}
 	results, err := r.db.MerchantStore.Query().
+		Order(ent.Desc(merchantstore.FieldCreatedAt)).
 		Where(merchantstore.MerchantType(merchantType)).
 		WithMerchant(
 			func(query *ent.MerchantQuery) {

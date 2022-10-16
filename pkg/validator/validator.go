@@ -122,15 +122,14 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 						}
 					case "match":
 						var val reflect.Value
-						f := strings.ToUpper(string([]byte{r[1][0]})) + strings.ToLower(r[1][1:])
 						for i := 0; i < t.NumField(); i++ {
-							if t.Field(i).Name == f {
+							if t.Field(i).Name == r[1] {
 								val = v.Field(i)
 								break
 							}
 						}
 						if value.String() != val.String() {
-							return fmt.Sprintf("The %s does not matched", "passwords")
+							return fmt.Sprintf("The %s does not matched", formatFieldName(r[1]))
 						}
 					case "unique":
 						table := r[1]
@@ -170,6 +169,22 @@ func formatFieldName(field string) string {
 }
 
 func snakeCase(field string) string {
+	var text string
+	for i := 0; i < len(field); i++ {
+		c := string([]byte{field[i]})
+		if c == strings.ToUpper(c) {
+			if len(text) != 0 {
+				text += "_"
+			}
+			text += strings.ToLower(c)
+		} else {
+			text += strings.ToLower(c)
+		}
+	}
+	return text
+
+}
+func camelCase(field string) string {
 	var text string
 	for i := 0; i < len(field); i++ {
 		c := string([]byte{field[i]})

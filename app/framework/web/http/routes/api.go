@@ -262,7 +262,7 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 
 			r.Get("/category/minor", minorH.Fetch()).Name("minor")
 
-			r.Get("/best-seller/:merchantType", h.FetchBestSellerProducts()).Name("best.sellers")
+			r.Get("/best-seller/:merchantType", h.FetchBestSellerProducts())
 
 			r.Get("/:merchant/:id", h.FetchMerchantProducts()).Name("merchant.all")
 
@@ -370,9 +370,12 @@ func authRouter(router fiber.Router, db *database.Adapter, mail gateways.EmailSe
 			r.Get("/user", middleware.Auth(), h.FetchAuthUser()).Name("user")
 
 			r.Post("/signin", request.ValidateUser(), h.Login()).Name("signin")
-			r.Post("/send-user-verification-code", request.ValidateUserName(), h.SendVerificationCode())
+			r.Post("/send-user-verification-code", request.ValidateUserName(true), h.SendVerificationCode())
+			r.Post("/send-password-reset-code", request.ValidateUserName(false), h.SendPasswordResetCode())
 
-			r.Put("/change-password/:user/:userType", request.ValidateChangePassword(), h.ChangePassword())
+			r.Put("/change-password/:user/:userType", request.ValidateChangePassword("update"), h.ChangePassword())
+
+			r.Put("/reset-password/:user/:userType", request.ValidateChangePassword("reset"), h.ResetPassword())
 
 		}, "auth.",
 	)

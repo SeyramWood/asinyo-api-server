@@ -54,7 +54,7 @@ func (r repository) ReadAllByStore(merchantId int) ([]*ent.Order, error) {
 	ctx := context.Background()
 	results, err := r.db.Merchant.Query().Where(merchant.ID(merchantId)).QueryStore().
 		QueryOrders().
-		Order(ent.Asc(order.FieldCreatedAt)).
+		Order(ent.Desc(order.FieldCreatedAt)).
 		WithDetails(
 			func(odq *ent.OrderDetailQuery) {
 				odq.Where(orderdetail.HasStore())
@@ -72,7 +72,7 @@ func (r repository) ReadAllByAgentStore(agentId int) ([]*ent.Order, error) {
 	results, err := r.db.Agent.Query().Where(agent.ID(agentId)).
 		QueryStore().
 		QueryOrders().
-		Order(ent.Asc(order.FieldCreatedAt)).
+		Order(ent.Desc(order.FieldCreatedAt)).
 		WithDetails(
 			func(odq *ent.OrderDetailQuery) {
 				odq.Where(orderdetail.HasStore())
@@ -521,7 +521,7 @@ func (r repository) calculateAmount(product *services.ProductDetails) float64 {
 func (r repository) readCustomerOrders(id int) ([]*ent.Order, error) {
 	results, err := r.db.Order.Query().
 		Where(order.HasCustomerWith(customer.ID(id))).
-		Order(ent.Asc(order.FieldCreatedAt)).
+		Order(ent.Desc(order.FieldCreatedAt)).
 		All(context.Background())
 	if err != nil {
 		return nil, err
@@ -531,18 +531,17 @@ func (r repository) readCustomerOrders(id int) ([]*ent.Order, error) {
 func (r repository) readAgentOrders(id int) ([]*ent.Order, error) {
 	results, err := r.db.Order.Query().
 		Where(order.HasAgentWith(agent.ID(id))).
-		Order(ent.Asc(order.FieldCreatedAt)).
+		Order(ent.Desc(order.FieldCreatedAt)).
 		All(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	return results, nil
 }
-
 func (r repository) readMerchantOrders(id int) ([]*ent.Order, error) {
 	results, err := r.db.Order.Query().
 		Where(order.HasMerchantWith(merchant.ID(id))).
-		Order(ent.Asc(order.FieldCreatedAt)).
+		Order(ent.Desc(order.FieldCreatedAt)).
 		All(context.Background())
 	if err != nil {
 		return nil, err

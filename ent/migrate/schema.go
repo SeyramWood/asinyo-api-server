@@ -192,7 +192,7 @@ var (
 		{Name: "username", Type: field.TypeString, Unique: true},
 		{Name: "password", Type: field.TypeBytes},
 		{Name: "type", Type: field.TypeString},
-		{Name: "otp", Type: field.TypeEnum, Nullable: true, Enums: []string{"active", "inactive"}},
+		{Name: "otp", Type: field.TypeBool, Nullable: true},
 	}
 	// MerchantsTable holds the schema information for the "merchants" table.
 	MerchantsTable = &schema.Table{

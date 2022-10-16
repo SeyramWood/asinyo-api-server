@@ -1,11 +1,11 @@
 package presenters
 
 import (
-	"sync"
 	"time"
 
-	"github.com/SeyramWood/ent"
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/SeyramWood/ent"
 )
 
 type (
@@ -21,25 +21,23 @@ type (
 )
 
 func CustomerSuccessResponse(data *ent.Customer) *fiber.Map {
-	return successResponse(Customer{
-		ID:        data.ID,
-		FirstName: data.FirstName,
-		LastName:  data.LastName,
-		Username:  data.Username,
-		Phone:     data.Phone,
-		CreatedAt: data.CreatedAt,
-		UpdatedAt: data.UpdatedAt,
-	})
+	return successResponse(
+		Customer{
+			ID:        data.ID,
+			FirstName: data.FirstName,
+			LastName:  data.LastName,
+			Username:  data.Username,
+			Phone:     data.Phone,
+			CreatedAt: data.CreatedAt,
+			UpdatedAt: data.UpdatedAt,
+		},
+	)
 }
 func CustomersSuccessResponse(data []*ent.Customer) *fiber.Map {
-	var response []Customer
-	wg := sync.WaitGroup{}
-
+	var response []*Customer
 	for _, v := range data {
-		wg.Add(1)
-		go func(v *ent.Customer) {
-			defer wg.Done()
-			response = append(response, Customer{
+		response = append(
+			response, &Customer{
 				ID:        v.ID,
 				FirstName: v.FirstName,
 				LastName:  v.LastName,
@@ -47,15 +45,12 @@ func CustomersSuccessResponse(data []*ent.Customer) *fiber.Map {
 				Phone:     v.Phone,
 				CreatedAt: v.CreatedAt,
 				UpdatedAt: v.UpdatedAt,
-			})
-		}(v)
+			},
+		)
 	}
-
-	wg.Wait()
 	return successResponse(response)
 }
 
-// UserErrorResponse is the ErrorResponse that will be passed in the response by Handler
 func CustomerErrorResponse(err error) *fiber.Map {
 	return errorResponse(err)
 }

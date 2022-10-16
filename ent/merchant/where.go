@@ -116,6 +116,13 @@ func Type(v string) predicate.Merchant {
 	})
 }
 
+// Otp applies equality check predicate on the "otp" field. It's identical to OtpEQ.
+func Otp(v bool) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldOtp), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Merchant {
 	return predicate.Merchant(func(s *sql.Selector) {
@@ -507,38 +514,16 @@ func TypeContainsFold(v string) predicate.Merchant {
 }
 
 // OtpEQ applies the EQ predicate on the "otp" field.
-func OtpEQ(v Otp) predicate.Merchant {
+func OtpEQ(v bool) predicate.Merchant {
 	return predicate.Merchant(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldOtp), v))
 	})
 }
 
 // OtpNEQ applies the NEQ predicate on the "otp" field.
-func OtpNEQ(v Otp) predicate.Merchant {
+func OtpNEQ(v bool) predicate.Merchant {
 	return predicate.Merchant(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldOtp), v))
-	})
-}
-
-// OtpIn applies the In predicate on the "otp" field.
-func OtpIn(vs ...Otp) predicate.Merchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Merchant(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldOtp), v...))
-	})
-}
-
-// OtpNotIn applies the NotIn predicate on the "otp" field.
-func OtpNotIn(vs ...Otp) predicate.Merchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Merchant(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldOtp), v...))
 	})
 }
 

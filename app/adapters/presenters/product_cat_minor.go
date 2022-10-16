@@ -1,11 +1,11 @@
 package presenters
 
 import (
-	"sync"
 	"time"
 
-	"github.com/SeyramWood/ent"
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/SeyramWood/ent"
 )
 
 type (
@@ -22,25 +22,24 @@ type (
 )
 
 func ProductCatMinorSuccessResponse(cat *ent.ProductCategoryMinor) *fiber.Map {
-	return successResponse(&ProductCatMinor{
-		ID:        cat.ID,
-		MajorID:   cat.Edges.Major.ID,
-		Major:     cat.Edges.Major.Category,
-		Category:  cat.Category,
-		Slug:      cat.Slug,
-		Image:     cat.Image,
-		CreatedAt: cat.CreatedAt,
-		UpdatedAt: cat.UpdatedAt,
-	})
+	return successResponse(
+		&ProductCatMinor{
+			ID:        cat.ID,
+			MajorID:   cat.Edges.Major.ID,
+			Major:     cat.Edges.Major.Category,
+			Category:  cat.Category,
+			Slug:      cat.Slug,
+			Image:     cat.Image,
+			CreatedAt: cat.CreatedAt,
+			UpdatedAt: cat.UpdatedAt,
+		},
+	)
 }
 func ProductCatMinorsSuccessResponse(data []*ent.ProductCategoryMinor) *fiber.Map {
 	var response []*ProductCatMinor
-	wg := sync.WaitGroup{}
 	for _, cat := range data {
-		wg.Add(1)
-		go func(cat *ent.ProductCategoryMinor) {
-			defer wg.Done()
-			response = append(response, &ProductCatMinor{
+		response = append(
+			response, &ProductCatMinor{
 				ID:        cat.ID,
 				MajorID:   cat.Edges.Major.ID,
 				Major:     cat.Edges.Major.Category,
@@ -49,14 +48,12 @@ func ProductCatMinorsSuccessResponse(data []*ent.ProductCategoryMinor) *fiber.Ma
 				Image:     cat.Image,
 				CreatedAt: cat.CreatedAt,
 				UpdatedAt: cat.UpdatedAt,
-			})
-		}(cat)
+			},
+		)
 	}
-	wg.Wait()
 	return successResponse(response)
 }
 
-// UserErrorResponse is the ErrorResponse that will be passed in the response by Handler
 func ProductCatMinorErrorResponse(err error) *fiber.Map {
 	return errorResponse(err)
 }

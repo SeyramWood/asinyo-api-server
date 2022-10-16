@@ -5584,7 +5584,7 @@ type MerchantMutation struct {
 	username          *string
 	password          *[]byte
 	_type             *string
-	otp               *merchant.Otp
+	otp               *bool
 	clearedFields     map[string]struct{}
 	supplier          *int
 	clearedsupplier   bool
@@ -5888,12 +5888,12 @@ func (m *MerchantMutation) ResetType() {
 }
 
 // SetOtp sets the "otp" field.
-func (m *MerchantMutation) SetOtp(value merchant.Otp) {
-	m.otp = &value
+func (m *MerchantMutation) SetOtp(b bool) {
+	m.otp = &b
 }
 
 // Otp returns the value of the "otp" field in the mutation.
-func (m *MerchantMutation) Otp() (r merchant.Otp, exists bool) {
+func (m *MerchantMutation) Otp() (r bool, exists bool) {
 	v := m.otp
 	if v == nil {
 		return
@@ -5904,7 +5904,7 @@ func (m *MerchantMutation) Otp() (r merchant.Otp, exists bool) {
 // OldOtp returns the old "otp" field's value of the Merchant entity.
 // If the Merchant object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MerchantMutation) OldOtp(ctx context.Context) (v merchant.Otp, err error) {
+func (m *MerchantMutation) OldOtp(ctx context.Context) (v *bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldOtp is only allowed on UpdateOne operations")
 	}
@@ -6393,7 +6393,7 @@ func (m *MerchantMutation) SetField(name string, value ent.Value) error {
 		m.SetType(v)
 		return nil
 	case merchant.FieldOtp:
-		v, ok := value.(merchant.Otp)
+		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

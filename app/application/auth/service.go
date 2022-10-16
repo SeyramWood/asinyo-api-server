@@ -190,17 +190,80 @@ func (s *service) FetchAuthUser(c *fiber.Ctx) error {
 
 }
 
-func (s *service) UpdatePassword(id string, request any, userType string) (bool, error) {
-
-	// data := request.(*models.ChangePassword)
-	user, err := s.repo.ReadAgent(id, "id")
-	if err != nil {
-		return false, err
+func (s *service) UpdatePassword(id string, request any, userType string, isOTP bool) (bool, error) {
+	data := request.(*models.ChangePassword)
+	switch userType {
+	case "customer":
+		if user, err := s.repo.ReadCustomer(id, "id"); err != nil {
+			return false, fmt.Errorf("no record found for %d", user.ID)
+		} else {
+			if s.hashCheck(user.Password, data.CurrentPassword) {
+				return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
+			}
+		}
+		return false, fmt.Errorf("current password do not match our records")
+	case "agent":
+		if user, err := s.repo.ReadAgent(id, "id"); err != nil {
+			return false, fmt.Errorf("no record found for %d", user.ID)
+		} else {
+			if s.hashCheck(user.Password, data.CurrentPassword) {
+				return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
+			}
+		}
+		return false, fmt.Errorf("current password do not match our records")
+	case "supplier", "retailer":
+		if user, err := s.repo.ReadMerchant(id, "id"); err != nil {
+			return false, fmt.Errorf("no record found for %d", user.ID)
+		} else {
+			if s.hashCheck(user.Password, data.CurrentPassword) {
+				return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
+			}
+		}
+		return false, fmt.Errorf("current password do not match our records")
+	case "asinyo":
+		if user, err := s.repo.ReadAdmin(id, "id"); err != nil {
+			return false, fmt.Errorf("no record found for %d", user.ID)
+		} else {
+			if s.hashCheck(user.Password, data.CurrentPassword) {
+				return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
+			}
+		}
+		return false, fmt.Errorf("current password do not match our records")
+	default:
+		return false, fmt.Errorf("current password do not match our records")
 	}
+}
 
-	fmt.Println(user)
+func (s *service) ResetPassword(request *models.ResetPassword, username, userType string) (bool, error) {
+	switch userType {
+	case "customer":
+		if user, err := s.repo.ReadCustomer(username, "username"); err != nil {
+			return false, fmt.Errorf("no record found for %s", user.Username)
+		} else {
+			return s.repo.ResetPassword(user.ID, request.NewPassword, userType)
+		}
 
-	panic("implement me")
+	case "agent":
+		if user, err := s.repo.ReadAgent(username, "username"); err != nil {
+			return false, fmt.Errorf("no record found for %s", user.Username)
+		} else {
+			return s.repo.ResetPassword(user.ID, request.NewPassword, userType)
+		}
+	case "merchant":
+		if user, err := s.repo.ReadMerchant(username, "username"); err != nil {
+			return false, fmt.Errorf("no record found for %s", user.Username)
+		} else {
+			return s.repo.ResetPassword(user.ID, request.NewPassword, userType)
+		}
+	case "asinyo":
+		if user, err := s.repo.ReadAdmin(username, "username"); err != nil {
+			return false, fmt.Errorf("no record found for %s", user.Username)
+		} else {
+			return s.repo.ResetPassword(user.ID, request.NewPassword, userType)
+		}
+	default:
+		return false, fmt.Errorf("no record found")
+	}
 }
 
 func (s *service) SendUserVerificationCode(username string) (string, error) {
@@ -232,6 +295,62 @@ func (s *service) SendUserVerificationCode(username string) (string, error) {
 	}
 
 	return code, nil
+}
+func (s *service) SendPasswordResetCode(username, userType string) (string, error) {
+	if userType == "customer" {
+		_, err := s.repo.ReadCustomer(username, "username")
+		if err != nil {
+			return "", nil
+		}
+	}
+	if userType == "agent" {
+		_, err := s.repo.ReadAgent(username, "username")
+		if err != nil {
+			return "", nil
+		}
+	}
+	if userType == "merchant" {
+		_, err := s.repo.ReadMerchant(username, "username")
+		if err != nil {
+			return "", nil
+		}
+	}
+	if userType == "asinyo" {
+		_, err := s.repo.ReadAdmin(username, "username")
+		if err != nil {
+			return "", nil
+		}
+	}
+
+	code, _ := application.GenerateOTP(6)
+	msg := fmt.Sprintf(
+		"You are one step away to complete your password reset! Please enter the RESET Code to proceed. %s",
+		code,
+	)
+	if application.UsernameType(username, "phone") {
+		_, err := s.sms.Send(
+			&services.SMSPayload{
+				Recipients: []string{username},
+				Message:    msg,
+			},
+		)
+		if err != nil {
+			return "", err
+		}
+	}
+	if application.UsernameType(username, "email") {
+
+		s.mail.Send(
+			&services.Message{
+				To:      username,
+				Subject: "ASINYO PASSWORD RESET",
+				Data:    msg,
+			},
+		)
+	}
+
+	return code, nil
+
 }
 
 func (s *service) hashCheck(hash []byte, plain string) bool {
@@ -287,11 +406,14 @@ func (s *service) signinAgent(c *fiber.Ctx, request models.User) error {
 func (s *service) signinSupplierMerchant(c *fiber.Ctx, request models.UserMerchant) error {
 
 	if user, err := s.repo.ReadMerchant(request.Username, "username"); err != nil {
+		fmt.Println(err)
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
 	} else {
 		if s.hashCheck(user.Password, request.Password) {
+			fmt.Println("pass")
 			merchant, err := user.QuerySupplier().WithMerchant().Only(context.Background())
 			if err != nil {
+
 				return c.Status(fiber.StatusInternalServerError).JSON(
 					fiber.Map{
 						"status": false,
@@ -307,11 +429,13 @@ func (s *service) signinSupplierMerchant(c *fiber.Ctx, request models.UserMercha
 						OtherName:  merchant.OtherName,
 						Phone:      merchant.Phone,
 						OtherPhone: *merchant.OtherPhone,
+						OTP:        merchant.Edges.Merchant.Otp,
 					},
 				),
 			)
 		}
 	}
+	fmt.Println(request)
 	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))
 }
 func (s *service) signinRetailMerchant(c *fiber.Ctx, request models.UserMerchant) error {
@@ -322,7 +446,6 @@ func (s *service) signinRetailMerchant(c *fiber.Ctx, request models.UserMerchant
 		if s.hashCheck(user.Password, request.Password) {
 			merchant, err := user.QueryRetailer().WithMerchant().Only(context.Background())
 			if err != nil {
-
 				return c.Status(fiber.StatusInternalServerError).JSON(
 					fiber.Map{
 						"status": false,
@@ -338,6 +461,7 @@ func (s *service) signinRetailMerchant(c *fiber.Ctx, request models.UserMerchant
 						OtherName:  merchant.OtherName,
 						Phone:      merchant.Phone,
 						OtherPhone: *merchant.OtherPhone,
+						OTP:        merchant.Edges.Merchant.Otp,
 					},
 				),
 			)

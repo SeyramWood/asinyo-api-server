@@ -74,15 +74,15 @@ func (mc *MerchantCreate) SetType(s string) *MerchantCreate {
 }
 
 // SetOtp sets the "otp" field.
-func (mc *MerchantCreate) SetOtp(m merchant.Otp) *MerchantCreate {
-	mc.mutation.SetOtp(m)
+func (mc *MerchantCreate) SetOtp(b bool) *MerchantCreate {
+	mc.mutation.SetOtp(b)
 	return mc
 }
 
 // SetNillableOtp sets the "otp" field if the given value is not nil.
-func (mc *MerchantCreate) SetNillableOtp(m *merchant.Otp) *MerchantCreate {
-	if m != nil {
-		mc.SetOtp(*m)
+func (mc *MerchantCreate) SetNillableOtp(b *bool) *MerchantCreate {
+	if b != nil {
+		mc.SetOtp(*b)
 	}
 	return mc
 }
@@ -323,11 +323,6 @@ func (mc *MerchantCreate) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Merchant.type": %w`, err)}
 		}
 	}
-	if v, ok := mc.mutation.Otp(); ok {
-		if err := merchant.OtpValidator(v); err != nil {
-			return &ValidationError{Name: "otp", err: fmt.Errorf(`ent: validator failed for field "Merchant.otp": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -397,11 +392,11 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := mc.mutation.Otp(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
+			Type:   field.TypeBool,
 			Value:  value,
 			Column: merchant.FieldOtp,
 		})
-		_node.Otp = value
+		_node.Otp = &value
 	}
 	if nodes := mc.mutation.SupplierIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
