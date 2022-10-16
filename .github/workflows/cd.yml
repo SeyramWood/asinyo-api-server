@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: "Build docker image for development server - Branch: DEV"
+#      - name: "Build docker image for development server - Branch: DEV"
 #        run: docker build . -t asinyoapi:dev
-      - name: Publishing to Dockerhub registry
+      - name: "Build docker image for development server - Branch: DEV and Publishing to Dockerhub registry"
         uses: elgohr/Publish-Docker-Github-Action@v4
         with:
           name: seyramwood/asinyoapi
