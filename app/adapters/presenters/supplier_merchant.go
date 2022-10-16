@@ -3,8 +3,9 @@ package presenters
 import (
 	"time"
 
-	"github.com/SeyramWood/ent"
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/SeyramWood/ent"
 )
 
 type (
@@ -23,18 +24,20 @@ type (
 )
 
 func SupplierMerchantSuccessResponse(data *ent.SupplierMerchant) *fiber.Map {
-	return successResponse(SupplierMerchant{
-		ID:             data.ID,
-		GhanaCard:      data.GhanaCard,
-		LastName:       data.LastName,
-		OtherName:      data.OtherName,
-		Phone:          data.Phone,
-		OtherPhone:     data.OtherPhone,
-		Address:        data.Address,
-		DigitalAddress: data.DigitalAddress,
-		CreatedAt:      data.CreatedAt,
-		UpdatedAt:      data.UpdatedAt,
-	})
+	return successResponse(
+		SupplierMerchant{
+			ID:             data.ID,
+			GhanaCard:      data.GhanaCard,
+			LastName:       data.LastName,
+			OtherName:      data.OtherName,
+			Phone:          data.Phone,
+			OtherPhone:     data.OtherPhone,
+			Address:        data.Address,
+			DigitalAddress: data.DigitalAddress,
+			CreatedAt:      data.CreatedAt,
+			UpdatedAt:      data.UpdatedAt,
+		},
+	)
 }
 func SupplierMerchantsSuccessResponse(data []*ent.SupplierMerchant) *fiber.Map {
 	var response []Customer
@@ -55,7 +58,6 @@ func SupplierMerchantsSuccessResponse(data []*ent.SupplierMerchant) *fiber.Map {
 	return successResponse(response)
 }
 
-// UserErrorResponse is the ErrorResponse that will be passed in the response by Handler
 func SupplierMerchantErrorResponse(err error) *fiber.Map {
 	return errorResponse(err)
 }

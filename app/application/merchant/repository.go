@@ -40,7 +40,7 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 			SetType(mc.Info.MerchantType).
 			SetUsername(mc.Credentials.Username).
 			SetPassword(hashPassword).
-			SetOtp(merchant.OtpActive).
+			SetOtp(true).
 			Save(ctx)
 		if err != nil {
 			return nil, application.Rollback(tx, fmt.Errorf("failed creating merchant: %w", err))

@@ -1,0 +1,9 @@
+FROM golang:1.19.0
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+COPY . .
+RUN go build -o /cmd/build ./cmd/
+EXPOSE 9000
+CMD ["sh", "-c", "/cmd/build"]
+

@@ -1,10 +1,11 @@
 package presenters
 
 import (
-	"github.com/SeyramWood/ent"
-	"github.com/gofiber/fiber/v2"
-	"sync"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+
+	"github.com/SeyramWood/ent"
 )
 
 type (
@@ -21,25 +22,24 @@ type (
 
 func PickupSuccessResponse(data *ent.PickupStation) *fiber.Map {
 
-	return successResponse(&PickupStation{
-		ID:        data.ID,
-		Address:   data.Address,
-		Region:    data.Region,
-		City:      data.City,
-		Name:      data.Name,
-		CreatedAt: data.CreatedAt,
-		UpdatedAt: data.UpdatedAt,
-	})
+	return successResponse(
+		&PickupStation{
+			ID:        data.ID,
+			Address:   data.Address,
+			Region:    data.Region,
+			City:      data.City,
+			Name:      data.Name,
+			CreatedAt: data.CreatedAt,
+			UpdatedAt: data.UpdatedAt,
+		},
+	)
 }
 
 func PickupSuccessResponses(data []*ent.PickupStation) *fiber.Map {
 	var response []*PickupStation
-	wg := sync.WaitGroup{}
 	for _, v := range data {
-		wg.Add(1)
-		go func(v *ent.PickupStation) {
-			defer wg.Done()
-			response = append(response, &PickupStation{
+		response = append(
+			response, &PickupStation{
 				ID:        v.ID,
 				Address:   v.Address,
 				Region:    v.Region,
@@ -47,10 +47,9 @@ func PickupSuccessResponses(data []*ent.PickupStation) *fiber.Map {
 				Name:      v.Name,
 				CreatedAt: v.CreatedAt,
 				UpdatedAt: v.UpdatedAt,
-			})
-		}(v)
+			},
+		)
 	}
-	wg.Wait()
 
 	return successResponse(response)
 }

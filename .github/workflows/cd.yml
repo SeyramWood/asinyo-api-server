@@ -14,14 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: "Build docker image for development server - Branch: DEV"
-        run: docker build . -t asinyoapi:dev
-      - name: Publishing to Dockerhub registry
+      - name: "Build docker image for development server - Branch: DEV and Publishing to Dockerhub registry"
         uses: elgohr/Publish-Docker-Github-Action@v4
         with:
           name: seyramwood/asinyoapi
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          dockerfile: DockerfileProduction
           default_branch: dev
           tags: "dev"
 
@@ -30,13 +29,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: "Build docker image for production server - Branch: Master"
-        run: docker build . -t asinyoapi:latest
-      - name: Publishing to Dockerhub registry
+      - name: "Build docker image for production server - Branch: Master and Publishing to Dockerhub registry"
         uses: elgohr/Publish-Docker-Github-Action@v4
         with:
           name: seyramwood/asinyoapi
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          dockerfile: DockerfileProduction
           default_branch: master
           tags: "latest"

@@ -117,6 +117,7 @@ func (r *repository) ReadByRetailMerchant(id int) (*ent.Product, error) {
 
 func (r *repository) ReadAll() ([]*ent.Product, error) {
 	products, err := r.db.Product.Query().
+		Order(ent.Desc(product.FieldCreatedAt)).
 		WithMerchant(
 			func(mq *ent.MerchantQuery) {
 				mq.WithStore(
@@ -145,6 +146,7 @@ func (r *repository) ReadBySlugRetailMerchantCategoryMinor(slug string) ([]*ent.
 						merchant.Type("retailer"),
 					),
 				).
+					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
 					WithMerchant(
@@ -177,6 +179,7 @@ func (r *repository) ReadBySlugRetailMerchantCategoryMajor(slug string) ([]*ent.
 						merchant.Type("retailer"),
 					),
 				).
+					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
 					WithMerchant(
@@ -210,6 +213,7 @@ func (r *repository) ReadBySlugSupplierMerchantCategoryMinor(slug string) ([]*en
 						merchant.Type("supplier"),
 					),
 				).
+					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
 					WithMerchant(
@@ -232,6 +236,7 @@ func (r *repository) ReadBySlugSupplierMerchantCategoryMinor(slug string) ([]*en
 
 	return products, nil
 }
+
 func (r *repository) ReadBySlugSupplierMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error) {
 	products, err := r.db.ProductCategoryMajor.Query().
 		Where(productcategorymajor.Slug(slug)).
@@ -242,6 +247,7 @@ func (r *repository) ReadBySlugSupplierMerchantCategoryMajor(slug string) ([]*en
 						merchant.Type("supplier"),
 					),
 				).
+					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
 					WithMerchant(
@@ -261,8 +267,8 @@ func (r *repository) ReadBySlugSupplierMerchantCategoryMajor(slug string) ([]*en
 	if err != nil {
 		return nil, err
 	}
-
 	return products, nil
+
 }
 
 func (r *repository) ReadAllRetailMerchantCategoryMinor() ([]*ent.ProductCategoryMinor, error) {
@@ -274,6 +280,7 @@ func (r *repository) ReadAllRetailMerchantCategoryMinor() ([]*ent.ProductCategor
 						merchant.Type("retailer"),
 					),
 				).
+					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
 					WithMerchant(
@@ -296,6 +303,7 @@ func (r *repository) ReadAllRetailMerchantCategoryMinor() ([]*ent.ProductCategor
 
 	return products, nil
 }
+
 func (r *repository) ReadAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error) {
 	products, err := r.db.ProductCategoryMajor.Query().
 		WithProducts(
@@ -305,6 +313,7 @@ func (r *repository) ReadAllRetailMerchantCategoryMajor() ([]*ent.ProductCategor
 						merchant.Type("retailer"),
 					),
 				).
+					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
 					WithMerchant(
@@ -327,6 +336,7 @@ func (r *repository) ReadAllRetailMerchantCategoryMajor() ([]*ent.ProductCategor
 
 	return products, nil
 }
+
 func (r *repository) ReadAllSupplierMerchantCategoryMinor() ([]*ent.ProductCategoryMinor, error) {
 	products, err := r.db.ProductCategoryMinor.Query().
 		WithProducts(
@@ -336,6 +346,7 @@ func (r *repository) ReadAllSupplierMerchantCategoryMinor() ([]*ent.ProductCateg
 						merchant.Type("supplier"),
 					),
 				).
+					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
 					WithMerchant(
@@ -358,6 +369,7 @@ func (r *repository) ReadAllSupplierMerchantCategoryMinor() ([]*ent.ProductCateg
 
 	return products, nil
 }
+
 func (r *repository) ReadAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error) {
 	products, err := r.db.ProductCategoryMajor.Query().
 		WithProducts(
@@ -367,6 +379,7 @@ func (r *repository) ReadAllSupplierMerchantCategoryMajor() ([]*ent.ProductCateg
 						merchant.Type("supplier"),
 					),
 				).
+					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
 					WithMerchant(
@@ -393,6 +406,7 @@ func (r *repository) ReadAllSupplierMerchantCategoryMajor() ([]*ent.ProductCateg
 func (r *repository) ReadAllBySupplierMerchant(merchantId int) ([]*ent.Product, error) {
 
 	products, err := r.db.Product.Query().
+		Order(ent.Desc(product.FieldCreatedAt)).
 		Where(product.HasMerchantWith(merchant.ID(merchantId))).
 		WithMerchant(
 			func(mq *ent.MerchantQuery) {
@@ -416,36 +430,10 @@ func (r *repository) ReadAllBySupplierMerchant(merchantId int) ([]*ent.Product, 
 
 }
 
-func (r *repository) ReadAllMajorByRetailer(majorId int) ([]*ent.Product, error) {
-
-	products, err := r.db.ProductCategoryMajor.Query().
-		Where(productcategorymajor.ID(majorId)).
-		QueryProducts().
-		WithMerchant(
-			func(mq *ent.MerchantQuery) {
-				mq.WithRetailer()
-				mq.WithStore(
-					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
-					},
-				)
-			},
-		).
-		WithMinor().
-		WithMajor().
-		All(context.Background())
-
-	if err != nil {
-		return nil, err
-	}
-
-	return products, nil
-
-}
-
 func (r *repository) ReadAllByRetailMerchant(merchantId int) ([]*ent.Product, error) {
 
 	products, err := r.db.Product.Query().
+		Order(ent.Desc(product.FieldCreatedAt)).
 		Where(product.HasMerchantWith(merchant.ID(merchantId))).
 		WithMerchant(
 			func(mq *ent.MerchantQuery) {
@@ -469,9 +457,11 @@ func (r *repository) ReadAllByRetailMerchant(merchantId int) ([]*ent.Product, er
 
 }
 
-func (r *repository) ReadBestSellerBySupplierMerchant() ([]*ent.Product, error) {
-
+func (r *repository) ReadBestSellerBySupplierMerchant(limit, offset int) ([]*ent.Product, error) {
 	products, err := r.db.Product.Query().
+		Limit(limit).
+		Offset(offset).
+		Order(ent.Desc(product.FieldCreatedAt)).
 		Where(product.HasMerchantWith(merchant.Type("supplier"))).
 		WithMerchant(
 			func(mq *ent.MerchantQuery) {
@@ -498,6 +488,7 @@ func (r *repository) ReadBestSellerBySupplierMerchant() ([]*ent.Product, error) 
 func (r *repository) ReadBestSellerRetailMerchant() ([]*ent.Product, error) {
 
 	products, err := r.db.Product.Query().
+		Order(ent.Desc(product.FieldCreatedAt)).
 		Where(product.HasMerchantWith(merchant.Type("retailer"))).
 		WithMerchant(
 			func(mq *ent.MerchantQuery) {
@@ -516,7 +507,6 @@ func (r *repository) ReadBestSellerRetailMerchant() ([]*ent.Product, error) {
 	if err != nil {
 		return nil, err
 	}
-	// fmt.Println(products)
 	return products, nil
 
 }

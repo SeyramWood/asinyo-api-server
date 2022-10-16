@@ -1,7 +1,6 @@
 package presenters
 
 import (
-	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -154,40 +153,11 @@ func MerchantStoreAgentSuccessResponse(data *ent.Agent) *fiber.Map {
 }
 
 func MerchantStorefrontsSuccessResponse(data []*ent.MerchantStore) *fiber.Map {
-	var response []AllMerchantStore
-	wg := sync.WaitGroup{}
+	var response []*AllMerchantStore
 	for _, v := range data {
-		wg.Add(1)
-		go func(v *ent.MerchantStore) {
-			defer wg.Done()
-			response = append(
-				response, AllMerchantStore{
-					&store{
-						ID:           v.ID,
-						BusinessName: v.Name,
-						About:        v.About,
-						Logo:         v.Logo,
-						PermitAgent:  v.PermitAgent,
-						CreatedAt:    v.CreatedAt,
-						UpdatedAt:    v.UpdatedAt,
-					},
-				},
-			)
-		}(v)
-	}
-	wg.Wait()
-	return successResponse(response)
-}
-
-func AgentMerchantStorefrontsSuccessResponse(data []*ent.MerchantStore) *fiber.Map {
-	var response []AgentAllMerchantStore
-	wg := sync.WaitGroup{}
-	for _, v := range data {
-		wg.Add(1)
-		go func(v *ent.MerchantStore) {
-			defer wg.Done()
-			response = append(
-				response, AgentAllMerchantStore{
+		response = append(
+			response, &AllMerchantStore{
+				&store{
 					ID:           v.ID,
 					BusinessName: v.Name,
 					About:        v.About,
@@ -195,40 +165,58 @@ func AgentMerchantStorefrontsSuccessResponse(data []*ent.MerchantStore) *fiber.M
 					PermitAgent:  v.PermitAgent,
 					CreatedAt:    v.CreatedAt,
 					UpdatedAt:    v.UpdatedAt,
-					Merchant: &AgentMerchantDetail{
-						ID:   v.Edges.Merchant.ID,
-						Type: v.Edges.Merchant.Type,
-						Profile: func() *agentMerchantTypeDetails {
-							if s, err := v.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
-								return &agentMerchantTypeDetails{
-									ID:             s.ID,
-									LastName:       s.LastName,
-									OtherName:      s.OtherName,
-									Phone:          s.Phone,
-									OtherPhone:     *s.OtherPhone,
-									Address:        s.Address,
-									DigitalAddress: s.DigitalAddress,
-								}
-							}
-							if s, err := v.Edges.Merchant.Edges.RetailerOrErr(); err == nil {
-								return &agentMerchantTypeDetails{
-									ID:             s.ID,
-									LastName:       s.LastName,
-									OtherName:      s.OtherName,
-									Phone:          s.Phone,
-									OtherPhone:     *s.OtherPhone,
-									Address:        s.Address,
-									DigitalAddress: s.DigitalAddress,
-								}
-							}
-							return nil
-						}(),
-					},
 				},
-			)
-		}(v)
+			},
+		)
 	}
-	wg.Wait()
+	return successResponse(response)
+}
+
+func AgentMerchantStorefrontsSuccessResponse(data []*ent.MerchantStore) *fiber.Map {
+	var response []*AgentAllMerchantStore
+	for _, v := range data {
+		response = append(
+			response, &AgentAllMerchantStore{
+				ID:           v.ID,
+				BusinessName: v.Name,
+				About:        v.About,
+				Logo:         v.Logo,
+				PermitAgent:  v.PermitAgent,
+				CreatedAt:    v.CreatedAt,
+				UpdatedAt:    v.UpdatedAt,
+				Merchant: &AgentMerchantDetail{
+					ID:   v.Edges.Merchant.ID,
+					Type: v.Edges.Merchant.Type,
+					Profile: func() *agentMerchantTypeDetails {
+						if s, err := v.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
+							return &agentMerchantTypeDetails{
+								ID:             s.ID,
+								LastName:       s.LastName,
+								OtherName:      s.OtherName,
+								Phone:          s.Phone,
+								OtherPhone:     *s.OtherPhone,
+								Address:        s.Address,
+								DigitalAddress: s.DigitalAddress,
+							}
+						}
+						if s, err := v.Edges.Merchant.Edges.RetailerOrErr(); err == nil {
+							return &agentMerchantTypeDetails{
+								ID:             s.ID,
+								LastName:       s.LastName,
+								OtherName:      s.OtherName,
+								Phone:          s.Phone,
+								OtherPhone:     *s.OtherPhone,
+								Address:        s.Address,
+								DigitalAddress: s.DigitalAddress,
+							}
+						}
+						return nil
+					}(),
+				},
+			},
+		)
+	}
+
 	return successResponse(response)
 }
 

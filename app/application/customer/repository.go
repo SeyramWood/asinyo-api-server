@@ -10,6 +10,7 @@ import (
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
+	"github.com/SeyramWood/ent/customer"
 )
 
 type repository struct {
@@ -50,8 +51,8 @@ func (r *repository) Read(id int) (*ent.Customer, error) {
 
 func (r *repository) ReadAll() ([]*ent.Customer, error) {
 
-	results, err := r.db.Customer.
-		Query().
+	results, err := r.db.Customer.Query().
+		Order(ent.Desc(customer.FieldCreatedAt)).
 		All(context.Background())
 
 	if err != nil {

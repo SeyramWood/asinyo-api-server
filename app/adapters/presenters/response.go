@@ -8,7 +8,7 @@ func errorResponse(e error) *fiber.Map {
 		"error":  e.Error(),
 	}
 }
-func successResponse(data interface{}) *fiber.Map {
+func successResponse(data any) *fiber.Map {
 	return &fiber.Map{
 		"status": true,
 		"data":   data,

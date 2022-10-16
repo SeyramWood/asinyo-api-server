@@ -1,7 +1,6 @@
 package presenters
 
 import (
-	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -82,34 +81,27 @@ func AgentsComplianceSuccessResponse(data *ent.Agent) *fiber.Map {
 	)
 }
 func AgentsSuccessResponse(data []*ent.Agent) *fiber.Map {
-	var response []Agent
-	wg := sync.WaitGroup{}
+	var response []*Agent
 	for _, v := range data {
-		wg.Add(1)
-		go func(v *ent.Agent) {
-			defer wg.Done()
-			response = append(
-				response, Agent{
-					ID:             v.ID,
-					GhanaCard:      v.GhanaCard,
-					LastName:       v.LastName,
-					OtherName:      v.OtherName,
-					Phone:          v.Phone,
-					OtherPhone:     v.OtherPhone,
-					Address:        v.Address,
-					DigitalAddress: v.DigitalAddress,
-					Username:       v.Username,
-					CreatedAt:      v.CreatedAt,
-					UpdatedAt:      v.UpdatedAt,
-				},
-			)
-		}(v)
+		response = append(
+			response, &Agent{
+				ID:             v.ID,
+				GhanaCard:      v.GhanaCard,
+				LastName:       v.LastName,
+				OtherName:      v.OtherName,
+				Phone:          v.Phone,
+				OtherPhone:     v.OtherPhone,
+				Address:        v.Address,
+				DigitalAddress: v.DigitalAddress,
+				Username:       v.Username,
+				CreatedAt:      v.CreatedAt,
+				UpdatedAt:      v.UpdatedAt,
+			},
+		)
 	}
-	wg.Wait()
 	return successResponse(response)
 }
 
-// UserErrorResponse is the ErrorResponse that will be passed in the response by Handler
 func AgentErrorResponse(err error) *fiber.Map {
 	return errorResponse(err)
 }

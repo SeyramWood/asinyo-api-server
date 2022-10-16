@@ -60,15 +60,15 @@ func (mu *MerchantUpdate) SetType(s string) *MerchantUpdate {
 }
 
 // SetOtp sets the "otp" field.
-func (mu *MerchantUpdate) SetOtp(m merchant.Otp) *MerchantUpdate {
-	mu.mutation.SetOtp(m)
+func (mu *MerchantUpdate) SetOtp(b bool) *MerchantUpdate {
+	mu.mutation.SetOtp(b)
 	return mu
 }
 
 // SetNillableOtp sets the "otp" field if the given value is not nil.
-func (mu *MerchantUpdate) SetNillableOtp(m *merchant.Otp) *MerchantUpdate {
-	if m != nil {
-		mu.SetOtp(*m)
+func (mu *MerchantUpdate) SetNillableOtp(b *bool) *MerchantUpdate {
+	if b != nil {
+		mu.SetOtp(*b)
 	}
 	return mu
 }
@@ -389,11 +389,6 @@ func (mu *MerchantUpdate) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Merchant.type": %w`, err)}
 		}
 	}
-	if v, ok := mu.mutation.Otp(); ok {
-		if err := merchant.OtpValidator(v); err != nil {
-			return &ValidationError{Name: "otp", err: fmt.Errorf(`ent: validator failed for field "Merchant.otp": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -445,14 +440,14 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := mu.mutation.Otp(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
+			Type:   field.TypeBool,
 			Value:  value,
 			Column: merchant.FieldOtp,
 		})
 	}
 	if mu.mutation.OtpCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
+			Type:   field.TypeBool,
 			Column: merchant.FieldOtp,
 		})
 	}
@@ -821,15 +816,15 @@ func (muo *MerchantUpdateOne) SetType(s string) *MerchantUpdateOne {
 }
 
 // SetOtp sets the "otp" field.
-func (muo *MerchantUpdateOne) SetOtp(m merchant.Otp) *MerchantUpdateOne {
-	muo.mutation.SetOtp(m)
+func (muo *MerchantUpdateOne) SetOtp(b bool) *MerchantUpdateOne {
+	muo.mutation.SetOtp(b)
 	return muo
 }
 
 // SetNillableOtp sets the "otp" field if the given value is not nil.
-func (muo *MerchantUpdateOne) SetNillableOtp(m *merchant.Otp) *MerchantUpdateOne {
-	if m != nil {
-		muo.SetOtp(*m)
+func (muo *MerchantUpdateOne) SetNillableOtp(b *bool) *MerchantUpdateOne {
+	if b != nil {
+		muo.SetOtp(*b)
 	}
 	return muo
 }
@@ -1163,11 +1158,6 @@ func (muo *MerchantUpdateOne) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Merchant.type": %w`, err)}
 		}
 	}
-	if v, ok := muo.mutation.Otp(); ok {
-		if err := merchant.OtpValidator(v); err != nil {
-			return &ValidationError{Name: "otp", err: fmt.Errorf(`ent: validator failed for field "Merchant.otp": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -1236,14 +1226,14 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 	}
 	if value, ok := muo.mutation.Otp(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
+			Type:   field.TypeBool,
 			Value:  value,
 			Column: merchant.FieldOtp,
 		})
 	}
 	if muo.mutation.OtpCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
+			Type:   field.TypeBool,
 			Column: merchant.FieldOtp,
 		})
 	}

@@ -2,15 +2,17 @@ package product
 
 import (
 	"fmt"
+	"mime/multipart"
+	"path/filepath"
+
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/pkg/storage"
-	"github.com/gabriel-vasile/mimetype"
-	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
-	"mime/multipart"
-	"path/filepath"
 )
 
 type service struct {
@@ -75,16 +77,12 @@ func (s *service) FetchAllByRetailer(retailer int) ([]*ent.Product, error) {
 	return s.repo.ReadAllByRetailMerchant(retailer)
 }
 
-func (s *service) FetchBestSellerBySupplier() ([]*ent.Product, error) {
-	return s.repo.ReadBestSellerBySupplierMerchant()
+func (s *service) FetchBestSellerBySupplier(limit, offset int) ([]*ent.Product, error) {
+	return s.repo.ReadBestSellerBySupplierMerchant(limit, offset)
 }
 
 func (s *service) FetchBestSellerByRetailer() ([]*ent.Product, error) {
 	return s.repo.ReadBestSellerRetailMerchant()
-}
-
-func (s *service) FetchAllMajorByRetailer(majorId int) ([]*ent.Product, error) {
-	return s.repo.ReadAllMajorByRetailer(majorId)
 }
 
 func (s *service) Update(user *models.Product) (*models.Product, error) {

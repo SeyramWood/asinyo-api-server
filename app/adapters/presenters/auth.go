@@ -1,8 +1,9 @@
 package presenters
 
 import (
-	"github.com/SeyramWood/ent"
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/SeyramWood/ent"
 )
 
 type (
@@ -29,60 +30,71 @@ type (
 		Phone      string `json:"phone"`
 		OtherPhone string `json:"otherPhone"`
 		UserType   string `json:"userType"`
+		OTP        any    `json:"otp"`
 	}
 )
 
-//Handler
 func AuthAdminResponse(data *ent.Admin) *fiber.Map {
-	return successResponse(&AuthAdmin{
-		ID:       data.ID,
-		Username: data.Username,
-	})
+	return successResponse(
+		&AuthAdmin{
+			ID:       data.ID,
+			Username: data.Username,
+		},
+	)
 }
 func AuthCustomerResponse(data *ent.Customer) *fiber.Map {
-	return successResponse(&AuthCustomer{
-		ID:        data.ID,
-		Username:  data.Username,
-		OtherName: data.FirstName,
-		LastName:  data.LastName,
-		UserType:  "customer",
-	})
+	return successResponse(
+		&AuthCustomer{
+			ID:        data.ID,
+			Username:  data.Username,
+			OtherName: data.FirstName,
+			LastName:  data.LastName,
+			UserType:  "customer",
+		},
+	)
 }
 func AuthAgentResponse(data *ent.Agent) *fiber.Map {
-	return successResponse(&AuthMerchant{
-		ID:         data.ID,
-		Username:   data.Username,
-		OtherName:  data.OtherName,
-		LastName:   data.LastName,
-		Phone:      data.Phone,
-		OtherPhone: *data.OtherPhone,
-		UserType:   "agent",
-	})
+	return successResponse(
+		&AuthMerchant{
+			ID:         data.ID,
+			Username:   data.Username,
+			OtherName:  data.OtherName,
+			LastName:   data.LastName,
+			Phone:      data.Phone,
+			OtherPhone: *data.OtherPhone,
+			UserType:   "agent",
+		},
+	)
 }
 func AuthSupplierMerchantResponse(data *AuthMerchant) *fiber.Map {
-	return successResponse(&AuthMerchant{
-		ID:         data.ID,
-		Username:   data.Username,
-		OtherName:  data.OtherName,
-		LastName:   data.LastName,
-		Phone:      data.Phone,
-		OtherPhone: data.OtherPhone,
-		UserType:   "supplier",
-	})
+	return successResponse(
+		&AuthMerchant{
+			ID:         data.ID,
+			Username:   data.Username,
+			OtherName:  data.OtherName,
+			LastName:   data.LastName,
+			Phone:      data.Phone,
+			OtherPhone: data.OtherPhone,
+			UserType:   "supplier",
+			OTP:        data.OTP,
+		},
+	)
 }
 func AuthRetailMerchantResponse(data *AuthMerchant) *fiber.Map {
-	return successResponse(&AuthMerchant{
-		ID:         data.ID,
-		Username:   data.Username,
-		OtherName:  data.OtherName,
-		LastName:   data.LastName,
-		Phone:      data.Phone,
-		OtherPhone: data.OtherPhone,
-		UserType:   "retailer",
-	})
+	return successResponse(
+		&AuthMerchant{
+			ID:         data.ID,
+			Username:   data.Username,
+			OtherName:  data.OtherName,
+			LastName:   data.LastName,
+			Phone:      data.Phone,
+			OtherPhone: data.OtherPhone,
+			UserType:   "retailer",
+			OTP:        data.OTP,
+		},
+	)
 }
 
-// UserErrorResponse is the ErrorResponse that will be passed in the response by Handler
 func AuthErrorResponse(err interface{}) *fiber.Map {
 	return &fiber.Map{
 		"status": false,

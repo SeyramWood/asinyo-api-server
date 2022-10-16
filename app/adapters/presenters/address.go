@@ -1,10 +1,11 @@
 package presenters
 
 import (
-	"github.com/SeyramWood/ent"
-	"github.com/gofiber/fiber/v2"
-	"sync"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+
+	"github.com/SeyramWood/ent"
 )
 
 type AddressResponse struct {
@@ -24,32 +25,31 @@ type AddressResponse struct {
 
 func AddressSuccessResponse(data *ent.Address) *fiber.Map {
 	if data != nil {
-		return successResponse(&AddressResponse{
-			ID:           data.ID,
-			LastName:     data.LastName,
-			OtherName:    data.OtherName,
-			Phone:        data.Phone,
-			OtherPhone:   *data.OtherPhone,
-			Address:      data.Address,
-			OtherAddress: *data.OtherInformation,
-			Region:       data.Region,
-			City:         data.City,
-			Default:      data.Default,
-			CreatedAt:    data.CreatedAt,
-			UpdatedAt:    data.UpdatedAt,
-		})
+		return successResponse(
+			&AddressResponse{
+				ID:           data.ID,
+				LastName:     data.LastName,
+				OtherName:    data.OtherName,
+				Phone:        data.Phone,
+				OtherPhone:   *data.OtherPhone,
+				Address:      data.Address,
+				OtherAddress: *data.OtherInformation,
+				Region:       data.Region,
+				City:         data.City,
+				Default:      data.Default,
+				CreatedAt:    data.CreatedAt,
+				UpdatedAt:    data.UpdatedAt,
+			},
+		)
 	}
 	return nil
 }
 
 func AddressSuccessResponses(data []*ent.Address) *fiber.Map {
 	var response []*AddressResponse
-	wg := sync.WaitGroup{}
 	for _, v := range data {
-		wg.Add(1)
-		go func(v *ent.Address) {
-			defer wg.Done()
-			response = append(response, &AddressResponse{
+		response = append(
+			response, &AddressResponse{
 				ID:           v.ID,
 				LastName:     v.LastName,
 				OtherName:    v.OtherName,
@@ -62,11 +62,9 @@ func AddressSuccessResponses(data []*ent.Address) *fiber.Map {
 				Default:      v.Default,
 				CreatedAt:    v.CreatedAt,
 				UpdatedAt:    v.UpdatedAt,
-			})
-		}(v)
+			},
+		)
 	}
-	wg.Wait()
-
 	return successResponse(response)
 }
 

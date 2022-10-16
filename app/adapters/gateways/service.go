@@ -74,10 +74,9 @@ type (
 		FetchBySlugSupplierMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
 		FetchAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
 		FetchAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
-		FetchAllMajorByRetailer(majorId int) ([]*ent.Product, error)
 		FetchAllBySupplier(supplier int) ([]*ent.Product, error)
 		FetchAllByRetailer(retailer int) ([]*ent.Product, error)
-		FetchBestSellerBySupplier() ([]*ent.Product, error)
+		FetchBestSellerBySupplier(limit, offset int) ([]*ent.Product, error)
 		FetchBestSellerByRetailer() ([]*ent.Product, error)
 		Fetch(id int) (*ent.Product, error)
 		FetchBySupplierMerchant(id int) (*ent.Product, error)
@@ -143,7 +142,10 @@ type (
 		Login(c *fiber.Ctx) error
 		Logout(c *fiber.Ctx) error
 		FetchAuthUser(c *fiber.Ctx) error
+		UpdatePassword(id string, request any, userType string, isOTP bool) (bool, error)
+		ResetPassword(request *models.ResetPassword, username, userType string) (bool, error)
 		SendUserVerificationCode(username string) (string, error)
+		SendPasswordResetCode(username, userType string) (string, error)
 	}
 
 	PaymentService interface {

@@ -3,7 +3,6 @@
 package merchant
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -126,26 +125,3 @@ var (
 	// TypeValidator is a validator for the "type" field. It is called by the builders before save.
 	TypeValidator func(string) error
 )
-
-// Otp defines the type for the "otp" enum field.
-type Otp string
-
-// Otp values.
-const (
-	OtpActive   Otp = "active"
-	OtpInactive Otp = "inactive"
-)
-
-func (o Otp) String() string {
-	return string(o)
-}
-
-// OtpValidator is a validator for the "otp" field enum values. It is called by the builders before save.
-func OtpValidator(o Otp) error {
-	switch o {
-	case OtpActive, OtpInactive:
-		return nil
-	default:
-		return fmt.Errorf("merchant: invalid enum value for otp field: %q", o)
-	}
-}
