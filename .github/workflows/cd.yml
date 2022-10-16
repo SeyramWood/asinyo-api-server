@@ -22,7 +22,7 @@ jobs:
           name: seyramwood/asinyoapi
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          dockerfile: DockerFile
+          dockerfile: Dockerfile
           default_branch: dev
           tags: "dev"
 
