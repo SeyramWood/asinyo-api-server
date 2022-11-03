@@ -335,6 +335,7 @@ func (r repository) checkOrderStatus(data []*ent.OrderDetail) order.Status {
 
 	return status
 }
+
 func (r repository) insertMerchantOrder(res *models.OrderPayload) (*ent.Order, error) {
 	ctx := context.Background()
 	c := r.db.Merchant.Query().Where(merchant.ID(res.Metadata.User)).OnlyX(ctx)
@@ -508,6 +509,7 @@ func (r repository) insertAgentOrder(res *models.OrderPayload) (*ent.Order, erro
 	return nil, nil
 
 }
+
 func (r repository) calculateAmount(product *services.ProductDetails) float64 {
 	var amount float64
 	if product.PromoPrice > 0 {
@@ -559,9 +561,10 @@ func (r repository) insertOrderDetails(metadata *models.OrderPayloadMetadata, o 
 			defer wg.Done()
 
 			amount := r.calculateAmount(item)
-
-			prod := r.db.Product.Query().Where(product.ID(item.ID)).OnlyX(ctx)
+			// prod := r.db.Product.Query().Where(product.ID(item.ID)).OnlyX(ctx)
 			store := r.db.MerchantStore.Query().Where(merchantstore.ID(item.Store)).OnlyX(ctx)
+			prod, _ := r.db.Product.UpdateOneID(item.ID).AddBestDeal(1).Save(ctx)
+
 			bulk[i] = r.db.OrderDetail.Create().
 				SetOrder(o).
 				SetProduct(prod).

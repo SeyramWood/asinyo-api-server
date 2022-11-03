@@ -133,6 +133,20 @@ func (pc *ProductCreate) SetImage(s string) *ProductCreate {
 	return pc
 }
 
+// SetBestDeal sets the "best_deal" field.
+func (pc *ProductCreate) SetBestDeal(u uint64) *ProductCreate {
+	pc.mutation.SetBestDeal(u)
+	return pc
+}
+
+// SetNillableBestDeal sets the "best_deal" field if the given value is not nil.
+func (pc *ProductCreate) SetNillableBestDeal(u *uint64) *ProductCreate {
+	if u != nil {
+		pc.SetBestDeal(*u)
+	}
+	return pc
+}
+
 // AddOrderDetailIDs adds the "order_details" edge to the OrderDetail entity by IDs.
 func (pc *ProductCreate) AddOrderDetailIDs(ids ...int) *ProductCreate {
 	pc.mutation.AddOrderDetailIDs(ids...)
@@ -285,6 +299,10 @@ func (pc *ProductCreate) defaults() {
 		v := product.DefaultPrice
 		pc.mutation.SetPrice(v)
 	}
+	if _, ok := pc.mutation.PromoPrice(); !ok {
+		v := product.DefaultPromoPrice
+		pc.mutation.SetPromoPrice(v)
+	}
 	if _, ok := pc.mutation.Weight(); !ok {
 		v := product.DefaultWeight
 		pc.mutation.SetWeight(v)
@@ -292,6 +310,10 @@ func (pc *ProductCreate) defaults() {
 	if _, ok := pc.mutation.Quantity(); !ok {
 		v := product.DefaultQuantity
 		pc.mutation.SetQuantity(v)
+	}
+	if _, ok := pc.mutation.BestDeal(); !ok {
+		v := product.DefaultBestDeal
+		pc.mutation.SetBestDeal(v)
 	}
 }
 
@@ -313,6 +335,9 @@ func (pc *ProductCreate) check() error {
 	}
 	if _, ok := pc.mutation.Price(); !ok {
 		return &ValidationError{Name: "price", err: errors.New(`ent: missing required field "Product.price"`)}
+	}
+	if _, ok := pc.mutation.PromoPrice(); !ok {
+		return &ValidationError{Name: "promo_price", err: errors.New(`ent: missing required field "Product.promo_price"`)}
 	}
 	if _, ok := pc.mutation.Weight(); !ok {
 		return &ValidationError{Name: "weight", err: errors.New(`ent: missing required field "Product.weight"`)}
@@ -343,6 +368,9 @@ func (pc *ProductCreate) check() error {
 		if err := product.ImageValidator(v); err != nil {
 			return &ValidationError{Name: "image", err: fmt.Errorf(`ent: validator failed for field "Product.image": %w`, err)}
 		}
+	}
+	if _, ok := pc.mutation.BestDeal(); !ok {
+		return &ValidationError{Name: "best_deal", err: errors.New(`ent: missing required field "Product.best_deal"`)}
 	}
 	if _, ok := pc.mutation.MerchantID(); !ok {
 		return &ValidationError{Name: "merchant", err: errors.New(`ent: missing required edge "Product.merchant"`)}
@@ -418,7 +446,7 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: product.FieldPromoPrice,
 		})
-		_node.PromoPrice = &value
+		_node.PromoPrice = value
 	}
 	if value, ok := pc.mutation.Weight(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -459,6 +487,14 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 			Column: product.FieldImage,
 		})
 		_node.Image = value
+	}
+	if value, ok := pc.mutation.BestDeal(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint64,
+			Value:  value,
+			Column: product.FieldBestDeal,
+		})
+		_node.BestDeal = value
 	}
 	if nodes := pc.mutation.OrderDetailsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

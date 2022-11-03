@@ -60,7 +60,7 @@ type (
 		ReadByMerchant(merchantId int) (*ent.MerchantStore, error)
 		ReadAgent(store int) (*ent.Agent, error)
 		ReadAll() ([]*ent.MerchantStore, error)
-		ReadAllByMerchant(merchantType string) ([]*ent.MerchantStore, error)
+		ReadAllByMerchant(merchantType string, limit, offset int) ([]*ent.MerchantStore, error)
 		Update(store *models.MerchantStore) (*models.MerchantStore, error)
 		Delete(id string) error
 	}
@@ -69,17 +69,22 @@ type (
 		Read(id int) (*ent.Product, error)
 		ReadBySupplierMerchant(id int) (*ent.Product, error)
 		ReadByRetailMerchant(id int) (*ent.Product, error)
-		ReadAll() ([]*ent.Product, error)
-		ReadBySlugRetailMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error)
-		ReadBySlugRetailMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
-		ReadBySlugSupplierMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error)
-		ReadBySlugSupplierMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
-		ReadAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
-		ReadAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
-		ReadAllBySupplierMerchant(merchant int) ([]*ent.Product, error)
-		ReadAllByRetailMerchant(merchant int) ([]*ent.Product, error)
+		ReadAll(limit, offset int) ([]*ent.Product, error)
+		ReadBySlugRetailMerchantCategoryMajor(slug string, limit, offset int) ([]*ent.ProductCategoryMajor, error)
+		ReadBySlugRetailMerchantCategoryMinor(slug string, limit, offset int) ([]*ent.ProductCategoryMinor, error)
+		ReadBySlugSupplierMerchantCategoryMajor(slug string, limit, offset int) ([]*ent.ProductCategoryMajor, error)
+		ReadBySlugSupplierMerchantCategoryMinor(slug string, limit, offset int) ([]*ent.ProductCategoryMinor, error)
+		ReadAllRetailMerchantCategoryMajor(limit, offset int) ([]*ent.ProductCategoryMajor, error)
+		ReadAllSupplierMerchantCategoryMajor(limit, offset int) ([]*ent.ProductCategoryMajor, error)
+		ReadAllBySupplierMerchant(merchant, limit, offset int) ([]*ent.Product, error)
+		ReadAllByRetailMerchant(merchant, limit, offset int) ([]*ent.Product, error)
 		ReadBestSellerBySupplierMerchant(limit, offset int) ([]*ent.Product, error)
-		ReadBestSellerRetailMerchant() ([]*ent.Product, error)
+		ReadBestSellerRetailMerchant(limit, offset int) ([]*ent.Product, error)
+
+		ReadAllBySlugCategoryMajor(merchantType, slug string, limit, offset int) ([]*ent.Product, error)
+		ReadAllBySlugCategoryMinor(merchantType, slug string, limit, offset int) ([]*ent.Product, error)
+		ReadBestSellerByMerchant(id, limit, offset int) ([]*ent.Product, error)
+
 		Update(merchant *models.Product) (*models.Product, error)
 		Delete(id string) error
 	}
@@ -93,7 +98,7 @@ type (
 	ProductCatMinorRepo interface {
 		Insert(merchant *models.ProductCategoryMinor, image string) (*ent.ProductCategoryMinor, error)
 		Read(id int) (*ent.ProductCategoryMinor, error)
-		ReadAll() ([]*ent.ProductCategoryMinor, error)
+		ReadAll(limit, offset int) ([]*ent.ProductCategoryMinor, error)
 		Update(merchant *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error)
 		Delete(id string) error
 	}

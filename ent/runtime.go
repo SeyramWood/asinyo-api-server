@@ -396,6 +396,10 @@ func init() {
 	productDescPrice := productFields[1].Descriptor()
 	// product.DefaultPrice holds the default value on creation for the price field.
 	product.DefaultPrice = productDescPrice.Default.(float64)
+	// productDescPromoPrice is the schema descriptor for promo_price field.
+	productDescPromoPrice := productFields[2].Descriptor()
+	// product.DefaultPromoPrice holds the default value on creation for the promo_price field.
+	product.DefaultPromoPrice = productDescPromoPrice.Default.(float64)
 	// productDescWeight is the schema descriptor for weight field.
 	productDescWeight := productFields[3].Descriptor()
 	// product.DefaultWeight holds the default value on creation for the weight field.
@@ -416,6 +420,10 @@ func init() {
 	productDescImage := productFields[7].Descriptor()
 	// product.ImageValidator is a validator for the "image" field. It is called by the builders before save.
 	product.ImageValidator = productDescImage.Validators[0].(func(string) error)
+	// productDescBestDeal is the schema descriptor for best_deal field.
+	productDescBestDeal := productFields[8].Descriptor()
+	// product.DefaultBestDeal holds the default value on creation for the best_deal field.
+	product.DefaultBestDeal = productDescBestDeal.Default.(uint64)
 	productcategorymajorMixin := schema.ProductCategoryMajor{}.Mixin()
 	productcategorymajorMixinFields0 := productcategorymajorMixin[0].Fields()
 	_ = productcategorymajorMixinFields0

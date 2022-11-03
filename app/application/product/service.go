@@ -42,49 +42,72 @@ func (s *service) FetchByRetailMerchant(id int) (*ent.Product, error) {
 	return s.repo.ReadByRetailMerchant(id)
 }
 
-func (s *service) FetchAll() ([]*ent.Product, error) {
-	return s.repo.ReadAll()
+func (s *service) FetchAll(limit, offset int) ([]*ent.Product, error) {
+	return s.repo.ReadAll(limit, offset)
 }
 
-func (s *service) FetchBySlugRetailMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error) {
-	return s.repo.ReadBySlugRetailMerchantCategoryMajor(slug)
+func (s *service) FetchBySlugRetailMerchantCategoryMajor(slug string, limit, offset int) (
+	[]*ent.ProductCategoryMajor, error,
+) {
+	return s.repo.ReadBySlugRetailMerchantCategoryMajor(slug, limit, offset)
 }
 
-func (s *service) FetchBySlugRetailMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error) {
-	return s.repo.ReadBySlugRetailMerchantCategoryMinor(slug)
+func (s *service) FetchBySlugRetailMerchantCategoryMinor(slug string, limit, offset int) (
+	[]*ent.ProductCategoryMinor, error,
+) {
+	return s.repo.ReadBySlugRetailMerchantCategoryMinor(slug, limit, offset)
 }
-func (s *service) FetchBySlugSupplierMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error) {
-	return s.repo.ReadBySlugSupplierMerchantCategoryMajor(slug)
-}
-
-func (s *service) FetchBySlugSupplierMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error) {
-	return s.repo.ReadBySlugSupplierMerchantCategoryMinor(slug)
-}
-
-func (s *service) FetchAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error) {
-	return s.repo.ReadAllRetailMerchantCategoryMajor()
+func (s *service) FetchBySlugSupplierMerchantCategoryMajor(slug string, limit, offset int) (
+	[]*ent.ProductCategoryMajor, error,
+) {
+	return s.repo.ReadBySlugSupplierMerchantCategoryMajor(slug, limit, offset)
 }
 
-func (s *service) FetchAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error) {
-	return s.repo.ReadAllSupplierMerchantCategoryMajor()
+func (s *service) FetchBySlugSupplierMerchantCategoryMinor(slug string, limit, offset int) (
+	[]*ent.ProductCategoryMinor, error,
+) {
+	return s.repo.ReadBySlugSupplierMerchantCategoryMinor(slug, limit, offset)
 }
 
-func (s *service) FetchAllBySupplier(supplier int) ([]*ent.Product, error) {
-	return s.repo.ReadAllBySupplierMerchant(supplier)
+func (s *service) FetchAllBySlugCategoryMajor(
+	merchantType, slug string, limit, offset int,
+) ([]*ent.Product, error) {
+	return s.repo.ReadAllBySlugCategoryMajor(merchantType, slug, limit, offset)
 }
 
-func (s *service) FetchAllByRetailer(retailer int) ([]*ent.Product, error) {
-	return s.repo.ReadAllByRetailMerchant(retailer)
+func (s *service) FetchAllBySlugCategoryMinor(merchantType, slug string, limit, offset int) (
+	[]*ent.Product, error,
+) {
+	return s.repo.ReadAllBySlugCategoryMinor(merchantType, slug, limit, offset)
+
+}
+
+func (s *service) FetchAllRetailMerchantCategoryMajor(limit, offset int) ([]*ent.ProductCategoryMajor, error) {
+	return s.repo.ReadAllRetailMerchantCategoryMajor(limit, offset)
+}
+
+func (s *service) FetchAllSupplierMerchantCategoryMajor(limit, offset int) ([]*ent.ProductCategoryMajor, error) {
+	return s.repo.ReadAllSupplierMerchantCategoryMajor(limit, offset)
+}
+
+func (s *service) FetchAllBySupplier(supplier, limit, offset int) ([]*ent.Product, error) {
+	return s.repo.ReadAllBySupplierMerchant(supplier, limit, offset)
+}
+
+func (s *service) FetchAllByRetailer(retailer, limit, offset int) ([]*ent.Product, error) {
+	return s.repo.ReadAllByRetailMerchant(retailer, limit, offset)
 }
 
 func (s *service) FetchBestSellerBySupplier(limit, offset int) ([]*ent.Product, error) {
 	return s.repo.ReadBestSellerBySupplierMerchant(limit, offset)
 }
 
-func (s *service) FetchBestSellerByRetailer() ([]*ent.Product, error) {
-	return s.repo.ReadBestSellerRetailMerchant()
+func (s *service) FetchBestSellerByRetailer(limit, offset int) ([]*ent.Product, error) {
+	return s.repo.ReadBestSellerRetailMerchant(limit, offset)
 }
-
+func (s *service) FetchBestSellerByMerchant(id, limit, offset int) ([]*ent.Product, error) {
+	return s.repo.ReadBestSellerByMerchant(id, limit, offset)
+}
 func (s *service) Update(user *models.Product) (*models.Product, error) {
 	return s.repo.Update(user)
 }

@@ -11556,6 +11556,8 @@ type ProductMutation struct {
 	unit                 *string
 	description          *string
 	image                *string
+	best_deal            *uint64
+	addbest_deal         *int64
 	clearedFields        map[string]struct{}
 	order_details        map[int]struct{}
 	removedorder_details map[int]struct{}
@@ -11854,7 +11856,7 @@ func (m *ProductMutation) PromoPrice() (r float64, exists bool) {
 // OldPromoPrice returns the old "promo_price" field's value of the Product entity.
 // If the Product object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProductMutation) OldPromoPrice(ctx context.Context) (v *float64, err error) {
+func (m *ProductMutation) OldPromoPrice(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPromoPrice is only allowed on UpdateOne operations")
 	}
@@ -11886,24 +11888,10 @@ func (m *ProductMutation) AddedPromoPrice() (r float64, exists bool) {
 	return *v, true
 }
 
-// ClearPromoPrice clears the value of the "promo_price" field.
-func (m *ProductMutation) ClearPromoPrice() {
-	m.promo_price = nil
-	m.addpromo_price = nil
-	m.clearedFields[product.FieldPromoPrice] = struct{}{}
-}
-
-// PromoPriceCleared returns if the "promo_price" field was cleared in this mutation.
-func (m *ProductMutation) PromoPriceCleared() bool {
-	_, ok := m.clearedFields[product.FieldPromoPrice]
-	return ok
-}
-
 // ResetPromoPrice resets all changes to the "promo_price" field.
 func (m *ProductMutation) ResetPromoPrice() {
 	m.promo_price = nil
 	m.addpromo_price = nil
-	delete(m.clearedFields, product.FieldPromoPrice)
 }
 
 // SetWeight sets the "weight" field.
@@ -12124,6 +12112,62 @@ func (m *ProductMutation) OldImage(ctx context.Context) (v string, err error) {
 // ResetImage resets all changes to the "image" field.
 func (m *ProductMutation) ResetImage() {
 	m.image = nil
+}
+
+// SetBestDeal sets the "best_deal" field.
+func (m *ProductMutation) SetBestDeal(u uint64) {
+	m.best_deal = &u
+	m.addbest_deal = nil
+}
+
+// BestDeal returns the value of the "best_deal" field in the mutation.
+func (m *ProductMutation) BestDeal() (r uint64, exists bool) {
+	v := m.best_deal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBestDeal returns the old "best_deal" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldBestDeal(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBestDeal is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBestDeal requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBestDeal: %w", err)
+	}
+	return oldValue.BestDeal, nil
+}
+
+// AddBestDeal adds u to the "best_deal" field.
+func (m *ProductMutation) AddBestDeal(u int64) {
+	if m.addbest_deal != nil {
+		*m.addbest_deal += u
+	} else {
+		m.addbest_deal = &u
+	}
+}
+
+// AddedBestDeal returns the value that was added to the "best_deal" field in this mutation.
+func (m *ProductMutation) AddedBestDeal() (r int64, exists bool) {
+	v := m.addbest_deal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBestDeal resets all changes to the "best_deal" field.
+func (m *ProductMutation) ResetBestDeal() {
+	m.best_deal = nil
+	m.addbest_deal = nil
 }
 
 // AddOrderDetailIDs adds the "order_details" edge to the OrderDetail entity by ids.
@@ -12370,7 +12414,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -12401,6 +12445,9 @@ func (m *ProductMutation) Fields() []string {
 	if m.image != nil {
 		fields = append(fields, product.FieldImage)
 	}
+	if m.best_deal != nil {
+		fields = append(fields, product.FieldBestDeal)
+	}
 	return fields
 }
 
@@ -12429,6 +12476,8 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.Description()
 	case product.FieldImage:
 		return m.Image()
+	case product.FieldBestDeal:
+		return m.BestDeal()
 	}
 	return nil, false
 }
@@ -12458,6 +12507,8 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldDescription(ctx)
 	case product.FieldImage:
 		return m.OldImage(ctx)
+	case product.FieldBestDeal:
+		return m.OldBestDeal(ctx)
 	}
 	return nil, fmt.Errorf("unknown Product field %s", name)
 }
@@ -12537,6 +12588,13 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetImage(v)
 		return nil
+	case product.FieldBestDeal:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBestDeal(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Product field %s", name)
 }
@@ -12557,6 +12615,9 @@ func (m *ProductMutation) AddedFields() []string {
 	if m.addquantity != nil {
 		fields = append(fields, product.FieldQuantity)
 	}
+	if m.addbest_deal != nil {
+		fields = append(fields, product.FieldBestDeal)
+	}
 	return fields
 }
 
@@ -12573,6 +12634,8 @@ func (m *ProductMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedWeight()
 	case product.FieldQuantity:
 		return m.AddedQuantity()
+	case product.FieldBestDeal:
+		return m.AddedBestDeal()
 	}
 	return nil, false
 }
@@ -12610,6 +12673,13 @@ func (m *ProductMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddQuantity(v)
 		return nil
+	case product.FieldBestDeal:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBestDeal(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Product numeric field %s", name)
 }
@@ -12617,11 +12687,7 @@ func (m *ProductMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ProductMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(product.FieldPromoPrice) {
-		fields = append(fields, product.FieldPromoPrice)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -12634,11 +12700,6 @@ func (m *ProductMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ProductMutation) ClearField(name string) error {
-	switch name {
-	case product.FieldPromoPrice:
-		m.ClearPromoPrice()
-		return nil
-	}
 	return fmt.Errorf("unknown Product nullable field %s", name)
 }
 
@@ -12675,6 +12736,9 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldImage:
 		m.ResetImage()
+		return nil
+	case product.FieldBestDeal:
+		m.ResetBestDeal()
 		return nil
 	}
 	return fmt.Errorf("unknown Product field %s", name)

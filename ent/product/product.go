@@ -31,6 +31,8 @@ const (
 	FieldDescription = "description"
 	// FieldImage holds the string denoting the image field in the database.
 	FieldImage = "image"
+	// FieldBestDeal holds the string denoting the best_deal field in the database.
+	FieldBestDeal = "best_deal"
 	// EdgeOrderDetails holds the string denoting the order_details edge name in mutations.
 	EdgeOrderDetails = "order_details"
 	// EdgeFavourites holds the string denoting the favourites edge name in mutations.
@@ -93,6 +95,7 @@ var Columns = []string{
 	FieldUnit,
 	FieldDescription,
 	FieldImage,
+	FieldBestDeal,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "products"
@@ -129,6 +132,8 @@ var (
 	NameValidator func(string) error
 	// DefaultPrice holds the default value on creation for the "price" field.
 	DefaultPrice float64
+	// DefaultPromoPrice holds the default value on creation for the "promo_price" field.
+	DefaultPromoPrice float64
 	// DefaultWeight holds the default value on creation for the "weight" field.
 	DefaultWeight uint32
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
@@ -139,4 +144,6 @@ var (
 	DescriptionValidator func(string) error
 	// ImageValidator is a validator for the "image" field. It is called by the builders before save.
 	ImageValidator func(string) error
+	// DefaultBestDeal holds the default value on creation for the "best_deal" field.
+	DefaultBestDeal uint64
 )

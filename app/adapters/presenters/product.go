@@ -84,7 +84,7 @@ func ProductsWithStoreResponse(data []*ent.Product) *fiber.Map {
 				Weight:      int(v.Weight),
 				Quantity:    int(v.Quantity),
 				Price:       v.Price,
-				PromoPrice:  *v.PromoPrice,
+				PromoPrice:  v.PromoPrice,
 				Description: v.Description,
 				Image:       v.Image,
 				Major:       v.Edges.Major.Category,
@@ -126,7 +126,7 @@ func ProductsBestSellerResponse(data []*ent.Product) *fiber.Map {
 				Weight:      int(v.Weight),
 				Quantity:    int(v.Quantity),
 				Price:       v.Price,
-				PromoPrice:  *v.PromoPrice,
+				PromoPrice:  v.PromoPrice,
 				Description: v.Description,
 				Image:       v.Image,
 				Major:       v.Edges.Major.Category,
@@ -203,7 +203,7 @@ func formatProductsWithMerchant(data []*ent.Product) []*ProductWithMerchant {
 				Weight:      int(v.Weight),
 				Quantity:    int(v.Quantity),
 				Price:       v.Price,
-				PromoPrice:  *v.PromoPrice,
+				PromoPrice:  v.PromoPrice,
 				Description: v.Description,
 				Image:       v.Image,
 				Major:       v.Edges.Major.Category,
@@ -250,6 +250,7 @@ func formatProductsWithMerchant(data []*ent.Product) []*ProductWithMerchant {
 	}
 	return response
 }
+
 func formatProductWithMerchant(data *ent.Product) *ProductWithMerchant {
 
 	return &ProductWithMerchant{
@@ -261,7 +262,7 @@ func formatProductWithMerchant(data *ent.Product) *ProductWithMerchant {
 		Weight:      int(data.Weight),
 		Quantity:    int(data.Quantity),
 		Price:       data.Price,
-		PromoPrice:  *data.PromoPrice,
+		PromoPrice:  data.PromoPrice,
 		Description: data.Description,
 		Image:       data.Image,
 		Major:       data.Edges.Major.Category,

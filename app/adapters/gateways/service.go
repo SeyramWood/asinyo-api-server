@@ -57,7 +57,7 @@ type (
 		SaveLogo(c *fiber.Ctx, field, directory string) (interface{}, error)
 		SavePhotos(c *fiber.Ctx, field, directory string) (interface{}, error)
 		FetchAll() ([]*ent.MerchantStore, error)
-		FetchAllByMerchant(merchantType string) ([]*ent.MerchantStore, error)
+		FetchAllByMerchant(merchantType string, limit, offset int) ([]*ent.MerchantStore, error)
 		Fetch(id int) (*ent.MerchantStore, error)
 		FetchAgent(store int) (*ent.Agent, error)
 		FetchByMerchant(merchantId int) (*ent.MerchantStore, error)
@@ -67,20 +67,25 @@ type (
 
 	ProductService interface {
 		Create(merchant *models.Product, imageUrl string) (*ent.Product, error)
-		FetchAll() ([]*ent.Product, error)
-		FetchBySlugRetailMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error)
-		FetchBySlugRetailMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
-		FetchBySlugSupplierMerchantCategoryMajor(slug string) ([]*ent.ProductCategoryMajor, error)
-		FetchBySlugSupplierMerchantCategoryMinor(slug string) ([]*ent.ProductCategoryMinor, error)
-		FetchAllRetailMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
-		FetchAllSupplierMerchantCategoryMajor() ([]*ent.ProductCategoryMajor, error)
-		FetchAllBySupplier(supplier int) ([]*ent.Product, error)
-		FetchAllByRetailer(retailer int) ([]*ent.Product, error)
+		FetchAll(limit, offset int) ([]*ent.Product, error)
+		FetchBySlugRetailMerchantCategoryMajor(slug string, limit, offset int) ([]*ent.ProductCategoryMajor, error)
+		FetchBySlugRetailMerchantCategoryMinor(slug string, limit, offset int) ([]*ent.ProductCategoryMinor, error)
+		FetchBySlugSupplierMerchantCategoryMajor(slug string, limit, offset int) ([]*ent.ProductCategoryMajor, error)
+		FetchBySlugSupplierMerchantCategoryMinor(slug string, limit, offset int) ([]*ent.ProductCategoryMinor, error)
+		FetchAllRetailMerchantCategoryMajor(limit, offset int) ([]*ent.ProductCategoryMajor, error)
+		FetchAllSupplierMerchantCategoryMajor(limit, offset int) ([]*ent.ProductCategoryMajor, error)
+		FetchAllBySupplier(supplier, limit, offset int) ([]*ent.Product, error)
+		FetchAllByRetailer(retailer, limit, offset int) ([]*ent.Product, error)
 		FetchBestSellerBySupplier(limit, offset int) ([]*ent.Product, error)
-		FetchBestSellerByRetailer() ([]*ent.Product, error)
+		FetchBestSellerByRetailer(limit, offset int) ([]*ent.Product, error)
 		Fetch(id int) (*ent.Product, error)
 		FetchBySupplierMerchant(id int) (*ent.Product, error)
 		FetchByRetailMerchant(id int) (*ent.Product, error)
+
+		FetchAllBySlugCategoryMajor(merchantType, slug string, limit, offset int) ([]*ent.Product, error)
+		FetchAllBySlugCategoryMinor(merchantType, slug string, limit, offset int) ([]*ent.Product, error)
+		FetchBestSellerByMerchant(id, limit, offset int) ([]*ent.Product, error)
+
 		Update(merchant *models.Product) (*models.Product, error)
 		Remove(id string) error
 		SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error)
@@ -95,7 +100,7 @@ type (
 	ProductCatMinorService interface {
 		Create(merchant *models.ProductCategoryMinor, image string) (*ent.ProductCategoryMinor, error)
 		SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error)
-		FetchAll() ([]*ent.ProductCategoryMinor, error)
+		FetchAll(limit, offset int) ([]*ent.ProductCategoryMinor, error)
 		Fetch(id int) (*ent.ProductCategoryMinor, error)
 		Update(merchant *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error)
 		Remove(id string) error

@@ -3,13 +3,13 @@ package product_cat_major
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
+	"github.com/SeyramWood/ent/product"
 )
 
 type repository struct {
@@ -45,17 +45,22 @@ func (r *repository) Read(id int) (*ent.ProductCategoryMajor, error) {
 }
 
 func (r *repository) ReadAll() ([]*ent.ProductCategoryMajor, error) {
-
-	cats, err := r.db.ProductCategoryMajor.Query().WithMinors().All(context.Background())
+	ctx := context.Background()
+	cats, err := r.db.ProductCategoryMajor.Query().
+		WithProducts(
+			func(pq *ent.ProductQuery) {
+				pq.Select(product.FieldID)
+			},
+		).
+		WithMinors().
+		All(ctx)
 	if err != nil {
-		log.Fatalln(err)
 		return nil, err
 	}
-
 	return cats, nil
 }
 
-func (a *repository) Update(i *models.ProductCategoryMajor) (*models.ProductCategoryMajor, error) {
+func (r *repository) Update(i *models.ProductCategoryMajor) (*models.ProductCategoryMajor, error) {
 	// book.UpdatedAt = time.Now()
 	// _, err := r.Collection.UpdateOne(context.Background(), bson.M{"_id": book.ID}, bson.M{"$set": book})
 	// if err != nil {
@@ -64,7 +69,6 @@ func (a *repository) Update(i *models.ProductCategoryMajor) (*models.ProductCate
 	return i, nil
 }
 
-//DeleteBook is a mongo repository that helps to delete books
 func (r *repository) Delete(ID string) error {
 	return fmt.Errorf("failed creating book")
 	// return r.Delete(ID).Error

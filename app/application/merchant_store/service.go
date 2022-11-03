@@ -48,8 +48,8 @@ func (s service) SaveDefaultAccount(storeId int, accountType string) (*ent.Merch
 func (s service) FetchAll() ([]*ent.MerchantStore, error) {
 	return s.repo.ReadAll()
 }
-func (s service) FetchAllByMerchant(merchantType string) ([]*ent.MerchantStore, error) {
-	return s.repo.ReadAllByMerchant(merchantType)
+func (s service) FetchAllByMerchant(merchantType string, limit, offset int) ([]*ent.MerchantStore, error) {
+	return s.repo.ReadAllByMerchant(merchantType, limit, offset)
 }
 
 func (s service) Fetch(id int) (*ent.MerchantStore, error) {

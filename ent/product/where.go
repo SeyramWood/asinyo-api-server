@@ -151,6 +151,13 @@ func Image(v string) predicate.Product {
 	})
 }
 
+// BestDeal applies equality check predicate on the "best_deal" field. It's identical to BestDealEQ.
+func BestDeal(v uint64) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldBestDeal), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Product {
 	return predicate.Product(func(s *sql.Selector) {
@@ -503,20 +510,6 @@ func PromoPriceLT(v float64) predicate.Product {
 func PromoPriceLTE(v float64) predicate.Product {
 	return predicate.Product(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldPromoPrice), v))
-	})
-}
-
-// PromoPriceIsNil applies the IsNil predicate on the "promo_price" field.
-func PromoPriceIsNil() predicate.Product {
-	return predicate.Product(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldPromoPrice)))
-	})
-}
-
-// PromoPriceNotNil applies the NotNil predicate on the "promo_price" field.
-func PromoPriceNotNil() predicate.Product {
-	return predicate.Product(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldPromoPrice)))
 	})
 }
 
@@ -942,6 +935,70 @@ func ImageEqualFold(v string) predicate.Product {
 func ImageContainsFold(v string) predicate.Product {
 	return predicate.Product(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldImage), v))
+	})
+}
+
+// BestDealEQ applies the EQ predicate on the "best_deal" field.
+func BestDealEQ(v uint64) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldBestDeal), v))
+	})
+}
+
+// BestDealNEQ applies the NEQ predicate on the "best_deal" field.
+func BestDealNEQ(v uint64) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldBestDeal), v))
+	})
+}
+
+// BestDealIn applies the In predicate on the "best_deal" field.
+func BestDealIn(vs ...uint64) predicate.Product {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Product(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldBestDeal), v...))
+	})
+}
+
+// BestDealNotIn applies the NotIn predicate on the "best_deal" field.
+func BestDealNotIn(vs ...uint64) predicate.Product {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Product(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldBestDeal), v...))
+	})
+}
+
+// BestDealGT applies the GT predicate on the "best_deal" field.
+func BestDealGT(v uint64) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldBestDeal), v))
+	})
+}
+
+// BestDealGTE applies the GTE predicate on the "best_deal" field.
+func BestDealGTE(v uint64) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldBestDeal), v))
+	})
+}
+
+// BestDealLT applies the LT predicate on the "best_deal" field.
+func BestDealLT(v uint64) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldBestDeal), v))
+	})
+}
+
+// BestDealLTE applies the LTE predicate on the "best_deal" field.
+func BestDealLTE(v uint64) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldBestDeal), v))
 	})
 }
 

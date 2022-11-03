@@ -52,10 +52,11 @@ func (h *MerchantStoreHandler) FetchByMerchantID() fiber.Handler {
 }
 func (h *MerchantStoreHandler) Fetch() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+
 		merchantType := c.Params("merchantType")
-
-		result, err := h.service.FetchAllByMerchant(merchantType)
-
+		result, err := h.service.FetchAllByMerchant(merchantType, limit, offset)
 		if err != nil {
 
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))

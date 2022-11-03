@@ -87,12 +87,6 @@ func (pu *ProductUpdate) AddPromoPrice(f float64) *ProductUpdate {
 	return pu
 }
 
-// ClearPromoPrice clears the value of the "promo_price" field.
-func (pu *ProductUpdate) ClearPromoPrice() *ProductUpdate {
-	pu.mutation.ClearPromoPrice()
-	return pu
-}
-
 // SetWeight sets the "weight" field.
 func (pu *ProductUpdate) SetWeight(u uint32) *ProductUpdate {
 	pu.mutation.ResetWeight()
@@ -150,6 +144,27 @@ func (pu *ProductUpdate) SetDescription(s string) *ProductUpdate {
 // SetImage sets the "image" field.
 func (pu *ProductUpdate) SetImage(s string) *ProductUpdate {
 	pu.mutation.SetImage(s)
+	return pu
+}
+
+// SetBestDeal sets the "best_deal" field.
+func (pu *ProductUpdate) SetBestDeal(u uint64) *ProductUpdate {
+	pu.mutation.ResetBestDeal()
+	pu.mutation.SetBestDeal(u)
+	return pu
+}
+
+// SetNillableBestDeal sets the "best_deal" field if the given value is not nil.
+func (pu *ProductUpdate) SetNillableBestDeal(u *uint64) *ProductUpdate {
+	if u != nil {
+		pu.SetBestDeal(*u)
+	}
+	return pu
+}
+
+// AddBestDeal adds u to the "best_deal" field.
+func (pu *ProductUpdate) AddBestDeal(u int64) *ProductUpdate {
+	pu.mutation.AddBestDeal(u)
 	return pu
 }
 
@@ -444,12 +459,6 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: product.FieldPromoPrice,
 		})
 	}
-	if pu.mutation.PromoPriceCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Column: product.FieldPromoPrice,
-		})
-	}
 	if value, ok := pu.mutation.Weight(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
@@ -497,6 +506,20 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeString,
 			Value:  value,
 			Column: product.FieldImage,
+		})
+	}
+	if value, ok := pu.mutation.BestDeal(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint64,
+			Value:  value,
+			Column: product.FieldBestDeal,
+		})
+	}
+	if value, ok := pu.mutation.AddedBestDeal(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint64,
+			Value:  value,
+			Column: product.FieldBestDeal,
 		})
 	}
 	if pu.mutation.OrderDetailsCleared() {
@@ -785,12 +808,6 @@ func (puo *ProductUpdateOne) AddPromoPrice(f float64) *ProductUpdateOne {
 	return puo
 }
 
-// ClearPromoPrice clears the value of the "promo_price" field.
-func (puo *ProductUpdateOne) ClearPromoPrice() *ProductUpdateOne {
-	puo.mutation.ClearPromoPrice()
-	return puo
-}
-
 // SetWeight sets the "weight" field.
 func (puo *ProductUpdateOne) SetWeight(u uint32) *ProductUpdateOne {
 	puo.mutation.ResetWeight()
@@ -848,6 +865,27 @@ func (puo *ProductUpdateOne) SetDescription(s string) *ProductUpdateOne {
 // SetImage sets the "image" field.
 func (puo *ProductUpdateOne) SetImage(s string) *ProductUpdateOne {
 	puo.mutation.SetImage(s)
+	return puo
+}
+
+// SetBestDeal sets the "best_deal" field.
+func (puo *ProductUpdateOne) SetBestDeal(u uint64) *ProductUpdateOne {
+	puo.mutation.ResetBestDeal()
+	puo.mutation.SetBestDeal(u)
+	return puo
+}
+
+// SetNillableBestDeal sets the "best_deal" field if the given value is not nil.
+func (puo *ProductUpdateOne) SetNillableBestDeal(u *uint64) *ProductUpdateOne {
+	if u != nil {
+		puo.SetBestDeal(*u)
+	}
+	return puo
+}
+
+// AddBestDeal adds u to the "best_deal" field.
+func (puo *ProductUpdateOne) AddBestDeal(u int64) *ProductUpdateOne {
+	puo.mutation.AddBestDeal(u)
 	return puo
 }
 
@@ -1172,12 +1210,6 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Column: product.FieldPromoPrice,
 		})
 	}
-	if puo.mutation.PromoPriceCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Column: product.FieldPromoPrice,
-		})
-	}
 	if value, ok := puo.mutation.Weight(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
@@ -1225,6 +1257,20 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Type:   field.TypeString,
 			Value:  value,
 			Column: product.FieldImage,
+		})
+	}
+	if value, ok := puo.mutation.BestDeal(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint64,
+			Value:  value,
+			Column: product.FieldBestDeal,
+		})
+	}
+	if value, ok := puo.mutation.AddedBestDeal(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint64,
+			Value:  value,
+			Column: product.FieldBestDeal,
 		})
 	}
 	if puo.mutation.OrderDetailsCleared() {

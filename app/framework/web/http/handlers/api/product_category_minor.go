@@ -2,13 +2,16 @@ package api
 
 import (
 	"fmt"
+	"strconv"
+
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/product_cat_minor"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/pkg/storage"
-	"github.com/gofiber/fiber/v2"
 )
 
 type ProductCatMinorHandler struct {
@@ -38,9 +41,9 @@ func (h *ProductCatMinorHandler) FetchByID() fiber.Handler {
 }
 func (h *ProductCatMinorHandler) Fetch() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
-		results, err := h.service.FetchAll()
-
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+		results, err := h.service.FetchAll(limit, offset)
 		if err != nil {
 
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductCatMinorErrorResponse(err))
@@ -64,20 +67,24 @@ func (h *ProductCatMinorHandler) Create() fiber.Handler {
 
 		file, err := c.FormFile("image")
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Upload error.",
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error.",
+				},
+			)
 		}
 		fPath, err := storage.NewUploadCare().Client().Upload(file, "category_minor")
 
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Upload error.",
-			})
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error.",
+				},
+			)
 		}
 		cat, err := h.service.Create(&request, fPath)
 		if err != nil {
-			//Delete file from remote storage
+			// Delete file from remote storage
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductCatMinorErrorResponse(err))
 		}
 		return c.JSON(presenters.ProductCatMinorSuccessResponse(cat))
@@ -86,9 +93,9 @@ func (h *ProductCatMinorHandler) Create() fiber.Handler {
 
 func (h *ProductCatMinorHandler) Update() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
-		result, err := h.service.FetchAll()
-
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+		result, err := h.service.FetchAll(limit, offset)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductCatMinorErrorResponse(err))
 		}
@@ -101,9 +108,11 @@ func (h *ProductCatMinorHandler) Delete() fiber.Handler {
 		if err := h.service.Remove(c.Params("id")); err != nil {
 			return c.Status(fiber.StatusNotFound).JSON(presenters.ProductCatMinorErrorResponse(err))
 		}
-		return c.Status(fiber.StatusOK).JSON(&fiber.Map{
-			"status": true,
-			"error":  nil,
-		})
+		return c.Status(fiber.StatusOK).JSON(
+			&fiber.Map{
+				"status": true,
+				"error":  nil,
+			},
+		)
 	}
 }

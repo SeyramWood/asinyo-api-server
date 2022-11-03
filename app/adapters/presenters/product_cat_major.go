@@ -21,9 +21,10 @@ type (
 		Data ProductCatMajor `json:"data"`
 	}
 	ProductCatMajors struct {
-		Key      int                        `json:"key"`
-		Data     ProductCatMajor            `json:"data"`
-		Children []*ProductCatMajorChildren `json:"children"`
+		Key          int                        `json:"key"`
+		Data         ProductCatMajor            `json:"data"`
+		ProductCount int                        `json:"productCount,omitempty"`
+		Children     []*ProductCatMajorChildren `json:"children"`
 	}
 )
 
@@ -52,6 +53,7 @@ func ProductCatMajorsSuccessResponse(data []*ent.ProductCategoryMajor) *fiber.Ma
 				CreatedAt: v.CreatedAt,
 				UpdatedAt: v.UpdatedAt,
 			},
+			ProductCount: len(v.Edges.Products),
 			Children: func() []*ProductCatMajorChildren {
 				var children []*ProductCatMajorChildren
 				for _, m := range v.Edges.Minors {

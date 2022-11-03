@@ -22,12 +22,13 @@ func (Product) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").NotEmpty(),
 		field.Float("price").Default(0.00),
-		field.Float("promo_price").Optional().Nillable(),
+		field.Float("promo_price").Default(0.00),
 		field.Uint32("weight").Default(1),
 		field.Uint32("quantity").Default(1),
 		field.String("unit").NotEmpty(),
 		field.Text("description").NotEmpty(),
 		field.String("image").NotEmpty(),
+		field.Uint64("best_deal").Default(0),
 	}
 }
 

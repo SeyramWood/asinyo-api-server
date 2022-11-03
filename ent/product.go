@@ -28,7 +28,7 @@ type Product struct {
 	// Price holds the value of the "price" field.
 	Price float64 `json:"price,omitempty"`
 	// PromoPrice holds the value of the "promo_price" field.
-	PromoPrice *float64 `json:"promo_price,omitempty"`
+	PromoPrice float64 `json:"promo_price,omitempty"`
 	// Weight holds the value of the "weight" field.
 	Weight uint32 `json:"weight,omitempty"`
 	// Quantity holds the value of the "quantity" field.
@@ -39,6 +39,8 @@ type Product struct {
 	Description string `json:"description,omitempty"`
 	// Image holds the value of the "image" field.
 	Image string `json:"image,omitempty"`
+	// BestDeal holds the value of the "best_deal" field.
+	BestDeal uint64 `json:"best_deal,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProductQuery when eager-loading is set.
 	Edges                           ProductEdges `json:"edges"`
@@ -128,7 +130,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case product.FieldPrice, product.FieldPromoPrice:
 			values[i] = new(sql.NullFloat64)
-		case product.FieldID, product.FieldWeight, product.FieldQuantity:
+		case product.FieldID, product.FieldWeight, product.FieldQuantity, product.FieldBestDeal:
 			values[i] = new(sql.NullInt64)
 		case product.FieldName, product.FieldUnit, product.FieldDescription, product.FieldImage:
 			values[i] = new(sql.NullString)
@@ -189,8 +191,7 @@ func (pr *Product) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field promo_price", values[i])
 			} else if value.Valid {
-				pr.PromoPrice = new(float64)
-				*pr.PromoPrice = value.Float64
+				pr.PromoPrice = value.Float64
 			}
 		case product.FieldWeight:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -221,6 +222,12 @@ func (pr *Product) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field image", values[i])
 			} else if value.Valid {
 				pr.Image = value.String
+			}
+		case product.FieldBestDeal:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field best_deal", values[i])
+			} else if value.Valid {
+				pr.BestDeal = uint64(value.Int64)
 			}
 		case product.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -308,10 +315,8 @@ func (pr *Product) String() string {
 	builder.WriteString("price=")
 	builder.WriteString(fmt.Sprintf("%v", pr.Price))
 	builder.WriteString(", ")
-	if v := pr.PromoPrice; v != nil {
-		builder.WriteString("promo_price=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
+	builder.WriteString("promo_price=")
+	builder.WriteString(fmt.Sprintf("%v", pr.PromoPrice))
 	builder.WriteString(", ")
 	builder.WriteString("weight=")
 	builder.WriteString(fmt.Sprintf("%v", pr.Weight))
@@ -327,6 +332,9 @@ func (pr *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("image=")
 	builder.WriteString(pr.Image)
+	builder.WriteString(", ")
+	builder.WriteString("best_deal=")
+	builder.WriteString(fmt.Sprintf("%v", pr.BestDeal))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -68,8 +68,10 @@ func (h *ProductHandler) FetchByIDMerchantProduct() fiber.Handler {
 
 func (h *ProductHandler) Fetch() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
 
-		result, err := h.service.FetchAll()
+		result, err := h.service.FetchAll(limit, offset)
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(err))
@@ -80,10 +82,12 @@ func (h *ProductHandler) Fetch() fiber.Handler {
 
 func (h *ProductHandler) FetchBySlugMerchantCategoryProducts() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
 
 		if c.Params("merchant") == "retailer" {
 			if c.Params("cat") == "major" {
-				products, err := h.service.FetchBySlugRetailMerchantCategoryMajor(c.Params("slug"))
+				products, err := h.service.FetchBySlugRetailMerchantCategoryMajor(c.Params("slug"), limit, offset)
 
 				if err != nil {
 
@@ -93,7 +97,7 @@ func (h *ProductHandler) FetchBySlugMerchantCategoryProducts() fiber.Handler {
 			}
 
 			if c.Params("cat") == "minor" {
-				products, err := h.service.FetchBySlugRetailMerchantCategoryMinor(c.Params("slug"))
+				products, err := h.service.FetchBySlugRetailMerchantCategoryMinor(c.Params("slug"), limit, offset)
 
 				if err != nil {
 
@@ -105,7 +109,7 @@ func (h *ProductHandler) FetchBySlugMerchantCategoryProducts() fiber.Handler {
 		}
 		if c.Params("merchant") == "supplier" {
 			if c.Params("cat") == "major" {
-				products, err := h.service.FetchBySlugSupplierMerchantCategoryMajor(c.Params("slug"))
+				products, err := h.service.FetchBySlugSupplierMerchantCategoryMajor(c.Params("slug"), limit, offset)
 
 				if err != nil {
 
@@ -115,7 +119,7 @@ func (h *ProductHandler) FetchBySlugMerchantCategoryProducts() fiber.Handler {
 			}
 
 			if c.Params("cat") == "minor" {
-				products, err := h.service.FetchBySlugSupplierMerchantCategoryMinor(c.Params("slug"))
+				products, err := h.service.FetchBySlugSupplierMerchantCategoryMinor(c.Params("slug"), limit, offset)
 
 				if err != nil {
 
@@ -129,12 +133,52 @@ func (h *ProductHandler) FetchBySlugMerchantCategoryProducts() fiber.Handler {
 
 	}
 }
+
+func (h *ProductHandler) FetchAllBySlugMerchantCategoryProducts() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+
+		if c.Params("cat") == "major" {
+			products, err := h.service.FetchAllBySlugCategoryMajor(
+				c.Params("merchant"), c.Params("slug"), limit, offset,
+			)
+
+			if err != nil {
+
+				return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(err))
+			}
+
+			return c.JSON(presenters.ProductsWithMerchantResponse(products))
+		}
+
+		if c.Params("cat") == "minor" {
+			products, err := h.service.FetchAllBySlugCategoryMinor(
+				c.Params("merchant"), c.Params("slug"), limit, offset,
+			)
+
+			if err != nil {
+
+				return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(err))
+			}
+
+			return c.JSON(presenters.ProductsWithMerchantResponse(products))
+		}
+
+		return c.Status(fiber.StatusNotFound).JSON("Not Found")
+
+	}
+}
+
 func (h *ProductHandler) FetchAllMerchantCategoryMajorProducts() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+
 		if c.Params("merchant") == "retailer" {
 
-			products, err := h.service.FetchAllRetailMerchantCategoryMajor()
+			products, err := h.service.FetchAllRetailMerchantCategoryMajor(limit, offset)
 
 			if err != nil {
 
@@ -145,7 +189,7 @@ func (h *ProductHandler) FetchAllMerchantCategoryMajorProducts() fiber.Handler {
 
 		if c.Params("merchant") == "supplier" {
 
-			products, err := h.service.FetchAllSupplierMerchantCategoryMajor()
+			products, err := h.service.FetchAllSupplierMerchantCategoryMajor(limit, offset)
 
 			if err != nil {
 
@@ -162,10 +206,12 @@ func (h *ProductHandler) FetchAllMerchantCategoryMajorProducts() fiber.Handler {
 
 func (h *ProductHandler) FetchMerchantProducts() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
 		id, _ := c.ParamsInt("id")
+
 		if c.Params("merchant") == "supplier" {
-			products, err := h.service.FetchAllBySupplier(id)
+			products, err := h.service.FetchAllBySupplier(id, limit, offset)
 			if err != nil {
 
 				return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(err))
@@ -173,7 +219,7 @@ func (h *ProductHandler) FetchMerchantProducts() fiber.Handler {
 			return c.JSON(presenters.ProductsWithMerchantResponse(products))
 		}
 		if c.Params("merchant") == "retailer" {
-			products, err := h.service.FetchAllByRetailer(id)
+			products, err := h.service.FetchAllByRetailer(id, limit, offset)
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(err))
 			}
@@ -183,12 +229,26 @@ func (h *ProductHandler) FetchMerchantProducts() fiber.Handler {
 	}
 }
 
+func (h *ProductHandler) FetchMerchantBestSellerProducts() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+		id, _ := c.ParamsInt("id")
+
+		products, err := h.service.FetchBestSellerByMerchant(id, limit, offset)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(err))
+		}
+		return c.JSON(presenters.ProductsWithMerchantResponse(products))
+		
+	}
+}
+
 func (h *ProductHandler) FetchBestSellerProducts() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
 		if c.Params("merchantType") == "supplier" {
-			limit, _ := strconv.Atoi(c.Query("limit"))
-			offset, _ := strconv.Atoi(c.Query("offset", "0"))
 			products, err := h.service.FetchBestSellerBySupplier(limit, offset)
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(err))
@@ -197,7 +257,7 @@ func (h *ProductHandler) FetchBestSellerProducts() fiber.Handler {
 		}
 
 		if c.Params("merchantType") == "retailer" {
-			products, err := h.service.FetchBestSellerByRetailer()
+			products, err := h.service.FetchBestSellerByRetailer(limit, offset)
 
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(err))
@@ -274,7 +334,10 @@ func (h *ProductHandler) Create() fiber.Handler {
 func (h *ProductHandler) Update() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		result, err := h.service.FetchAll()
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+
+		result, err := h.service.FetchAll(limit, offset)
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))

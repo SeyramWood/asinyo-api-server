@@ -258,21 +258,25 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 
 			r.Get("/", h.Fetch()).Name("all")
 
-			r.Get("/category/major", majorH.Fetch()).Name("major")
+			r.Get("/category/major", majorH.Fetch())
 
-			r.Get("/category/minor", minorH.Fetch()).Name("minor")
+			r.Get("/category/minor", minorH.Fetch())
 
 			r.Get("/best-seller/:merchantType", h.FetchBestSellerProducts())
 
-			r.Get("/:merchant/:id", h.FetchMerchantProducts()).Name("merchant.all")
+			r.Get("/merchant-best-seller/:id", h.FetchMerchantBestSellerProducts())
+
+			r.Get("/:merchant/:id", h.FetchMerchantProducts())
 
 			r.Get("/category/major/:merchant", h.FetchAllMerchantCategoryMajorProducts())
 
 			r.Get("/category/:merchant/:cat/:slug", h.FetchBySlugMerchantCategoryProducts())
 
+			r.Get("/category/:merchant/:cat/:slug/all", h.FetchAllBySlugMerchantCategoryProducts())
+
 			r.Get("/:merchant/:id/:slug", h.FetchByIDMerchantProduct())
 
-			r.Post("/create/:merchant", request.ValidateProduct(), h.Create()).Name("create")
+			r.Post("/create/:merchant", request.ValidateProduct(), h.Create())
 
 		}, "products.",
 	)

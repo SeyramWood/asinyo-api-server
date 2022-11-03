@@ -194,9 +194,11 @@ func (r repository) ReadAll() ([]*ent.MerchantStore, error) {
 	// TODO implement me
 	panic("implement me")
 }
-func (r repository) ReadAllByMerchant(merchantType string) ([]*ent.MerchantStore, error) {
+func (r repository) ReadAllByMerchant(merchantType string, limit, offset int) ([]*ent.MerchantStore, error) {
 	if merchantType == "supplier" {
 		results, err := r.db.MerchantStore.Query().
+			Limit(limit).
+			Offset(offset).
 			Order(ent.Desc(merchantstore.FieldCreatedAt)).
 			Where(merchantstore.MerchantType(merchantType)).
 			WithMerchant(
