@@ -10,12 +10,14 @@ import (
 	"time"
 
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/agentrequest"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -46,6 +48,7 @@ const (
 	TypeAgentRequest         = "AgentRequest"
 	TypeCustomer             = "Customer"
 	TypeFavourite            = "Favourite"
+	TypeLogistic             = "Logistic"
 	TypeMerchant             = "Merchant"
 	TypeMerchantStore        = "MerchantStore"
 	TypeOrder                = "Order"
@@ -61,34 +64,38 @@ const (
 // AddressMutation represents an operation that mutates the Address nodes in the graph.
 type AddressMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	created_at        *time.Time
-	updated_at        *time.Time
-	last_name         *string
-	other_name        *string
-	phone             *string
-	other_phone       *string
-	digital_address   *string
-	city              *string
-	_Region           *string
-	address           *string
-	other_information *string
-	_default          *bool
-	clearedFields     map[string]struct{}
-	merchant          *int
-	clearedmerchant   bool
-	agent             *int
-	clearedagent      bool
-	customer          *int
-	clearedcustomer   bool
-	orders            map[int]struct{}
-	removedorders     map[int]struct{}
-	clearedorders     bool
-	done              bool
-	oldValue          func(context.Context) (*Address, error)
-	predicates        []predicate.Address
+	op              Op
+	typ             string
+	id              *int
+	created_at      *time.Time
+	updated_at      *time.Time
+	last_name       *string
+	other_name      *string
+	phone           *string
+	other_phone     *string
+	digital_address *string
+	street_name     *string
+	street_number   *string
+	city            *string
+	district        *string
+	_Region         *string
+	_Country        *string
+	address         *string
+	_default        *bool
+	coordinate      **services.Coordinate
+	clearedFields   map[string]struct{}
+	merchant        *int
+	clearedmerchant bool
+	agent           *int
+	clearedagent    bool
+	customer        *int
+	clearedcustomer bool
+	orders          map[int]struct{}
+	removedorders   map[int]struct{}
+	clearedorders   bool
+	done            bool
+	oldValue        func(context.Context) (*Address, error)
+	predicates      []predicate.Address
 }
 
 var _ ent.Mutation = (*AddressMutation)(nil)
@@ -386,7 +393,7 @@ func (m *AddressMutation) OtherPhone() (r string, exists bool) {
 // OldOtherPhone returns the old "other_phone" field's value of the Address entity.
 // If the Address object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AddressMutation) OldOtherPhone(ctx context.Context) (v *string, err error) {
+func (m *AddressMutation) OldOtherPhone(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldOtherPhone is only allowed on UpdateOne operations")
 	}
@@ -435,7 +442,7 @@ func (m *AddressMutation) DigitalAddress() (r string, exists bool) {
 // OldDigitalAddress returns the old "digital_address" field's value of the Address entity.
 // If the Address object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AddressMutation) OldDigitalAddress(ctx context.Context) (v *string, err error) {
+func (m *AddressMutation) OldDigitalAddress(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldDigitalAddress is only allowed on UpdateOne operations")
 	}
@@ -465,6 +472,104 @@ func (m *AddressMutation) DigitalAddressCleared() bool {
 func (m *AddressMutation) ResetDigitalAddress() {
 	m.digital_address = nil
 	delete(m.clearedFields, address.FieldDigitalAddress)
+}
+
+// SetStreetName sets the "street_name" field.
+func (m *AddressMutation) SetStreetName(s string) {
+	m.street_name = &s
+}
+
+// StreetName returns the value of the "street_name" field in the mutation.
+func (m *AddressMutation) StreetName() (r string, exists bool) {
+	v := m.street_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStreetName returns the old "street_name" field's value of the Address entity.
+// If the Address object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AddressMutation) OldStreetName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStreetName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStreetName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStreetName: %w", err)
+	}
+	return oldValue.StreetName, nil
+}
+
+// ClearStreetName clears the value of the "street_name" field.
+func (m *AddressMutation) ClearStreetName() {
+	m.street_name = nil
+	m.clearedFields[address.FieldStreetName] = struct{}{}
+}
+
+// StreetNameCleared returns if the "street_name" field was cleared in this mutation.
+func (m *AddressMutation) StreetNameCleared() bool {
+	_, ok := m.clearedFields[address.FieldStreetName]
+	return ok
+}
+
+// ResetStreetName resets all changes to the "street_name" field.
+func (m *AddressMutation) ResetStreetName() {
+	m.street_name = nil
+	delete(m.clearedFields, address.FieldStreetName)
+}
+
+// SetStreetNumber sets the "street_number" field.
+func (m *AddressMutation) SetStreetNumber(s string) {
+	m.street_number = &s
+}
+
+// StreetNumber returns the value of the "street_number" field in the mutation.
+func (m *AddressMutation) StreetNumber() (r string, exists bool) {
+	v := m.street_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStreetNumber returns the old "street_number" field's value of the Address entity.
+// If the Address object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AddressMutation) OldStreetNumber(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStreetNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStreetNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStreetNumber: %w", err)
+	}
+	return oldValue.StreetNumber, nil
+}
+
+// ClearStreetNumber clears the value of the "street_number" field.
+func (m *AddressMutation) ClearStreetNumber() {
+	m.street_number = nil
+	m.clearedFields[address.FieldStreetNumber] = struct{}{}
+}
+
+// StreetNumberCleared returns if the "street_number" field was cleared in this mutation.
+func (m *AddressMutation) StreetNumberCleared() bool {
+	_, ok := m.clearedFields[address.FieldStreetNumber]
+	return ok
+}
+
+// ResetStreetNumber resets all changes to the "street_number" field.
+func (m *AddressMutation) ResetStreetNumber() {
+	m.street_number = nil
+	delete(m.clearedFields, address.FieldStreetNumber)
 }
 
 // SetCity sets the "city" field.
@@ -503,6 +608,55 @@ func (m *AddressMutation) ResetCity() {
 	m.city = nil
 }
 
+// SetDistrict sets the "district" field.
+func (m *AddressMutation) SetDistrict(s string) {
+	m.district = &s
+}
+
+// District returns the value of the "district" field in the mutation.
+func (m *AddressMutation) District() (r string, exists bool) {
+	v := m.district
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDistrict returns the old "district" field's value of the Address entity.
+// If the Address object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AddressMutation) OldDistrict(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDistrict is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDistrict requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDistrict: %w", err)
+	}
+	return oldValue.District, nil
+}
+
+// ClearDistrict clears the value of the "district" field.
+func (m *AddressMutation) ClearDistrict() {
+	m.district = nil
+	m.clearedFields[address.FieldDistrict] = struct{}{}
+}
+
+// DistrictCleared returns if the "district" field was cleared in this mutation.
+func (m *AddressMutation) DistrictCleared() bool {
+	_, ok := m.clearedFields[address.FieldDistrict]
+	return ok
+}
+
+// ResetDistrict resets all changes to the "district" field.
+func (m *AddressMutation) ResetDistrict() {
+	m.district = nil
+	delete(m.clearedFields, address.FieldDistrict)
+}
+
 // SetRegion sets the "Region" field.
 func (m *AddressMutation) SetRegion(s string) {
 	m._Region = &s
@@ -537,6 +691,42 @@ func (m *AddressMutation) OldRegion(ctx context.Context) (v string, err error) {
 // ResetRegion resets all changes to the "Region" field.
 func (m *AddressMutation) ResetRegion() {
 	m._Region = nil
+}
+
+// SetCountry sets the "Country" field.
+func (m *AddressMutation) SetCountry(s string) {
+	m._Country = &s
+}
+
+// Country returns the value of the "Country" field in the mutation.
+func (m *AddressMutation) Country() (r string, exists bool) {
+	v := m._Country
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCountry returns the old "Country" field's value of the Address entity.
+// If the Address object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AddressMutation) OldCountry(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCountry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCountry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCountry: %w", err)
+	}
+	return oldValue.Country, nil
+}
+
+// ResetCountry resets all changes to the "Country" field.
+func (m *AddressMutation) ResetCountry() {
+	m._Country = nil
 }
 
 // SetAddress sets the "address" field.
@@ -575,55 +765,6 @@ func (m *AddressMutation) ResetAddress() {
 	m.address = nil
 }
 
-// SetOtherInformation sets the "other_information" field.
-func (m *AddressMutation) SetOtherInformation(s string) {
-	m.other_information = &s
-}
-
-// OtherInformation returns the value of the "other_information" field in the mutation.
-func (m *AddressMutation) OtherInformation() (r string, exists bool) {
-	v := m.other_information
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldOtherInformation returns the old "other_information" field's value of the Address entity.
-// If the Address object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AddressMutation) OldOtherInformation(ctx context.Context) (v *string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldOtherInformation is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldOtherInformation requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldOtherInformation: %w", err)
-	}
-	return oldValue.OtherInformation, nil
-}
-
-// ClearOtherInformation clears the value of the "other_information" field.
-func (m *AddressMutation) ClearOtherInformation() {
-	m.other_information = nil
-	m.clearedFields[address.FieldOtherInformation] = struct{}{}
-}
-
-// OtherInformationCleared returns if the "other_information" field was cleared in this mutation.
-func (m *AddressMutation) OtherInformationCleared() bool {
-	_, ok := m.clearedFields[address.FieldOtherInformation]
-	return ok
-}
-
-// ResetOtherInformation resets all changes to the "other_information" field.
-func (m *AddressMutation) ResetOtherInformation() {
-	m.other_information = nil
-	delete(m.clearedFields, address.FieldOtherInformation)
-}
-
 // SetDefault sets the "default" field.
 func (m *AddressMutation) SetDefault(b bool) {
 	m._default = &b
@@ -658,6 +799,55 @@ func (m *AddressMutation) OldDefault(ctx context.Context) (v bool, err error) {
 // ResetDefault resets all changes to the "default" field.
 func (m *AddressMutation) ResetDefault() {
 	m._default = nil
+}
+
+// SetCoordinate sets the "coordinate" field.
+func (m *AddressMutation) SetCoordinate(s *services.Coordinate) {
+	m.coordinate = &s
+}
+
+// Coordinate returns the value of the "coordinate" field in the mutation.
+func (m *AddressMutation) Coordinate() (r *services.Coordinate, exists bool) {
+	v := m.coordinate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCoordinate returns the old "coordinate" field's value of the Address entity.
+// If the Address object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AddressMutation) OldCoordinate(ctx context.Context) (v *services.Coordinate, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCoordinate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCoordinate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCoordinate: %w", err)
+	}
+	return oldValue.Coordinate, nil
+}
+
+// ClearCoordinate clears the value of the "coordinate" field.
+func (m *AddressMutation) ClearCoordinate() {
+	m.coordinate = nil
+	m.clearedFields[address.FieldCoordinate] = struct{}{}
+}
+
+// CoordinateCleared returns if the "coordinate" field was cleared in this mutation.
+func (m *AddressMutation) CoordinateCleared() bool {
+	_, ok := m.clearedFields[address.FieldCoordinate]
+	return ok
+}
+
+// ResetCoordinate resets all changes to the "coordinate" field.
+func (m *AddressMutation) ResetCoordinate() {
+	m.coordinate = nil
+	delete(m.clearedFields, address.FieldCoordinate)
 }
 
 // SetMerchantID sets the "merchant" edge to the Merchant entity by id.
@@ -850,7 +1040,7 @@ func (m *AddressMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AddressMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, address.FieldCreatedAt)
 	}
@@ -872,20 +1062,32 @@ func (m *AddressMutation) Fields() []string {
 	if m.digital_address != nil {
 		fields = append(fields, address.FieldDigitalAddress)
 	}
+	if m.street_name != nil {
+		fields = append(fields, address.FieldStreetName)
+	}
+	if m.street_number != nil {
+		fields = append(fields, address.FieldStreetNumber)
+	}
 	if m.city != nil {
 		fields = append(fields, address.FieldCity)
+	}
+	if m.district != nil {
+		fields = append(fields, address.FieldDistrict)
 	}
 	if m._Region != nil {
 		fields = append(fields, address.FieldRegion)
 	}
+	if m._Country != nil {
+		fields = append(fields, address.FieldCountry)
+	}
 	if m.address != nil {
 		fields = append(fields, address.FieldAddress)
 	}
-	if m.other_information != nil {
-		fields = append(fields, address.FieldOtherInformation)
-	}
 	if m._default != nil {
 		fields = append(fields, address.FieldDefault)
+	}
+	if m.coordinate != nil {
+		fields = append(fields, address.FieldCoordinate)
 	}
 	return fields
 }
@@ -909,16 +1111,24 @@ func (m *AddressMutation) Field(name string) (ent.Value, bool) {
 		return m.OtherPhone()
 	case address.FieldDigitalAddress:
 		return m.DigitalAddress()
+	case address.FieldStreetName:
+		return m.StreetName()
+	case address.FieldStreetNumber:
+		return m.StreetNumber()
 	case address.FieldCity:
 		return m.City()
+	case address.FieldDistrict:
+		return m.District()
 	case address.FieldRegion:
 		return m.Region()
+	case address.FieldCountry:
+		return m.Country()
 	case address.FieldAddress:
 		return m.Address()
-	case address.FieldOtherInformation:
-		return m.OtherInformation()
 	case address.FieldDefault:
 		return m.Default()
+	case address.FieldCoordinate:
+		return m.Coordinate()
 	}
 	return nil, false
 }
@@ -942,16 +1152,24 @@ func (m *AddressMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldOtherPhone(ctx)
 	case address.FieldDigitalAddress:
 		return m.OldDigitalAddress(ctx)
+	case address.FieldStreetName:
+		return m.OldStreetName(ctx)
+	case address.FieldStreetNumber:
+		return m.OldStreetNumber(ctx)
 	case address.FieldCity:
 		return m.OldCity(ctx)
+	case address.FieldDistrict:
+		return m.OldDistrict(ctx)
 	case address.FieldRegion:
 		return m.OldRegion(ctx)
+	case address.FieldCountry:
+		return m.OldCountry(ctx)
 	case address.FieldAddress:
 		return m.OldAddress(ctx)
-	case address.FieldOtherInformation:
-		return m.OldOtherInformation(ctx)
 	case address.FieldDefault:
 		return m.OldDefault(ctx)
+	case address.FieldCoordinate:
+		return m.OldCoordinate(ctx)
 	}
 	return nil, fmt.Errorf("unknown Address field %s", name)
 }
@@ -1010,12 +1228,33 @@ func (m *AddressMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDigitalAddress(v)
 		return nil
+	case address.FieldStreetName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStreetName(v)
+		return nil
+	case address.FieldStreetNumber:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStreetNumber(v)
+		return nil
 	case address.FieldCity:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCity(v)
+		return nil
+	case address.FieldDistrict:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDistrict(v)
 		return nil
 	case address.FieldRegion:
 		v, ok := value.(string)
@@ -1024,6 +1263,13 @@ func (m *AddressMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRegion(v)
 		return nil
+	case address.FieldCountry:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCountry(v)
+		return nil
 	case address.FieldAddress:
 		v, ok := value.(string)
 		if !ok {
@@ -1031,19 +1277,19 @@ func (m *AddressMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAddress(v)
 		return nil
-	case address.FieldOtherInformation:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetOtherInformation(v)
-		return nil
 	case address.FieldDefault:
 		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDefault(v)
+		return nil
+	case address.FieldCoordinate:
+		v, ok := value.(*services.Coordinate)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCoordinate(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Address field %s", name)
@@ -1081,8 +1327,17 @@ func (m *AddressMutation) ClearedFields() []string {
 	if m.FieldCleared(address.FieldDigitalAddress) {
 		fields = append(fields, address.FieldDigitalAddress)
 	}
-	if m.FieldCleared(address.FieldOtherInformation) {
-		fields = append(fields, address.FieldOtherInformation)
+	if m.FieldCleared(address.FieldStreetName) {
+		fields = append(fields, address.FieldStreetName)
+	}
+	if m.FieldCleared(address.FieldStreetNumber) {
+		fields = append(fields, address.FieldStreetNumber)
+	}
+	if m.FieldCleared(address.FieldDistrict) {
+		fields = append(fields, address.FieldDistrict)
+	}
+	if m.FieldCleared(address.FieldCoordinate) {
+		fields = append(fields, address.FieldCoordinate)
 	}
 	return fields
 }
@@ -1104,8 +1359,17 @@ func (m *AddressMutation) ClearField(name string) error {
 	case address.FieldDigitalAddress:
 		m.ClearDigitalAddress()
 		return nil
-	case address.FieldOtherInformation:
-		m.ClearOtherInformation()
+	case address.FieldStreetName:
+		m.ClearStreetName()
+		return nil
+	case address.FieldStreetNumber:
+		m.ClearStreetNumber()
+		return nil
+	case address.FieldDistrict:
+		m.ClearDistrict()
+		return nil
+	case address.FieldCoordinate:
+		m.ClearCoordinate()
 		return nil
 	}
 	return fmt.Errorf("unknown Address nullable field %s", name)
@@ -1136,20 +1400,32 @@ func (m *AddressMutation) ResetField(name string) error {
 	case address.FieldDigitalAddress:
 		m.ResetDigitalAddress()
 		return nil
+	case address.FieldStreetName:
+		m.ResetStreetName()
+		return nil
+	case address.FieldStreetNumber:
+		m.ResetStreetNumber()
+		return nil
 	case address.FieldCity:
 		m.ResetCity()
+		return nil
+	case address.FieldDistrict:
+		m.ResetDistrict()
 		return nil
 	case address.FieldRegion:
 		m.ResetRegion()
 		return nil
+	case address.FieldCountry:
+		m.ResetCountry()
+		return nil
 	case address.FieldAddress:
 		m.ResetAddress()
 		return nil
-	case address.FieldOtherInformation:
-		m.ResetOtherInformation()
-		return nil
 	case address.FieldDefault:
 		m.ResetDefault()
+		return nil
+	case address.FieldCoordinate:
+		m.ResetCoordinate()
 		return nil
 	}
 	return fmt.Errorf("unknown Address field %s", name)
@@ -5573,6 +5849,613 @@ func (m *FavouriteMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Favourite edge %s", name)
 }
 
+// LogisticMutation represents an operation that mutates the Logistic nodes in the graph.
+type LogisticMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	created_at    *time.Time
+	updated_at    *time.Time
+	tracking_link *string
+	tasks         **models.TookanMultiTaskResponse
+	clearedFields map[string]struct{}
+	_order        map[int]struct{}
+	removed_order map[int]struct{}
+	cleared_order bool
+	done          bool
+	oldValue      func(context.Context) (*Logistic, error)
+	predicates    []predicate.Logistic
+}
+
+var _ ent.Mutation = (*LogisticMutation)(nil)
+
+// logisticOption allows management of the mutation configuration using functional options.
+type logisticOption func(*LogisticMutation)
+
+// newLogisticMutation creates new mutation for the Logistic entity.
+func newLogisticMutation(c config, op Op, opts ...logisticOption) *LogisticMutation {
+	m := &LogisticMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeLogistic,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withLogisticID sets the ID field of the mutation.
+func withLogisticID(id int) logisticOption {
+	return func(m *LogisticMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Logistic
+		)
+		m.oldValue = func(ctx context.Context) (*Logistic, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Logistic.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withLogistic sets the old Logistic of the mutation.
+func withLogistic(node *Logistic) logisticOption {
+	return func(m *LogisticMutation) {
+		m.oldValue = func(context.Context) (*Logistic, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m LogisticMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m LogisticMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *LogisticMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *LogisticMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Logistic.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *LogisticMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *LogisticMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Logistic entity.
+// If the Logistic object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LogisticMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *LogisticMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *LogisticMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *LogisticMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Logistic entity.
+// If the Logistic object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LogisticMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *LogisticMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetTrackingLink sets the "tracking_link" field.
+func (m *LogisticMutation) SetTrackingLink(s string) {
+	m.tracking_link = &s
+}
+
+// TrackingLink returns the value of the "tracking_link" field in the mutation.
+func (m *LogisticMutation) TrackingLink() (r string, exists bool) {
+	v := m.tracking_link
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrackingLink returns the old "tracking_link" field's value of the Logistic entity.
+// If the Logistic object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LogisticMutation) OldTrackingLink(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrackingLink is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrackingLink requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrackingLink: %w", err)
+	}
+	return oldValue.TrackingLink, nil
+}
+
+// ClearTrackingLink clears the value of the "tracking_link" field.
+func (m *LogisticMutation) ClearTrackingLink() {
+	m.tracking_link = nil
+	m.clearedFields[logistic.FieldTrackingLink] = struct{}{}
+}
+
+// TrackingLinkCleared returns if the "tracking_link" field was cleared in this mutation.
+func (m *LogisticMutation) TrackingLinkCleared() bool {
+	_, ok := m.clearedFields[logistic.FieldTrackingLink]
+	return ok
+}
+
+// ResetTrackingLink resets all changes to the "tracking_link" field.
+func (m *LogisticMutation) ResetTrackingLink() {
+	m.tracking_link = nil
+	delete(m.clearedFields, logistic.FieldTrackingLink)
+}
+
+// SetTasks sets the "tasks" field.
+func (m *LogisticMutation) SetTasks(mmtr *models.TookanMultiTaskResponse) {
+	m.tasks = &mmtr
+}
+
+// Tasks returns the value of the "tasks" field in the mutation.
+func (m *LogisticMutation) Tasks() (r *models.TookanMultiTaskResponse, exists bool) {
+	v := m.tasks
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTasks returns the old "tasks" field's value of the Logistic entity.
+// If the Logistic object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LogisticMutation) OldTasks(ctx context.Context) (v *models.TookanMultiTaskResponse, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTasks is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTasks requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTasks: %w", err)
+	}
+	return oldValue.Tasks, nil
+}
+
+// ClearTasks clears the value of the "tasks" field.
+func (m *LogisticMutation) ClearTasks() {
+	m.tasks = nil
+	m.clearedFields[logistic.FieldTasks] = struct{}{}
+}
+
+// TasksCleared returns if the "tasks" field was cleared in this mutation.
+func (m *LogisticMutation) TasksCleared() bool {
+	_, ok := m.clearedFields[logistic.FieldTasks]
+	return ok
+}
+
+// ResetTasks resets all changes to the "tasks" field.
+func (m *LogisticMutation) ResetTasks() {
+	m.tasks = nil
+	delete(m.clearedFields, logistic.FieldTasks)
+}
+
+// AddOrderIDs adds the "order" edge to the Order entity by ids.
+func (m *LogisticMutation) AddOrderIDs(ids ...int) {
+	if m._order == nil {
+		m._order = make(map[int]struct{})
+	}
+	for i := range ids {
+		m._order[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOrder clears the "order" edge to the Order entity.
+func (m *LogisticMutation) ClearOrder() {
+	m.cleared_order = true
+}
+
+// OrderCleared reports if the "order" edge to the Order entity was cleared.
+func (m *LogisticMutation) OrderCleared() bool {
+	return m.cleared_order
+}
+
+// RemoveOrderIDs removes the "order" edge to the Order entity by IDs.
+func (m *LogisticMutation) RemoveOrderIDs(ids ...int) {
+	if m.removed_order == nil {
+		m.removed_order = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m._order, ids[i])
+		m.removed_order[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOrder returns the removed IDs of the "order" edge to the Order entity.
+func (m *LogisticMutation) RemovedOrderIDs() (ids []int) {
+	for id := range m.removed_order {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OrderIDs returns the "order" edge IDs in the mutation.
+func (m *LogisticMutation) OrderIDs() (ids []int) {
+	for id := range m._order {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOrder resets all changes to the "order" edge.
+func (m *LogisticMutation) ResetOrder() {
+	m._order = nil
+	m.cleared_order = false
+	m.removed_order = nil
+}
+
+// Where appends a list predicates to the LogisticMutation builder.
+func (m *LogisticMutation) Where(ps ...predicate.Logistic) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *LogisticMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Logistic).
+func (m *LogisticMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *LogisticMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, logistic.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, logistic.FieldUpdatedAt)
+	}
+	if m.tracking_link != nil {
+		fields = append(fields, logistic.FieldTrackingLink)
+	}
+	if m.tasks != nil {
+		fields = append(fields, logistic.FieldTasks)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *LogisticMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case logistic.FieldCreatedAt:
+		return m.CreatedAt()
+	case logistic.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case logistic.FieldTrackingLink:
+		return m.TrackingLink()
+	case logistic.FieldTasks:
+		return m.Tasks()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *LogisticMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case logistic.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case logistic.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case logistic.FieldTrackingLink:
+		return m.OldTrackingLink(ctx)
+	case logistic.FieldTasks:
+		return m.OldTasks(ctx)
+	}
+	return nil, fmt.Errorf("unknown Logistic field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LogisticMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case logistic.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case logistic.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case logistic.FieldTrackingLink:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrackingLink(v)
+		return nil
+	case logistic.FieldTasks:
+		v, ok := value.(*models.TookanMultiTaskResponse)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTasks(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Logistic field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *LogisticMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *LogisticMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LogisticMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Logistic numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *LogisticMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(logistic.FieldTrackingLink) {
+		fields = append(fields, logistic.FieldTrackingLink)
+	}
+	if m.FieldCleared(logistic.FieldTasks) {
+		fields = append(fields, logistic.FieldTasks)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *LogisticMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *LogisticMutation) ClearField(name string) error {
+	switch name {
+	case logistic.FieldTrackingLink:
+		m.ClearTrackingLink()
+		return nil
+	case logistic.FieldTasks:
+		m.ClearTasks()
+		return nil
+	}
+	return fmt.Errorf("unknown Logistic nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *LogisticMutation) ResetField(name string) error {
+	switch name {
+	case logistic.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case logistic.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case logistic.FieldTrackingLink:
+		m.ResetTrackingLink()
+		return nil
+	case logistic.FieldTasks:
+		m.ResetTasks()
+		return nil
+	}
+	return fmt.Errorf("unknown Logistic field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *LogisticMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m._order != nil {
+		edges = append(edges, logistic.EdgeOrder)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *LogisticMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case logistic.EdgeOrder:
+		ids := make([]ent.Value, 0, len(m._order))
+		for id := range m._order {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *LogisticMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removed_order != nil {
+		edges = append(edges, logistic.EdgeOrder)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *LogisticMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case logistic.EdgeOrder:
+		ids := make([]ent.Value, 0, len(m.removed_order))
+		for id := range m.removed_order {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *LogisticMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleared_order {
+		edges = append(edges, logistic.EdgeOrder)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *LogisticMutation) EdgeCleared(name string) bool {
+	switch name {
+	case logistic.EdgeOrder:
+		return m.cleared_order
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *LogisticMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Logistic unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *LogisticMutation) ResetEdge(name string) error {
+	switch name {
+	case logistic.EdgeOrder:
+		m.ResetOrder()
+		return nil
+	}
+	return fmt.Errorf("unknown Logistic edge %s", name)
+}
+
 // MerchantMutation represents an operation that mutates the Merchant nodes in the graph.
 type MerchantMutation struct {
 	config
@@ -6705,16 +7588,15 @@ type MerchantStoreMutation struct {
 	updated_at           *time.Time
 	name                 *string
 	about                *string
-	desc_title           *string
+	slogan               *string
 	description          *string
 	logo                 *string
 	images               *[]string
-	region               *string
-	district             *string
-	city                 *string
 	default_account      *merchantstore.DefaultAccount
 	bank_account         **models.MerchantBankAccount
 	momo_account         **models.MerchantMomoAccount
+	address              **models.MerchantStoreAddress
+	coordinate           **services.Coordinate
 	merchant_type        *string
 	permit_agent         *bool
 	clearedFields        map[string]struct{}
@@ -6978,40 +7860,40 @@ func (m *MerchantStoreMutation) ResetAbout() {
 	m.about = nil
 }
 
-// SetDescTitle sets the "desc_title" field.
-func (m *MerchantStoreMutation) SetDescTitle(s string) {
-	m.desc_title = &s
+// SetSlogan sets the "slogan" field.
+func (m *MerchantStoreMutation) SetSlogan(s string) {
+	m.slogan = &s
 }
 
-// DescTitle returns the value of the "desc_title" field in the mutation.
-func (m *MerchantStoreMutation) DescTitle() (r string, exists bool) {
-	v := m.desc_title
+// Slogan returns the value of the "slogan" field in the mutation.
+func (m *MerchantStoreMutation) Slogan() (r string, exists bool) {
+	v := m.slogan
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDescTitle returns the old "desc_title" field's value of the MerchantStore entity.
+// OldSlogan returns the old "slogan" field's value of the MerchantStore entity.
 // If the MerchantStore object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MerchantStoreMutation) OldDescTitle(ctx context.Context) (v string, err error) {
+func (m *MerchantStoreMutation) OldSlogan(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDescTitle is only allowed on UpdateOne operations")
+		return v, errors.New("OldSlogan is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDescTitle requires an ID field in the mutation")
+		return v, errors.New("OldSlogan requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDescTitle: %w", err)
+		return v, fmt.Errorf("querying old value for OldSlogan: %w", err)
 	}
-	return oldValue.DescTitle, nil
+	return oldValue.Slogan, nil
 }
 
-// ResetDescTitle resets all changes to the "desc_title" field.
-func (m *MerchantStoreMutation) ResetDescTitle() {
-	m.desc_title = nil
+// ResetSlogan resets all changes to the "slogan" field.
+func (m *MerchantStoreMutation) ResetSlogan() {
+	m.slogan = nil
 }
 
 // SetDescription sets the "description" field.
@@ -7133,153 +8015,6 @@ func (m *MerchantStoreMutation) ImagesCleared() bool {
 func (m *MerchantStoreMutation) ResetImages() {
 	m.images = nil
 	delete(m.clearedFields, merchantstore.FieldImages)
-}
-
-// SetRegion sets the "region" field.
-func (m *MerchantStoreMutation) SetRegion(s string) {
-	m.region = &s
-}
-
-// Region returns the value of the "region" field in the mutation.
-func (m *MerchantStoreMutation) Region() (r string, exists bool) {
-	v := m.region
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRegion returns the old "region" field's value of the MerchantStore entity.
-// If the MerchantStore object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MerchantStoreMutation) OldRegion(ctx context.Context) (v *string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRegion is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRegion requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRegion: %w", err)
-	}
-	return oldValue.Region, nil
-}
-
-// ClearRegion clears the value of the "region" field.
-func (m *MerchantStoreMutation) ClearRegion() {
-	m.region = nil
-	m.clearedFields[merchantstore.FieldRegion] = struct{}{}
-}
-
-// RegionCleared returns if the "region" field was cleared in this mutation.
-func (m *MerchantStoreMutation) RegionCleared() bool {
-	_, ok := m.clearedFields[merchantstore.FieldRegion]
-	return ok
-}
-
-// ResetRegion resets all changes to the "region" field.
-func (m *MerchantStoreMutation) ResetRegion() {
-	m.region = nil
-	delete(m.clearedFields, merchantstore.FieldRegion)
-}
-
-// SetDistrict sets the "district" field.
-func (m *MerchantStoreMutation) SetDistrict(s string) {
-	m.district = &s
-}
-
-// District returns the value of the "district" field in the mutation.
-func (m *MerchantStoreMutation) District() (r string, exists bool) {
-	v := m.district
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDistrict returns the old "district" field's value of the MerchantStore entity.
-// If the MerchantStore object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MerchantStoreMutation) OldDistrict(ctx context.Context) (v *string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDistrict is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDistrict requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDistrict: %w", err)
-	}
-	return oldValue.District, nil
-}
-
-// ClearDistrict clears the value of the "district" field.
-func (m *MerchantStoreMutation) ClearDistrict() {
-	m.district = nil
-	m.clearedFields[merchantstore.FieldDistrict] = struct{}{}
-}
-
-// DistrictCleared returns if the "district" field was cleared in this mutation.
-func (m *MerchantStoreMutation) DistrictCleared() bool {
-	_, ok := m.clearedFields[merchantstore.FieldDistrict]
-	return ok
-}
-
-// ResetDistrict resets all changes to the "district" field.
-func (m *MerchantStoreMutation) ResetDistrict() {
-	m.district = nil
-	delete(m.clearedFields, merchantstore.FieldDistrict)
-}
-
-// SetCity sets the "city" field.
-func (m *MerchantStoreMutation) SetCity(s string) {
-	m.city = &s
-}
-
-// City returns the value of the "city" field in the mutation.
-func (m *MerchantStoreMutation) City() (r string, exists bool) {
-	v := m.city
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCity returns the old "city" field's value of the MerchantStore entity.
-// If the MerchantStore object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MerchantStoreMutation) OldCity(ctx context.Context) (v *string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCity is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCity requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCity: %w", err)
-	}
-	return oldValue.City, nil
-}
-
-// ClearCity clears the value of the "city" field.
-func (m *MerchantStoreMutation) ClearCity() {
-	m.city = nil
-	m.clearedFields[merchantstore.FieldCity] = struct{}{}
-}
-
-// CityCleared returns if the "city" field was cleared in this mutation.
-func (m *MerchantStoreMutation) CityCleared() bool {
-	_, ok := m.clearedFields[merchantstore.FieldCity]
-	return ok
-}
-
-// ResetCity resets all changes to the "city" field.
-func (m *MerchantStoreMutation) ResetCity() {
-	m.city = nil
-	delete(m.clearedFields, merchantstore.FieldCity)
 }
 
 // SetDefaultAccount sets the "default_account" field.
@@ -7427,6 +8162,104 @@ func (m *MerchantStoreMutation) MomoAccountCleared() bool {
 func (m *MerchantStoreMutation) ResetMomoAccount() {
 	m.momo_account = nil
 	delete(m.clearedFields, merchantstore.FieldMomoAccount)
+}
+
+// SetAddress sets the "address" field.
+func (m *MerchantStoreMutation) SetAddress(msa *models.MerchantStoreAddress) {
+	m.address = &msa
+}
+
+// Address returns the value of the "address" field in the mutation.
+func (m *MerchantStoreMutation) Address() (r *models.MerchantStoreAddress, exists bool) {
+	v := m.address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddress returns the old "address" field's value of the MerchantStore entity.
+// If the MerchantStore object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MerchantStoreMutation) OldAddress(ctx context.Context) (v *models.MerchantStoreAddress, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddress: %w", err)
+	}
+	return oldValue.Address, nil
+}
+
+// ClearAddress clears the value of the "address" field.
+func (m *MerchantStoreMutation) ClearAddress() {
+	m.address = nil
+	m.clearedFields[merchantstore.FieldAddress] = struct{}{}
+}
+
+// AddressCleared returns if the "address" field was cleared in this mutation.
+func (m *MerchantStoreMutation) AddressCleared() bool {
+	_, ok := m.clearedFields[merchantstore.FieldAddress]
+	return ok
+}
+
+// ResetAddress resets all changes to the "address" field.
+func (m *MerchantStoreMutation) ResetAddress() {
+	m.address = nil
+	delete(m.clearedFields, merchantstore.FieldAddress)
+}
+
+// SetCoordinate sets the "coordinate" field.
+func (m *MerchantStoreMutation) SetCoordinate(s *services.Coordinate) {
+	m.coordinate = &s
+}
+
+// Coordinate returns the value of the "coordinate" field in the mutation.
+func (m *MerchantStoreMutation) Coordinate() (r *services.Coordinate, exists bool) {
+	v := m.coordinate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCoordinate returns the old "coordinate" field's value of the MerchantStore entity.
+// If the MerchantStore object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MerchantStoreMutation) OldCoordinate(ctx context.Context) (v *services.Coordinate, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCoordinate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCoordinate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCoordinate: %w", err)
+	}
+	return oldValue.Coordinate, nil
+}
+
+// ClearCoordinate clears the value of the "coordinate" field.
+func (m *MerchantStoreMutation) ClearCoordinate() {
+	m.coordinate = nil
+	m.clearedFields[merchantstore.FieldCoordinate] = struct{}{}
+}
+
+// CoordinateCleared returns if the "coordinate" field was cleared in this mutation.
+func (m *MerchantStoreMutation) CoordinateCleared() bool {
+	_, ok := m.clearedFields[merchantstore.FieldCoordinate]
+	return ok
+}
+
+// ResetCoordinate resets all changes to the "coordinate" field.
+func (m *MerchantStoreMutation) ResetCoordinate() {
+	m.coordinate = nil
+	delete(m.clearedFields, merchantstore.FieldCoordinate)
 }
 
 // SetMerchantType sets the "merchant_type" field.
@@ -7760,7 +8593,7 @@ func (m *MerchantStoreMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MerchantStoreMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, merchantstore.FieldCreatedAt)
 	}
@@ -7773,8 +8606,8 @@ func (m *MerchantStoreMutation) Fields() []string {
 	if m.about != nil {
 		fields = append(fields, merchantstore.FieldAbout)
 	}
-	if m.desc_title != nil {
-		fields = append(fields, merchantstore.FieldDescTitle)
+	if m.slogan != nil {
+		fields = append(fields, merchantstore.FieldSlogan)
 	}
 	if m.description != nil {
 		fields = append(fields, merchantstore.FieldDescription)
@@ -7785,15 +8618,6 @@ func (m *MerchantStoreMutation) Fields() []string {
 	if m.images != nil {
 		fields = append(fields, merchantstore.FieldImages)
 	}
-	if m.region != nil {
-		fields = append(fields, merchantstore.FieldRegion)
-	}
-	if m.district != nil {
-		fields = append(fields, merchantstore.FieldDistrict)
-	}
-	if m.city != nil {
-		fields = append(fields, merchantstore.FieldCity)
-	}
 	if m.default_account != nil {
 		fields = append(fields, merchantstore.FieldDefaultAccount)
 	}
@@ -7802,6 +8626,12 @@ func (m *MerchantStoreMutation) Fields() []string {
 	}
 	if m.momo_account != nil {
 		fields = append(fields, merchantstore.FieldMomoAccount)
+	}
+	if m.address != nil {
+		fields = append(fields, merchantstore.FieldAddress)
+	}
+	if m.coordinate != nil {
+		fields = append(fields, merchantstore.FieldCoordinate)
 	}
 	if m.merchant_type != nil {
 		fields = append(fields, merchantstore.FieldMerchantType)
@@ -7825,26 +8655,24 @@ func (m *MerchantStoreMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case merchantstore.FieldAbout:
 		return m.About()
-	case merchantstore.FieldDescTitle:
-		return m.DescTitle()
+	case merchantstore.FieldSlogan:
+		return m.Slogan()
 	case merchantstore.FieldDescription:
 		return m.Description()
 	case merchantstore.FieldLogo:
 		return m.Logo()
 	case merchantstore.FieldImages:
 		return m.Images()
-	case merchantstore.FieldRegion:
-		return m.Region()
-	case merchantstore.FieldDistrict:
-		return m.District()
-	case merchantstore.FieldCity:
-		return m.City()
 	case merchantstore.FieldDefaultAccount:
 		return m.DefaultAccount()
 	case merchantstore.FieldBankAccount:
 		return m.BankAccount()
 	case merchantstore.FieldMomoAccount:
 		return m.MomoAccount()
+	case merchantstore.FieldAddress:
+		return m.Address()
+	case merchantstore.FieldCoordinate:
+		return m.Coordinate()
 	case merchantstore.FieldMerchantType:
 		return m.MerchantType()
 	case merchantstore.FieldPermitAgent:
@@ -7866,26 +8694,24 @@ func (m *MerchantStoreMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldName(ctx)
 	case merchantstore.FieldAbout:
 		return m.OldAbout(ctx)
-	case merchantstore.FieldDescTitle:
-		return m.OldDescTitle(ctx)
+	case merchantstore.FieldSlogan:
+		return m.OldSlogan(ctx)
 	case merchantstore.FieldDescription:
 		return m.OldDescription(ctx)
 	case merchantstore.FieldLogo:
 		return m.OldLogo(ctx)
 	case merchantstore.FieldImages:
 		return m.OldImages(ctx)
-	case merchantstore.FieldRegion:
-		return m.OldRegion(ctx)
-	case merchantstore.FieldDistrict:
-		return m.OldDistrict(ctx)
-	case merchantstore.FieldCity:
-		return m.OldCity(ctx)
 	case merchantstore.FieldDefaultAccount:
 		return m.OldDefaultAccount(ctx)
 	case merchantstore.FieldBankAccount:
 		return m.OldBankAccount(ctx)
 	case merchantstore.FieldMomoAccount:
 		return m.OldMomoAccount(ctx)
+	case merchantstore.FieldAddress:
+		return m.OldAddress(ctx)
+	case merchantstore.FieldCoordinate:
+		return m.OldCoordinate(ctx)
 	case merchantstore.FieldMerchantType:
 		return m.OldMerchantType(ctx)
 	case merchantstore.FieldPermitAgent:
@@ -7927,12 +8753,12 @@ func (m *MerchantStoreMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAbout(v)
 		return nil
-	case merchantstore.FieldDescTitle:
+	case merchantstore.FieldSlogan:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDescTitle(v)
+		m.SetSlogan(v)
 		return nil
 	case merchantstore.FieldDescription:
 		v, ok := value.(string)
@@ -7955,27 +8781,6 @@ func (m *MerchantStoreMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetImages(v)
 		return nil
-	case merchantstore.FieldRegion:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRegion(v)
-		return nil
-	case merchantstore.FieldDistrict:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDistrict(v)
-		return nil
-	case merchantstore.FieldCity:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCity(v)
-		return nil
 	case merchantstore.FieldDefaultAccount:
 		v, ok := value.(merchantstore.DefaultAccount)
 		if !ok {
@@ -7996,6 +8801,20 @@ func (m *MerchantStoreMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetMomoAccount(v)
+		return nil
+	case merchantstore.FieldAddress:
+		v, ok := value.(*models.MerchantStoreAddress)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddress(v)
+		return nil
+	case merchantstore.FieldCoordinate:
+		v, ok := value.(*services.Coordinate)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCoordinate(v)
 		return nil
 	case merchantstore.FieldMerchantType:
 		v, ok := value.(string)
@@ -8044,15 +8863,6 @@ func (m *MerchantStoreMutation) ClearedFields() []string {
 	if m.FieldCleared(merchantstore.FieldImages) {
 		fields = append(fields, merchantstore.FieldImages)
 	}
-	if m.FieldCleared(merchantstore.FieldRegion) {
-		fields = append(fields, merchantstore.FieldRegion)
-	}
-	if m.FieldCleared(merchantstore.FieldDistrict) {
-		fields = append(fields, merchantstore.FieldDistrict)
-	}
-	if m.FieldCleared(merchantstore.FieldCity) {
-		fields = append(fields, merchantstore.FieldCity)
-	}
 	if m.FieldCleared(merchantstore.FieldDefaultAccount) {
 		fields = append(fields, merchantstore.FieldDefaultAccount)
 	}
@@ -8061,6 +8871,12 @@ func (m *MerchantStoreMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(merchantstore.FieldMomoAccount) {
 		fields = append(fields, merchantstore.FieldMomoAccount)
+	}
+	if m.FieldCleared(merchantstore.FieldAddress) {
+		fields = append(fields, merchantstore.FieldAddress)
+	}
+	if m.FieldCleared(merchantstore.FieldCoordinate) {
+		fields = append(fields, merchantstore.FieldCoordinate)
 	}
 	return fields
 }
@@ -8079,15 +8895,6 @@ func (m *MerchantStoreMutation) ClearField(name string) error {
 	case merchantstore.FieldImages:
 		m.ClearImages()
 		return nil
-	case merchantstore.FieldRegion:
-		m.ClearRegion()
-		return nil
-	case merchantstore.FieldDistrict:
-		m.ClearDistrict()
-		return nil
-	case merchantstore.FieldCity:
-		m.ClearCity()
-		return nil
 	case merchantstore.FieldDefaultAccount:
 		m.ClearDefaultAccount()
 		return nil
@@ -8096,6 +8903,12 @@ func (m *MerchantStoreMutation) ClearField(name string) error {
 		return nil
 	case merchantstore.FieldMomoAccount:
 		m.ClearMomoAccount()
+		return nil
+	case merchantstore.FieldAddress:
+		m.ClearAddress()
+		return nil
+	case merchantstore.FieldCoordinate:
+		m.ClearCoordinate()
 		return nil
 	}
 	return fmt.Errorf("unknown MerchantStore nullable field %s", name)
@@ -8117,8 +8930,8 @@ func (m *MerchantStoreMutation) ResetField(name string) error {
 	case merchantstore.FieldAbout:
 		m.ResetAbout()
 		return nil
-	case merchantstore.FieldDescTitle:
-		m.ResetDescTitle()
+	case merchantstore.FieldSlogan:
+		m.ResetSlogan()
 		return nil
 	case merchantstore.FieldDescription:
 		m.ResetDescription()
@@ -8129,15 +8942,6 @@ func (m *MerchantStoreMutation) ResetField(name string) error {
 	case merchantstore.FieldImages:
 		m.ResetImages()
 		return nil
-	case merchantstore.FieldRegion:
-		m.ResetRegion()
-		return nil
-	case merchantstore.FieldDistrict:
-		m.ResetDistrict()
-		return nil
-	case merchantstore.FieldCity:
-		m.ResetCity()
-		return nil
 	case merchantstore.FieldDefaultAccount:
 		m.ResetDefaultAccount()
 		return nil
@@ -8146,6 +8950,12 @@ func (m *MerchantStoreMutation) ResetField(name string) error {
 		return nil
 	case merchantstore.FieldMomoAccount:
 		m.ResetMomoAccount()
+		return nil
+	case merchantstore.FieldAddress:
+		m.ResetAddress()
+		return nil
+	case merchantstore.FieldCoordinate:
+		m.ResetCoordinate()
 		return nil
 	case merchantstore.FieldMerchantType:
 		m.ResetMerchantType()
@@ -8332,44 +9142,48 @@ func (m *MerchantStoreMutation) ResetEdge(name string) error {
 // OrderMutation represents an operation that mutates the Order nodes in the graph.
 type OrderMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int
-	created_at      *time.Time
-	updated_at      *time.Time
-	order_number    *string
-	currency        *string
-	amount          *float64
-	addamount       *float64
-	delivery_fee    *float64
-	adddelivery_fee *float64
-	reference       *string
-	channel         *string
-	paid_at         *string
-	delivery_method *order.DeliveryMethod
-	payment_method  *order.PaymentMethod
-	status          *order.Status
-	delivered_at    *time.Time
-	clearedFields   map[string]struct{}
-	details         map[int]struct{}
-	removeddetails  map[int]struct{}
-	cleareddetails  bool
-	merchant        *int
-	clearedmerchant bool
-	agent           *int
-	clearedagent    bool
-	customer        *int
-	clearedcustomer bool
-	address         *int
-	clearedaddress  bool
-	pickup          *int
-	clearedpickup   bool
-	stores          map[int]struct{}
-	removedstores   map[int]struct{}
-	clearedstores   bool
-	done            bool
-	oldValue        func(context.Context) (*Order, error)
-	predicates      []predicate.Order
+	op                  Op
+	typ                 string
+	id                  *int
+	created_at          *time.Time
+	updated_at          *time.Time
+	order_number        *string
+	currency            *string
+	amount              *float64
+	addamount           *float64
+	delivery_fee        *float64
+	adddelivery_fee     *float64
+	reference           *string
+	channel             *string
+	paid_at             *string
+	delivery_method     *order.DeliveryMethod
+	payment_method      *order.PaymentMethod
+	status              *order.Status
+	store_tasks_created *[]int
+	delivered_at        *time.Time
+	clearedFields       map[string]struct{}
+	details             map[int]struct{}
+	removeddetails      map[int]struct{}
+	cleareddetails      bool
+	merchant            *int
+	clearedmerchant     bool
+	agent               *int
+	clearedagent        bool
+	customer            *int
+	clearedcustomer     bool
+	address             *int
+	clearedaddress      bool
+	pickup              *int
+	clearedpickup       bool
+	stores              map[int]struct{}
+	removedstores       map[int]struct{}
+	clearedstores       bool
+	logistic            map[int]struct{}
+	removedlogistic     map[int]struct{}
+	clearedlogistic     bool
+	done                bool
+	oldValue            func(context.Context) (*Order, error)
+	predicates          []predicate.Order
 }
 
 var _ ent.Mutation = (*OrderMutation)(nil)
@@ -8981,6 +9795,55 @@ func (m *OrderMutation) ResetStatus() {
 	m.status = nil
 }
 
+// SetStoreTasksCreated sets the "store_tasks_created" field.
+func (m *OrderMutation) SetStoreTasksCreated(i []int) {
+	m.store_tasks_created = &i
+}
+
+// StoreTasksCreated returns the value of the "store_tasks_created" field in the mutation.
+func (m *OrderMutation) StoreTasksCreated() (r []int, exists bool) {
+	v := m.store_tasks_created
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStoreTasksCreated returns the old "store_tasks_created" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldStoreTasksCreated(ctx context.Context) (v []int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStoreTasksCreated is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStoreTasksCreated requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStoreTasksCreated: %w", err)
+	}
+	return oldValue.StoreTasksCreated, nil
+}
+
+// ClearStoreTasksCreated clears the value of the "store_tasks_created" field.
+func (m *OrderMutation) ClearStoreTasksCreated() {
+	m.store_tasks_created = nil
+	m.clearedFields[order.FieldStoreTasksCreated] = struct{}{}
+}
+
+// StoreTasksCreatedCleared returns if the "store_tasks_created" field was cleared in this mutation.
+func (m *OrderMutation) StoreTasksCreatedCleared() bool {
+	_, ok := m.clearedFields[order.FieldStoreTasksCreated]
+	return ok
+}
+
+// ResetStoreTasksCreated resets all changes to the "store_tasks_created" field.
+func (m *OrderMutation) ResetStoreTasksCreated() {
+	m.store_tasks_created = nil
+	delete(m.clearedFields, order.FieldStoreTasksCreated)
+}
+
 // SetDeliveredAt sets the "delivered_at" field.
 func (m *OrderMutation) SetDeliveredAt(t time.Time) {
 	m.delivered_at = &t
@@ -9333,6 +10196,60 @@ func (m *OrderMutation) ResetStores() {
 	m.removedstores = nil
 }
 
+// AddLogisticIDs adds the "logistic" edge to the Logistic entity by ids.
+func (m *OrderMutation) AddLogisticIDs(ids ...int) {
+	if m.logistic == nil {
+		m.logistic = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.logistic[ids[i]] = struct{}{}
+	}
+}
+
+// ClearLogistic clears the "logistic" edge to the Logistic entity.
+func (m *OrderMutation) ClearLogistic() {
+	m.clearedlogistic = true
+}
+
+// LogisticCleared reports if the "logistic" edge to the Logistic entity was cleared.
+func (m *OrderMutation) LogisticCleared() bool {
+	return m.clearedlogistic
+}
+
+// RemoveLogisticIDs removes the "logistic" edge to the Logistic entity by IDs.
+func (m *OrderMutation) RemoveLogisticIDs(ids ...int) {
+	if m.removedlogistic == nil {
+		m.removedlogistic = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.logistic, ids[i])
+		m.removedlogistic[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedLogistic returns the removed IDs of the "logistic" edge to the Logistic entity.
+func (m *OrderMutation) RemovedLogisticIDs() (ids []int) {
+	for id := range m.removedlogistic {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// LogisticIDs returns the "logistic" edge IDs in the mutation.
+func (m *OrderMutation) LogisticIDs() (ids []int) {
+	for id := range m.logistic {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetLogistic resets all changes to the "logistic" edge.
+func (m *OrderMutation) ResetLogistic() {
+	m.logistic = nil
+	m.clearedlogistic = false
+	m.removedlogistic = nil
+}
+
 // Where appends a list predicates to the OrderMutation builder.
 func (m *OrderMutation) Where(ps ...predicate.Order) {
 	m.predicates = append(m.predicates, ps...)
@@ -9352,7 +10269,7 @@ func (m *OrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, order.FieldCreatedAt)
 	}
@@ -9389,6 +10306,9 @@ func (m *OrderMutation) Fields() []string {
 	if m.status != nil {
 		fields = append(fields, order.FieldStatus)
 	}
+	if m.store_tasks_created != nil {
+		fields = append(fields, order.FieldStoreTasksCreated)
+	}
 	if m.delivered_at != nil {
 		fields = append(fields, order.FieldDeliveredAt)
 	}
@@ -9424,6 +10344,8 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 		return m.PaymentMethod()
 	case order.FieldStatus:
 		return m.Status()
+	case order.FieldStoreTasksCreated:
+		return m.StoreTasksCreated()
 	case order.FieldDeliveredAt:
 		return m.DeliveredAt()
 	}
@@ -9459,6 +10381,8 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldPaymentMethod(ctx)
 	case order.FieldStatus:
 		return m.OldStatus(ctx)
+	case order.FieldStoreTasksCreated:
+		return m.OldStoreTasksCreated(ctx)
 	case order.FieldDeliveredAt:
 		return m.OldDeliveredAt(ctx)
 	}
@@ -9554,6 +10478,13 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetStatus(v)
 		return nil
+	case order.FieldStoreTasksCreated:
+		v, ok := value.([]int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStoreTasksCreated(v)
+		return nil
 	case order.FieldDeliveredAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -9627,6 +10558,9 @@ func (m *OrderMutation) ClearedFields() []string {
 	if m.FieldCleared(order.FieldPaidAt) {
 		fields = append(fields, order.FieldPaidAt)
 	}
+	if m.FieldCleared(order.FieldStoreTasksCreated) {
+		fields = append(fields, order.FieldStoreTasksCreated)
+	}
 	if m.FieldCleared(order.FieldDeliveredAt) {
 		fields = append(fields, order.FieldDeliveredAt)
 	}
@@ -9652,6 +10586,9 @@ func (m *OrderMutation) ClearField(name string) error {
 		return nil
 	case order.FieldPaidAt:
 		m.ClearPaidAt()
+		return nil
+	case order.FieldStoreTasksCreated:
+		m.ClearStoreTasksCreated()
 		return nil
 	case order.FieldDeliveredAt:
 		m.ClearDeliveredAt()
@@ -9700,6 +10637,9 @@ func (m *OrderMutation) ResetField(name string) error {
 	case order.FieldStatus:
 		m.ResetStatus()
 		return nil
+	case order.FieldStoreTasksCreated:
+		m.ResetStoreTasksCreated()
+		return nil
 	case order.FieldDeliveredAt:
 		m.ResetDeliveredAt()
 		return nil
@@ -9709,7 +10649,7 @@ func (m *OrderMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OrderMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.details != nil {
 		edges = append(edges, order.EdgeDetails)
 	}
@@ -9730,6 +10670,9 @@ func (m *OrderMutation) AddedEdges() []string {
 	}
 	if m.stores != nil {
 		edges = append(edges, order.EdgeStores)
+	}
+	if m.logistic != nil {
+		edges = append(edges, order.EdgeLogistic)
 	}
 	return edges
 }
@@ -9770,18 +10713,27 @@ func (m *OrderMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case order.EdgeLogistic:
+		ids := make([]ent.Value, 0, len(m.logistic))
+		for id := range m.logistic {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OrderMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.removeddetails != nil {
 		edges = append(edges, order.EdgeDetails)
 	}
 	if m.removedstores != nil {
 		edges = append(edges, order.EdgeStores)
+	}
+	if m.removedlogistic != nil {
+		edges = append(edges, order.EdgeLogistic)
 	}
 	return edges
 }
@@ -9802,13 +10754,19 @@ func (m *OrderMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case order.EdgeLogistic:
+		ids := make([]ent.Value, 0, len(m.removedlogistic))
+		for id := range m.removedlogistic {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OrderMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.cleareddetails {
 		edges = append(edges, order.EdgeDetails)
 	}
@@ -9829,6 +10787,9 @@ func (m *OrderMutation) ClearedEdges() []string {
 	}
 	if m.clearedstores {
 		edges = append(edges, order.EdgeStores)
+	}
+	if m.clearedlogistic {
+		edges = append(edges, order.EdgeLogistic)
 	}
 	return edges
 }
@@ -9851,6 +10812,8 @@ func (m *OrderMutation) EdgeCleared(name string) bool {
 		return m.clearedpickup
 	case order.EdgeStores:
 		return m.clearedstores
+	case order.EdgeLogistic:
+		return m.clearedlogistic
 	}
 	return false
 }
@@ -9902,6 +10865,9 @@ func (m *OrderMutation) ResetEdge(name string) error {
 		return nil
 	case order.EdgeStores:
 		m.ResetStores()
+		return nil
+	case order.EdgeLogistic:
+		m.ResetLogistic()
 		return nil
 	}
 	return fmt.Errorf("unknown Order edge %s", name)
@@ -14249,8 +15215,6 @@ type RetailMerchantMutation struct {
 	other_name      *string
 	phone           *string
 	other_phone     *string
-	address         *string
-	digital_address *string
 	clearedFields   map[string]struct{}
 	merchant        *int
 	clearedmerchant bool
@@ -14622,78 +15586,6 @@ func (m *RetailMerchantMutation) ResetOtherPhone() {
 	delete(m.clearedFields, retailmerchant.FieldOtherPhone)
 }
 
-// SetAddress sets the "address" field.
-func (m *RetailMerchantMutation) SetAddress(s string) {
-	m.address = &s
-}
-
-// Address returns the value of the "address" field in the mutation.
-func (m *RetailMerchantMutation) Address() (r string, exists bool) {
-	v := m.address
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAddress returns the old "address" field's value of the RetailMerchant entity.
-// If the RetailMerchant object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RetailMerchantMutation) OldAddress(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAddress is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAddress requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAddress: %w", err)
-	}
-	return oldValue.Address, nil
-}
-
-// ResetAddress resets all changes to the "address" field.
-func (m *RetailMerchantMutation) ResetAddress() {
-	m.address = nil
-}
-
-// SetDigitalAddress sets the "digital_address" field.
-func (m *RetailMerchantMutation) SetDigitalAddress(s string) {
-	m.digital_address = &s
-}
-
-// DigitalAddress returns the value of the "digital_address" field in the mutation.
-func (m *RetailMerchantMutation) DigitalAddress() (r string, exists bool) {
-	v := m.digital_address
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDigitalAddress returns the old "digital_address" field's value of the RetailMerchant entity.
-// If the RetailMerchant object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RetailMerchantMutation) OldDigitalAddress(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDigitalAddress is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDigitalAddress requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDigitalAddress: %w", err)
-	}
-	return oldValue.DigitalAddress, nil
-}
-
-// ResetDigitalAddress resets all changes to the "digital_address" field.
-func (m *RetailMerchantMutation) ResetDigitalAddress() {
-	m.digital_address = nil
-}
-
 // SetMerchantID sets the "merchant" edge to the Merchant entity by id.
 func (m *RetailMerchantMutation) SetMerchantID(id int) {
 	m.merchant = &id
@@ -14752,7 +15644,7 @@ func (m *RetailMerchantMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RetailMerchantMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, retailmerchant.FieldCreatedAt)
 	}
@@ -14773,12 +15665,6 @@ func (m *RetailMerchantMutation) Fields() []string {
 	}
 	if m.other_phone != nil {
 		fields = append(fields, retailmerchant.FieldOtherPhone)
-	}
-	if m.address != nil {
-		fields = append(fields, retailmerchant.FieldAddress)
-	}
-	if m.digital_address != nil {
-		fields = append(fields, retailmerchant.FieldDigitalAddress)
 	}
 	return fields
 }
@@ -14802,10 +15688,6 @@ func (m *RetailMerchantMutation) Field(name string) (ent.Value, bool) {
 		return m.Phone()
 	case retailmerchant.FieldOtherPhone:
 		return m.OtherPhone()
-	case retailmerchant.FieldAddress:
-		return m.Address()
-	case retailmerchant.FieldDigitalAddress:
-		return m.DigitalAddress()
 	}
 	return nil, false
 }
@@ -14829,10 +15711,6 @@ func (m *RetailMerchantMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldPhone(ctx)
 	case retailmerchant.FieldOtherPhone:
 		return m.OldOtherPhone(ctx)
-	case retailmerchant.FieldAddress:
-		return m.OldAddress(ctx)
-	case retailmerchant.FieldDigitalAddress:
-		return m.OldDigitalAddress(ctx)
 	}
 	return nil, fmt.Errorf("unknown RetailMerchant field %s", name)
 }
@@ -14890,20 +15768,6 @@ func (m *RetailMerchantMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOtherPhone(v)
-		return nil
-	case retailmerchant.FieldAddress:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAddress(v)
-		return nil
-	case retailmerchant.FieldDigitalAddress:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDigitalAddress(v)
 		return nil
 	}
 	return fmt.Errorf("unknown RetailMerchant field %s", name)
@@ -14983,12 +15847,6 @@ func (m *RetailMerchantMutation) ResetField(name string) error {
 		return nil
 	case retailmerchant.FieldOtherPhone:
 		m.ResetOtherPhone()
-		return nil
-	case retailmerchant.FieldAddress:
-		m.ResetAddress()
-		return nil
-	case retailmerchant.FieldDigitalAddress:
-		m.ResetDigitalAddress()
 		return nil
 	}
 	return fmt.Errorf("unknown RetailMerchant field %s", name)
@@ -15081,8 +15939,6 @@ type SupplierMerchantMutation struct {
 	other_name      *string
 	phone           *string
 	other_phone     *string
-	address         *string
-	digital_address *string
 	clearedFields   map[string]struct{}
 	merchant        *int
 	clearedmerchant bool
@@ -15454,78 +16310,6 @@ func (m *SupplierMerchantMutation) ResetOtherPhone() {
 	delete(m.clearedFields, suppliermerchant.FieldOtherPhone)
 }
 
-// SetAddress sets the "address" field.
-func (m *SupplierMerchantMutation) SetAddress(s string) {
-	m.address = &s
-}
-
-// Address returns the value of the "address" field in the mutation.
-func (m *SupplierMerchantMutation) Address() (r string, exists bool) {
-	v := m.address
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAddress returns the old "address" field's value of the SupplierMerchant entity.
-// If the SupplierMerchant object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SupplierMerchantMutation) OldAddress(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAddress is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAddress requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAddress: %w", err)
-	}
-	return oldValue.Address, nil
-}
-
-// ResetAddress resets all changes to the "address" field.
-func (m *SupplierMerchantMutation) ResetAddress() {
-	m.address = nil
-}
-
-// SetDigitalAddress sets the "digital_address" field.
-func (m *SupplierMerchantMutation) SetDigitalAddress(s string) {
-	m.digital_address = &s
-}
-
-// DigitalAddress returns the value of the "digital_address" field in the mutation.
-func (m *SupplierMerchantMutation) DigitalAddress() (r string, exists bool) {
-	v := m.digital_address
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDigitalAddress returns the old "digital_address" field's value of the SupplierMerchant entity.
-// If the SupplierMerchant object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SupplierMerchantMutation) OldDigitalAddress(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDigitalAddress is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDigitalAddress requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDigitalAddress: %w", err)
-	}
-	return oldValue.DigitalAddress, nil
-}
-
-// ResetDigitalAddress resets all changes to the "digital_address" field.
-func (m *SupplierMerchantMutation) ResetDigitalAddress() {
-	m.digital_address = nil
-}
-
 // SetMerchantID sets the "merchant" edge to the Merchant entity by id.
 func (m *SupplierMerchantMutation) SetMerchantID(id int) {
 	m.merchant = &id
@@ -15584,7 +16368,7 @@ func (m *SupplierMerchantMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplierMerchantMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, suppliermerchant.FieldCreatedAt)
 	}
@@ -15605,12 +16389,6 @@ func (m *SupplierMerchantMutation) Fields() []string {
 	}
 	if m.other_phone != nil {
 		fields = append(fields, suppliermerchant.FieldOtherPhone)
-	}
-	if m.address != nil {
-		fields = append(fields, suppliermerchant.FieldAddress)
-	}
-	if m.digital_address != nil {
-		fields = append(fields, suppliermerchant.FieldDigitalAddress)
 	}
 	return fields
 }
@@ -15634,10 +16412,6 @@ func (m *SupplierMerchantMutation) Field(name string) (ent.Value, bool) {
 		return m.Phone()
 	case suppliermerchant.FieldOtherPhone:
 		return m.OtherPhone()
-	case suppliermerchant.FieldAddress:
-		return m.Address()
-	case suppliermerchant.FieldDigitalAddress:
-		return m.DigitalAddress()
 	}
 	return nil, false
 }
@@ -15661,10 +16435,6 @@ func (m *SupplierMerchantMutation) OldField(ctx context.Context, name string) (e
 		return m.OldPhone(ctx)
 	case suppliermerchant.FieldOtherPhone:
 		return m.OldOtherPhone(ctx)
-	case suppliermerchant.FieldAddress:
-		return m.OldAddress(ctx)
-	case suppliermerchant.FieldDigitalAddress:
-		return m.OldDigitalAddress(ctx)
 	}
 	return nil, fmt.Errorf("unknown SupplierMerchant field %s", name)
 }
@@ -15722,20 +16492,6 @@ func (m *SupplierMerchantMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOtherPhone(v)
-		return nil
-	case suppliermerchant.FieldAddress:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAddress(v)
-		return nil
-	case suppliermerchant.FieldDigitalAddress:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDigitalAddress(v)
 		return nil
 	}
 	return fmt.Errorf("unknown SupplierMerchant field %s", name)
@@ -15815,12 +16571,6 @@ func (m *SupplierMerchantMutation) ResetField(name string) error {
 		return nil
 	case suppliermerchant.FieldOtherPhone:
 		m.ResetOtherPhone()
-		return nil
-	case suppliermerchant.FieldAddress:
-		m.ResetAddress()
-		return nil
-	case suppliermerchant.FieldDigitalAddress:
-		m.ResetDigitalAddress()
 		return nil
 	}
 	return fmt.Errorf("unknown SupplierMerchant field %s", name)

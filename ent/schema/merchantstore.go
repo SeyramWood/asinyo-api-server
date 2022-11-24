@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema/field"
 
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 )
 
 // MerchantStore holds the schema definition for the MerchantStore entity.
@@ -24,16 +25,15 @@ func (MerchantStore) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").NotEmpty(),
 		field.Text("about").NotEmpty(),
-		field.String("desc_title").NotEmpty(),
+		field.String("slogan").NotEmpty(),
 		field.Text("description").NotEmpty(),
 		field.String("logo").NotEmpty(),
 		field.JSON("images", []string{}).Optional(),
-		field.String("region").Optional().Nillable(),
-		field.String("district").Optional().Nillable(),
-		field.String("city").Optional().Nillable(),
 		field.Enum("default_account").Values("bank", "momo").Optional(),
 		field.JSON("bank_account", &models.MerchantBankAccount{}).Optional(),
 		field.JSON("momo_account", &models.MerchantMomoAccount{}).Optional(),
+		field.JSON("address", &models.MerchantStoreAddress{}).Optional(),
+		field.JSON("coordinate", &services.Coordinate{}).Optional(),
 		field.String("merchant_type").NotEmpty(),
 		field.Bool("permit_agent").Default(true),
 	}

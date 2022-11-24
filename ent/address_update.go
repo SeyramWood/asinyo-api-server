@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
@@ -96,9 +97,69 @@ func (au *AddressUpdate) ClearDigitalAddress() *AddressUpdate {
 	return au
 }
 
+// SetStreetName sets the "street_name" field.
+func (au *AddressUpdate) SetStreetName(s string) *AddressUpdate {
+	au.mutation.SetStreetName(s)
+	return au
+}
+
+// SetNillableStreetName sets the "street_name" field if the given value is not nil.
+func (au *AddressUpdate) SetNillableStreetName(s *string) *AddressUpdate {
+	if s != nil {
+		au.SetStreetName(*s)
+	}
+	return au
+}
+
+// ClearStreetName clears the value of the "street_name" field.
+func (au *AddressUpdate) ClearStreetName() *AddressUpdate {
+	au.mutation.ClearStreetName()
+	return au
+}
+
+// SetStreetNumber sets the "street_number" field.
+func (au *AddressUpdate) SetStreetNumber(s string) *AddressUpdate {
+	au.mutation.SetStreetNumber(s)
+	return au
+}
+
+// SetNillableStreetNumber sets the "street_number" field if the given value is not nil.
+func (au *AddressUpdate) SetNillableStreetNumber(s *string) *AddressUpdate {
+	if s != nil {
+		au.SetStreetNumber(*s)
+	}
+	return au
+}
+
+// ClearStreetNumber clears the value of the "street_number" field.
+func (au *AddressUpdate) ClearStreetNumber() *AddressUpdate {
+	au.mutation.ClearStreetNumber()
+	return au
+}
+
 // SetCity sets the "city" field.
 func (au *AddressUpdate) SetCity(s string) *AddressUpdate {
 	au.mutation.SetCity(s)
+	return au
+}
+
+// SetDistrict sets the "district" field.
+func (au *AddressUpdate) SetDistrict(s string) *AddressUpdate {
+	au.mutation.SetDistrict(s)
+	return au
+}
+
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (au *AddressUpdate) SetNillableDistrict(s *string) *AddressUpdate {
+	if s != nil {
+		au.SetDistrict(*s)
+	}
+	return au
+}
+
+// ClearDistrict clears the value of the "district" field.
+func (au *AddressUpdate) ClearDistrict() *AddressUpdate {
+	au.mutation.ClearDistrict()
 	return au
 }
 
@@ -108,29 +169,23 @@ func (au *AddressUpdate) SetRegion(s string) *AddressUpdate {
 	return au
 }
 
-// SetAddress sets the "address" field.
-func (au *AddressUpdate) SetAddress(s string) *AddressUpdate {
-	au.mutation.SetAddress(s)
+// SetCountry sets the "Country" field.
+func (au *AddressUpdate) SetCountry(s string) *AddressUpdate {
+	au.mutation.SetCountry(s)
 	return au
 }
 
-// SetOtherInformation sets the "other_information" field.
-func (au *AddressUpdate) SetOtherInformation(s string) *AddressUpdate {
-	au.mutation.SetOtherInformation(s)
-	return au
-}
-
-// SetNillableOtherInformation sets the "other_information" field if the given value is not nil.
-func (au *AddressUpdate) SetNillableOtherInformation(s *string) *AddressUpdate {
+// SetNillableCountry sets the "Country" field if the given value is not nil.
+func (au *AddressUpdate) SetNillableCountry(s *string) *AddressUpdate {
 	if s != nil {
-		au.SetOtherInformation(*s)
+		au.SetCountry(*s)
 	}
 	return au
 }
 
-// ClearOtherInformation clears the value of the "other_information" field.
-func (au *AddressUpdate) ClearOtherInformation() *AddressUpdate {
-	au.mutation.ClearOtherInformation()
+// SetAddress sets the "address" field.
+func (au *AddressUpdate) SetAddress(s string) *AddressUpdate {
+	au.mutation.SetAddress(s)
 	return au
 }
 
@@ -145,6 +200,18 @@ func (au *AddressUpdate) SetNillableDefault(b *bool) *AddressUpdate {
 	if b != nil {
 		au.SetDefault(*b)
 	}
+	return au
+}
+
+// SetCoordinate sets the "coordinate" field.
+func (au *AddressUpdate) SetCoordinate(s *services.Coordinate) *AddressUpdate {
+	au.mutation.SetCoordinate(s)
+	return au
+}
+
+// ClearCoordinate clears the value of the "coordinate" field.
+func (au *AddressUpdate) ClearCoordinate() *AddressUpdate {
+	au.mutation.ClearCoordinate()
 	return au
 }
 
@@ -440,11 +507,50 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: address.FieldDigitalAddress,
 		})
 	}
+	if value, ok := au.mutation.StreetName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldStreetName,
+		})
+	}
+	if au.mutation.StreetNameCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: address.FieldStreetName,
+		})
+	}
+	if value, ok := au.mutation.StreetNumber(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldStreetNumber,
+		})
+	}
+	if au.mutation.StreetNumberCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: address.FieldStreetNumber,
+		})
+	}
 	if value, ok := au.mutation.City(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
 			Column: address.FieldCity,
+		})
+	}
+	if value, ok := au.mutation.District(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldDistrict,
+		})
+	}
+	if au.mutation.DistrictCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: address.FieldDistrict,
 		})
 	}
 	if value, ok := au.mutation.Region(); ok {
@@ -454,6 +560,13 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: address.FieldRegion,
 		})
 	}
+	if value, ok := au.mutation.Country(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldCountry,
+		})
+	}
 	if value, ok := au.mutation.Address(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -461,24 +574,24 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: address.FieldAddress,
 		})
 	}
-	if value, ok := au.mutation.OtherInformation(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldOtherInformation,
-		})
-	}
-	if au.mutation.OtherInformationCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldOtherInformation,
-		})
-	}
 	if value, ok := au.mutation.Default(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeBool,
 			Value:  value,
 			Column: address.FieldDefault,
+		})
+	}
+	if value, ok := au.mutation.Coordinate(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: address.FieldCoordinate,
+		})
+	}
+	if au.mutation.CoordinateCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: address.FieldCoordinate,
 		})
 	}
 	if au.mutation.MerchantCleared() {
@@ -723,9 +836,69 @@ func (auo *AddressUpdateOne) ClearDigitalAddress() *AddressUpdateOne {
 	return auo
 }
 
+// SetStreetName sets the "street_name" field.
+func (auo *AddressUpdateOne) SetStreetName(s string) *AddressUpdateOne {
+	auo.mutation.SetStreetName(s)
+	return auo
+}
+
+// SetNillableStreetName sets the "street_name" field if the given value is not nil.
+func (auo *AddressUpdateOne) SetNillableStreetName(s *string) *AddressUpdateOne {
+	if s != nil {
+		auo.SetStreetName(*s)
+	}
+	return auo
+}
+
+// ClearStreetName clears the value of the "street_name" field.
+func (auo *AddressUpdateOne) ClearStreetName() *AddressUpdateOne {
+	auo.mutation.ClearStreetName()
+	return auo
+}
+
+// SetStreetNumber sets the "street_number" field.
+func (auo *AddressUpdateOne) SetStreetNumber(s string) *AddressUpdateOne {
+	auo.mutation.SetStreetNumber(s)
+	return auo
+}
+
+// SetNillableStreetNumber sets the "street_number" field if the given value is not nil.
+func (auo *AddressUpdateOne) SetNillableStreetNumber(s *string) *AddressUpdateOne {
+	if s != nil {
+		auo.SetStreetNumber(*s)
+	}
+	return auo
+}
+
+// ClearStreetNumber clears the value of the "street_number" field.
+func (auo *AddressUpdateOne) ClearStreetNumber() *AddressUpdateOne {
+	auo.mutation.ClearStreetNumber()
+	return auo
+}
+
 // SetCity sets the "city" field.
 func (auo *AddressUpdateOne) SetCity(s string) *AddressUpdateOne {
 	auo.mutation.SetCity(s)
+	return auo
+}
+
+// SetDistrict sets the "district" field.
+func (auo *AddressUpdateOne) SetDistrict(s string) *AddressUpdateOne {
+	auo.mutation.SetDistrict(s)
+	return auo
+}
+
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (auo *AddressUpdateOne) SetNillableDistrict(s *string) *AddressUpdateOne {
+	if s != nil {
+		auo.SetDistrict(*s)
+	}
+	return auo
+}
+
+// ClearDistrict clears the value of the "district" field.
+func (auo *AddressUpdateOne) ClearDistrict() *AddressUpdateOne {
+	auo.mutation.ClearDistrict()
 	return auo
 }
 
@@ -735,29 +908,23 @@ func (auo *AddressUpdateOne) SetRegion(s string) *AddressUpdateOne {
 	return auo
 }
 
-// SetAddress sets the "address" field.
-func (auo *AddressUpdateOne) SetAddress(s string) *AddressUpdateOne {
-	auo.mutation.SetAddress(s)
+// SetCountry sets the "Country" field.
+func (auo *AddressUpdateOne) SetCountry(s string) *AddressUpdateOne {
+	auo.mutation.SetCountry(s)
 	return auo
 }
 
-// SetOtherInformation sets the "other_information" field.
-func (auo *AddressUpdateOne) SetOtherInformation(s string) *AddressUpdateOne {
-	auo.mutation.SetOtherInformation(s)
-	return auo
-}
-
-// SetNillableOtherInformation sets the "other_information" field if the given value is not nil.
-func (auo *AddressUpdateOne) SetNillableOtherInformation(s *string) *AddressUpdateOne {
+// SetNillableCountry sets the "Country" field if the given value is not nil.
+func (auo *AddressUpdateOne) SetNillableCountry(s *string) *AddressUpdateOne {
 	if s != nil {
-		auo.SetOtherInformation(*s)
+		auo.SetCountry(*s)
 	}
 	return auo
 }
 
-// ClearOtherInformation clears the value of the "other_information" field.
-func (auo *AddressUpdateOne) ClearOtherInformation() *AddressUpdateOne {
-	auo.mutation.ClearOtherInformation()
+// SetAddress sets the "address" field.
+func (auo *AddressUpdateOne) SetAddress(s string) *AddressUpdateOne {
+	auo.mutation.SetAddress(s)
 	return auo
 }
 
@@ -772,6 +939,18 @@ func (auo *AddressUpdateOne) SetNillableDefault(b *bool) *AddressUpdateOne {
 	if b != nil {
 		auo.SetDefault(*b)
 	}
+	return auo
+}
+
+// SetCoordinate sets the "coordinate" field.
+func (auo *AddressUpdateOne) SetCoordinate(s *services.Coordinate) *AddressUpdateOne {
+	auo.mutation.SetCoordinate(s)
+	return auo
+}
+
+// ClearCoordinate clears the value of the "coordinate" field.
+func (auo *AddressUpdateOne) ClearCoordinate() *AddressUpdateOne {
+	auo.mutation.ClearCoordinate()
 	return auo
 }
 
@@ -1097,11 +1276,50 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Column: address.FieldDigitalAddress,
 		})
 	}
+	if value, ok := auo.mutation.StreetName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldStreetName,
+		})
+	}
+	if auo.mutation.StreetNameCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: address.FieldStreetName,
+		})
+	}
+	if value, ok := auo.mutation.StreetNumber(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldStreetNumber,
+		})
+	}
+	if auo.mutation.StreetNumberCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: address.FieldStreetNumber,
+		})
+	}
 	if value, ok := auo.mutation.City(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
 			Column: address.FieldCity,
+		})
+	}
+	if value, ok := auo.mutation.District(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldDistrict,
+		})
+	}
+	if auo.mutation.DistrictCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: address.FieldDistrict,
 		})
 	}
 	if value, ok := auo.mutation.Region(); ok {
@@ -1111,6 +1329,13 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Column: address.FieldRegion,
 		})
 	}
+	if value, ok := auo.mutation.Country(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldCountry,
+		})
+	}
 	if value, ok := auo.mutation.Address(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -1118,24 +1343,24 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Column: address.FieldAddress,
 		})
 	}
-	if value, ok := auo.mutation.OtherInformation(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldOtherInformation,
-		})
-	}
-	if auo.mutation.OtherInformationCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldOtherInformation,
-		})
-	}
 	if value, ok := auo.mutation.Default(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeBool,
 			Value:  value,
 			Column: address.FieldDefault,
+		})
+	}
+	if value, ok := auo.mutation.Coordinate(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: address.FieldCoordinate,
+		})
+	}
+	if auo.mutation.CoordinateCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: address.FieldCoordinate,
 		})
 	}
 	if auo.mutation.MerchantCleared() {

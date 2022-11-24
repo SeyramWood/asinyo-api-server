@@ -5,13 +5,15 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent"
 )
 
 type (
 	ProductStore struct {
-		ID           int    `json:"id"`
-		BusinessName string `json:"businessName"`
+		ID           int                  `json:"id"`
+		BusinessName string               `json:"businessName"`
+		Coordinate   *services.Coordinate `json:"coordinate"`
 	}
 	MerchantResponse struct {
 		Username  string        `json:"username"`
@@ -96,6 +98,7 @@ func ProductsWithStoreResponse(data []*ent.Product) *fiber.Map {
 						return &ProductStore{
 							ID:           s.ID,
 							BusinessName: s.Name,
+							Coordinate:   s.Coordinate,
 						}
 					}
 					return nil
@@ -142,6 +145,7 @@ func ProductsBestSellerResponse(data []*ent.Product) *fiber.Map {
 							return &ProductStore{
 								ID:           s.ID,
 								BusinessName: s.Name,
+								Coordinate:   s.Coordinate,
 							}
 						}
 						return nil
@@ -221,6 +225,7 @@ func formatProductsWithMerchant(data []*ent.Product) []*ProductWithMerchant {
 									return &ProductStore{
 										ID:           s.ID,
 										BusinessName: s.Name,
+										Coordinate:   s.Coordinate,
 									}
 								}
 								return nil
@@ -237,6 +242,7 @@ func formatProductsWithMerchant(data []*ent.Product) []*ProductWithMerchant {
 									return &ProductStore{
 										ID:           s.ID,
 										BusinessName: s.Name,
+										Coordinate:   s.Coordinate,
 									}
 								}
 								return nil
@@ -280,6 +286,7 @@ func formatProductWithMerchant(data *ent.Product) *ProductWithMerchant {
 							return &ProductStore{
 								ID:           s.ID,
 								BusinessName: s.Name,
+								Coordinate:   s.Coordinate,
 							}
 						}
 						return nil
@@ -296,6 +303,7 @@ func formatProductWithMerchant(data *ent.Product) *ProductWithMerchant {
 							return &ProductStore{
 								ID:           s.ID,
 								BusinessName: s.Name,
+								Coordinate:   s.Coordinate,
 							}
 						}
 						return nil

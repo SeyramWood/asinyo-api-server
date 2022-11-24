@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/SeyramWood/app/application"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/merchant"
 
 	"golang.org/x/crypto/bcrypt"
@@ -53,8 +54,6 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 				SetOtherName(mc.Info.OtherName).
 				SetPhone(mc.Info.Phone).
 				SetOtherPhone(mc.Info.OtherPhone).
-				SetAddress(mc.Info.Address).
-				SetDigitalAddress(mc.Info.DigitalAddress).
 				Save(ctx)
 			if err != nil {
 				return nil, application.Rollback(tx, fmt.Errorf("failed creating supplier merchant: %w", err))
@@ -67,8 +66,6 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 				SetOtherName(mc.Info.OtherName).
 				SetPhone(mc.Info.Phone).
 				SetOtherPhone(mc.Info.OtherPhone).
-				SetAddress(mc.Info.Address).
-				SetDigitalAddress(mc.Info.DigitalAddress).
 				Save(ctx)
 			if err != nil {
 				return nil, application.Rollback(tx, fmt.Errorf("failed creating retail merchant: %w", err))
@@ -86,6 +83,7 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 		SetUsername(mc.Credentials.Username).
 		SetPassword(hashPassword).
 		Save(ctx)
+
 	if err != nil {
 		return nil, application.Rollback(tx, fmt.Errorf("failed creating merchant: %w", err))
 	}
@@ -98,8 +96,6 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 			SetOtherName(mc.Info.OtherName).
 			SetPhone(mc.Info.Phone).
 			SetOtherPhone(mc.Info.OtherPhone).
-			SetAddress(mc.Info.Address).
-			SetDigitalAddress(mc.Info.DigitalAddress).
 			Save(ctx)
 		if err != nil {
 			return nil, application.Rollback(tx, fmt.Errorf("failed creating supplier merchant: %w", err))
@@ -112,13 +108,12 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 			SetOtherName(mc.Info.OtherName).
 			SetPhone(mc.Info.Phone).
 			SetOtherPhone(mc.Info.OtherPhone).
-			SetAddress(mc.Info.Address).
-			SetDigitalAddress(mc.Info.DigitalAddress).
 			Save(ctx)
 		if err != nil {
 			return nil, application.Rollback(tx, fmt.Errorf("failed creating retail merchant: %w", err))
 		}
 	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed commiting merchant transaction: %w", err)
 	}
@@ -127,24 +122,22 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 }
 
 func (r *repository) Onboard(
-	merc *models.StoreFinalRequest, agentId int, logo string, images []string, password string,
+	merc *models.OnboardMerchantFullRequest, agentId int, logo string, images []string, password string,
 ) (
 	*ent.Merchant, error,
 ) {
 
 	mr := &models.MerchantRequest{
 		Info: models.RetailMerchantRequestInfo{
-			MerchantType:   merc.MerchantType,
-			GhanaCard:      merc.GhanaCard,
-			LastName:       merc.LastName,
-			OtherName:      merc.OtherName,
-			Phone:          merc.Phone,
-			OtherPhone:     merc.OtherPhone,
-			Address:        merc.Address,
-			DigitalAddress: merc.DigitalAddress,
+			MerchantType: merc.PersonalInfo.MerchantType,
+			GhanaCard:    merc.PersonalInfo.GhanaCard,
+			LastName:     merc.PersonalInfo.LastName,
+			OtherName:    merc.PersonalInfo.OtherName,
+			Phone:        merc.PersonalInfo.Phone,
+			OtherPhone:   merc.PersonalInfo.OtherPhone,
 		},
 		Credentials: models.MerchantRequestCredentials{
-			Username:        merc.Username,
+			Username:        merc.PersonalInfo.Username,
 			Password:        password,
 			ConfirmPassword: password,
 			Terms:           true,
@@ -158,23 +151,27 @@ func (r *repository) Onboard(
 	mq := r.db.Merchant.Query().Where(merchant.ID(m.ID)).OnlyX(ctx)
 	_, err := r.db.MerchantStore.Create().SetMerchant(mq).
 		SetAgentID(agentId).
-		SetName(merc.BusinessName).
-		SetAbout(merc.About).
-		SetDescTitle(merc.DescriptionTitle).
-		SetDescription(merc.Description).
+		SetName(merc.StoreInfo.BusinessName).
+		SetSlogan(merc.StoreInfo.BusinessSlogan).
+		SetAbout(merc.StoreInfo.About).
+		SetDescription(merc.StoreInfo.Description).
 		SetLogo(logo).
 		SetImages(images).
-		SetRegion(merc.Region).
-		SetDistrict(merc.District).
-		SetCity(merc.City).
-		SetMerchantType(merc.MerchantType).
+		SetMerchantType(merc.PersonalInfo.MerchantType).
+		SetAddress(merc.Address).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating merchant store: %w", err)
 	}
 	return m, nil
 }
-
+func (r repository) SaveCoordinate(coordinate *services.Coordinate, id int) error {
+	_, err := r.db.MerchantStore.UpdateOneID(id).SetCoordinate(coordinate).Save(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func (r *repository) Read(id int) (*ent.Merchant, error) {
 
 	// b, err := r.db.User.Query().Where(user.ID(id)).First(context.Background())

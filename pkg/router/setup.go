@@ -8,9 +8,13 @@ import (
 	"github.com/SeyramWood/app/framework/web/http/routes"
 )
 
-func NewRouter(app *fiber.App, db *database.Adapter, mail gateways.EmailService) {
-	setup(app, routes.NewApiRouter(db, mail), routes.NewPageRouter(db, mail))
+func NewRouter(
+	app *fiber.App, db *database.Adapter, mail gateways.EmailService, logis gateways.LogisticService,
+	maps gateways.MapService,
+) {
+	setup(app, routes.NewApiRouter(db, mail, logis, maps), routes.NewPageRouter(db, mail, logis))
 }
+
 func setup(app *fiber.App, routers ...Router) {
 	for _, r := range routers {
 		r.Router(app)

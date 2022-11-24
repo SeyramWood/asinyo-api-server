@@ -31,10 +31,6 @@ type RetailMerchant struct {
 	Phone string `json:"phone,omitempty"`
 	// OtherPhone holds the value of the "other_phone" field.
 	OtherPhone *string `json:"other_phone,omitempty"`
-	// Address holds the value of the "address" field.
-	Address string `json:"address,omitempty"`
-	// DigitalAddress holds the value of the "digital_address" field.
-	DigitalAddress string `json:"digital_address,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RetailMerchantQuery when eager-loading is set.
 	Edges             RetailMerchantEdges `json:"edges"`
@@ -70,7 +66,7 @@ func (*RetailMerchant) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case retailmerchant.FieldID:
 			values[i] = new(sql.NullInt64)
-		case retailmerchant.FieldGhanaCard, retailmerchant.FieldLastName, retailmerchant.FieldOtherName, retailmerchant.FieldPhone, retailmerchant.FieldOtherPhone, retailmerchant.FieldAddress, retailmerchant.FieldDigitalAddress:
+		case retailmerchant.FieldGhanaCard, retailmerchant.FieldLastName, retailmerchant.FieldOtherName, retailmerchant.FieldPhone, retailmerchant.FieldOtherPhone:
 			values[i] = new(sql.NullString)
 		case retailmerchant.FieldCreatedAt, retailmerchant.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -140,18 +136,6 @@ func (rm *RetailMerchant) assignValues(columns []string, values []any) error {
 				rm.OtherPhone = new(string)
 				*rm.OtherPhone = value.String
 			}
-		case retailmerchant.FieldAddress:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field address", values[i])
-			} else if value.Valid {
-				rm.Address = value.String
-			}
-		case retailmerchant.FieldDigitalAddress:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field digital_address", values[i])
-			} else if value.Valid {
-				rm.DigitalAddress = value.String
-			}
 		case retailmerchant.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field merchant_retailer", value)
@@ -214,12 +198,6 @@ func (rm *RetailMerchant) String() string {
 		builder.WriteString("other_phone=")
 		builder.WriteString(*v)
 	}
-	builder.WriteString(", ")
-	builder.WriteString("address=")
-	builder.WriteString(rm.Address)
-	builder.WriteString(", ")
-	builder.WriteString("digital_address=")
-	builder.WriteString(rm.DigitalAddress)
 	builder.WriteByte(')')
 	return builder.String()
 }

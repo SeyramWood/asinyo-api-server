@@ -25,10 +25,6 @@ const (
 	FieldPhone = "phone"
 	// FieldOtherPhone holds the string denoting the other_phone field in the database.
 	FieldOtherPhone = "other_phone"
-	// FieldAddress holds the string denoting the address field in the database.
-	FieldAddress = "address"
-	// FieldDigitalAddress holds the string denoting the digital_address field in the database.
-	FieldDigitalAddress = "digital_address"
 	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
 	EdgeMerchant = "merchant"
 	// Table holds the table name of the suppliermerchant in the database.
@@ -52,8 +48,6 @@ var Columns = []string{
 	FieldOtherName,
 	FieldPhone,
 	FieldOtherPhone,
-	FieldAddress,
-	FieldDigitalAddress,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "supplier_merchants"
@@ -92,8 +86,4 @@ var (
 	OtherNameValidator func(string) error
 	// PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
 	PhoneValidator func(string) error
-	// AddressValidator is a validator for the "address" field. It is called by the builders before save.
-	AddressValidator func(string) error
-	// DigitalAddressValidator is a validator for the "digital_address" field. It is called by the builders before save.
-	DigitalAddressValidator func(string) error
 )

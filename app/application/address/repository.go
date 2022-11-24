@@ -6,6 +6,7 @@ import (
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/ent/address"
@@ -47,19 +48,19 @@ func (r repository) ReadAllByUser(userId int, userType string) ([]*ent.Address, 
 	ctx := context.Background()
 	switch userType {
 	case "retailer", "supplier":
-		result, err := r.db.Address.Query().Where(address.HasMerchantWith(merchant.ID(userId))).Order(ent.Asc(address.FieldDefault)).All(ctx)
+		result, err := r.db.Address.Query().Where(address.HasMerchantWith(merchant.ID(userId))).Order(ent.Desc(address.FieldDefault)).All(ctx)
 		if err != nil {
 			return nil, nil
 		}
 		return result, nil
 	case "agent":
-		result, err := r.db.Address.Query().Where(address.HasAgentWith(agent.ID(userId))).Order(ent.Asc(address.FieldDefault)).All(ctx)
+		result, err := r.db.Address.Query().Where(address.HasAgentWith(agent.ID(userId))).Order(ent.Desc(address.FieldDefault)).All(ctx)
 		if err != nil {
 			return nil, nil
 		}
 		return result, nil
 	default:
-		result, err := r.db.Address.Query().Where(address.HasCustomerWith(customer.ID(userId))).Order(ent.Asc(address.FieldDefault)).All(ctx)
+		result, err := r.db.Address.Query().Where(address.HasCustomerWith(customer.ID(userId))).Order(ent.Desc(address.FieldDefault)).All(ctx)
 		if err != nil {
 			return nil, nil
 		}
@@ -106,9 +107,11 @@ func (r repository) ReadByUser(userId int, userType string) (*ent.Address, error
 func (r repository) Update(addressId int, addr *models.Address) (*ent.Address, error) {
 	result, err := r.db.Address.UpdateOneID(addressId).
 		SetAddress(addr.Address).
-		SetOtherInformation(addr.OtherAddress).
 		SetRegion(addr.Region).
+		SetDistrict(addr.District).
 		SetCity(addr.City).
+		SetStreetName(addr.StreetName).
+		SetStreetNumber(addr.StreetNumber).
 		SetLastName(addr.LastName).
 		SetOtherName(addr.OtherName).
 		SetPhone(addr.Phone).
@@ -156,6 +159,13 @@ func (r repository) UpdateByUserDefaultAddress(userId, addressId int, userType s
 		return r.ReadAllByUser(userId, userType)
 	}
 }
+func (r repository) SaveCoordinate(coordinate *services.Coordinate, id int) error {
+	_, err := r.db.Address.UpdateOneID(id).SetCoordinate(coordinate).Save(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func (r repository) Delete(id string) error {
 	// TODO implement me
@@ -167,9 +177,11 @@ func (r repository) insertMerchantAddress(addr *models.Address, userId int) (*en
 	result, err := r.db.Address.Create().
 		SetMerchant(mq).
 		SetAddress(addr.Address).
-		SetOtherInformation(addr.OtherAddress).
 		SetRegion(addr.Region).
+		SetDistrict(addr.District).
 		SetCity(addr.City).
+		SetStreetName(addr.StreetName).
+		SetStreetNumber(addr.StreetNumber).
 		SetLastName(addr.LastName).
 		SetOtherName(addr.OtherName).
 		SetPhone(addr.Phone).
@@ -187,9 +199,11 @@ func (r repository) insertAgentAddress(addr *models.Address, userId int) (*ent.A
 	result, err := r.db.Address.Create().
 		SetAgent(mq).
 		SetAddress(addr.Address).
-		SetOtherInformation(addr.OtherAddress).
 		SetRegion(addr.Region).
+		SetDistrict(addr.District).
 		SetCity(addr.City).
+		SetStreetName(addr.StreetName).
+		SetStreetNumber(addr.StreetNumber).
 		SetLastName(addr.LastName).
 		SetOtherName(addr.OtherName).
 		SetPhone(addr.Phone).
@@ -207,9 +221,11 @@ func (r repository) insertCustomerAddress(addr *models.Address, userId int) (*en
 	result, err := r.db.Address.Create().
 		SetCustomer(mq).
 		SetAddress(addr.Address).
-		SetOtherInformation(addr.OtherAddress).
 		SetRegion(addr.Region).
+		SetDistrict(addr.District).
 		SetCity(addr.City).
+		SetStreetName(addr.StreetName).
+		SetStreetNumber(addr.StreetNumber).
 		SetLastName(addr.LastName).
 		SetOtherName(addr.OtherName).
 		SetPhone(addr.Phone).

@@ -2,7 +2,10 @@ package api
 
 import (
 	"errors"
+	"fmt"
 
+	cacheDriver "github.com/faabiosr/cachego/file"
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/SeyramWood/app/adapters/gateways"
@@ -15,14 +18,16 @@ import (
 
 type MerchantHandler struct {
 	service gateways.MerchantService
+	maps    gateways.MapService
 }
 
-func NewMerchantHandler(db *database.Adapter, mail gateways.EmailService) *MerchantHandler {
+func NewMerchantHandler(db *database.Adapter, mail gateways.EmailService, maps gateways.MapService) *MerchantHandler {
 	repo := merchant.NewMerchantRepo(db)
 	service := merchant.NewMerchantService(repo, mail)
-
+	mapService := maps.SetMerchantRepo(repo)
 	return &MerchantHandler{
 		service: service,
+		maps:    mapService,
 	}
 }
 
@@ -73,14 +78,15 @@ func (h *MerchantHandler) Create() fiber.Handler {
 
 func (h *MerchantHandler) OnboardMerchant() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		var request models.MerchantStoreInfo
 
-		var request models.StoreFinalRequest
 		err := c.BodyParser(&request)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
+
 		agentId, _ := c.ParamsInt("agent")
-		file, err := c.FormFile("image")
+		file, err := c.FormFile("banner")
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
@@ -96,6 +102,34 @@ func (h *MerchantHandler) OnboardMerchant() fiber.Handler {
 				},
 			)
 		}
+		cache := cacheDriver.New("./mnt/cache/")
+		stepOne := fmt.Sprintf("step_one_%s", c.Params("agent"))
+		stepTwo := fmt.Sprintf("step_two_%s", c.Params("agent"))
+		cachedData := cache.FetchMulti([]string{stepOne, stepTwo})
+		if len(cachedData) < 2 {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Something went wrong",
+				},
+			)
+		}
+		pInfo := models.RetailerStorePersonalInfo{}
+		aInfo := models.MerchantStoreAddress{}
+		err = json.Unmarshal([]byte(cachedData[stepOne]), &pInfo)
+		err = json.Unmarshal([]byte(cachedData[stepTwo]), &aInfo)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Something went wrong",
+				},
+			)
+		}
+
+		requestData := models.OnboardMerchantFullRequest{
+			PersonalInfo: &pInfo,
+			Address:      &aInfo,
+			StoreInfo:    &request,
+		}
 
 		logo, images, upErr := storage.NewUploadCare().Client().UploadMerchantStore(file, form)
 		if upErr != nil {
@@ -105,11 +139,19 @@ func (h *MerchantHandler) OnboardMerchant() fiber.Handler {
 				},
 			)
 		}
-		_, err = h.service.Onboard(&request, agentId, logo, images)
-		if err != nil {
-			// Delete all files from remote server
+
+		result, errr := h.service.Onboard(&requestData, agentId, logo, images)
+		if errr != nil {
+			// TODO Delete all files from remote server
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
+
+		for key, _ := range cachedData {
+			cache.Delete(key)
+		}
+
+		h.maps.ExecuteTask(result, "geocoding", "merchant")
+
 		return c.JSON(presenters.EmptySuccessResponse())
 	}
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/SeyramWood/ent/agentrequest"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -49,6 +50,8 @@ type Client struct {
 	Customer *CustomerClient
 	// Favourite is the client for interacting with the Favourite builders.
 	Favourite *FavouriteClient
+	// Logistic is the client for interacting with the Logistic builders.
+	Logistic *LogisticClient
 	// Merchant is the client for interacting with the Merchant builders.
 	Merchant *MerchantClient
 	// MerchantStore is the client for interacting with the MerchantStore builders.
@@ -88,6 +91,7 @@ func (c *Client) init() {
 	c.AgentRequest = NewAgentRequestClient(c.config)
 	c.Customer = NewCustomerClient(c.config)
 	c.Favourite = NewFavouriteClient(c.config)
+	c.Logistic = NewLogisticClient(c.config)
 	c.Merchant = NewMerchantClient(c.config)
 	c.MerchantStore = NewMerchantStoreClient(c.config)
 	c.Order = NewOrderClient(c.config)
@@ -137,6 +141,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AgentRequest:         NewAgentRequestClient(cfg),
 		Customer:             NewCustomerClient(cfg),
 		Favourite:            NewFavouriteClient(cfg),
+		Logistic:             NewLogisticClient(cfg),
 		Merchant:             NewMerchantClient(cfg),
 		MerchantStore:        NewMerchantStoreClient(cfg),
 		Order:                NewOrderClient(cfg),
@@ -172,6 +177,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AgentRequest:         NewAgentRequestClient(cfg),
 		Customer:             NewCustomerClient(cfg),
 		Favourite:            NewFavouriteClient(cfg),
+		Logistic:             NewLogisticClient(cfg),
 		Merchant:             NewMerchantClient(cfg),
 		MerchantStore:        NewMerchantStoreClient(cfg),
 		Order:                NewOrderClient(cfg),
@@ -217,6 +223,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.AgentRequest.Use(hooks...)
 	c.Customer.Use(hooks...)
 	c.Favourite.Use(hooks...)
+	c.Logistic.Use(hooks...)
 	c.Merchant.Use(hooks...)
 	c.MerchantStore.Use(hooks...)
 	c.Order.Use(hooks...)
@@ -1025,6 +1032,112 @@ func (c *FavouriteClient) Hooks() []Hook {
 	return c.hooks.Favourite
 }
 
+// LogisticClient is a client for the Logistic schema.
+type LogisticClient struct {
+	config
+}
+
+// NewLogisticClient returns a client for the Logistic from the given config.
+func NewLogisticClient(c config) *LogisticClient {
+	return &LogisticClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `logistic.Hooks(f(g(h())))`.
+func (c *LogisticClient) Use(hooks ...Hook) {
+	c.hooks.Logistic = append(c.hooks.Logistic, hooks...)
+}
+
+// Create returns a builder for creating a Logistic entity.
+func (c *LogisticClient) Create() *LogisticCreate {
+	mutation := newLogisticMutation(c.config, OpCreate)
+	return &LogisticCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Logistic entities.
+func (c *LogisticClient) CreateBulk(builders ...*LogisticCreate) *LogisticCreateBulk {
+	return &LogisticCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Logistic.
+func (c *LogisticClient) Update() *LogisticUpdate {
+	mutation := newLogisticMutation(c.config, OpUpdate)
+	return &LogisticUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LogisticClient) UpdateOne(l *Logistic) *LogisticUpdateOne {
+	mutation := newLogisticMutation(c.config, OpUpdateOne, withLogistic(l))
+	return &LogisticUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LogisticClient) UpdateOneID(id int) *LogisticUpdateOne {
+	mutation := newLogisticMutation(c.config, OpUpdateOne, withLogisticID(id))
+	return &LogisticUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Logistic.
+func (c *LogisticClient) Delete() *LogisticDelete {
+	mutation := newLogisticMutation(c.config, OpDelete)
+	return &LogisticDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *LogisticClient) DeleteOne(l *Logistic) *LogisticDeleteOne {
+	return c.DeleteOneID(l.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *LogisticClient) DeleteOneID(id int) *LogisticDeleteOne {
+	builder := c.Delete().Where(logistic.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LogisticDeleteOne{builder}
+}
+
+// Query returns a query builder for Logistic.
+func (c *LogisticClient) Query() *LogisticQuery {
+	return &LogisticQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Logistic entity by its id.
+func (c *LogisticClient) Get(ctx context.Context, id int) (*Logistic, error) {
+	return c.Query().Where(logistic.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LogisticClient) GetX(ctx context.Context, id int) *Logistic {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryOrder queries the order edge of a Logistic.
+func (c *LogisticClient) QueryOrder(l *Logistic) *OrderQuery {
+	query := &OrderQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := l.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(logistic.Table, logistic.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, logistic.OrderTable, logistic.OrderPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(l.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *LogisticClient) Hooks() []Hook {
+	return c.hooks.Logistic
+}
+
 // MerchantClient is a client for the Merchant schema.
 type MerchantClient struct {
 	config
@@ -1587,6 +1700,22 @@ func (c *OrderClient) QueryStores(o *Order) *MerchantStoreQuery {
 			sqlgraph.From(order.Table, order.FieldID, id),
 			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, order.StoresTable, order.StoresPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLogistic queries the logistic edge of a Order.
+func (c *OrderClient) QueryLogistic(o *Order) *LogisticQuery {
+	query := &LogisticQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(logistic.Table, logistic.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, order.LogisticTable, order.LogisticPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
 		return fromV, nil

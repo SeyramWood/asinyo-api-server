@@ -87,18 +87,6 @@ func (rmc *RetailMerchantCreate) SetNillableOtherPhone(s *string) *RetailMerchan
 	return rmc
 }
 
-// SetAddress sets the "address" field.
-func (rmc *RetailMerchantCreate) SetAddress(s string) *RetailMerchantCreate {
-	rmc.mutation.SetAddress(s)
-	return rmc
-}
-
-// SetDigitalAddress sets the "digital_address" field.
-func (rmc *RetailMerchantCreate) SetDigitalAddress(s string) *RetailMerchantCreate {
-	rmc.mutation.SetDigitalAddress(s)
-	return rmc
-}
-
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (rmc *RetailMerchantCreate) SetMerchantID(id int) *RetailMerchantCreate {
 	rmc.mutation.SetMerchantID(id)
@@ -237,22 +225,6 @@ func (rmc *RetailMerchantCreate) check() error {
 			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.phone": %w`, err)}
 		}
 	}
-	if _, ok := rmc.mutation.Address(); !ok {
-		return &ValidationError{Name: "address", err: errors.New(`ent: missing required field "RetailMerchant.address"`)}
-	}
-	if v, ok := rmc.mutation.Address(); ok {
-		if err := retailmerchant.AddressValidator(v); err != nil {
-			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.address": %w`, err)}
-		}
-	}
-	if _, ok := rmc.mutation.DigitalAddress(); !ok {
-		return &ValidationError{Name: "digital_address", err: errors.New(`ent: missing required field "RetailMerchant.digital_address"`)}
-	}
-	if v, ok := rmc.mutation.DigitalAddress(); ok {
-		if err := retailmerchant.DigitalAddressValidator(v); err != nil {
-			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.digital_address": %w`, err)}
-		}
-	}
 	if _, ok := rmc.mutation.MerchantID(); !ok {
 		return &ValidationError{Name: "merchant", err: errors.New(`ent: missing required edge "RetailMerchant.merchant"`)}
 	}
@@ -338,22 +310,6 @@ func (rmc *RetailMerchantCreate) createSpec() (*RetailMerchant, *sqlgraph.Create
 			Column: retailmerchant.FieldOtherPhone,
 		})
 		_node.OtherPhone = &value
-	}
-	if value, ok := rmc.mutation.Address(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldAddress,
-		})
-		_node.Address = value
-	}
-	if value, ok := rmc.mutation.DigitalAddress(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldDigitalAddress,
-		})
-		_node.DigitalAddress = value
 	}
 	if nodes := rmc.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

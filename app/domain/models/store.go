@@ -32,16 +32,25 @@ type (
 		DefaultAccount bool   `json:"defaultAccount"`
 	}
 	MerchantStore struct {
-		BusinessName     string `json:"businessName" validate:"required|string"`
-		About            string `json:"about" validate:"required"`
-		DescriptionTitle string `json:"descriptionTitle" validate:"required|string"`
-		Description      string `json:"description" validate:"required"`
-		Image            []byte `json:"image"`
-		OtherImages      []byte `json:"otherImages"`
-		Region           string `json:"region" validate:"required|string"`
-		District         string `json:"district" validate:"required|string"`
-		City             string `json:"city" validate:"required|string"`
-		Account          string `json:"account"`
-		MerchantType     string `json:"merchantType" validate:"required|string"`
+		BusinessName   string `json:"businessName" validate:"required|string"`
+		BusinessSlogan string `json:"businessLogan" validate:"required|string"`
+		About          string `json:"about" validate:"required"`
+		Description    string `json:"description" validate:"required"`
+		Banner         []byte `json:"banner"`
+		OtherImages    []byte `json:"otherImages"`
+		MerchantType   string `json:"merchantType" validate:"required|string"`
+	}
+	// StoreAddress struct {
+	// 	Address      string `json:"postalAddress" validate:"required|string"`
+	// 	Country      string `json:"country,omitempty" validate:"required|string"`
+	// 	Region       string `json:"region" validate:"required|string"`
+	// 	City         string `json:"city" validate:"required|string"`
+	// 	District     string `json:"district" validate:"required|string"`
+	// 	StreetName   string `json:"streetName" validate:"required|string"`
+	// 	StreetNumber string `json:"streetNumber" validate:"string"`
+	// }
+	MerchantStoreRequest struct {
+		Info    *MerchantStore        `json:"postalAddress"`
+		Address *MerchantStoreAddress `json:"address"`
 	}
 )

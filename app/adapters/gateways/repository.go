@@ -30,8 +30,9 @@ type (
 	MerchantRepo interface {
 		Insert(merchant *models.MerchantRequest, onboard bool) (*ent.Merchant, error)
 		Onboard(
-			merchant *models.StoreFinalRequest, agentId int, logo string, images []string, password string,
+			merchant *models.OnboardMerchantFullRequest, agentId int, logo string, images []string, password string,
 		) (*ent.Merchant, error)
+		SaveCoordinate(coordinate *services.Coordinate, id int) error
 		Read(id int) (*ent.Merchant, error)
 		ReadAll() ([]*ent.Merchant, error)
 		Update(merchant *models.Merchant) (*models.Merchant, error)
@@ -52,16 +53,20 @@ type (
 		Delete(id string) error
 	}
 	MerchantStoreRepo interface {
-		Insert(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.MerchantStore, error)
+		Insert(store *models.MerchantStoreRequest, merchantId int, logo string, images []string) (
+			*ent.MerchantStore, error,
+		)
 		UpdateAccount(store interface{}, storeId int, logo string) (*ent.MerchantStore, error)
 		UpdateDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
 		UpdateAgentPermission(permission bool, storeId int) (*ent.MerchantStore, error)
+		SaveCoordinate(coordinate *services.Coordinate, id int) error
 		Read(id int) (*ent.MerchantStore, error)
 		ReadByMerchant(merchantId int) (*ent.MerchantStore, error)
 		ReadAgent(store int) (*ent.Agent, error)
 		ReadAll() ([]*ent.MerchantStore, error)
 		ReadAllByMerchant(merchantType string, limit, offset int) ([]*ent.MerchantStore, error)
-		Update(store *models.MerchantStore) (*models.MerchantStore, error)
+		Update(store *models.MerchantStore, storeId int) (*ent.MerchantStore, error)
+		UpdateAddress(address *models.MerchantStoreAddress, storeId int) (*ent.MerchantStore, error)
 		Delete(id string) error
 	}
 	ProductRepo interface {
@@ -117,6 +122,7 @@ type (
 		ReadByUser(userId int, userType string) (*ent.Address, error)
 		Update(addressId int, address *models.Address) (*ent.Address, error)
 		UpdateByUserDefaultAddress(userId, addressId int, userType string) ([]*ent.Address, error)
+		SaveCoordinate(coordinate *services.Coordinate, id int) error
 		Delete(id string) error
 	}
 	PickupStationRepo interface {
@@ -125,6 +131,16 @@ type (
 		ReadAll() ([]*ent.PickupStation, error)
 		Update(stationId int, address *models.PickupStation) (*ent.PickupStation, error)
 		Delete(id string) error
+	}
+	LogisticRepo interface {
+		InsertResponse(response *models.TookanMultiTaskResponse) (*ent.Logistic, error)
+		UpdateResponse(response *models.TookanMultiTaskResponse) (*ent.Logistic, error)
+		UpdateOrderDeliveryTask(orderId string, ids []int) error
+		Delete(id string) error
+	}
+	MapRepo interface {
+		Delete(id string) error
+		SaveCoordinate(coordinate *services.Coordinate, id int, model string) error
 	}
 
 	OrderRepo interface {
@@ -140,6 +156,7 @@ type (
 		Update(order *services.PaystackResponse) (*ent.Order, error)
 		Delete(id string) error
 		UpdateOrderDetailStatus(requests map[string]*gabs.Container) (*ent.Order, error)
+		ReadByStoreOrderDetail(orderId int) ([]*ent.OrderDetail, error)
 	}
 
 	AuthRepo interface {

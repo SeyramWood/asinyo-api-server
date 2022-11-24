@@ -14,6 +14,7 @@ import (
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -189,6 +190,18 @@ func (ou *OrderUpdate) SetNillableStatus(o *order.Status) *OrderUpdate {
 	return ou
 }
 
+// SetStoreTasksCreated sets the "store_tasks_created" field.
+func (ou *OrderUpdate) SetStoreTasksCreated(i []int) *OrderUpdate {
+	ou.mutation.SetStoreTasksCreated(i)
+	return ou
+}
+
+// ClearStoreTasksCreated clears the value of the "store_tasks_created" field.
+func (ou *OrderUpdate) ClearStoreTasksCreated() *OrderUpdate {
+	ou.mutation.ClearStoreTasksCreated()
+	return ou
+}
+
 // SetDeliveredAt sets the "delivered_at" field.
 func (ou *OrderUpdate) SetDeliveredAt(t time.Time) *OrderUpdate {
 	ou.mutation.SetDeliveredAt(t)
@@ -334,6 +347,21 @@ func (ou *OrderUpdate) AddStores(m ...*MerchantStore) *OrderUpdate {
 	return ou.AddStoreIDs(ids...)
 }
 
+// AddLogisticIDs adds the "logistic" edge to the Logistic entity by IDs.
+func (ou *OrderUpdate) AddLogisticIDs(ids ...int) *OrderUpdate {
+	ou.mutation.AddLogisticIDs(ids...)
+	return ou
+}
+
+// AddLogistic adds the "logistic" edges to the Logistic entity.
+func (ou *OrderUpdate) AddLogistic(l ...*Logistic) *OrderUpdate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return ou.AddLogisticIDs(ids...)
+}
+
 // Mutation returns the OrderMutation object of the builder.
 func (ou *OrderUpdate) Mutation() *OrderMutation {
 	return ou.mutation
@@ -409,6 +437,27 @@ func (ou *OrderUpdate) RemoveStores(m ...*MerchantStore) *OrderUpdate {
 		ids[i] = m[i].ID
 	}
 	return ou.RemoveStoreIDs(ids...)
+}
+
+// ClearLogistic clears all "logistic" edges to the Logistic entity.
+func (ou *OrderUpdate) ClearLogistic() *OrderUpdate {
+	ou.mutation.ClearLogistic()
+	return ou
+}
+
+// RemoveLogisticIDs removes the "logistic" edge to Logistic entities by IDs.
+func (ou *OrderUpdate) RemoveLogisticIDs(ids ...int) *OrderUpdate {
+	ou.mutation.RemoveLogisticIDs(ids...)
+	return ou
+}
+
+// RemoveLogistic removes "logistic" edges to Logistic entities.
+func (ou *OrderUpdate) RemoveLogistic(l ...*Logistic) *OrderUpdate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return ou.RemoveLogisticIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -635,6 +684,19 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeEnum,
 			Value:  value,
 			Column: order.FieldStatus,
+		})
+	}
+	if value, ok := ou.mutation.StoreTasksCreated(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: order.FieldStoreTasksCreated,
+		})
+	}
+	if ou.mutation.StoreTasksCreatedCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: order.FieldStoreTasksCreated,
 		})
 	}
 	if value, ok := ou.mutation.DeliveredAt(); ok {
@@ -933,6 +995,60 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if ou.mutation.LogisticCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   order.LogisticTable,
+			Columns: order.LogisticPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ou.mutation.RemovedLogisticIDs(); len(nodes) > 0 && !ou.mutation.LogisticCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   order.LogisticTable,
+			Columns: order.LogisticPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ou.mutation.LogisticIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   order.LogisticTable,
+			Columns: order.LogisticPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ou.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{order.Label}
@@ -1106,6 +1222,18 @@ func (ouo *OrderUpdateOne) SetNillableStatus(o *order.Status) *OrderUpdateOne {
 	return ouo
 }
 
+// SetStoreTasksCreated sets the "store_tasks_created" field.
+func (ouo *OrderUpdateOne) SetStoreTasksCreated(i []int) *OrderUpdateOne {
+	ouo.mutation.SetStoreTasksCreated(i)
+	return ouo
+}
+
+// ClearStoreTasksCreated clears the value of the "store_tasks_created" field.
+func (ouo *OrderUpdateOne) ClearStoreTasksCreated() *OrderUpdateOne {
+	ouo.mutation.ClearStoreTasksCreated()
+	return ouo
+}
+
 // SetDeliveredAt sets the "delivered_at" field.
 func (ouo *OrderUpdateOne) SetDeliveredAt(t time.Time) *OrderUpdateOne {
 	ouo.mutation.SetDeliveredAt(t)
@@ -1251,6 +1379,21 @@ func (ouo *OrderUpdateOne) AddStores(m ...*MerchantStore) *OrderUpdateOne {
 	return ouo.AddStoreIDs(ids...)
 }
 
+// AddLogisticIDs adds the "logistic" edge to the Logistic entity by IDs.
+func (ouo *OrderUpdateOne) AddLogisticIDs(ids ...int) *OrderUpdateOne {
+	ouo.mutation.AddLogisticIDs(ids...)
+	return ouo
+}
+
+// AddLogistic adds the "logistic" edges to the Logistic entity.
+func (ouo *OrderUpdateOne) AddLogistic(l ...*Logistic) *OrderUpdateOne {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return ouo.AddLogisticIDs(ids...)
+}
+
 // Mutation returns the OrderMutation object of the builder.
 func (ouo *OrderUpdateOne) Mutation() *OrderMutation {
 	return ouo.mutation
@@ -1326,6 +1469,27 @@ func (ouo *OrderUpdateOne) RemoveStores(m ...*MerchantStore) *OrderUpdateOne {
 		ids[i] = m[i].ID
 	}
 	return ouo.RemoveStoreIDs(ids...)
+}
+
+// ClearLogistic clears all "logistic" edges to the Logistic entity.
+func (ouo *OrderUpdateOne) ClearLogistic() *OrderUpdateOne {
+	ouo.mutation.ClearLogistic()
+	return ouo
+}
+
+// RemoveLogisticIDs removes the "logistic" edge to Logistic entities by IDs.
+func (ouo *OrderUpdateOne) RemoveLogisticIDs(ids ...int) *OrderUpdateOne {
+	ouo.mutation.RemoveLogisticIDs(ids...)
+	return ouo
+}
+
+// RemoveLogistic removes "logistic" edges to Logistic entities.
+func (ouo *OrderUpdateOne) RemoveLogistic(l ...*Logistic) *OrderUpdateOne {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return ouo.RemoveLogisticIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -1582,6 +1746,19 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Type:   field.TypeEnum,
 			Value:  value,
 			Column: order.FieldStatus,
+		})
+	}
+	if value, ok := ouo.mutation.StoreTasksCreated(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: order.FieldStoreTasksCreated,
+		})
+	}
+	if ouo.mutation.StoreTasksCreatedCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: order.FieldStoreTasksCreated,
 		})
 	}
 	if value, ok := ouo.mutation.DeliveredAt(); ok {
@@ -1872,6 +2049,60 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ouo.mutation.LogisticCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   order.LogisticTable,
+			Columns: order.LogisticPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ouo.mutation.RemovedLogisticIDs(); len(nodes) > 0 && !ouo.mutation.LogisticCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   order.LogisticTable,
+			Columns: order.LogisticPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ouo.mutation.LogisticIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   order.LogisticTable,
+			Columns: order.LogisticPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
 				},
 			},
 		}

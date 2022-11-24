@@ -119,7 +119,7 @@ func (auth *authHandler) SendVerificationCode() fiber.Handler {
 				},
 			)
 		}
-		if err := cache.Save(request.Username, code, 24*time.Hour); err != nil {
+		if err := cache.Save(request.Username, code, 6*time.Hour); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
 					"status": false,

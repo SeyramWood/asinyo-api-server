@@ -20,26 +20,24 @@ const (
 	FieldName = "name"
 	// FieldAbout holds the string denoting the about field in the database.
 	FieldAbout = "about"
-	// FieldDescTitle holds the string denoting the desc_title field in the database.
-	FieldDescTitle = "desc_title"
+	// FieldSlogan holds the string denoting the slogan field in the database.
+	FieldSlogan = "slogan"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
 	// FieldLogo holds the string denoting the logo field in the database.
 	FieldLogo = "logo"
 	// FieldImages holds the string denoting the images field in the database.
 	FieldImages = "images"
-	// FieldRegion holds the string denoting the region field in the database.
-	FieldRegion = "region"
-	// FieldDistrict holds the string denoting the district field in the database.
-	FieldDistrict = "district"
-	// FieldCity holds the string denoting the city field in the database.
-	FieldCity = "city"
 	// FieldDefaultAccount holds the string denoting the default_account field in the database.
 	FieldDefaultAccount = "default_account"
 	// FieldBankAccount holds the string denoting the bank_account field in the database.
 	FieldBankAccount = "bank_account"
 	// FieldMomoAccount holds the string denoting the momo_account field in the database.
 	FieldMomoAccount = "momo_account"
+	// FieldAddress holds the string denoting the address field in the database.
+	FieldAddress = "address"
+	// FieldCoordinate holds the string denoting the coordinate field in the database.
+	FieldCoordinate = "coordinate"
 	// FieldMerchantType holds the string denoting the merchant_type field in the database.
 	FieldMerchantType = "merchant_type"
 	// FieldPermitAgent holds the string denoting the permit_agent field in the database.
@@ -98,16 +96,15 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldName,
 	FieldAbout,
-	FieldDescTitle,
+	FieldSlogan,
 	FieldDescription,
 	FieldLogo,
 	FieldImages,
-	FieldRegion,
-	FieldDistrict,
-	FieldCity,
 	FieldDefaultAccount,
 	FieldBankAccount,
 	FieldMomoAccount,
+	FieldAddress,
+	FieldCoordinate,
 	FieldMerchantType,
 	FieldPermitAgent,
 }
@@ -151,8 +148,8 @@ var (
 	NameValidator func(string) error
 	// AboutValidator is a validator for the "about" field. It is called by the builders before save.
 	AboutValidator func(string) error
-	// DescTitleValidator is a validator for the "desc_title" field. It is called by the builders before save.
-	DescTitleValidator func(string) error
+	// SloganValidator is a validator for the "slogan" field. It is called by the builders before save.
+	SloganValidator func(string) error
 	// DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
 	DescriptionValidator func(string) error
 	// LogoValidator is a validator for the "logo" field. It is called by the builders before save.

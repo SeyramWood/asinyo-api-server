@@ -25,8 +25,6 @@ func (RetailMerchant) Fields() []ent.Field {
 		field.String("other_name").NotEmpty(),
 		field.String("phone").NotEmpty().Unique(),
 		field.String("other_phone").Optional().Nillable(),
-		field.String("address").NotEmpty(),
-		field.String("digital_address").NotEmpty(),
 	}
 }
 

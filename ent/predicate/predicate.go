@@ -24,6 +24,9 @@ type Customer func(*sql.Selector)
 // Favourite is the predicate function for favourite builders.
 type Favourite func(*sql.Selector)
 
+// Logistic is the predicate function for logistic builders.
+type Logistic func(*sql.Selector)
+
 // Merchant is the predicate function for merchant builders.
 type Merchant func(*sql.Selector)
 

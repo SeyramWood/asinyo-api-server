@@ -28,7 +28,7 @@ func New() *serverconfig {
 	var wg = sync.WaitGroup{}
 
 	errorChan := make(chan error)
-	mailerChan := make(chan *services.Message, 100)
+	mailerChan := make(chan *services.Message, 1024)
 	mailerDoneChan := make(chan bool)
 
 	return &serverconfig{
@@ -39,6 +39,7 @@ func New() *serverconfig {
 				StrictRouting: config.Server().StrictRouting,
 				ServerHeader:  config.Server().ServerHeader,
 				AppName:       config.App().Name,
+				BodyLimit:     10485760,
 				JSONEncoder:   json.Marshal,
 				JSONDecoder:   json.Unmarshal,
 			},

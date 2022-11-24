@@ -87,6 +87,19 @@ func (f FavouriteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	return f(ctx, mv)
 }
 
+// The LogisticFunc type is an adapter to allow the use of ordinary
+// function as Logistic mutator.
+type LogisticFunc func(context.Context, *ent.LogisticMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f LogisticFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.LogisticMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LogisticMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The MerchantFunc type is an adapter to allow the use of ordinary
 // function as Merchant mutator.
 type MerchantFunc func(context.Context, *ent.MerchantMutation) (ent.Value, error)

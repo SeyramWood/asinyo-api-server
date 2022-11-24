@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -45,6 +46,8 @@ type Order struct {
 	PaymentMethod order.PaymentMethod `json:"payment_method,omitempty"`
 	// Status holds the value of the "status" field.
 	Status order.Status `json:"status,omitempty"`
+	// StoreTasksCreated holds the value of the "store_tasks_created" field.
+	StoreTasksCreated []int `json:"store_tasks_created,omitempty"`
 	// DeliveredAt holds the value of the "delivered_at" field.
 	DeliveredAt *time.Time `json:"delivered_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -73,9 +76,11 @@ type OrderEdges struct {
 	Pickup *PickupStation `json:"pickup,omitempty"`
 	// Stores holds the value of the stores edge.
 	Stores []*MerchantStore `json:"stores,omitempty"`
+	// Logistic holds the value of the logistic edge.
+	Logistic []*Logistic `json:"logistic,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 }
 
 // DetailsOrErr returns the Details value or an error if the edge
@@ -161,11 +166,22 @@ func (e OrderEdges) StoresOrErr() ([]*MerchantStore, error) {
 	return nil, &NotLoadedError{edge: "stores"}
 }
 
+// LogisticOrErr returns the Logistic value or an error if the edge
+// was not loaded in eager-loading.
+func (e OrderEdges) LogisticOrErr() ([]*Logistic, error) {
+	if e.loadedTypes[7] {
+		return e.Logistic, nil
+	}
+	return nil, &NotLoadedError{edge: "logistic"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Order) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case order.FieldStoreTasksCreated:
+			values[i] = new([]byte)
 		case order.FieldAmount, order.FieldDeliveryFee:
 			values[i] = new(sql.NullFloat64)
 		case order.FieldID:
@@ -280,6 +296,14 @@ func (o *Order) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				o.Status = order.Status(value.String)
 			}
+		case order.FieldStoreTasksCreated:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field store_tasks_created", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &o.StoreTasksCreated); err != nil {
+					return fmt.Errorf("unmarshal field store_tasks_created: %w", err)
+				}
+			}
 		case order.FieldDeliveredAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field delivered_at", values[i])
@@ -362,6 +386,11 @@ func (o *Order) QueryStores() *MerchantStoreQuery {
 	return (&OrderClient{config: o.config}).QueryStores(o)
 }
 
+// QueryLogistic queries the "logistic" edge of the Order entity.
+func (o *Order) QueryLogistic() *LogisticQuery {
+	return (&OrderClient{config: o.config}).QueryLogistic(o)
+}
+
 // Update returns a builder for updating this Order.
 // Note that you need to call Order.Unwrap() before calling this method if this Order
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -426,6 +455,9 @@ func (o *Order) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", o.Status))
+	builder.WriteString(", ")
+	builder.WriteString("store_tasks_created=")
+	builder.WriteString(fmt.Sprintf("%v", o.StoreTasksCreated))
 	builder.WriteString(", ")
 	if v := o.DeliveredAt; v != nil {
 		builder.WriteString("delivered_at=")

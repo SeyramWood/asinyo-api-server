@@ -11,24 +11,22 @@ import (
 
 type (
 	storeDetails struct {
-		ID               int                         `json:"id"`
-		BusinessName     string                      `json:"businessName"`
-		About            string                      `json:"about"`
-		DescriptionTitle string                      `json:"descTitle"`
-		Description      string                      `json:"description"`
-		Logo             string                      `json:"logo"`
-		Region           string                      `json:"region"`
-		District         string                      `json:"district"`
-		City             string                      `json:"city"`
-		Images           []string                    `json:"images"`
-		DefaultAccount   string                      `json:"defaultAccount"`
-		BankAccount      *models.MerchantBankAccount `json:"bankAccount"`
-		MomoAccount      *models.MerchantMomoAccount `json:"momoAccount"`
-		PermitAgent      bool                        `json:"permitAgent"`
-		Agent            *agentMerchantTypeDetails   `json:"agent"`
-		CreatedAt        time.Time                   `json:"created_at"`
-		UpdatedAt        time.Time                   `json:"updated_at"`
-		MerchantInfo     *MerchantInfo               `json:"merchant"`
+		ID             int                          `json:"id"`
+		BusinessName   string                       `json:"businessName"`
+		BusinessSlogan string                       `json:"businessSlogan"`
+		About          string                       `json:"about"`
+		Description    string                       `json:"description"`
+		Logo           string                       `json:"logo"`
+		Images         []string                     `json:"images"`
+		DefaultAccount string                       `json:"defaultAccount"`
+		BankAccount    *models.MerchantBankAccount  `json:"bankAccount"`
+		MomoAccount    *models.MerchantMomoAccount  `json:"momoAccount"`
+		Address        *models.MerchantStoreAddress `json:"address"`
+		PermitAgent    bool                         `json:"permitAgent"`
+		Agent          *agentMerchantTypeDetails    `json:"agent"`
+		CreatedAt      time.Time                    `json:"created_at"`
+		UpdatedAt      time.Time                    `json:"updated_at"`
+		MerchantInfo   *MerchantInfo                `json:"merchant"`
 	}
 	agentMerchantTypeDetails struct {
 		ID             int    `json:"id"`
@@ -78,22 +76,20 @@ func MerchantStoreSuccessResponse(data *ent.MerchantStore) *fiber.Map {
 
 	return successResponse(
 		&storeDetails{
-			ID:               data.ID,
-			BusinessName:     data.Name,
-			About:            data.About,
-			DescriptionTitle: data.DescTitle,
-			Description:      data.Description,
-			Logo:             data.Logo,
-			Region:           *data.Region,
-			District:         *data.District,
-			City:             *data.City,
-			Images:           data.Images,
-			DefaultAccount:   string(data.DefaultAccount),
-			BankAccount:      data.BankAccount,
-			MomoAccount:      data.MomoAccount,
-			PermitAgent:      data.PermitAgent,
-			CreatedAt:        data.CreatedAt,
-			UpdatedAt:        data.UpdatedAt,
+			ID:             data.ID,
+			BusinessName:   data.Name,
+			BusinessSlogan: data.Slogan,
+			About:          data.About,
+			Description:    data.Description,
+			Logo:           data.Logo,
+			Images:         data.Images,
+			DefaultAccount: string(data.DefaultAccount),
+			BankAccount:    data.BankAccount,
+			MomoAccount:    data.MomoAccount,
+			Address:        data.Address,
+			PermitAgent:    data.PermitAgent,
+			CreatedAt:      data.CreatedAt,
+			UpdatedAt:      data.UpdatedAt,
 			MerchantInfo: &MerchantInfo{
 				ID: data.Edges.Merchant.ID,
 			},
@@ -118,22 +114,20 @@ func MerchantStoreSuccessResponse(data *ent.MerchantStore) *fiber.Map {
 func MerchantStorefrontSuccessResponse(data *ent.MerchantStore) *fiber.Map {
 	return successResponse(
 		&storeDetails{
-			ID:               data.ID,
-			BusinessName:     data.Name,
-			About:            data.About,
-			DescriptionTitle: data.DescTitle,
-			Description:      data.Description,
-			Logo:             data.Logo,
-			Region:           *data.Region,
-			District:         *data.District,
-			City:             *data.City,
-			Images:           data.Images,
-			DefaultAccount:   string(data.DefaultAccount),
-			BankAccount:      data.BankAccount,
-			MomoAccount:      data.MomoAccount,
-			PermitAgent:      data.PermitAgent,
-			CreatedAt:        data.CreatedAt,
-			UpdatedAt:        data.UpdatedAt,
+			ID:             data.ID,
+			BusinessName:   data.Name,
+			BusinessSlogan: data.Slogan,
+			About:          data.About,
+			Description:    data.Description,
+			Logo:           data.Logo,
+			Images:         data.Images,
+			DefaultAccount: string(data.DefaultAccount),
+			BankAccount:    data.BankAccount,
+			MomoAccount:    data.MomoAccount,
+			Address:        data.Address,
+			PermitAgent:    data.PermitAgent,
+			CreatedAt:      data.CreatedAt,
+			UpdatedAt:      data.UpdatedAt,
 		},
 	)
 }
@@ -190,24 +184,20 @@ func AgentMerchantStorefrontsSuccessResponse(data []*ent.MerchantStore) *fiber.M
 					Profile: func() *agentMerchantTypeDetails {
 						if s, err := v.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
 							return &agentMerchantTypeDetails{
-								ID:             s.ID,
-								LastName:       s.LastName,
-								OtherName:      s.OtherName,
-								Phone:          s.Phone,
-								OtherPhone:     *s.OtherPhone,
-								Address:        s.Address,
-								DigitalAddress: s.DigitalAddress,
+								ID:         s.ID,
+								LastName:   s.LastName,
+								OtherName:  s.OtherName,
+								Phone:      s.Phone,
+								OtherPhone: *s.OtherPhone,
 							}
 						}
 						if s, err := v.Edges.Merchant.Edges.RetailerOrErr(); err == nil {
 							return &agentMerchantTypeDetails{
-								ID:             s.ID,
-								LastName:       s.LastName,
-								OtherName:      s.OtherName,
-								Phone:          s.Phone,
-								OtherPhone:     *s.OtherPhone,
-								Address:        s.Address,
-								DigitalAddress: s.DigitalAddress,
+								ID:         s.ID,
+								LastName:   s.LastName,
+								OtherName:  s.OtherName,
+								Phone:      s.Phone,
+								OtherPhone: *s.OtherPhone,
 							}
 						}
 						return nil

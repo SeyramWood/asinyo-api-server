@@ -27,7 +27,7 @@ func NewMerchantStoreService(repo gateways.MerchantStoreRepo) gateways.MerchantS
 	}
 }
 
-func (s service) Create(store *models.MerchantStore, merchantId int, logo string, images []string) (
+func (s service) Create(store *models.MerchantStoreRequest, merchantId int, logo string, images []string) (
 	*ent.MerchantStore, error,
 ) {
 	return s.repo.Insert(store, merchantId, logo, images)
@@ -61,11 +61,13 @@ func (s service) FetchByMerchant(merchantId int) (*ent.MerchantStore, error) {
 func (s service) FetchAgent(store int) (*ent.Agent, error) {
 	return s.repo.ReadAgent(store)
 }
-func (s service) Update(store *models.MerchantStore) (*models.MerchantStore, error) {
+func (s service) Update(store *models.MerchantStore, storeId int) (*ent.MerchantStore, error) {
 	// TODO implement me
 	panic("implement me")
 }
-
+func (s service) UpdateAddress(address *models.MerchantStoreAddress, storeId int) (*ent.MerchantStore, error) {
+	return s.repo.UpdateAddress(address, storeId)
+}
 func (s service) Remove(id string) error {
 	// TODO implement me
 	panic("implement me")

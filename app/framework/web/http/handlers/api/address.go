@@ -14,13 +14,16 @@ import (
 
 type AddressHandler struct {
 	service gateways.AddressService
+	maps    gateways.MapService
 }
 
-func NewAddressHandler(db *database.Adapter) *AddressHandler {
+func NewAddressHandler(db *database.Adapter, maps gateways.MapService) *AddressHandler {
 	repo := address.NewAddressRepo(db)
 	service := address.NewAddressService(repo)
+	mapService := maps.SetAddressRepo(repo)
 	return &AddressHandler{
 		service: service,
+		maps:    mapService,
 	}
 }
 
@@ -97,6 +100,8 @@ func (h *AddressHandler) Create() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.AddressErrorResponse(errors.New("error creating merchant")))
 		}
+		h.maps.ExecuteTask(result, "geocoding", "address")
+
 		return c.JSON(presenters.AddressSuccessResponse(result))
 
 	}
@@ -136,6 +141,9 @@ func (h *AddressHandler) Update() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.AddressErrorResponse(errors.New("error updating address")))
 		}
+
+		h.maps.ExecuteTask(result, "geocoding", "address")
+
 		return c.JSON(presenters.AddressSuccessResponse(result))
 	}
 

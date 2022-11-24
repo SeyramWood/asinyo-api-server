@@ -1,6 +1,11 @@
 package request
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/faabiosr/cachego/file"
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/SeyramWood/app/adapters/presenters"
@@ -313,6 +318,10 @@ func ValidateNewMerchant() fiber.Handler {
 
 		var retailerInfo models.RetailerStorePersonalInfo
 		var supplierInfo models.SupplierStorePersonalInfo
+		var merchAddress models.MerchantStoreAddress
+
+		cache := file.New("./mnt/cache/")
+		agentId := c.Params("agent")
 
 		if c.Get("step") == "one" {
 			var err error
@@ -328,34 +337,72 @@ func ValidateNewMerchant() fiber.Handler {
 				if er := validator.Validate(&supplierInfo); er != nil {
 					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 				}
+				dataKey := fmt.Sprintf("step_one_%s", agentId)
+				if cache.Contains(dataKey) {
+					cache.Delete(dataKey)
+				}
+				data, _ := json.Marshal(supplierInfo)
+				if err := cache.Save(dataKey, string(data), 25*time.Minute); err != nil {
+					return c.Status(fiber.StatusInternalServerError).JSON(
+						fiber.Map{
+							"status": false,
+							"msg":    "Could not cached data",
+						},
+					)
+				}
+
 			} else {
 				if er := validator.Validate(&retailerInfo); er != nil {
 					return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 				}
+				dataKey := fmt.Sprintf("step_one_%s", agentId)
+				if cache.Contains(dataKey) {
+					cache.Delete(dataKey)
+				}
+				data, _ := json.Marshal(supplierInfo)
+				if err := cache.Save(dataKey, string(data), 25*time.Minute); err != nil {
+					return c.Status(fiber.StatusInternalServerError).JSON(
+						fiber.Map{
+							"status": false,
+							"msg":    "Could not cached data",
+						},
+					)
+				}
+			}
+
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
+
+		} else if c.Get("step") == "two" {
+			var err error
+			err = c.BodyParser(&merchAddress)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+			}
+			if er := validator.Validate(&merchAddress); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+			dataKey := fmt.Sprintf("step_two_%s", agentId)
+			if cache.Contains(dataKey) {
+				cache.Delete(dataKey)
+			}
+			data, _ := json.Marshal(merchAddress)
+			if err := cache.Save(dataKey, string(data), 25*time.Minute); err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(
+					fiber.Map{
+						"status": false,
+						"msg":    "Could not cached data",
+					},
+				)
 			}
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 
 		} else {
-			var allRequest models.StoreFinalRequest
-			err := c.BodyParser(&allRequest)
+			var merchantStoreInfo models.MerchantStoreInfo
+			err := c.BodyParser(&merchantStoreInfo)
 			if err != nil {
 				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 			}
-			if er := validator.Validate(
-				&models.MerchantStore{
-					BusinessName:     allRequest.BusinessName,
-					About:            allRequest.About,
-					DescriptionTitle: allRequest.DescriptionTitle,
-					Description:      allRequest.Description,
-					Image:            allRequest.Image,
-					OtherImages:      allRequest.OtherImages,
-					Region:           allRequest.Region,
-					District:         allRequest.District,
-					City:             allRequest.City,
-					Account:          allRequest.Account,
-					MerchantType:     allRequest.MerchantType,
-				},
-			); er != nil {
+			if er := validator.Validate(&merchantStoreInfo); er != nil {
 				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 			}
 
@@ -372,7 +419,9 @@ func ValidateAddress() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
-
+		if er := validator.Validate(&request); er != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
 		return c.Next()
 
 	}
@@ -380,10 +429,70 @@ func ValidateAddress() fiber.Handler {
 
 func ValidateMerchantStore() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var request models.MerchantStore
-		err := c.BodyParser(&request)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+		if c.Get("step") == "one" {
+			var addressRequest models.MerchantStoreAddress
+			err := c.BodyParser(&addressRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+			}
+			if er := validator.Validate(&addressRequest); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+			cache := file.New("./mnt/cache/")
+			merchantId := c.Params("merchantId")
+			dataKey := fmt.Sprintf("step_one_%s", merchantId)
+			if cache.Contains(dataKey) {
+				cache.Delete(dataKey)
+			}
+			data, _ := json.Marshal(addressRequest)
+			if err := cache.Save(dataKey, string(data), 25*time.Minute); err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(
+					fiber.Map{
+						"status": false,
+						"msg":    "Could not cached data",
+					},
+				)
+			}
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
+		} else {
+			var storeRequest models.MerchantStore
+			err := c.BodyParser(&storeRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+			}
+			if er := validator.Validate(&storeRequest); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		}
+		return c.Next()
+
+	}
+}
+func ValidateMerchantStoreUpdate() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var infoRequest models.MerchantStore
+		var addressRequest models.MerchantStoreAddress
+
+		formType := c.Get("formType")
+		if formType == "information" {
+			err := c.BodyParser(&infoRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+			}
+			if er := validator.Validate(&infoRequest); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+			
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
+		}
+		if formType == "address" {
+			err := c.BodyParser(&addressRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+			}
+			if er := validator.Validate(&addressRequest); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
 		}
 
 		return c.Next()

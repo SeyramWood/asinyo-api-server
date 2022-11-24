@@ -14,6 +14,7 @@ import (
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -38,6 +39,7 @@ type OrderQuery struct {
 	withAddress  *AddressQuery
 	withPickup   *PickupStationQuery
 	withStores   *MerchantStoreQuery
+	withLogistic *LogisticQuery
 	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -222,6 +224,28 @@ func (oq *OrderQuery) QueryStores() *MerchantStoreQuery {
 			sqlgraph.From(order.Table, order.FieldID, selector),
 			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, order.StoresTable, order.StoresPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(oq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLogistic chains the current query on the "logistic" edge.
+func (oq *OrderQuery) QueryLogistic() *LogisticQuery {
+	query := &LogisticQuery{config: oq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := oq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := oq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, selector),
+			sqlgraph.To(logistic.Table, logistic.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, order.LogisticTable, order.LogisticPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(oq.driver.Dialect(), step)
 		return fromU, nil
@@ -417,6 +441,7 @@ func (oq *OrderQuery) Clone() *OrderQuery {
 		withAddress:  oq.withAddress.Clone(),
 		withPickup:   oq.withPickup.Clone(),
 		withStores:   oq.withStores.Clone(),
+		withLogistic: oq.withLogistic.Clone(),
 		// clone intermediate query.
 		sql:    oq.sql.Clone(),
 		path:   oq.path,
@@ -501,6 +526,17 @@ func (oq *OrderQuery) WithStores(opts ...func(*MerchantStoreQuery)) *OrderQuery 
 	return oq
 }
 
+// WithLogistic tells the query-builder to eager-load the nodes that are connected to
+// the "logistic" edge. The optional arguments are used to configure the query builder of the edge.
+func (oq *OrderQuery) WithLogistic(opts ...func(*LogisticQuery)) *OrderQuery {
+	query := &LogisticQuery{config: oq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	oq.withLogistic = query
+	return oq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -572,7 +608,7 @@ func (oq *OrderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Order,
 		nodes       = []*Order{}
 		withFKs     = oq.withFKs
 		_spec       = oq.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [8]bool{
 			oq.withDetails != nil,
 			oq.withMerchant != nil,
 			oq.withAgent != nil,
@@ -580,6 +616,7 @@ func (oq *OrderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Order,
 			oq.withAddress != nil,
 			oq.withPickup != nil,
 			oq.withStores != nil,
+			oq.withLogistic != nil,
 		}
 	)
 	if oq.withMerchant != nil || oq.withAgent != nil || oq.withCustomer != nil || oq.withAddress != nil || oq.withPickup != nil {
@@ -647,6 +684,13 @@ func (oq *OrderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Order,
 		if err := oq.loadStores(ctx, query, nodes,
 			func(n *Order) { n.Edges.Stores = []*MerchantStore{} },
 			func(n *Order, e *MerchantStore) { n.Edges.Stores = append(n.Edges.Stores, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := oq.withLogistic; query != nil {
+		if err := oq.loadLogistic(ctx, query, nodes,
+			func(n *Order) { n.Edges.Logistic = []*Logistic{} },
+			func(n *Order, e *Logistic) { n.Edges.Logistic = append(n.Edges.Logistic, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -880,6 +924,64 @@ func (oq *OrderQuery) loadStores(ctx context.Context, query *MerchantStoreQuery,
 		nodes, ok := nids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected "stores" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (oq *OrderQuery) loadLogistic(ctx context.Context, query *LogisticQuery, nodes []*Order, init func(*Order), assign func(*Order, *Logistic)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Order)
+	nids := make(map[int]map[*Order]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(order.LogisticTable)
+		s.Join(joinT).On(s.C(logistic.FieldID), joinT.C(order.LogisticPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(order.LogisticPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(order.LogisticPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(sql.NullInt64)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := int(values[0].(*sql.NullInt64).Int64)
+			inValue := int(values[1].(*sql.NullInt64).Int64)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Order]struct{}{byID[outValue]: struct{}{}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "logistic" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)

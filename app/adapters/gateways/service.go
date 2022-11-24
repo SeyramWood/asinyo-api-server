@@ -29,7 +29,9 @@ type (
 	}
 	MerchantService interface {
 		Create(merchant *models.MerchantRequest) (*ent.Merchant, error)
-		Onboard(merchant *models.StoreFinalRequest, agentId int, logo string, images []string) (*ent.Merchant, error)
+		Onboard(merchant *models.OnboardMerchantFullRequest, agentId int, logo string, images []string) (
+			*ent.Merchant, error,
+		)
 		FetchAll() ([]*ent.Merchant, error)
 		Fetch(id int) (*ent.Merchant, error)
 		Update(merchant *models.Merchant) (*models.Merchant, error)
@@ -50,7 +52,9 @@ type (
 		Remove(id string) error
 	}
 	MerchantStoreService interface {
-		Create(store *models.MerchantStore, merchantId int, logo string, images []string) (*ent.MerchantStore, error)
+		Create(store *models.MerchantStoreRequest, merchantId int, logo string, images []string) (
+			*ent.MerchantStore, error,
+		)
 		SaveAccount(store interface{}, storeId int, logo string) (*ent.MerchantStore, error)
 		SaveDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
 		SaveAgentPermission(request bool, storeId int) (*ent.MerchantStore, error)
@@ -61,7 +65,8 @@ type (
 		Fetch(id int) (*ent.MerchantStore, error)
 		FetchAgent(store int) (*ent.Agent, error)
 		FetchByMerchant(merchantId int) (*ent.MerchantStore, error)
-		Update(store *models.MerchantStore) (*models.MerchantStore, error)
+		Update(store *models.MerchantStore, storeId int) (*ent.MerchantStore, error)
+		UpdateAddress(address *models.MerchantStoreAddress, storeId int) (*ent.MerchantStore, error)
 		Remove(id string) error
 	}
 
@@ -165,6 +170,25 @@ type (
 	EmailService interface {
 		Listen()
 		Send(msg *services.Message)
+		Done()
+		CloseChannels()
+	}
+	LogisticService interface {
+		New(repo OrderRepo) LogisticService
+		DoTask(order *ent.Order, deliveryType string)
+		ListenOnWebhook()
+		FareEstimate(coordinates *models.OrderFareEstimateRequest) ([]*services.FareEstimateResponseData, error)
+		Listen()
+		Done()
+		CloseChannels()
+	}
+	MapService interface {
+		SetRepo(repo MapRepo) MapService
+		SetAddressRepo(repo AddressRepo) MapService
+		SetMerchantRepo(repo MerchantRepo) MapService
+		SetMerchantStoreRepo(repo MerchantStoreRepo) MapService
+		ExecuteTask(data any, taskType, repoType string)
+		Listen()
 		Done()
 		CloseChannels()
 	}

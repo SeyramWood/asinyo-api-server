@@ -26,16 +26,14 @@ type (
 func RetailMerchantSuccessResponse(data *ent.RetailMerchant) *fiber.Map {
 	return successResponse(
 		RetailMerchant{
-			ID:             data.ID,
-			GhanaCard:      data.GhanaCard,
-			LastName:       data.LastName,
-			OtherName:      data.OtherName,
-			Phone:          data.Phone,
-			OtherPhone:     data.OtherPhone,
-			Address:        data.Address,
-			DigitalAddress: data.DigitalAddress,
-			CreatedAt:      data.CreatedAt,
-			UpdatedAt:      data.UpdatedAt,
+			ID:         data.ID,
+			GhanaCard:  data.GhanaCard,
+			LastName:   data.LastName,
+			OtherName:  data.OtherName,
+			Phone:      data.Phone,
+			OtherPhone: data.OtherPhone,
+			CreatedAt:  data.CreatedAt,
+			UpdatedAt:  data.UpdatedAt,
 		},
 	)
 }

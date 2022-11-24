@@ -6,6 +6,7 @@ import (
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/ent/merchant"
@@ -21,36 +22,38 @@ func NewMerchantStoreRepo(db *database.Adapter) gateways.MerchantStoreRepo {
 }
 
 func (r repository) Insert(
-	store *models.MerchantStore, merchantId int, logo string, images []string,
+	store *models.MerchantStoreRequest, merchantId int, logo string, images []string,
 ) (*ent.MerchantStore, error) {
 	ctx := context.Background()
 	mq := r.db.Merchant.Query().Where(merchant.ID(merchantId)).OnlyX(ctx)
 	storeResult, err := r.db.MerchantStore.Create().SetMerchant(mq).
-		SetName(store.BusinessName).
-		SetAbout(store.About).
-		SetDescTitle(store.DescriptionTitle).
-		SetDescription(store.Description).
+		SetName(store.Info.BusinessName).
+		SetSlogan(store.Info.BusinessSlogan).
+		SetAbout(store.Info.About).
+		SetDescription(store.Info.Description).
 		SetLogo(logo).
 		SetImages(images).
-		SetRegion(store.Region).
-		SetDistrict(store.District).
-		SetCity(store.City).
-		SetMerchantType(store.MerchantType).
-		SetRegion(store.Region).
-		SetDistrict(store.District).
-		SetCity(store.City).
+		SetMerchantType(store.Info.MerchantType).
+		SetAddress(store.Address).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating merchant store: %w", err)
 	}
 
-	result, err := r.Read(storeResult.ID)
+	result, errr := r.Read(storeResult.ID)
 
-	if err != nil {
+	if errr != nil {
 		return nil, err
 	}
 
 	return result, nil
+}
+func (r repository) SaveCoordinate(coordinate *services.Coordinate, id int) error {
+	_, err := r.db.MerchantStore.UpdateOneID(id).SetCoordinate(coordinate).Save(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r repository) UpdateAccount(store interface{}, storeId int, accountType string) (*ent.MerchantStore, error) {
@@ -227,11 +230,19 @@ func (r repository) ReadAllByMerchant(merchantType string, limit, offset int) ([
 	return results, nil
 }
 
-func (r repository) Update(store *models.MerchantStore) (*models.MerchantStore, error) {
+func (r repository) Update(store *models.MerchantStore, storeId int) (*ent.MerchantStore, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
+func (r repository) UpdateAddress(address *models.MerchantStoreAddress, storeId int) (*ent.MerchantStore, error) {
+
+	result, err := r.db.MerchantStore.UpdateOneID(storeId).SetAddress(address).Save(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
 func (r repository) Delete(id string) error {
 	// TODO implement me
 	panic("implement me")

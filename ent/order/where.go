@@ -1052,6 +1052,20 @@ func StatusNotIn(vs ...Status) predicate.Order {
 	})
 }
 
+// StoreTasksCreatedIsNil applies the IsNil predicate on the "store_tasks_created" field.
+func StoreTasksCreatedIsNil() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldStoreTasksCreated)))
+	})
+}
+
+// StoreTasksCreatedNotNil applies the NotNil predicate on the "store_tasks_created" field.
+func StoreTasksCreatedNotNil() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldStoreTasksCreated)))
+	})
+}
+
 // DeliveredAtEQ applies the EQ predicate on the "delivered_at" field.
 func DeliveredAtEQ(v time.Time) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
@@ -1317,6 +1331,34 @@ func HasStoresWith(preds ...predicate.MerchantStore) predicate.Order {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(StoresInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, StoresTable, StoresPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasLogistic applies the HasEdge predicate on the "logistic" edge.
+func HasLogistic() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(LogisticTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, LogisticTable, LogisticPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLogisticWith applies the HasEdge predicate on the "logistic" edge with a given conditions (other predicates).
+func HasLogisticWith(preds ...predicate.Logistic) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(LogisticInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, LogisticTable, LogisticPrimaryKey...),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

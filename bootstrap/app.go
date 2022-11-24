@@ -12,7 +12,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 
+	"github.com/SeyramWood/app/application/logistic"
 	"github.com/SeyramWood/app/application/mailer"
+	"github.com/SeyramWood/app/application/maps"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/ent/migrate"
@@ -55,9 +57,17 @@ func App() {
 
 	mail := mailer.NewEmail(newApp.Mailer)
 
-	router.NewRouter(newApp.HTTP, db, mail)
+	logis := logistic.NewLogistic(newApp.WG, db)
+
+	ms := maps.NewMaps(newApp.WG)
+
+	router.NewRouter(newApp.HTTP, db, mail, logis, ms)
 
 	go mail.Listen()
+
+	go logis.Listen()
+
+	go ms.Listen()
 
 	go newApp.Run()
 
@@ -79,6 +89,10 @@ func App() {
 	_ = db.DB.Close()
 	mail.Done()
 	mail.CloseChannels()
+	logis.Done()
+	logis.CloseChannels()
+	ms.Done()
+	ms.CloseChannels()
 
 	fmt.Println("Fiber was successful shutdown.")
 }

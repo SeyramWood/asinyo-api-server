@@ -16,6 +16,7 @@ import (
 	"github.com/SeyramWood/ent/agentrequest"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -52,6 +53,7 @@ func columnChecker(table string) func(string) error {
 		agentrequest.Table:         agentrequest.ValidColumn,
 		customer.Table:             customer.ValidColumn,
 		favourite.Table:            favourite.ValidColumn,
+		logistic.Table:             logistic.ValidColumn,
 		merchant.Table:             merchant.ValidColumn,
 		merchantstore.Table:        merchantstore.ValidColumn,
 		order.Table:                order.ValidColumn,

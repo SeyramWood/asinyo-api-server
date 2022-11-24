@@ -79,18 +79,6 @@ func (rmu *RetailMerchantUpdate) ClearOtherPhone() *RetailMerchantUpdate {
 	return rmu
 }
 
-// SetAddress sets the "address" field.
-func (rmu *RetailMerchantUpdate) SetAddress(s string) *RetailMerchantUpdate {
-	rmu.mutation.SetAddress(s)
-	return rmu
-}
-
-// SetDigitalAddress sets the "digital_address" field.
-func (rmu *RetailMerchantUpdate) SetDigitalAddress(s string) *RetailMerchantUpdate {
-	rmu.mutation.SetDigitalAddress(s)
-	return rmu
-}
-
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (rmu *RetailMerchantUpdate) SetMerchantID(id int) *RetailMerchantUpdate {
 	rmu.mutation.SetMerchantID(id)
@@ -204,16 +192,6 @@ func (rmu *RetailMerchantUpdate) check() error {
 			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.phone": %w`, err)}
 		}
 	}
-	if v, ok := rmu.mutation.Address(); ok {
-		if err := retailmerchant.AddressValidator(v); err != nil {
-			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.address": %w`, err)}
-		}
-	}
-	if v, ok := rmu.mutation.DigitalAddress(); ok {
-		if err := retailmerchant.DigitalAddressValidator(v); err != nil {
-			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.digital_address": %w`, err)}
-		}
-	}
 	if _, ok := rmu.mutation.MerchantID(); rmu.mutation.MerchantCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "RetailMerchant.merchant"`)
 	}
@@ -284,20 +262,6 @@ func (rmu *RetailMerchantUpdate) sqlSave(ctx context.Context) (n int, err error)
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: retailmerchant.FieldOtherPhone,
-		})
-	}
-	if value, ok := rmu.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldAddress,
-		})
-	}
-	if value, ok := rmu.mutation.DigitalAddress(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldDigitalAddress,
 		})
 	}
 	if rmu.mutation.MerchantCleared() {
@@ -401,18 +365,6 @@ func (rmuo *RetailMerchantUpdateOne) SetNillableOtherPhone(s *string) *RetailMer
 // ClearOtherPhone clears the value of the "other_phone" field.
 func (rmuo *RetailMerchantUpdateOne) ClearOtherPhone() *RetailMerchantUpdateOne {
 	rmuo.mutation.ClearOtherPhone()
-	return rmuo
-}
-
-// SetAddress sets the "address" field.
-func (rmuo *RetailMerchantUpdateOne) SetAddress(s string) *RetailMerchantUpdateOne {
-	rmuo.mutation.SetAddress(s)
-	return rmuo
-}
-
-// SetDigitalAddress sets the "digital_address" field.
-func (rmuo *RetailMerchantUpdateOne) SetDigitalAddress(s string) *RetailMerchantUpdateOne {
-	rmuo.mutation.SetDigitalAddress(s)
 	return rmuo
 }
 
@@ -542,16 +494,6 @@ func (rmuo *RetailMerchantUpdateOne) check() error {
 			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.phone": %w`, err)}
 		}
 	}
-	if v, ok := rmuo.mutation.Address(); ok {
-		if err := retailmerchant.AddressValidator(v); err != nil {
-			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.address": %w`, err)}
-		}
-	}
-	if v, ok := rmuo.mutation.DigitalAddress(); ok {
-		if err := retailmerchant.DigitalAddressValidator(v); err != nil {
-			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "RetailMerchant.digital_address": %w`, err)}
-		}
-	}
 	if _, ok := rmuo.mutation.MerchantID(); rmuo.mutation.MerchantCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "RetailMerchant.merchant"`)
 	}
@@ -639,20 +581,6 @@ func (rmuo *RetailMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Retail
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: retailmerchant.FieldOtherPhone,
-		})
-	}
-	if value, ok := rmuo.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldAddress,
-		})
-	}
-	if value, ok := rmuo.mutation.DigitalAddress(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldDigitalAddress,
 		})
 	}
 	if rmuo.mutation.MerchantCleared() {

@@ -87,18 +87,6 @@ func (smc *SupplierMerchantCreate) SetNillableOtherPhone(s *string) *SupplierMer
 	return smc
 }
 
-// SetAddress sets the "address" field.
-func (smc *SupplierMerchantCreate) SetAddress(s string) *SupplierMerchantCreate {
-	smc.mutation.SetAddress(s)
-	return smc
-}
-
-// SetDigitalAddress sets the "digital_address" field.
-func (smc *SupplierMerchantCreate) SetDigitalAddress(s string) *SupplierMerchantCreate {
-	smc.mutation.SetDigitalAddress(s)
-	return smc
-}
-
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (smc *SupplierMerchantCreate) SetMerchantID(id int) *SupplierMerchantCreate {
 	smc.mutation.SetMerchantID(id)
@@ -237,22 +225,6 @@ func (smc *SupplierMerchantCreate) check() error {
 			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.phone": %w`, err)}
 		}
 	}
-	if _, ok := smc.mutation.Address(); !ok {
-		return &ValidationError{Name: "address", err: errors.New(`ent: missing required field "SupplierMerchant.address"`)}
-	}
-	if v, ok := smc.mutation.Address(); ok {
-		if err := suppliermerchant.AddressValidator(v); err != nil {
-			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.address": %w`, err)}
-		}
-	}
-	if _, ok := smc.mutation.DigitalAddress(); !ok {
-		return &ValidationError{Name: "digital_address", err: errors.New(`ent: missing required field "SupplierMerchant.digital_address"`)}
-	}
-	if v, ok := smc.mutation.DigitalAddress(); ok {
-		if err := suppliermerchant.DigitalAddressValidator(v); err != nil {
-			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.digital_address": %w`, err)}
-		}
-	}
 	if _, ok := smc.mutation.MerchantID(); !ok {
 		return &ValidationError{Name: "merchant", err: errors.New(`ent: missing required edge "SupplierMerchant.merchant"`)}
 	}
@@ -338,22 +310,6 @@ func (smc *SupplierMerchantCreate) createSpec() (*SupplierMerchant, *sqlgraph.Cr
 			Column: suppliermerchant.FieldOtherPhone,
 		})
 		_node.OtherPhone = &value
-	}
-	if value, ok := smc.mutation.Address(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldAddress,
-		})
-		_node.Address = value
-	}
-	if value, ok := smc.mutation.DigitalAddress(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldDigitalAddress,
-		})
-		_node.DigitalAddress = value
 	}
 	if nodes := smc.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -9,20 +9,23 @@ import (
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/order"
 	"github.com/SeyramWood/app/application/payment"
+	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 )
 
 type OrderHandler struct {
 	service        gateways.OrderService
 	paymentService gateways.PaymentService
+	logis          gateways.LogisticService
 }
 
-func NewOrderHandler(db *database.Adapter) *OrderHandler {
-	service := order.NewOrderService(order.NewOrderRepo(db))
+func NewOrderHandler(db *database.Adapter, logis gateways.LogisticService) *OrderHandler {
+	service := order.NewOrderService(order.NewOrderRepo(db), logis)
 	paymentService := payment.NewPaymentService(payment.NewPaymentRepo(db))
 	return &OrderHandler{
 		service:        service,
 		paymentService: paymentService,
+		logis:          logis,
 	}
 }
 
@@ -142,5 +145,22 @@ func (h *OrderHandler) UpdateOrderDetailStatus() fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.OrderErrorResponse(err))
 		}
 		return c.JSON(presenters.StoreOrderSuccessResponse(result))
+	}
+}
+
+func (h *OrderHandler) FetchOrderFareEstimate() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var coordinates models.OrderFareEstimateRequest
+
+		if err := c.BodyParser(&coordinates); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.OrderErrorResponse(err))
+		}
+
+		result, err := h.logis.FareEstimate(&coordinates)
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.OrderErrorResponse(err))
+		}
+		return c.JSON(presenters.OrderFareEstimateSuccessResponse(result))
 	}
 }

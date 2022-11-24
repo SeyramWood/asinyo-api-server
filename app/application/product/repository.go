@@ -56,7 +56,7 @@ func (r *repository) Read(id int) (*ent.Product, error) {
 			func(mq *ent.MerchantQuery) {
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},
@@ -79,7 +79,7 @@ func (r *repository) ReadBySupplierMerchant(id int) (*ent.Product, error) {
 				mq.WithSupplier()
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},
@@ -103,7 +103,7 @@ func (r *repository) ReadByRetailMerchant(id int) (*ent.Product, error) {
 				mq.WithRetailer()
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},
@@ -128,7 +128,7 @@ func (r *repository) ReadAll(limit, offset int) ([]*ent.Product, error) {
 			func(mq *ent.MerchantQuery) {
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},
@@ -160,7 +160,7 @@ func (r *repository) ReadAllBySlugCategoryMajor(merchantType, slug string, limit
 				mq.WithRetailer()
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},
@@ -190,7 +190,7 @@ func (r *repository) ReadAllBySlugCategoryMinor(merchantType, slug string, limit
 				mq.WithRetailer()
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},
@@ -225,7 +225,7 @@ func (r *repository) ReadBySlugRetailMerchantCategoryMinor(slug string, limit, o
 							mq.WithRetailer()
 							mq.WithStore(
 								func(query *ent.MerchantStoreQuery) {
-									query.Select("id", "name")
+									query.Select("id", "name", "coordinate")
 								},
 							)
 						},
@@ -263,7 +263,7 @@ func (r *repository) ReadBySlugRetailMerchantCategoryMajor(slug string, limit, o
 							mq.WithRetailer()
 							mq.WithStore(
 								func(query *ent.MerchantStoreQuery) {
-									query.Select("id", "name")
+									query.Select("id", "name", "coordinate")
 								},
 							)
 						},
@@ -301,7 +301,7 @@ func (r *repository) ReadBySlugSupplierMerchantCategoryMinor(
 							mq.WithSupplier()
 							mq.WithStore(
 								func(query *ent.MerchantStoreQuery) {
-									query.Select("id", "name")
+									query.Select("id", "name", "coordinate")
 								},
 							)
 						},
@@ -339,7 +339,7 @@ func (r *repository) ReadBySlugSupplierMerchantCategoryMajor(
 							mq.WithSupplier()
 							mq.WithStore(
 								func(query *ent.MerchantStoreQuery) {
-									query.Select("id", "name")
+									query.Select("id", "name", "coordinate")
 								},
 							)
 						},
@@ -374,7 +374,7 @@ func (r *repository) ReadAllRetailMerchantCategoryMinor(limit, offset int) ([]*e
 							mq.WithRetailer()
 							mq.WithStore(
 								func(query *ent.MerchantStoreQuery) {
-									query.Select("id", "name")
+									query.Select("id", "name", "coordinate")
 								},
 							)
 						},
@@ -409,7 +409,7 @@ func (r *repository) ReadAllRetailMerchantCategoryMajor(limit, offset int) ([]*e
 							mq.WithRetailer()
 							mq.WithStore(
 								func(query *ent.MerchantStoreQuery) {
-									query.Select("id", "name")
+									query.Select("id", "name", "coordinate")
 								},
 							)
 						},
@@ -444,7 +444,7 @@ func (r *repository) ReadAllSupplierMerchantCategoryMinor(limit, offset int) ([]
 							mq.WithSupplier()
 							mq.WithStore(
 								func(query *ent.MerchantStoreQuery) {
-									query.Select("id", "name")
+									query.Select("id", "name", "coordinate")
 								},
 							)
 						},
@@ -479,7 +479,7 @@ func (r *repository) ReadAllSupplierMerchantCategoryMajor(limit, offset int) ([]
 							mq.WithSupplier()
 							mq.WithStore(
 								func(query *ent.MerchantStoreQuery) {
-									query.Select("id", "name")
+									query.Select("id", "name", "coordinate")
 								},
 							)
 						},
@@ -507,7 +507,7 @@ func (r *repository) ReadAllBySupplierMerchant(merchantId, limit, offset int) ([
 				mq.WithSupplier()
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},
@@ -536,7 +536,7 @@ func (r *repository) ReadAllByRetailMerchant(merchantId, limit, offset int) ([]*
 				mq.WithRetailer()
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},
@@ -561,7 +561,7 @@ func (r *repository) ReadBestSellerBySupplierMerchant(limit, offset int) ([]*ent
 		Where(product.HasMerchantWith(merchant.Type("supplier"))).
 		Where(
 			func(s *sql.Selector) {
-				s.Where(sql.GTE(product.FieldBestDeal, 10))
+				s.Where(sql.GTE(product.FieldBestDeal, 0))
 			},
 		).
 		WithMerchant(
@@ -569,7 +569,7 @@ func (r *repository) ReadBestSellerBySupplierMerchant(limit, offset int) ([]*ent
 				mq.WithSupplier()
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},
@@ -595,7 +595,7 @@ func (r *repository) ReadBestSellerRetailMerchant(limit, offset int) ([]*ent.Pro
 		Where(product.HasMerchantWith(merchant.Type("retailer"))).
 		Where(
 			func(s *sql.Selector) {
-				s.Where(sql.GTE(product.FieldBestDeal, 10))
+				s.Where(sql.GTE(product.FieldBestDeal, 0))
 			},
 		).
 		WithMerchant(
@@ -603,7 +603,7 @@ func (r *repository) ReadBestSellerRetailMerchant(limit, offset int) ([]*ent.Pro
 				mq.WithRetailer()
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},
@@ -626,7 +626,7 @@ func (r *repository) ReadBestSellerByMerchant(id, limit, offset int) ([]*ent.Pro
 		Where(product.HasMerchantWith(merchant.ID(id))).
 		Where(
 			func(s *sql.Selector) {
-				s.Where(sql.GTE(product.FieldBestDeal, 10))
+				s.Where(sql.GTE(product.FieldBestDeal, 0))
 			},
 		).
 		WithMerchant(
@@ -635,7 +635,7 @@ func (r *repository) ReadBestSellerByMerchant(id, limit, offset int) ([]*ent.Pro
 				mq.WithRetailer()
 				mq.WithStore(
 					func(query *ent.MerchantStoreQuery) {
-						query.Select("id", "name")
+						query.Select("id", "name", "coordinate")
 					},
 				)
 			},

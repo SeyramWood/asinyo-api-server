@@ -63,13 +63,11 @@ func (h *SupplierMerchantHandler) Create() fiber.Handler {
 		}
 		_, err = h.service.Create(
 			&models.SupplierMerchant{
-				GhanaCard:      request.Info.GhanaCard,
-				LastName:       request.Info.LastName,
-				OtherName:      request.Info.OtherName,
-				Phone:          request.Info.Phone,
-				OtherPhone:     request.Info.OtherPhone,
-				Address:        request.Info.Address,
-				DigitalAddress: request.Info.DigitalAddress,
+				GhanaCard:  request.Info.GhanaCard,
+				LastName:   request.Info.LastName,
+				OtherName:  request.Info.OtherName,
+				Phone:      request.Info.Phone,
+				OtherPhone: request.Info.OtherPhone,
 			},
 		)
 

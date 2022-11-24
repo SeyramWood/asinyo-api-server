@@ -6,6 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/samber/lo"
 
+	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent"
 )
 
@@ -48,25 +50,31 @@ type (
 		Product    *OrderProductDetail `json:"product"`
 		Store      *OrderProductStore  `json:"store"`
 	}
+	OrderLogisticDetail struct {
+		ID           int                             `json:"id"`
+		TrackingLink string                          `json:"trackingLink"`
+		Tasks        *models.TookanMultiTaskResponse `json:"tasks"`
+	}
 	DetailOrder struct {
-		ID             int              `json:"id"`
-		OrderNumber    string           `json:"orderNumber"`
-		Amount         float64          `json:"amount"`
-		Currency       string           `json:"currency"`
-		DeliveryFee    float64          `json:"deliveryFee"`
-		DeliveryMethod string           `json:"deliveryMethod"`
-		PaymentMethod  string           `json:"paymentMethod"`
-		Reference      *string          `json:"reference"`
-		Channel        *string          `json:"channel"`
-		PaidAt         *string          `json:"paidAt"`
-		Status         string           `json:"status"`
-		Store          string           `json:"store,omitempty"`
-		DeliveredAt    *time.Time       `json:"deliveredAt"`
-		CreatedAt      time.Time        `json:"createdAt"`
-		UpdatedAt      time.Time        `json:"updatedAt"`
-		Products       []*OrderProducts `json:"products"`
-		Address        *OrderAddress    `json:"address"`
-		Pickup         *OrderPickup     `json:"pickup"`
+		ID             int                    `json:"id"`
+		OrderNumber    string                 `json:"orderNumber"`
+		Amount         float64                `json:"amount"`
+		Currency       string                 `json:"currency"`
+		DeliveryFee    float64                `json:"deliveryFee"`
+		DeliveryMethod string                 `json:"deliveryMethod"`
+		PaymentMethod  string                 `json:"paymentMethod"`
+		Reference      *string                `json:"reference"`
+		Channel        *string                `json:"channel"`
+		PaidAt         *string                `json:"paidAt"`
+		Status         string                 `json:"status"`
+		Store          string                 `json:"store,omitempty"`
+		DeliveredAt    *time.Time             `json:"deliveredAt"`
+		CreatedAt      time.Time              `json:"createdAt"`
+		UpdatedAt      time.Time              `json:"updatedAt"`
+		Products       []*OrderProducts       `json:"products"`
+		Address        *OrderAddress          `json:"address"`
+		Pickup         *OrderPickup           `json:"pickup"`
+		Logistics      []*OrderLogisticDetail `json:"logistics"`
 	}
 	Order struct {
 		ID            int       `json:"id"`
@@ -140,6 +148,22 @@ func OrderSuccessResponse(data *ent.Order) *fiber.Map {
 				}
 				return nil
 			}(data),
+			Logistics: func(edges *ent.Order) []*OrderLogisticDetail {
+				if logis, err := edges.Edges.LogisticOrErr(); err == nil {
+					var results []*OrderLogisticDetail
+					for _, l := range logis {
+						results = append(
+							results, &OrderLogisticDetail{
+								ID:           l.ID,
+								TrackingLink: l.TrackingLink,
+								Tasks:        l.Tasks,
+							},
+						)
+					}
+					return results
+				}
+				return nil
+			}(data),
 		},
 	)
 }
@@ -184,6 +208,22 @@ func StoreOrderSuccessResponse(data *ent.Order) *fiber.Map {
 						City:    pick.City,
 						Region:  pick.Region,
 					}
+				}
+				return nil
+			}(data),
+			Logistics: func(edges *ent.Order) []*OrderLogisticDetail {
+				if logis, err := edges.Edges.LogisticOrErr(); err == nil {
+					var results []*OrderLogisticDetail
+					for _, l := range logis {
+						results = append(
+							results, &OrderLogisticDetail{
+								ID:           l.ID,
+								TrackingLink: l.TrackingLink,
+								Tasks:        l.Tasks,
+							},
+						)
+					}
+					return results
 				}
 				return nil
 			}(data),
@@ -296,13 +336,27 @@ func AgentStoreOrdersSuccessResponse(data []*ent.Order) *fiber.Map {
 				PaymentMethod: string(v.PaymentMethod),
 				PaidAt:        v.PaidAt,
 				Status:        detail["status"].(string),
-				Store:         v.Edges.Stores[0].Name,
-				CreatedAt:     v.CreatedAt,
-				UpdatedAt:     v.UpdatedAt,
+				Store: func() string {
+					result := ""
+					for i, store := range v.Edges.Stores {
+						if i == (len(v.Edges.Stores) - 1) {
+							result += store.Name
+						} else {
+							result += store.Name + ", "
+						}
+					}
+					return result
+				}(),
+				CreatedAt: v.CreatedAt,
+				UpdatedAt: v.UpdatedAt,
 			},
 		)
 	}
 	return successResponse(response)
+}
+
+func OrderFareEstimateSuccessResponse(data []*services.FareEstimateResponseData) *fiber.Map {
+	return successResponse(data)
 }
 
 func OrderErrorResponse(err error) *fiber.Map {
@@ -370,6 +424,7 @@ func calculateAmountOrderDetails(data []*ent.OrderDetail) map[string]interface{}
 
 	return response
 }
+
 func calculateStoreAmountOrderDetails(data []*ent.OrderDetail) map[string]any {
 	response := map[string]any{}
 

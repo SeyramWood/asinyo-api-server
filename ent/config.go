@@ -30,6 +30,7 @@ type hooks struct {
 	AgentRequest         []ent.Hook
 	Customer             []ent.Hook
 	Favourite            []ent.Hook
+	Logistic             []ent.Hook
 	Merchant             []ent.Hook
 	MerchantStore        []ent.Hook
 	Order                []ent.Hook

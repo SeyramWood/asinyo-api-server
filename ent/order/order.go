@@ -36,6 +36,8 @@ const (
 	FieldPaymentMethod = "payment_method"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldStoreTasksCreated holds the string denoting the store_tasks_created field in the database.
+	FieldStoreTasksCreated = "store_tasks_created"
 	// FieldDeliveredAt holds the string denoting the delivered_at field in the database.
 	FieldDeliveredAt = "delivered_at"
 	// EdgeDetails holds the string denoting the details edge name in mutations.
@@ -52,6 +54,8 @@ const (
 	EdgePickup = "pickup"
 	// EdgeStores holds the string denoting the stores edge name in mutations.
 	EdgeStores = "stores"
+	// EdgeLogistic holds the string denoting the logistic edge name in mutations.
+	EdgeLogistic = "logistic"
 	// Table holds the table name of the order in the database.
 	Table = "orders"
 	// DetailsTable is the table that holds the details relation/edge.
@@ -101,6 +105,11 @@ const (
 	// StoresInverseTable is the table name for the MerchantStore entity.
 	// It exists in this package in order to avoid circular dependency with the "merchantstore" package.
 	StoresInverseTable = "merchant_stores"
+	// LogisticTable is the table that holds the logistic relation/edge. The primary key declared below.
+	LogisticTable = "logistic_order"
+	// LogisticInverseTable is the table name for the Logistic entity.
+	// It exists in this package in order to avoid circular dependency with the "logistic" package.
+	LogisticInverseTable = "logistics"
 )
 
 // Columns holds all SQL columns for order fields.
@@ -118,6 +127,7 @@ var Columns = []string{
 	FieldDeliveryMethod,
 	FieldPaymentMethod,
 	FieldStatus,
+	FieldStoreTasksCreated,
 	FieldDeliveredAt,
 }
 
@@ -135,6 +145,9 @@ var (
 	// StoresPrimaryKey and StoresColumn2 are the table columns denoting the
 	// primary key for the stores relation (M2M).
 	StoresPrimaryKey = []string{"merchant_store_id", "order_id"}
+	// LogisticPrimaryKey and LogisticColumn2 are the table columns denoting the
+	// primary key for the logistic relation (M2M).
+	LogisticPrimaryKey = []string{"logistic_id", "order_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

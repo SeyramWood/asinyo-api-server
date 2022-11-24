@@ -24,8 +24,6 @@ func (r *repository) Insert(merchant *models.RetailMerchant) (*ent.RetailMerchan
 		SetOtherName(merchant.OtherName).
 		SetPhone(merchant.Phone).
 		SetOtherPhone(merchant.OtherPhone).
-		SetAddress(merchant.Address).
-		SetDigitalAddress(merchant.DigitalAddress).
 		SetGhanaCard(merchant.GhanaCard).
 		Save(context.Background())
 

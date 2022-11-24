@@ -130,10 +130,31 @@ func DigitalAddress(v string) predicate.Address {
 	})
 }
 
+// StreetName applies equality check predicate on the "street_name" field. It's identical to StreetNameEQ.
+func StreetName(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNumber applies equality check predicate on the "street_number" field. It's identical to StreetNumberEQ.
+func StreetNumber(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldStreetNumber), v))
+	})
+}
+
 // City applies equality check predicate on the "city" field. It's identical to CityEQ.
 func City(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldCity), v))
+	})
+}
+
+// District applies equality check predicate on the "district" field. It's identical to DistrictEQ.
+func District(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldDistrict), v))
 	})
 }
 
@@ -144,17 +165,17 @@ func Region(v string) predicate.Address {
 	})
 }
 
+// Country applies equality check predicate on the "Country" field. It's identical to CountryEQ.
+func Country(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldCountry), v))
+	})
+}
+
 // Address applies equality check predicate on the "address" field. It's identical to AddressEQ.
 func Address(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldAddress), v))
-	})
-}
-
-// OtherInformation applies equality check predicate on the "other_information" field. It's identical to OtherInformationEQ.
-func OtherInformation(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherInformation), v))
 	})
 }
 
@@ -816,6 +837,232 @@ func DigitalAddressContainsFold(v string) predicate.Address {
 	})
 }
 
+// StreetNameEQ applies the EQ predicate on the "street_name" field.
+func StreetNameEQ(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNameNEQ applies the NEQ predicate on the "street_name" field.
+func StreetNameNEQ(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNameIn applies the In predicate on the "street_name" field.
+func StreetNameIn(vs ...string) predicate.Address {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldStreetName), v...))
+	})
+}
+
+// StreetNameNotIn applies the NotIn predicate on the "street_name" field.
+func StreetNameNotIn(vs ...string) predicate.Address {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldStreetName), v...))
+	})
+}
+
+// StreetNameGT applies the GT predicate on the "street_name" field.
+func StreetNameGT(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNameGTE applies the GTE predicate on the "street_name" field.
+func StreetNameGTE(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNameLT applies the LT predicate on the "street_name" field.
+func StreetNameLT(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNameLTE applies the LTE predicate on the "street_name" field.
+func StreetNameLTE(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNameContains applies the Contains predicate on the "street_name" field.
+func StreetNameContains(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNameHasPrefix applies the HasPrefix predicate on the "street_name" field.
+func StreetNameHasPrefix(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNameHasSuffix applies the HasSuffix predicate on the "street_name" field.
+func StreetNameHasSuffix(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNameIsNil applies the IsNil predicate on the "street_name" field.
+func StreetNameIsNil() predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldStreetName)))
+	})
+}
+
+// StreetNameNotNil applies the NotNil predicate on the "street_name" field.
+func StreetNameNotNil() predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldStreetName)))
+	})
+}
+
+// StreetNameEqualFold applies the EqualFold predicate on the "street_name" field.
+func StreetNameEqualFold(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNameContainsFold applies the ContainsFold predicate on the "street_name" field.
+func StreetNameContainsFold(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldStreetName), v))
+	})
+}
+
+// StreetNumberEQ applies the EQ predicate on the "street_number" field.
+func StreetNumberEQ(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldStreetNumber), v))
+	})
+}
+
+// StreetNumberNEQ applies the NEQ predicate on the "street_number" field.
+func StreetNumberNEQ(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldStreetNumber), v))
+	})
+}
+
+// StreetNumberIn applies the In predicate on the "street_number" field.
+func StreetNumberIn(vs ...string) predicate.Address {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldStreetNumber), v...))
+	})
+}
+
+// StreetNumberNotIn applies the NotIn predicate on the "street_number" field.
+func StreetNumberNotIn(vs ...string) predicate.Address {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldStreetNumber), v...))
+	})
+}
+
+// StreetNumberGT applies the GT predicate on the "street_number" field.
+func StreetNumberGT(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldStreetNumber), v))
+	})
+}
+
+// StreetNumberGTE applies the GTE predicate on the "street_number" field.
+func StreetNumberGTE(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldStreetNumber), v))
+	})
+}
+
+// StreetNumberLT applies the LT predicate on the "street_number" field.
+func StreetNumberLT(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldStreetNumber), v))
+	})
+}
+
+// StreetNumberLTE applies the LTE predicate on the "street_number" field.
+func StreetNumberLTE(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldStreetNumber), v))
+	})
+}
+
+// StreetNumberContains applies the Contains predicate on the "street_number" field.
+func StreetNumberContains(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldStreetNumber), v))
+	})
+}
+
+// StreetNumberHasPrefix applies the HasPrefix predicate on the "street_number" field.
+func StreetNumberHasPrefix(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldStreetNumber), v))
+	})
+}
+
+// StreetNumberHasSuffix applies the HasSuffix predicate on the "street_number" field.
+func StreetNumberHasSuffix(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldStreetNumber), v))
+	})
+}
+
+// StreetNumberIsNil applies the IsNil predicate on the "street_number" field.
+func StreetNumberIsNil() predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldStreetNumber)))
+	})
+}
+
+// StreetNumberNotNil applies the NotNil predicate on the "street_number" field.
+func StreetNumberNotNil() predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldStreetNumber)))
+	})
+}
+
+// StreetNumberEqualFold applies the EqualFold predicate on the "street_number" field.
+func StreetNumberEqualFold(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldStreetNumber), v))
+	})
+}
+
+// StreetNumberContainsFold applies the ContainsFold predicate on the "street_number" field.
+func StreetNumberContainsFold(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldStreetNumber), v))
+	})
+}
+
 // CityEQ applies the EQ predicate on the "city" field.
 func CityEQ(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
@@ -912,6 +1159,119 @@ func CityEqualFold(v string) predicate.Address {
 func CityContainsFold(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldCity), v))
+	})
+}
+
+// DistrictEQ applies the EQ predicate on the "district" field.
+func DistrictEQ(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldDistrict), v))
+	})
+}
+
+// DistrictNEQ applies the NEQ predicate on the "district" field.
+func DistrictNEQ(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldDistrict), v))
+	})
+}
+
+// DistrictIn applies the In predicate on the "district" field.
+func DistrictIn(vs ...string) predicate.Address {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldDistrict), v...))
+	})
+}
+
+// DistrictNotIn applies the NotIn predicate on the "district" field.
+func DistrictNotIn(vs ...string) predicate.Address {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldDistrict), v...))
+	})
+}
+
+// DistrictGT applies the GT predicate on the "district" field.
+func DistrictGT(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldDistrict), v))
+	})
+}
+
+// DistrictGTE applies the GTE predicate on the "district" field.
+func DistrictGTE(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldDistrict), v))
+	})
+}
+
+// DistrictLT applies the LT predicate on the "district" field.
+func DistrictLT(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldDistrict), v))
+	})
+}
+
+// DistrictLTE applies the LTE predicate on the "district" field.
+func DistrictLTE(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldDistrict), v))
+	})
+}
+
+// DistrictContains applies the Contains predicate on the "district" field.
+func DistrictContains(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldDistrict), v))
+	})
+}
+
+// DistrictHasPrefix applies the HasPrefix predicate on the "district" field.
+func DistrictHasPrefix(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldDistrict), v))
+	})
+}
+
+// DistrictHasSuffix applies the HasSuffix predicate on the "district" field.
+func DistrictHasSuffix(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldDistrict), v))
+	})
+}
+
+// DistrictIsNil applies the IsNil predicate on the "district" field.
+func DistrictIsNil() predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldDistrict)))
+	})
+}
+
+// DistrictNotNil applies the NotNil predicate on the "district" field.
+func DistrictNotNil() predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldDistrict)))
+	})
+}
+
+// DistrictEqualFold applies the EqualFold predicate on the "district" field.
+func DistrictEqualFold(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldDistrict), v))
+	})
+}
+
+// DistrictContainsFold applies the ContainsFold predicate on the "district" field.
+func DistrictContainsFold(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldDistrict), v))
 	})
 }
 
@@ -1014,6 +1374,105 @@ func RegionContainsFold(v string) predicate.Address {
 	})
 }
 
+// CountryEQ applies the EQ predicate on the "Country" field.
+func CountryEQ(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldCountry), v))
+	})
+}
+
+// CountryNEQ applies the NEQ predicate on the "Country" field.
+func CountryNEQ(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldCountry), v))
+	})
+}
+
+// CountryIn applies the In predicate on the "Country" field.
+func CountryIn(vs ...string) predicate.Address {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldCountry), v...))
+	})
+}
+
+// CountryNotIn applies the NotIn predicate on the "Country" field.
+func CountryNotIn(vs ...string) predicate.Address {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldCountry), v...))
+	})
+}
+
+// CountryGT applies the GT predicate on the "Country" field.
+func CountryGT(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldCountry), v))
+	})
+}
+
+// CountryGTE applies the GTE predicate on the "Country" field.
+func CountryGTE(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldCountry), v))
+	})
+}
+
+// CountryLT applies the LT predicate on the "Country" field.
+func CountryLT(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldCountry), v))
+	})
+}
+
+// CountryLTE applies the LTE predicate on the "Country" field.
+func CountryLTE(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldCountry), v))
+	})
+}
+
+// CountryContains applies the Contains predicate on the "Country" field.
+func CountryContains(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldCountry), v))
+	})
+}
+
+// CountryHasPrefix applies the HasPrefix predicate on the "Country" field.
+func CountryHasPrefix(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldCountry), v))
+	})
+}
+
+// CountryHasSuffix applies the HasSuffix predicate on the "Country" field.
+func CountryHasSuffix(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldCountry), v))
+	})
+}
+
+// CountryEqualFold applies the EqualFold predicate on the "Country" field.
+func CountryEqualFold(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldCountry), v))
+	})
+}
+
+// CountryContainsFold applies the ContainsFold predicate on the "Country" field.
+func CountryContainsFold(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldCountry), v))
+	})
+}
+
 // AddressEQ applies the EQ predicate on the "address" field.
 func AddressEQ(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
@@ -1113,119 +1572,6 @@ func AddressContainsFold(v string) predicate.Address {
 	})
 }
 
-// OtherInformationEQ applies the EQ predicate on the "other_information" field.
-func OtherInformationEQ(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherInformation), v))
-	})
-}
-
-// OtherInformationNEQ applies the NEQ predicate on the "other_information" field.
-func OtherInformationNEQ(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldOtherInformation), v))
-	})
-}
-
-// OtherInformationIn applies the In predicate on the "other_information" field.
-func OtherInformationIn(vs ...string) predicate.Address {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldOtherInformation), v...))
-	})
-}
-
-// OtherInformationNotIn applies the NotIn predicate on the "other_information" field.
-func OtherInformationNotIn(vs ...string) predicate.Address {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldOtherInformation), v...))
-	})
-}
-
-// OtherInformationGT applies the GT predicate on the "other_information" field.
-func OtherInformationGT(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldOtherInformation), v))
-	})
-}
-
-// OtherInformationGTE applies the GTE predicate on the "other_information" field.
-func OtherInformationGTE(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldOtherInformation), v))
-	})
-}
-
-// OtherInformationLT applies the LT predicate on the "other_information" field.
-func OtherInformationLT(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldOtherInformation), v))
-	})
-}
-
-// OtherInformationLTE applies the LTE predicate on the "other_information" field.
-func OtherInformationLTE(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldOtherInformation), v))
-	})
-}
-
-// OtherInformationContains applies the Contains predicate on the "other_information" field.
-func OtherInformationContains(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldOtherInformation), v))
-	})
-}
-
-// OtherInformationHasPrefix applies the HasPrefix predicate on the "other_information" field.
-func OtherInformationHasPrefix(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldOtherInformation), v))
-	})
-}
-
-// OtherInformationHasSuffix applies the HasSuffix predicate on the "other_information" field.
-func OtherInformationHasSuffix(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldOtherInformation), v))
-	})
-}
-
-// OtherInformationIsNil applies the IsNil predicate on the "other_information" field.
-func OtherInformationIsNil() predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldOtherInformation)))
-	})
-}
-
-// OtherInformationNotNil applies the NotNil predicate on the "other_information" field.
-func OtherInformationNotNil() predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldOtherInformation)))
-	})
-}
-
-// OtherInformationEqualFold applies the EqualFold predicate on the "other_information" field.
-func OtherInformationEqualFold(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldOtherInformation), v))
-	})
-}
-
-// OtherInformationContainsFold applies the ContainsFold predicate on the "other_information" field.
-func OtherInformationContainsFold(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldOtherInformation), v))
-	})
-}
-
 // DefaultEQ applies the EQ predicate on the "default" field.
 func DefaultEQ(v bool) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
@@ -1237,6 +1583,20 @@ func DefaultEQ(v bool) predicate.Address {
 func DefaultNEQ(v bool) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldDefault), v))
+	})
+}
+
+// CoordinateIsNil applies the IsNil predicate on the "coordinate" field.
+func CoordinateIsNil() predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldCoordinate)))
+	})
+}
+
+// CoordinateNotNil applies the NotNil predicate on the "coordinate" field.
+func CoordinateNotNil() predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldCoordinate)))
 	})
 }
 

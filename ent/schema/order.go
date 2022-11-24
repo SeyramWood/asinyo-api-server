@@ -35,6 +35,7 @@ func (Order) Fields() []ent.Field {
 		field.Enum("status").
 			Values("pending", "in_progress", "fulfilled", "canceled").
 			Default("pending"),
+		field.JSON("store_tasks_created", []int{}).Optional(),
 		field.Time("delivered_at").Nillable().Optional(),
 	}
 }
@@ -60,5 +61,7 @@ func (Order) Edges() []ent.Edge {
 			Unique(),
 		edge.From("stores", MerchantStore.Type).
 			Ref("orders"),
+		edge.From("logistic", Logistic.Type).
+			Ref("order"),
 	}
 }

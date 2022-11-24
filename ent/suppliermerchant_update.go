@@ -79,18 +79,6 @@ func (smu *SupplierMerchantUpdate) ClearOtherPhone() *SupplierMerchantUpdate {
 	return smu
 }
 
-// SetAddress sets the "address" field.
-func (smu *SupplierMerchantUpdate) SetAddress(s string) *SupplierMerchantUpdate {
-	smu.mutation.SetAddress(s)
-	return smu
-}
-
-// SetDigitalAddress sets the "digital_address" field.
-func (smu *SupplierMerchantUpdate) SetDigitalAddress(s string) *SupplierMerchantUpdate {
-	smu.mutation.SetDigitalAddress(s)
-	return smu
-}
-
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
 func (smu *SupplierMerchantUpdate) SetMerchantID(id int) *SupplierMerchantUpdate {
 	smu.mutation.SetMerchantID(id)
@@ -204,16 +192,6 @@ func (smu *SupplierMerchantUpdate) check() error {
 			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.phone": %w`, err)}
 		}
 	}
-	if v, ok := smu.mutation.Address(); ok {
-		if err := suppliermerchant.AddressValidator(v); err != nil {
-			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.address": %w`, err)}
-		}
-	}
-	if v, ok := smu.mutation.DigitalAddress(); ok {
-		if err := suppliermerchant.DigitalAddressValidator(v); err != nil {
-			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.digital_address": %w`, err)}
-		}
-	}
 	if _, ok := smu.mutation.MerchantID(); smu.mutation.MerchantCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "SupplierMerchant.merchant"`)
 	}
@@ -284,20 +262,6 @@ func (smu *SupplierMerchantUpdate) sqlSave(ctx context.Context) (n int, err erro
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: suppliermerchant.FieldOtherPhone,
-		})
-	}
-	if value, ok := smu.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldAddress,
-		})
-	}
-	if value, ok := smu.mutation.DigitalAddress(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldDigitalAddress,
 		})
 	}
 	if smu.mutation.MerchantCleared() {
@@ -401,18 +365,6 @@ func (smuo *SupplierMerchantUpdateOne) SetNillableOtherPhone(s *string) *Supplie
 // ClearOtherPhone clears the value of the "other_phone" field.
 func (smuo *SupplierMerchantUpdateOne) ClearOtherPhone() *SupplierMerchantUpdateOne {
 	smuo.mutation.ClearOtherPhone()
-	return smuo
-}
-
-// SetAddress sets the "address" field.
-func (smuo *SupplierMerchantUpdateOne) SetAddress(s string) *SupplierMerchantUpdateOne {
-	smuo.mutation.SetAddress(s)
-	return smuo
-}
-
-// SetDigitalAddress sets the "digital_address" field.
-func (smuo *SupplierMerchantUpdateOne) SetDigitalAddress(s string) *SupplierMerchantUpdateOne {
-	smuo.mutation.SetDigitalAddress(s)
 	return smuo
 }
 
@@ -542,16 +494,6 @@ func (smuo *SupplierMerchantUpdateOne) check() error {
 			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.phone": %w`, err)}
 		}
 	}
-	if v, ok := smuo.mutation.Address(); ok {
-		if err := suppliermerchant.AddressValidator(v); err != nil {
-			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.address": %w`, err)}
-		}
-	}
-	if v, ok := smuo.mutation.DigitalAddress(); ok {
-		if err := suppliermerchant.DigitalAddressValidator(v); err != nil {
-			return &ValidationError{Name: "digital_address", err: fmt.Errorf(`ent: validator failed for field "SupplierMerchant.digital_address": %w`, err)}
-		}
-	}
 	if _, ok := smuo.mutation.MerchantID(); smuo.mutation.MerchantCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "SupplierMerchant.merchant"`)
 	}
@@ -639,20 +581,6 @@ func (smuo *SupplierMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Supp
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: suppliermerchant.FieldOtherPhone,
-		})
-	}
-	if value, ok := smuo.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldAddress,
-		})
-	}
-	if value, ok := smuo.mutation.DigitalAddress(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldDigitalAddress,
 		})
 	}
 	if smuo.mutation.MerchantCleared() {

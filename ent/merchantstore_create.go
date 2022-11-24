@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/agentrequest"
 	"github.com/SeyramWood/ent/merchant"
@@ -66,9 +67,9 @@ func (msc *MerchantStoreCreate) SetAbout(s string) *MerchantStoreCreate {
 	return msc
 }
 
-// SetDescTitle sets the "desc_title" field.
-func (msc *MerchantStoreCreate) SetDescTitle(s string) *MerchantStoreCreate {
-	msc.mutation.SetDescTitle(s)
+// SetSlogan sets the "slogan" field.
+func (msc *MerchantStoreCreate) SetSlogan(s string) *MerchantStoreCreate {
+	msc.mutation.SetSlogan(s)
 	return msc
 }
 
@@ -87,48 +88,6 @@ func (msc *MerchantStoreCreate) SetLogo(s string) *MerchantStoreCreate {
 // SetImages sets the "images" field.
 func (msc *MerchantStoreCreate) SetImages(s []string) *MerchantStoreCreate {
 	msc.mutation.SetImages(s)
-	return msc
-}
-
-// SetRegion sets the "region" field.
-func (msc *MerchantStoreCreate) SetRegion(s string) *MerchantStoreCreate {
-	msc.mutation.SetRegion(s)
-	return msc
-}
-
-// SetNillableRegion sets the "region" field if the given value is not nil.
-func (msc *MerchantStoreCreate) SetNillableRegion(s *string) *MerchantStoreCreate {
-	if s != nil {
-		msc.SetRegion(*s)
-	}
-	return msc
-}
-
-// SetDistrict sets the "district" field.
-func (msc *MerchantStoreCreate) SetDistrict(s string) *MerchantStoreCreate {
-	msc.mutation.SetDistrict(s)
-	return msc
-}
-
-// SetNillableDistrict sets the "district" field if the given value is not nil.
-func (msc *MerchantStoreCreate) SetNillableDistrict(s *string) *MerchantStoreCreate {
-	if s != nil {
-		msc.SetDistrict(*s)
-	}
-	return msc
-}
-
-// SetCity sets the "city" field.
-func (msc *MerchantStoreCreate) SetCity(s string) *MerchantStoreCreate {
-	msc.mutation.SetCity(s)
-	return msc
-}
-
-// SetNillableCity sets the "city" field if the given value is not nil.
-func (msc *MerchantStoreCreate) SetNillableCity(s *string) *MerchantStoreCreate {
-	if s != nil {
-		msc.SetCity(*s)
-	}
 	return msc
 }
 
@@ -155,6 +114,18 @@ func (msc *MerchantStoreCreate) SetBankAccount(mba *models.MerchantBankAccount) 
 // SetMomoAccount sets the "momo_account" field.
 func (msc *MerchantStoreCreate) SetMomoAccount(mma *models.MerchantMomoAccount) *MerchantStoreCreate {
 	msc.mutation.SetMomoAccount(mma)
+	return msc
+}
+
+// SetAddress sets the "address" field.
+func (msc *MerchantStoreCreate) SetAddress(msa *models.MerchantStoreAddress) *MerchantStoreCreate {
+	msc.mutation.SetAddress(msa)
+	return msc
+}
+
+// SetCoordinate sets the "coordinate" field.
+func (msc *MerchantStoreCreate) SetCoordinate(s *services.Coordinate) *MerchantStoreCreate {
+	msc.mutation.SetCoordinate(s)
 	return msc
 }
 
@@ -376,12 +347,12 @@ func (msc *MerchantStoreCreate) check() error {
 			return &ValidationError{Name: "about", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.about": %w`, err)}
 		}
 	}
-	if _, ok := msc.mutation.DescTitle(); !ok {
-		return &ValidationError{Name: "desc_title", err: errors.New(`ent: missing required field "MerchantStore.desc_title"`)}
+	if _, ok := msc.mutation.Slogan(); !ok {
+		return &ValidationError{Name: "slogan", err: errors.New(`ent: missing required field "MerchantStore.slogan"`)}
 	}
-	if v, ok := msc.mutation.DescTitle(); ok {
-		if err := merchantstore.DescTitleValidator(v); err != nil {
-			return &ValidationError{Name: "desc_title", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.desc_title": %w`, err)}
+	if v, ok := msc.mutation.Slogan(); ok {
+		if err := merchantstore.SloganValidator(v); err != nil {
+			return &ValidationError{Name: "slogan", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.slogan": %w`, err)}
 		}
 	}
 	if _, ok := msc.mutation.Description(); !ok {
@@ -475,13 +446,13 @@ func (msc *MerchantStoreCreate) createSpec() (*MerchantStore, *sqlgraph.CreateSp
 		})
 		_node.About = value
 	}
-	if value, ok := msc.mutation.DescTitle(); ok {
+	if value, ok := msc.mutation.Slogan(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: merchantstore.FieldDescTitle,
+			Column: merchantstore.FieldSlogan,
 		})
-		_node.DescTitle = value
+		_node.Slogan = value
 	}
 	if value, ok := msc.mutation.Description(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -507,30 +478,6 @@ func (msc *MerchantStoreCreate) createSpec() (*MerchantStore, *sqlgraph.CreateSp
 		})
 		_node.Images = value
 	}
-	if value, ok := msc.mutation.Region(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldRegion,
-		})
-		_node.Region = &value
-	}
-	if value, ok := msc.mutation.District(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldDistrict,
-		})
-		_node.District = &value
-	}
-	if value, ok := msc.mutation.City(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldCity,
-		})
-		_node.City = &value
-	}
 	if value, ok := msc.mutation.DefaultAccount(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeEnum,
@@ -554,6 +501,22 @@ func (msc *MerchantStoreCreate) createSpec() (*MerchantStore, *sqlgraph.CreateSp
 			Column: merchantstore.FieldMomoAccount,
 		})
 		_node.MomoAccount = value
+	}
+	if value, ok := msc.mutation.Address(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: merchantstore.FieldAddress,
+		})
+		_node.Address = value
+	}
+	if value, ok := msc.mutation.Coordinate(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: merchantstore.FieldCoordinate,
+		})
+		_node.Coordinate = value
 	}
 	if value, ok := msc.mutation.MerchantType(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

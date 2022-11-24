@@ -14,7 +14,7 @@ import (
 type PageRouter struct {
 }
 
-func NewPageRouter(db *database.Adapter, mail gateways.EmailService) *PageRouter {
+func NewPageRouter(db *database.Adapter, mail gateways.EmailService, logis gateways.LogisticService) *PageRouter {
 	return &PageRouter{}
 }
 

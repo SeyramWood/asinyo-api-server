@@ -4,6 +4,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+
+	"github.com/SeyramWood/app/domain/services"
 )
 
 // Address holds the schema definition for the Address entity.
@@ -23,13 +25,17 @@ func (Address) Fields() []ent.Field {
 		field.String("last_name").NotEmpty(),
 		field.String("other_name").NotEmpty(),
 		field.String("phone").NotEmpty(),
-		field.String("other_phone").Optional().Nillable(),
-		field.String("digital_address").Optional().Nillable(),
+		field.String("other_phone").Optional(),
+		field.String("digital_address").Optional(),
+		field.String("street_name").Optional(),
+		field.String("street_number").Optional(),
 		field.String("city").NotEmpty(),
+		field.String("district").Optional(),
 		field.String("Region").NotEmpty(),
+		field.String("Country").Default("Ghana"),
 		field.Text("address").NotEmpty(),
-		field.Text("other_information").Optional().Nillable(),
 		field.Bool("default").Default(false),
+		field.JSON("coordinate", &services.Coordinate{}).Optional(),
 	}
 }
 

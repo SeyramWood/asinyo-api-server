@@ -10,11 +10,12 @@ import (
 )
 
 type service struct {
-	repo gateways.OrderRepo
+	repo     gateways.OrderRepo
+	logistic gateways.LogisticService
 }
 
-func NewOrderService(repo gateways.OrderRepo) gateways.OrderService {
-	return &service{repo: repo}
+func NewOrderService(repo gateways.OrderRepo, logistic gateways.LogisticService) gateways.OrderService {
+	return &service{repo: repo, logistic: logistic.New(repo)}
 }
 
 func (s service) Create(order *models.OrderPayload) (*ent.Order, error) {
@@ -72,5 +73,17 @@ func (s service) UpdateOrderDetailStatus(request []byte) (*ent.Order, error) {
 		return nil, errr
 	}
 
-	return s.repo.UpdateOrderDetailStatus(statuses)
+	if result, err := s.repo.UpdateOrderDetailStatus(statuses); err != nil {
+		return nil, err
+	} else {
+		if result.Status == "in_progress" {
+			s.logistic.DoTask(result, "create_multiple_tasks")
+			// if result.DeliveryTask {
+			// 	s.logistic.DoTask(result, "edit_multiple_tasks")
+			// } else {
+			// 	s.logistic.DoTask(result, "create_multiple_tasks")
+			// }
+		}
+		return result, nil
+	}
 }

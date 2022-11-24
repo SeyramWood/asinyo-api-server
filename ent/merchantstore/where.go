@@ -109,10 +109,10 @@ func About(v string) predicate.MerchantStore {
 	})
 }
 
-// DescTitle applies equality check predicate on the "desc_title" field. It's identical to DescTitleEQ.
-func DescTitle(v string) predicate.MerchantStore {
+// Slogan applies equality check predicate on the "slogan" field. It's identical to SloganEQ.
+func Slogan(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDescTitle), v))
+		s.Where(sql.EQ(s.C(FieldSlogan), v))
 	})
 }
 
@@ -127,27 +127,6 @@ func Description(v string) predicate.MerchantStore {
 func Logo(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldLogo), v))
-	})
-}
-
-// Region applies equality check predicate on the "region" field. It's identical to RegionEQ.
-func Region(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldRegion), v))
-	})
-}
-
-// District applies equality check predicate on the "district" field. It's identical to DistrictEQ.
-func District(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDistrict), v))
-	})
-}
-
-// City applies equality check predicate on the "city" field. It's identical to CityEQ.
-func City(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCity), v))
 	})
 }
 
@@ -491,102 +470,102 @@ func AboutContainsFold(v string) predicate.MerchantStore {
 	})
 }
 
-// DescTitleEQ applies the EQ predicate on the "desc_title" field.
-func DescTitleEQ(v string) predicate.MerchantStore {
+// SloganEQ applies the EQ predicate on the "slogan" field.
+func SloganEQ(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDescTitle), v))
+		s.Where(sql.EQ(s.C(FieldSlogan), v))
 	})
 }
 
-// DescTitleNEQ applies the NEQ predicate on the "desc_title" field.
-func DescTitleNEQ(v string) predicate.MerchantStore {
+// SloganNEQ applies the NEQ predicate on the "slogan" field.
+func SloganNEQ(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldDescTitle), v))
+		s.Where(sql.NEQ(s.C(FieldSlogan), v))
 	})
 }
 
-// DescTitleIn applies the In predicate on the "desc_title" field.
-func DescTitleIn(vs ...string) predicate.MerchantStore {
+// SloganIn applies the In predicate on the "slogan" field.
+func SloganIn(vs ...string) predicate.MerchantStore {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldDescTitle), v...))
+		s.Where(sql.In(s.C(FieldSlogan), v...))
 	})
 }
 
-// DescTitleNotIn applies the NotIn predicate on the "desc_title" field.
-func DescTitleNotIn(vs ...string) predicate.MerchantStore {
+// SloganNotIn applies the NotIn predicate on the "slogan" field.
+func SloganNotIn(vs ...string) predicate.MerchantStore {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldDescTitle), v...))
+		s.Where(sql.NotIn(s.C(FieldSlogan), v...))
 	})
 }
 
-// DescTitleGT applies the GT predicate on the "desc_title" field.
-func DescTitleGT(v string) predicate.MerchantStore {
+// SloganGT applies the GT predicate on the "slogan" field.
+func SloganGT(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldDescTitle), v))
+		s.Where(sql.GT(s.C(FieldSlogan), v))
 	})
 }
 
-// DescTitleGTE applies the GTE predicate on the "desc_title" field.
-func DescTitleGTE(v string) predicate.MerchantStore {
+// SloganGTE applies the GTE predicate on the "slogan" field.
+func SloganGTE(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldDescTitle), v))
+		s.Where(sql.GTE(s.C(FieldSlogan), v))
 	})
 }
 
-// DescTitleLT applies the LT predicate on the "desc_title" field.
-func DescTitleLT(v string) predicate.MerchantStore {
+// SloganLT applies the LT predicate on the "slogan" field.
+func SloganLT(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldDescTitle), v))
+		s.Where(sql.LT(s.C(FieldSlogan), v))
 	})
 }
 
-// DescTitleLTE applies the LTE predicate on the "desc_title" field.
-func DescTitleLTE(v string) predicate.MerchantStore {
+// SloganLTE applies the LTE predicate on the "slogan" field.
+func SloganLTE(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldDescTitle), v))
+		s.Where(sql.LTE(s.C(FieldSlogan), v))
 	})
 }
 
-// DescTitleContains applies the Contains predicate on the "desc_title" field.
-func DescTitleContains(v string) predicate.MerchantStore {
+// SloganContains applies the Contains predicate on the "slogan" field.
+func SloganContains(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldDescTitle), v))
+		s.Where(sql.Contains(s.C(FieldSlogan), v))
 	})
 }
 
-// DescTitleHasPrefix applies the HasPrefix predicate on the "desc_title" field.
-func DescTitleHasPrefix(v string) predicate.MerchantStore {
+// SloganHasPrefix applies the HasPrefix predicate on the "slogan" field.
+func SloganHasPrefix(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldDescTitle), v))
+		s.Where(sql.HasPrefix(s.C(FieldSlogan), v))
 	})
 }
 
-// DescTitleHasSuffix applies the HasSuffix predicate on the "desc_title" field.
-func DescTitleHasSuffix(v string) predicate.MerchantStore {
+// SloganHasSuffix applies the HasSuffix predicate on the "slogan" field.
+func SloganHasSuffix(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldDescTitle), v))
+		s.Where(sql.HasSuffix(s.C(FieldSlogan), v))
 	})
 }
 
-// DescTitleEqualFold applies the EqualFold predicate on the "desc_title" field.
-func DescTitleEqualFold(v string) predicate.MerchantStore {
+// SloganEqualFold applies the EqualFold predicate on the "slogan" field.
+func SloganEqualFold(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldDescTitle), v))
+		s.Where(sql.EqualFold(s.C(FieldSlogan), v))
 	})
 }
 
-// DescTitleContainsFold applies the ContainsFold predicate on the "desc_title" field.
-func DescTitleContainsFold(v string) predicate.MerchantStore {
+// SloganContainsFold applies the ContainsFold predicate on the "slogan" field.
+func SloganContainsFold(v string) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldDescTitle), v))
+		s.Where(sql.ContainsFold(s.C(FieldSlogan), v))
 	})
 }
 
@@ -802,345 +781,6 @@ func ImagesNotNil() predicate.MerchantStore {
 	})
 }
 
-// RegionEQ applies the EQ predicate on the "region" field.
-func RegionEQ(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldRegion), v))
-	})
-}
-
-// RegionNEQ applies the NEQ predicate on the "region" field.
-func RegionNEQ(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldRegion), v))
-	})
-}
-
-// RegionIn applies the In predicate on the "region" field.
-func RegionIn(vs ...string) predicate.MerchantStore {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldRegion), v...))
-	})
-}
-
-// RegionNotIn applies the NotIn predicate on the "region" field.
-func RegionNotIn(vs ...string) predicate.MerchantStore {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldRegion), v...))
-	})
-}
-
-// RegionGT applies the GT predicate on the "region" field.
-func RegionGT(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldRegion), v))
-	})
-}
-
-// RegionGTE applies the GTE predicate on the "region" field.
-func RegionGTE(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldRegion), v))
-	})
-}
-
-// RegionLT applies the LT predicate on the "region" field.
-func RegionLT(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldRegion), v))
-	})
-}
-
-// RegionLTE applies the LTE predicate on the "region" field.
-func RegionLTE(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldRegion), v))
-	})
-}
-
-// RegionContains applies the Contains predicate on the "region" field.
-func RegionContains(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldRegion), v))
-	})
-}
-
-// RegionHasPrefix applies the HasPrefix predicate on the "region" field.
-func RegionHasPrefix(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldRegion), v))
-	})
-}
-
-// RegionHasSuffix applies the HasSuffix predicate on the "region" field.
-func RegionHasSuffix(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldRegion), v))
-	})
-}
-
-// RegionIsNil applies the IsNil predicate on the "region" field.
-func RegionIsNil() predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldRegion)))
-	})
-}
-
-// RegionNotNil applies the NotNil predicate on the "region" field.
-func RegionNotNil() predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldRegion)))
-	})
-}
-
-// RegionEqualFold applies the EqualFold predicate on the "region" field.
-func RegionEqualFold(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldRegion), v))
-	})
-}
-
-// RegionContainsFold applies the ContainsFold predicate on the "region" field.
-func RegionContainsFold(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldRegion), v))
-	})
-}
-
-// DistrictEQ applies the EQ predicate on the "district" field.
-func DistrictEQ(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDistrict), v))
-	})
-}
-
-// DistrictNEQ applies the NEQ predicate on the "district" field.
-func DistrictNEQ(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldDistrict), v))
-	})
-}
-
-// DistrictIn applies the In predicate on the "district" field.
-func DistrictIn(vs ...string) predicate.MerchantStore {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldDistrict), v...))
-	})
-}
-
-// DistrictNotIn applies the NotIn predicate on the "district" field.
-func DistrictNotIn(vs ...string) predicate.MerchantStore {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldDistrict), v...))
-	})
-}
-
-// DistrictGT applies the GT predicate on the "district" field.
-func DistrictGT(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldDistrict), v))
-	})
-}
-
-// DistrictGTE applies the GTE predicate on the "district" field.
-func DistrictGTE(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldDistrict), v))
-	})
-}
-
-// DistrictLT applies the LT predicate on the "district" field.
-func DistrictLT(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldDistrict), v))
-	})
-}
-
-// DistrictLTE applies the LTE predicate on the "district" field.
-func DistrictLTE(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldDistrict), v))
-	})
-}
-
-// DistrictContains applies the Contains predicate on the "district" field.
-func DistrictContains(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldDistrict), v))
-	})
-}
-
-// DistrictHasPrefix applies the HasPrefix predicate on the "district" field.
-func DistrictHasPrefix(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldDistrict), v))
-	})
-}
-
-// DistrictHasSuffix applies the HasSuffix predicate on the "district" field.
-func DistrictHasSuffix(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldDistrict), v))
-	})
-}
-
-// DistrictIsNil applies the IsNil predicate on the "district" field.
-func DistrictIsNil() predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldDistrict)))
-	})
-}
-
-// DistrictNotNil applies the NotNil predicate on the "district" field.
-func DistrictNotNil() predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldDistrict)))
-	})
-}
-
-// DistrictEqualFold applies the EqualFold predicate on the "district" field.
-func DistrictEqualFold(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldDistrict), v))
-	})
-}
-
-// DistrictContainsFold applies the ContainsFold predicate on the "district" field.
-func DistrictContainsFold(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldDistrict), v))
-	})
-}
-
-// CityEQ applies the EQ predicate on the "city" field.
-func CityEQ(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCity), v))
-	})
-}
-
-// CityNEQ applies the NEQ predicate on the "city" field.
-func CityNEQ(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCity), v))
-	})
-}
-
-// CityIn applies the In predicate on the "city" field.
-func CityIn(vs ...string) predicate.MerchantStore {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCity), v...))
-	})
-}
-
-// CityNotIn applies the NotIn predicate on the "city" field.
-func CityNotIn(vs ...string) predicate.MerchantStore {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCity), v...))
-	})
-}
-
-// CityGT applies the GT predicate on the "city" field.
-func CityGT(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCity), v))
-	})
-}
-
-// CityGTE applies the GTE predicate on the "city" field.
-func CityGTE(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCity), v))
-	})
-}
-
-// CityLT applies the LT predicate on the "city" field.
-func CityLT(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCity), v))
-	})
-}
-
-// CityLTE applies the LTE predicate on the "city" field.
-func CityLTE(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCity), v))
-	})
-}
-
-// CityContains applies the Contains predicate on the "city" field.
-func CityContains(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldCity), v))
-	})
-}
-
-// CityHasPrefix applies the HasPrefix predicate on the "city" field.
-func CityHasPrefix(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldCity), v))
-	})
-}
-
-// CityHasSuffix applies the HasSuffix predicate on the "city" field.
-func CityHasSuffix(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldCity), v))
-	})
-}
-
-// CityIsNil applies the IsNil predicate on the "city" field.
-func CityIsNil() predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldCity)))
-	})
-}
-
-// CityNotNil applies the NotNil predicate on the "city" field.
-func CityNotNil() predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldCity)))
-	})
-}
-
-// CityEqualFold applies the EqualFold predicate on the "city" field.
-func CityEqualFold(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldCity), v))
-	})
-}
-
-// CityContainsFold applies the ContainsFold predicate on the "city" field.
-func CityContainsFold(v string) predicate.MerchantStore {
-	return predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldCity), v))
-	})
-}
-
 // DefaultAccountEQ applies the EQ predicate on the "default_account" field.
 func DefaultAccountEQ(v DefaultAccount) predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
@@ -1216,6 +856,34 @@ func MomoAccountIsNil() predicate.MerchantStore {
 func MomoAccountNotNil() predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {
 		s.Where(sql.NotNull(s.C(FieldMomoAccount)))
+	})
+}
+
+// AddressIsNil applies the IsNil predicate on the "address" field.
+func AddressIsNil() predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldAddress)))
+	})
+}
+
+// AddressNotNil applies the NotNil predicate on the "address" field.
+func AddressNotNil() predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldAddress)))
+	})
+}
+
+// CoordinateIsNil applies the IsNil predicate on the "coordinate" field.
+func CoordinateIsNil() predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldCoordinate)))
+	})
+}
+
+// CoordinateNotNil applies the NotNil predicate on the "coordinate" field.
+func CoordinateNotNil() predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldCoordinate)))
 	})
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -171,6 +172,12 @@ func (oc *OrderCreate) SetNillableStatus(o *order.Status) *OrderCreate {
 	return oc
 }
 
+// SetStoreTasksCreated sets the "store_tasks_created" field.
+func (oc *OrderCreate) SetStoreTasksCreated(i []int) *OrderCreate {
+	oc.mutation.SetStoreTasksCreated(i)
+	return oc
+}
+
 // SetDeliveredAt sets the "delivered_at" field.
 func (oc *OrderCreate) SetDeliveredAt(t time.Time) *OrderCreate {
 	oc.mutation.SetDeliveredAt(t)
@@ -308,6 +315,21 @@ func (oc *OrderCreate) AddStores(m ...*MerchantStore) *OrderCreate {
 		ids[i] = m[i].ID
 	}
 	return oc.AddStoreIDs(ids...)
+}
+
+// AddLogisticIDs adds the "logistic" edge to the Logistic entity by IDs.
+func (oc *OrderCreate) AddLogisticIDs(ids ...int) *OrderCreate {
+	oc.mutation.AddLogisticIDs(ids...)
+	return oc
+}
+
+// AddLogistic adds the "logistic" edges to the Logistic entity.
+func (oc *OrderCreate) AddLogistic(l ...*Logistic) *OrderCreate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return oc.AddLogisticIDs(ids...)
 }
 
 // Mutation returns the OrderMutation object of the builder.
@@ -590,6 +612,14 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		})
 		_node.Status = value
 	}
+	if value, ok := oc.mutation.StoreTasksCreated(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: order.FieldStoreTasksCreated,
+		})
+		_node.StoreTasksCreated = value
+	}
 	if value, ok := oc.mutation.DeliveredAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -728,6 +758,25 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := oc.mutation.LogisticIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   order.LogisticTable,
+			Columns: order.LogisticPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
 				},
 			},
 		}

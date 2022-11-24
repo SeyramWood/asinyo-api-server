@@ -31,7 +31,7 @@ func (s *service) Create(merchant *models.MerchantRequest) (*ent.Merchant, error
 	return s.repo.Insert(merchant, false)
 }
 
-func (s *service) Onboard(merchant *models.StoreFinalRequest, agentId int, logo string, images []string) (
+func (s *service) Onboard(merchant *models.OnboardMerchantFullRequest, agentId int, logo string, images []string) (
 	*ent.Merchant, error,
 ) {
 	password, _ := application.GenerateOTP(12)
@@ -43,10 +43,10 @@ func (s *service) Onboard(merchant *models.StoreFinalRequest, agentId int, logo 
 		"Congratulations for joining Asinyo! Please enter the OTP (password) to continue with Asinyo. Make sure to change your password when you successfuly sign in. %s",
 		password,
 	)
-	if application.UsernameType(merchant.Username, "phone") {
+	if application.UsernameType(merc.Username, "phone") {
 		_, err := s.sms.Send(
 			&services.SMSPayload{
-				Recipients: []string{merchant.Username},
+				Recipients: []string{merc.Username},
 				Message:    msg,
 			},
 		)
@@ -54,10 +54,10 @@ func (s *service) Onboard(merchant *models.StoreFinalRequest, agentId int, logo 
 			return nil, err
 		}
 	}
-	if application.UsernameType(merchant.Username, "email") {
+	if application.UsernameType(merc.Username, "email") {
 		s.mail.Send(
 			&services.Message{
-				To:      merchant.Username,
+				To:      merc.Username,
 				Subject: "ASINYO MERCHANT OTP",
 				Data:    msg,
 			},

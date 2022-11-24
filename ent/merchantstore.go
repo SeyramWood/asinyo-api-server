@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
@@ -28,26 +29,24 @@ type MerchantStore struct {
 	Name string `json:"name,omitempty"`
 	// About holds the value of the "about" field.
 	About string `json:"about,omitempty"`
-	// DescTitle holds the value of the "desc_title" field.
-	DescTitle string `json:"desc_title,omitempty"`
+	// Slogan holds the value of the "slogan" field.
+	Slogan string `json:"slogan,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
 	// Logo holds the value of the "logo" field.
 	Logo string `json:"logo,omitempty"`
 	// Images holds the value of the "images" field.
 	Images []string `json:"images,omitempty"`
-	// Region holds the value of the "region" field.
-	Region *string `json:"region,omitempty"`
-	// District holds the value of the "district" field.
-	District *string `json:"district,omitempty"`
-	// City holds the value of the "city" field.
-	City *string `json:"city,omitempty"`
 	// DefaultAccount holds the value of the "default_account" field.
 	DefaultAccount merchantstore.DefaultAccount `json:"default_account,omitempty"`
 	// BankAccount holds the value of the "bank_account" field.
 	BankAccount *models.MerchantBankAccount `json:"bank_account,omitempty"`
 	// MomoAccount holds the value of the "momo_account" field.
 	MomoAccount *models.MerchantMomoAccount `json:"momo_account,omitempty"`
+	// Address holds the value of the "address" field.
+	Address *models.MerchantStoreAddress `json:"address,omitempty"`
+	// Coordinate holds the value of the "coordinate" field.
+	Coordinate *services.Coordinate `json:"coordinate,omitempty"`
 	// MerchantType holds the value of the "merchant_type" field.
 	MerchantType string `json:"merchant_type,omitempty"`
 	// PermitAgent holds the value of the "permit_agent" field.
@@ -134,13 +133,13 @@ func (*MerchantStore) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case merchantstore.FieldImages, merchantstore.FieldBankAccount, merchantstore.FieldMomoAccount:
+		case merchantstore.FieldImages, merchantstore.FieldBankAccount, merchantstore.FieldMomoAccount, merchantstore.FieldAddress, merchantstore.FieldCoordinate:
 			values[i] = new([]byte)
 		case merchantstore.FieldPermitAgent:
 			values[i] = new(sql.NullBool)
 		case merchantstore.FieldID:
 			values[i] = new(sql.NullInt64)
-		case merchantstore.FieldName, merchantstore.FieldAbout, merchantstore.FieldDescTitle, merchantstore.FieldDescription, merchantstore.FieldLogo, merchantstore.FieldRegion, merchantstore.FieldDistrict, merchantstore.FieldCity, merchantstore.FieldDefaultAccount, merchantstore.FieldMerchantType:
+		case merchantstore.FieldName, merchantstore.FieldAbout, merchantstore.FieldSlogan, merchantstore.FieldDescription, merchantstore.FieldLogo, merchantstore.FieldDefaultAccount, merchantstore.FieldMerchantType:
 			values[i] = new(sql.NullString)
 		case merchantstore.FieldCreatedAt, merchantstore.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -193,11 +192,11 @@ func (ms *MerchantStore) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				ms.About = value.String
 			}
-		case merchantstore.FieldDescTitle:
+		case merchantstore.FieldSlogan:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field desc_title", values[i])
+				return fmt.Errorf("unexpected type %T for field slogan", values[i])
 			} else if value.Valid {
-				ms.DescTitle = value.String
+				ms.Slogan = value.String
 			}
 		case merchantstore.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -219,27 +218,6 @@ func (ms *MerchantStore) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field images: %w", err)
 				}
 			}
-		case merchantstore.FieldRegion:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field region", values[i])
-			} else if value.Valid {
-				ms.Region = new(string)
-				*ms.Region = value.String
-			}
-		case merchantstore.FieldDistrict:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field district", values[i])
-			} else if value.Valid {
-				ms.District = new(string)
-				*ms.District = value.String
-			}
-		case merchantstore.FieldCity:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field city", values[i])
-			} else if value.Valid {
-				ms.City = new(string)
-				*ms.City = value.String
-			}
 		case merchantstore.FieldDefaultAccount:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field default_account", values[i])
@@ -260,6 +238,22 @@ func (ms *MerchantStore) assignValues(columns []string, values []any) error {
 			} else if value != nil && len(*value) > 0 {
 				if err := json.Unmarshal(*value, &ms.MomoAccount); err != nil {
 					return fmt.Errorf("unmarshal field momo_account: %w", err)
+				}
+			}
+		case merchantstore.FieldAddress:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field address", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &ms.Address); err != nil {
+					return fmt.Errorf("unmarshal field address: %w", err)
+				}
+			}
+		case merchantstore.FieldCoordinate:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field coordinate", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &ms.Coordinate); err != nil {
+					return fmt.Errorf("unmarshal field coordinate: %w", err)
 				}
 			}
 		case merchantstore.FieldMerchantType:
@@ -353,8 +347,8 @@ func (ms *MerchantStore) String() string {
 	builder.WriteString("about=")
 	builder.WriteString(ms.About)
 	builder.WriteString(", ")
-	builder.WriteString("desc_title=")
-	builder.WriteString(ms.DescTitle)
+	builder.WriteString("slogan=")
+	builder.WriteString(ms.Slogan)
 	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(ms.Description)
@@ -365,21 +359,6 @@ func (ms *MerchantStore) String() string {
 	builder.WriteString("images=")
 	builder.WriteString(fmt.Sprintf("%v", ms.Images))
 	builder.WriteString(", ")
-	if v := ms.Region; v != nil {
-		builder.WriteString("region=")
-		builder.WriteString(*v)
-	}
-	builder.WriteString(", ")
-	if v := ms.District; v != nil {
-		builder.WriteString("district=")
-		builder.WriteString(*v)
-	}
-	builder.WriteString(", ")
-	if v := ms.City; v != nil {
-		builder.WriteString("city=")
-		builder.WriteString(*v)
-	}
-	builder.WriteString(", ")
 	builder.WriteString("default_account=")
 	builder.WriteString(fmt.Sprintf("%v", ms.DefaultAccount))
 	builder.WriteString(", ")
@@ -388,6 +367,12 @@ func (ms *MerchantStore) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("momo_account=")
 	builder.WriteString(fmt.Sprintf("%v", ms.MomoAccount))
+	builder.WriteString(", ")
+	builder.WriteString("address=")
+	builder.WriteString(fmt.Sprintf("%v", ms.Address))
+	builder.WriteString(", ")
+	builder.WriteString("coordinate=")
+	builder.WriteString(fmt.Sprintf("%v", ms.Coordinate))
 	builder.WriteString(", ")
 	builder.WriteString("merchant_type=")
 	builder.WriteString(ms.MerchantType)

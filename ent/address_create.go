@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
@@ -98,9 +99,51 @@ func (ac *AddressCreate) SetNillableDigitalAddress(s *string) *AddressCreate {
 	return ac
 }
 
+// SetStreetName sets the "street_name" field.
+func (ac *AddressCreate) SetStreetName(s string) *AddressCreate {
+	ac.mutation.SetStreetName(s)
+	return ac
+}
+
+// SetNillableStreetName sets the "street_name" field if the given value is not nil.
+func (ac *AddressCreate) SetNillableStreetName(s *string) *AddressCreate {
+	if s != nil {
+		ac.SetStreetName(*s)
+	}
+	return ac
+}
+
+// SetStreetNumber sets the "street_number" field.
+func (ac *AddressCreate) SetStreetNumber(s string) *AddressCreate {
+	ac.mutation.SetStreetNumber(s)
+	return ac
+}
+
+// SetNillableStreetNumber sets the "street_number" field if the given value is not nil.
+func (ac *AddressCreate) SetNillableStreetNumber(s *string) *AddressCreate {
+	if s != nil {
+		ac.SetStreetNumber(*s)
+	}
+	return ac
+}
+
 // SetCity sets the "city" field.
 func (ac *AddressCreate) SetCity(s string) *AddressCreate {
 	ac.mutation.SetCity(s)
+	return ac
+}
+
+// SetDistrict sets the "district" field.
+func (ac *AddressCreate) SetDistrict(s string) *AddressCreate {
+	ac.mutation.SetDistrict(s)
+	return ac
+}
+
+// SetNillableDistrict sets the "district" field if the given value is not nil.
+func (ac *AddressCreate) SetNillableDistrict(s *string) *AddressCreate {
+	if s != nil {
+		ac.SetDistrict(*s)
+	}
 	return ac
 }
 
@@ -110,23 +153,23 @@ func (ac *AddressCreate) SetRegion(s string) *AddressCreate {
 	return ac
 }
 
+// SetCountry sets the "Country" field.
+func (ac *AddressCreate) SetCountry(s string) *AddressCreate {
+	ac.mutation.SetCountry(s)
+	return ac
+}
+
+// SetNillableCountry sets the "Country" field if the given value is not nil.
+func (ac *AddressCreate) SetNillableCountry(s *string) *AddressCreate {
+	if s != nil {
+		ac.SetCountry(*s)
+	}
+	return ac
+}
+
 // SetAddress sets the "address" field.
 func (ac *AddressCreate) SetAddress(s string) *AddressCreate {
 	ac.mutation.SetAddress(s)
-	return ac
-}
-
-// SetOtherInformation sets the "other_information" field.
-func (ac *AddressCreate) SetOtherInformation(s string) *AddressCreate {
-	ac.mutation.SetOtherInformation(s)
-	return ac
-}
-
-// SetNillableOtherInformation sets the "other_information" field if the given value is not nil.
-func (ac *AddressCreate) SetNillableOtherInformation(s *string) *AddressCreate {
-	if s != nil {
-		ac.SetOtherInformation(*s)
-	}
 	return ac
 }
 
@@ -141,6 +184,12 @@ func (ac *AddressCreate) SetNillableDefault(b *bool) *AddressCreate {
 	if b != nil {
 		ac.SetDefault(*b)
 	}
+	return ac
+}
+
+// SetCoordinate sets the "coordinate" field.
+func (ac *AddressCreate) SetCoordinate(s *services.Coordinate) *AddressCreate {
+	ac.mutation.SetCoordinate(s)
 	return ac
 }
 
@@ -301,6 +350,10 @@ func (ac *AddressCreate) defaults() {
 		v := address.DefaultUpdatedAt()
 		ac.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := ac.mutation.Country(); !ok {
+		v := address.DefaultCountry
+		ac.mutation.SetCountry(v)
+	}
 	if _, ok := ac.mutation.Default(); !ok {
 		v := address.DefaultDefault
 		ac.mutation.SetDefault(v)
@@ -354,6 +407,9 @@ func (ac *AddressCreate) check() error {
 		if err := address.RegionValidator(v); err != nil {
 			return &ValidationError{Name: "Region", err: fmt.Errorf(`ent: validator failed for field "Address.Region": %w`, err)}
 		}
+	}
+	if _, ok := ac.mutation.Country(); !ok {
+		return &ValidationError{Name: "Country", err: errors.New(`ent: missing required field "Address.Country"`)}
 	}
 	if _, ok := ac.mutation.Address(); !ok {
 		return &ValidationError{Name: "address", err: errors.New(`ent: missing required field "Address.address"`)}
@@ -439,7 +495,7 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: address.FieldOtherPhone,
 		})
-		_node.OtherPhone = &value
+		_node.OtherPhone = value
 	}
 	if value, ok := ac.mutation.DigitalAddress(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -447,7 +503,23 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: address.FieldDigitalAddress,
 		})
-		_node.DigitalAddress = &value
+		_node.DigitalAddress = value
+	}
+	if value, ok := ac.mutation.StreetName(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldStreetName,
+		})
+		_node.StreetName = value
+	}
+	if value, ok := ac.mutation.StreetNumber(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldStreetNumber,
+		})
+		_node.StreetNumber = value
 	}
 	if value, ok := ac.mutation.City(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -457,6 +529,14 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 		})
 		_node.City = value
 	}
+	if value, ok := ac.mutation.District(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldDistrict,
+		})
+		_node.District = value
+	}
 	if value, ok := ac.mutation.Region(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -464,6 +544,14 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 			Column: address.FieldRegion,
 		})
 		_node.Region = value
+	}
+	if value, ok := ac.mutation.Country(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldCountry,
+		})
+		_node.Country = value
 	}
 	if value, ok := ac.mutation.Address(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -473,14 +561,6 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 		})
 		_node.Address = value
 	}
-	if value, ok := ac.mutation.OtherInformation(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldOtherInformation,
-		})
-		_node.OtherInformation = &value
-	}
 	if value, ok := ac.mutation.Default(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeBool,
@@ -488,6 +568,14 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 			Column: address.FieldDefault,
 		})
 		_node.Default = value
+	}
+	if value, ok := ac.mutation.Coordinate(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: address.FieldCoordinate,
+		})
+		_node.Coordinate = value
 	}
 	if nodes := ac.mutation.MerchantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -15,6 +15,7 @@ import (
 )
 
 type mailer struct {
+	SMTP        *mail.SMTPServer
 	Mailer      string
 	FromAddress string
 	FromName    string
@@ -25,12 +26,13 @@ type mailer struct {
 }
 
 func NewEmail(app *config.MailServer) gateways.EmailService {
-	wg := app.WG
+
 	return &mailer{
+		SMTP:        app.SMTP,
 		Mailer:      config.Mailer().Mailer,
 		FromAddress: config.Mailer().FromAddress,
 		FromName:    config.Mailer().FromName,
-		WG:          wg,
+		WG:          app.WG,
 		MailerChan:  app.MailerChan,
 		DoneChan:    app.DoneChan,
 		ErrorChan:   app.ErrorChan,
@@ -94,7 +96,7 @@ func (m *mailer) sendMail(msg *services.Message, errorChan chan error) {
 		errorChan <- err
 	}
 
-	smtpClient, err := config.SMTPServer().Connect()
+	smtpClient, err := m.SMTP.Connect()
 	if err != nil {
 		fmt.Println(err)
 		errorChan <- err

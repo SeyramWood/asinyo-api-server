@@ -25,16 +25,24 @@ const (
 	FieldOtherPhone = "other_phone"
 	// FieldDigitalAddress holds the string denoting the digital_address field in the database.
 	FieldDigitalAddress = "digital_address"
+	// FieldStreetName holds the string denoting the street_name field in the database.
+	FieldStreetName = "street_name"
+	// FieldStreetNumber holds the string denoting the street_number field in the database.
+	FieldStreetNumber = "street_number"
 	// FieldCity holds the string denoting the city field in the database.
 	FieldCity = "city"
+	// FieldDistrict holds the string denoting the district field in the database.
+	FieldDistrict = "district"
 	// FieldRegion holds the string denoting the region field in the database.
 	FieldRegion = "region"
+	// FieldCountry holds the string denoting the country field in the database.
+	FieldCountry = "country"
 	// FieldAddress holds the string denoting the address field in the database.
 	FieldAddress = "address"
-	// FieldOtherInformation holds the string denoting the other_information field in the database.
-	FieldOtherInformation = "other_information"
 	// FieldDefault holds the string denoting the default field in the database.
 	FieldDefault = "default"
+	// FieldCoordinate holds the string denoting the coordinate field in the database.
+	FieldCoordinate = "coordinate"
 	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
 	EdgeMerchant = "merchant"
 	// EdgeAgent holds the string denoting the agent edge name in mutations.
@@ -85,11 +93,15 @@ var Columns = []string{
 	FieldPhone,
 	FieldOtherPhone,
 	FieldDigitalAddress,
+	FieldStreetName,
+	FieldStreetNumber,
 	FieldCity,
+	FieldDistrict,
 	FieldRegion,
+	FieldCountry,
 	FieldAddress,
-	FieldOtherInformation,
 	FieldDefault,
+	FieldCoordinate,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "addresses"
@@ -132,6 +144,8 @@ var (
 	CityValidator func(string) error
 	// RegionValidator is a validator for the "Region" field. It is called by the builders before save.
 	RegionValidator func(string) error
+	// DefaultCountry holds the default value on creation for the "Country" field.
+	DefaultCountry string
 	// AddressValidator is a validator for the "address" field. It is called by the builders before save.
 	AddressValidator func(string) error
 	// DefaultDefault holds the default value on creation for the "default" field.

@@ -11,12 +11,16 @@ import (
 )
 
 type ApiRouter struct {
-	db   *database.Adapter
-	mail gateways.EmailService
+	db    *database.Adapter
+	mail  gateways.EmailService
+	logis gateways.LogisticService
+	maps  gateways.MapService
 }
 
-func NewApiRouter(db *database.Adapter, mail gateways.EmailService) *ApiRouter {
-	return &ApiRouter{db, mail}
+func NewApiRouter(
+	db *database.Adapter, mail gateways.EmailService, logis gateways.LogisticService, maps gateways.MapService,
+) *ApiRouter {
+	return &ApiRouter{db, mail, logis, maps}
 }
 
 func (h *ApiRouter) Router(app *fiber.App) {
@@ -27,23 +31,23 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 	agentRouter(r, h.db)
 
-	merchantRouter(r, h.db)
+	merchantRouter(r, h.db, h.maps)
 
-	retailMerchantRouter(r, h.db, h.mail)
+	retailMerchantRouter(r, h.db, h.mail, h.maps)
 
-	supplierMerchantRouter(r, h.db, h.mail)
+	supplierMerchantRouter(r, h.db, h.mail, h.maps)
 
 	customerRouter(r, h.db)
 
 	productRouter(r, h.db)
 
-	paymentRouter(r, h.db)
+	paymentRouter(r, h.db, h.logis)
 
-	orderRouter(r, h.db)
+	orderRouter(r, h.db, h.logis)
 
 	adminRouter(r, h.db)
 
-	addressRouter(r, h.db)
+	addressRouter(r, h.db, h.maps)
 
 }
 
@@ -102,10 +106,10 @@ func agentRouter(r fiber.Router, db *database.Adapter) {
 
 }
 
-func retailMerchantRouter(r fiber.Router, db *database.Adapter, mail gateways.EmailService) {
+func retailMerchantRouter(r fiber.Router, db *database.Adapter, mail gateways.EmailService, maps gateways.MapService) {
 
 	h := handler.NewRetailMerchantHandler(db, mail)
-	m := handler.NewMerchantHandler(db, mail)
+	m := handler.NewMerchantHandler(db, mail, maps)
 
 	router := r.Group("/auth/merchant/retailers")
 
@@ -137,10 +141,12 @@ func retailMerchantRouter(r fiber.Router, db *database.Adapter, mail gateways.Em
 
 }
 
-func supplierMerchantRouter(r fiber.Router, db *database.Adapter, mail gateways.EmailService) {
+func supplierMerchantRouter(
+	r fiber.Router, db *database.Adapter, mail gateways.EmailService, maps gateways.MapService,
+) {
 
 	h := handler.NewSupplierMerchantHandler(db)
-	m := handler.NewMerchantHandler(db, mail)
+	m := handler.NewMerchantHandler(db, mail, maps)
 
 	router := r.Group("/auth/merchant/suppliers")
 
@@ -173,10 +179,10 @@ func supplierMerchantRouter(r fiber.Router, db *database.Adapter, mail gateways.
 
 }
 
-func merchantRouter(r fiber.Router, db *database.Adapter) {
+func merchantRouter(r fiber.Router, db *database.Adapter, maps gateways.MapService) {
 
 	// m := handlers.NewMerchantHandler(db)
-	msHandler := handler.NewMerchantStoreHandler(db)
+	msHandler := handler.NewMerchantStoreHandler(db, maps)
 
 	mRouter := r.Group("/merchants")
 	msRouter := mRouter.Group("/storefront")
@@ -201,6 +207,8 @@ func merchantRouter(r fiber.Router, db *database.Adapter) {
 			r.Get("/:merchantId/:merchant", msHandler.FetchByMerchantID())
 
 			r.Post("/:merchantId/profile", request.ValidateMerchantStore(), msHandler.Create())
+
+			r.Put("/:storeId/profile", request.ValidateMerchantStoreUpdate(), msHandler.Update())
 
 			r.Put("/:storeId/account/momo", request.ValidateMerchantMomoAccount(), msHandler.SaveMomoAccount())
 
@@ -298,10 +306,10 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 
 }
 
-func paymentRouter(router fiber.Router, db *database.Adapter) {
+func paymentRouter(router fiber.Router, db *database.Adapter, logis gateways.LogisticService) {
 
-	ph := handler.NewPaystackHandler(db)
-	oh := handler.NewOrderHandler(db)
+	ph := handler.NewPaystackHandler(db, logis)
+	oh := handler.NewOrderHandler(db, logis)
 
 	router.Route(
 		"/payment", func(r fiber.Router) {
@@ -317,14 +325,15 @@ func paymentRouter(router fiber.Router, db *database.Adapter) {
 
 }
 
-func orderRouter(router fiber.Router, db *database.Adapter) {
+func orderRouter(router fiber.Router, db *database.Adapter, logis gateways.LogisticService) {
 
-	h := handler.NewOrderHandler(db)
+	h := handler.NewOrderHandler(db, logis)
 
 	router.Route(
 		"/orders", func(r fiber.Router) {
 
 			r.Get("/:id", h.FetchById())
+
 			r.Get("/:merchant/store", h.FetchAllByStore())
 			r.Get("/agent/store/:agent", h.FetchAllByAgentStore())
 			r.Get("/:merchant/store/:order", h.FetchByStore())
@@ -333,14 +342,15 @@ func orderRouter(router fiber.Router, db *database.Adapter) {
 
 			r.Put("/update-order-details-status", h.UpdateOrderDetailStatus())
 
+			r.Post("/get-fare-estimate", h.FetchOrderFareEstimate())
 		}, "order.",
 	)
 
 }
 
-func addressRouter(router fiber.Router, db *database.Adapter) {
+func addressRouter(router fiber.Router, db *database.Adapter, maps gateways.MapService) {
 
-	h := handler.NewAddressHandler(db)
+	h := handler.NewAddressHandler(db, maps)
 	psh := handler.NewPickupStationHandler(db)
 
 	router.Route(

@@ -2,20 +2,20 @@ package config
 
 import (
 	"os"
+	"sync"
 
+	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/pkg/env"
 )
 
 // AppConfig - our app specific config
 type app struct {
-	Name           string
-	Version        string
-	AppURL         string
-	Key            string
-	TokenName      string
-	PORT           string
-	PaymentGateway string
-	SMSGateway     string
+	Name      string
+	Version   string
+	AppURL    string
+	Key       string
+	TokenName string
+	PORT      string
 }
 type payment struct {
 	Gateway string
@@ -23,6 +23,14 @@ type payment struct {
 type sms struct {
 	Sender  string
 	Gateway string
+}
+
+type logistic struct {
+	Gateway   string
+	WG        *sync.WaitGroup
+	DataChan  chan *ent.Order
+	DoneChan  chan bool
+	ErrorChan chan error
 }
 
 type mailer struct {
@@ -53,6 +61,14 @@ type arkesel struct {
 	APIKey string
 	URL    string
 }
+type tookan struct {
+	APIKey string
+	URL    string
+}
+
+type google struct {
+	APIKey string
+}
 
 func App() *app {
 	if os.Getenv("APP_ENV") == "production" {
@@ -72,6 +88,17 @@ func App() *app {
 		Key:       env.Get("APP_KEY", "secretKEY5465"),
 		TokenName: env.Get("API_TOKEN_NAME", "asinyo_remember"),
 		PORT:      env.Get("SERVER_PORT", "9000"),
+	}
+}
+
+func Logistic() *logistic {
+	if os.Getenv("APP_ENV") == "production" {
+		return &logistic{
+			Gateway: os.Getenv("LOGISTIC_GATEWAY"),
+		}
+	}
+	return &logistic{
+		Gateway: env.Get("LOGISTIC_GATEWAY", "tookan"),
 	}
 }
 
@@ -170,5 +197,29 @@ func Arkesel() *arkesel {
 	return &arkesel{
 		APIKey: env.Get("ARKESEL_API_KEY", ""),
 		URL:    env.Get("ARKESEL_URL", ""),
+	}
+}
+
+func Tookan() *tookan {
+	if os.Getenv("APP_ENV") == "production" {
+		return &tookan{
+			APIKey: os.Getenv("TOOKAN_API_KEY"),
+			URL:    os.Getenv("TOOKAN_URL"),
+		}
+	}
+	return &tookan{
+		APIKey: env.Get("TOOKAN_API_KEY", ""),
+		URL:    env.Get("TOOKAN_URL", ""),
+	}
+}
+
+func Google() *google {
+	if os.Getenv("APP_ENV") == "production" {
+		return &google{
+			APIKey: os.Getenv("GOOGLE_API_KEY"),
+		}
+	}
+	return &google{
+		APIKey: env.Get("GOOGLE_API_KEY", ""),
 	}
 }

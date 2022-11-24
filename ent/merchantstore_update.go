@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/agentrequest"
 	"github.com/SeyramWood/ent/merchant"
@@ -52,9 +53,9 @@ func (msu *MerchantStoreUpdate) SetAbout(s string) *MerchantStoreUpdate {
 	return msu
 }
 
-// SetDescTitle sets the "desc_title" field.
-func (msu *MerchantStoreUpdate) SetDescTitle(s string) *MerchantStoreUpdate {
-	msu.mutation.SetDescTitle(s)
+// SetSlogan sets the "slogan" field.
+func (msu *MerchantStoreUpdate) SetSlogan(s string) *MerchantStoreUpdate {
+	msu.mutation.SetSlogan(s)
 	return msu
 }
 
@@ -79,66 +80,6 @@ func (msu *MerchantStoreUpdate) SetImages(s []string) *MerchantStoreUpdate {
 // ClearImages clears the value of the "images" field.
 func (msu *MerchantStoreUpdate) ClearImages() *MerchantStoreUpdate {
 	msu.mutation.ClearImages()
-	return msu
-}
-
-// SetRegion sets the "region" field.
-func (msu *MerchantStoreUpdate) SetRegion(s string) *MerchantStoreUpdate {
-	msu.mutation.SetRegion(s)
-	return msu
-}
-
-// SetNillableRegion sets the "region" field if the given value is not nil.
-func (msu *MerchantStoreUpdate) SetNillableRegion(s *string) *MerchantStoreUpdate {
-	if s != nil {
-		msu.SetRegion(*s)
-	}
-	return msu
-}
-
-// ClearRegion clears the value of the "region" field.
-func (msu *MerchantStoreUpdate) ClearRegion() *MerchantStoreUpdate {
-	msu.mutation.ClearRegion()
-	return msu
-}
-
-// SetDistrict sets the "district" field.
-func (msu *MerchantStoreUpdate) SetDistrict(s string) *MerchantStoreUpdate {
-	msu.mutation.SetDistrict(s)
-	return msu
-}
-
-// SetNillableDistrict sets the "district" field if the given value is not nil.
-func (msu *MerchantStoreUpdate) SetNillableDistrict(s *string) *MerchantStoreUpdate {
-	if s != nil {
-		msu.SetDistrict(*s)
-	}
-	return msu
-}
-
-// ClearDistrict clears the value of the "district" field.
-func (msu *MerchantStoreUpdate) ClearDistrict() *MerchantStoreUpdate {
-	msu.mutation.ClearDistrict()
-	return msu
-}
-
-// SetCity sets the "city" field.
-func (msu *MerchantStoreUpdate) SetCity(s string) *MerchantStoreUpdate {
-	msu.mutation.SetCity(s)
-	return msu
-}
-
-// SetNillableCity sets the "city" field if the given value is not nil.
-func (msu *MerchantStoreUpdate) SetNillableCity(s *string) *MerchantStoreUpdate {
-	if s != nil {
-		msu.SetCity(*s)
-	}
-	return msu
-}
-
-// ClearCity clears the value of the "city" field.
-func (msu *MerchantStoreUpdate) ClearCity() *MerchantStoreUpdate {
-	msu.mutation.ClearCity()
 	return msu
 }
 
@@ -183,6 +124,30 @@ func (msu *MerchantStoreUpdate) SetMomoAccount(mma *models.MerchantMomoAccount) 
 // ClearMomoAccount clears the value of the "momo_account" field.
 func (msu *MerchantStoreUpdate) ClearMomoAccount() *MerchantStoreUpdate {
 	msu.mutation.ClearMomoAccount()
+	return msu
+}
+
+// SetAddress sets the "address" field.
+func (msu *MerchantStoreUpdate) SetAddress(msa *models.MerchantStoreAddress) *MerchantStoreUpdate {
+	msu.mutation.SetAddress(msa)
+	return msu
+}
+
+// ClearAddress clears the value of the "address" field.
+func (msu *MerchantStoreUpdate) ClearAddress() *MerchantStoreUpdate {
+	msu.mutation.ClearAddress()
+	return msu
+}
+
+// SetCoordinate sets the "coordinate" field.
+func (msu *MerchantStoreUpdate) SetCoordinate(s *services.Coordinate) *MerchantStoreUpdate {
+	msu.mutation.SetCoordinate(s)
+	return msu
+}
+
+// ClearCoordinate clears the value of the "coordinate" field.
+func (msu *MerchantStoreUpdate) ClearCoordinate() *MerchantStoreUpdate {
+	msu.mutation.ClearCoordinate()
 	return msu
 }
 
@@ -450,9 +415,9 @@ func (msu *MerchantStoreUpdate) check() error {
 			return &ValidationError{Name: "about", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.about": %w`, err)}
 		}
 	}
-	if v, ok := msu.mutation.DescTitle(); ok {
-		if err := merchantstore.DescTitleValidator(v); err != nil {
-			return &ValidationError{Name: "desc_title", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.desc_title": %w`, err)}
+	if v, ok := msu.mutation.Slogan(); ok {
+		if err := merchantstore.SloganValidator(v); err != nil {
+			return &ValidationError{Name: "slogan", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.slogan": %w`, err)}
 		}
 	}
 	if v, ok := msu.mutation.Description(); ok {
@@ -517,11 +482,11 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Column: merchantstore.FieldAbout,
 		})
 	}
-	if value, ok := msu.mutation.DescTitle(); ok {
+	if value, ok := msu.mutation.Slogan(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: merchantstore.FieldDescTitle,
+			Column: merchantstore.FieldSlogan,
 		})
 	}
 	if value, ok := msu.mutation.Description(); ok {
@@ -549,45 +514,6 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeJSON,
 			Column: merchantstore.FieldImages,
-		})
-	}
-	if value, ok := msu.mutation.Region(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldRegion,
-		})
-	}
-	if msu.mutation.RegionCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: merchantstore.FieldRegion,
-		})
-	}
-	if value, ok := msu.mutation.District(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldDistrict,
-		})
-	}
-	if msu.mutation.DistrictCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: merchantstore.FieldDistrict,
-		})
-	}
-	if value, ok := msu.mutation.City(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldCity,
-		})
-	}
-	if msu.mutation.CityCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: merchantstore.FieldCity,
 		})
 	}
 	if value, ok := msu.mutation.DefaultAccount(); ok {
@@ -627,6 +553,32 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeJSON,
 			Column: merchantstore.FieldMomoAccount,
+		})
+	}
+	if value, ok := msu.mutation.Address(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: merchantstore.FieldAddress,
+		})
+	}
+	if msu.mutation.AddressCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: merchantstore.FieldAddress,
+		})
+	}
+	if value, ok := msu.mutation.Coordinate(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: merchantstore.FieldCoordinate,
+		})
+	}
+	if msu.mutation.CoordinateCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: merchantstore.FieldCoordinate,
 		})
 	}
 	if value, ok := msu.mutation.MerchantType(); ok {
@@ -912,9 +864,9 @@ func (msuo *MerchantStoreUpdateOne) SetAbout(s string) *MerchantStoreUpdateOne {
 	return msuo
 }
 
-// SetDescTitle sets the "desc_title" field.
-func (msuo *MerchantStoreUpdateOne) SetDescTitle(s string) *MerchantStoreUpdateOne {
-	msuo.mutation.SetDescTitle(s)
+// SetSlogan sets the "slogan" field.
+func (msuo *MerchantStoreUpdateOne) SetSlogan(s string) *MerchantStoreUpdateOne {
+	msuo.mutation.SetSlogan(s)
 	return msuo
 }
 
@@ -939,66 +891,6 @@ func (msuo *MerchantStoreUpdateOne) SetImages(s []string) *MerchantStoreUpdateOn
 // ClearImages clears the value of the "images" field.
 func (msuo *MerchantStoreUpdateOne) ClearImages() *MerchantStoreUpdateOne {
 	msuo.mutation.ClearImages()
-	return msuo
-}
-
-// SetRegion sets the "region" field.
-func (msuo *MerchantStoreUpdateOne) SetRegion(s string) *MerchantStoreUpdateOne {
-	msuo.mutation.SetRegion(s)
-	return msuo
-}
-
-// SetNillableRegion sets the "region" field if the given value is not nil.
-func (msuo *MerchantStoreUpdateOne) SetNillableRegion(s *string) *MerchantStoreUpdateOne {
-	if s != nil {
-		msuo.SetRegion(*s)
-	}
-	return msuo
-}
-
-// ClearRegion clears the value of the "region" field.
-func (msuo *MerchantStoreUpdateOne) ClearRegion() *MerchantStoreUpdateOne {
-	msuo.mutation.ClearRegion()
-	return msuo
-}
-
-// SetDistrict sets the "district" field.
-func (msuo *MerchantStoreUpdateOne) SetDistrict(s string) *MerchantStoreUpdateOne {
-	msuo.mutation.SetDistrict(s)
-	return msuo
-}
-
-// SetNillableDistrict sets the "district" field if the given value is not nil.
-func (msuo *MerchantStoreUpdateOne) SetNillableDistrict(s *string) *MerchantStoreUpdateOne {
-	if s != nil {
-		msuo.SetDistrict(*s)
-	}
-	return msuo
-}
-
-// ClearDistrict clears the value of the "district" field.
-func (msuo *MerchantStoreUpdateOne) ClearDistrict() *MerchantStoreUpdateOne {
-	msuo.mutation.ClearDistrict()
-	return msuo
-}
-
-// SetCity sets the "city" field.
-func (msuo *MerchantStoreUpdateOne) SetCity(s string) *MerchantStoreUpdateOne {
-	msuo.mutation.SetCity(s)
-	return msuo
-}
-
-// SetNillableCity sets the "city" field if the given value is not nil.
-func (msuo *MerchantStoreUpdateOne) SetNillableCity(s *string) *MerchantStoreUpdateOne {
-	if s != nil {
-		msuo.SetCity(*s)
-	}
-	return msuo
-}
-
-// ClearCity clears the value of the "city" field.
-func (msuo *MerchantStoreUpdateOne) ClearCity() *MerchantStoreUpdateOne {
-	msuo.mutation.ClearCity()
 	return msuo
 }
 
@@ -1043,6 +935,30 @@ func (msuo *MerchantStoreUpdateOne) SetMomoAccount(mma *models.MerchantMomoAccou
 // ClearMomoAccount clears the value of the "momo_account" field.
 func (msuo *MerchantStoreUpdateOne) ClearMomoAccount() *MerchantStoreUpdateOne {
 	msuo.mutation.ClearMomoAccount()
+	return msuo
+}
+
+// SetAddress sets the "address" field.
+func (msuo *MerchantStoreUpdateOne) SetAddress(msa *models.MerchantStoreAddress) *MerchantStoreUpdateOne {
+	msuo.mutation.SetAddress(msa)
+	return msuo
+}
+
+// ClearAddress clears the value of the "address" field.
+func (msuo *MerchantStoreUpdateOne) ClearAddress() *MerchantStoreUpdateOne {
+	msuo.mutation.ClearAddress()
+	return msuo
+}
+
+// SetCoordinate sets the "coordinate" field.
+func (msuo *MerchantStoreUpdateOne) SetCoordinate(s *services.Coordinate) *MerchantStoreUpdateOne {
+	msuo.mutation.SetCoordinate(s)
+	return msuo
+}
+
+// ClearCoordinate clears the value of the "coordinate" field.
+func (msuo *MerchantStoreUpdateOne) ClearCoordinate() *MerchantStoreUpdateOne {
+	msuo.mutation.ClearCoordinate()
 	return msuo
 }
 
@@ -1323,9 +1239,9 @@ func (msuo *MerchantStoreUpdateOne) check() error {
 			return &ValidationError{Name: "about", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.about": %w`, err)}
 		}
 	}
-	if v, ok := msuo.mutation.DescTitle(); ok {
-		if err := merchantstore.DescTitleValidator(v); err != nil {
-			return &ValidationError{Name: "desc_title", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.desc_title": %w`, err)}
+	if v, ok := msuo.mutation.Slogan(); ok {
+		if err := merchantstore.SloganValidator(v); err != nil {
+			return &ValidationError{Name: "slogan", err: fmt.Errorf(`ent: validator failed for field "MerchantStore.slogan": %w`, err)}
 		}
 	}
 	if v, ok := msuo.mutation.Description(); ok {
@@ -1407,11 +1323,11 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Column: merchantstore.FieldAbout,
 		})
 	}
-	if value, ok := msuo.mutation.DescTitle(); ok {
+	if value, ok := msuo.mutation.Slogan(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: merchantstore.FieldDescTitle,
+			Column: merchantstore.FieldSlogan,
 		})
 	}
 	if value, ok := msuo.mutation.Description(); ok {
@@ -1439,45 +1355,6 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeJSON,
 			Column: merchantstore.FieldImages,
-		})
-	}
-	if value, ok := msuo.mutation.Region(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldRegion,
-		})
-	}
-	if msuo.mutation.RegionCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: merchantstore.FieldRegion,
-		})
-	}
-	if value, ok := msuo.mutation.District(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldDistrict,
-		})
-	}
-	if msuo.mutation.DistrictCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: merchantstore.FieldDistrict,
-		})
-	}
-	if value, ok := msuo.mutation.City(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldCity,
-		})
-	}
-	if msuo.mutation.CityCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: merchantstore.FieldCity,
 		})
 	}
 	if value, ok := msuo.mutation.DefaultAccount(); ok {
@@ -1517,6 +1394,32 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeJSON,
 			Column: merchantstore.FieldMomoAccount,
+		})
+	}
+	if value, ok := msuo.mutation.Address(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: merchantstore.FieldAddress,
+		})
+	}
+	if msuo.mutation.AddressCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: merchantstore.FieldAddress,
+		})
+	}
+	if value, ok := msuo.mutation.Coordinate(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: merchantstore.FieldCoordinate,
+		})
+	}
+	if msuo.mutation.CoordinateCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: merchantstore.FieldCoordinate,
 		})
 	}
 	if value, ok := msuo.mutation.MerchantType(); ok {

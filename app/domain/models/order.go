@@ -22,4 +22,8 @@ type (
 		PaidAt    string                `json:"paidAt"`
 		Metadata  *OrderPayloadMetadata `json:"metadata"`
 	}
+	OrderFareEstimateRequest struct {
+		Delivery *services.Coordinate   `json:"delivery,omitempty"`
+		Pickups  []*services.Coordinate `json:"pickups,omitempty"`
+	}
 )
