@@ -14,7 +14,7 @@ type (
 		Terms           bool   `json:"terms" validate:"required|bool"`
 		Username        string `json:"username" validate:"required|email_phone|unique:agents"`
 		Password        string `json:"password" validate:"required|string|min:8"`
-		ConfirmPassword string `json:"confirmPassword" validate:"required|string|min:8|match:password"`
+		ConfirmPassword string `json:"confirmPassword" validate:"required|string|min:8|match:Password"`
 	}
 	AgentGuarantor struct {
 		GhanaCard      []byte `json:"ghanaCard"`

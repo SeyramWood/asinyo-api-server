@@ -21,7 +21,7 @@ type (
 		Terms           bool   `json:"terms" validate:"required|bool"`
 		Username        string `json:"username" validate:"required|email_phone|unique:merchants"`
 		Password        string `json:"password" validate:"required|string|min:8"`
-		ConfirmPassword string `json:"confirmPassword" validate:"required|string|min:8|match:password"`
+		ConfirmPassword string `json:"confirmPassword" validate:"required|string|min:8|match:Password"`
 	}
 
 	MerchantRequest struct {

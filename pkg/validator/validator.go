@@ -123,12 +123,13 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 					case "match":
 						var val reflect.Value
 						for i := 0; i < t.NumField(); i++ {
-							if t.Field(i).Name == r[1] {
-								val = v.Field(i)
-								break
+							if t.Field(i).Name != r[1] {
+								continue
 							}
+							val = v.Field(i)
+							break
 						}
-						if value.String() != val.String() {
+						if strings.TrimSpace(value.String()) != strings.TrimSpace(val.String()) {
 							return fmt.Sprintf("The %s does not matched", formatFieldName(r[1]))
 						}
 					case "unique":

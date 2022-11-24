@@ -1,12 +1,15 @@
 package api
 
 import (
+	"log"
+
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/customer"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/gofiber/fiber/v2"
 )
 
 type CustomerHandler struct {
@@ -57,6 +60,7 @@ func (h *CustomerHandler) Create() fiber.Handler {
 			c.Status(fiber.StatusBadRequest)
 			return c.JSON(presenters.CustomerErrorResponse(err))
 		}
+		log.Fatalln(request)
 
 		result, err := h.service.Create(&request)
 
@@ -85,9 +89,11 @@ func (h *CustomerHandler) Delete() fiber.Handler {
 		if err := h.service.Remove(c.Params("id")); err != nil {
 			return c.Status(fiber.StatusNotFound).JSON(presenters.CustomerErrorResponse(err))
 		}
-		return c.Status(fiber.StatusOK).JSON(&fiber.Map{
-			"status": true,
-			"error":  nil,
-		})
+		return c.Status(fiber.StatusOK).JSON(
+			&fiber.Map{
+				"status": true,
+				"error":  nil,
+			},
+		)
 	}
 }
