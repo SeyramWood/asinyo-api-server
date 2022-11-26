@@ -137,6 +137,16 @@ func (r repository) UpdateByUserDefaultAddress(userId, addressId int, userType s
 			return nil, oneErr
 		}
 		return r.ReadAllByUser(userId, userType)
+	case "business", "individual":
+		_, allErr := r.db.Address.Update().Where(address.HasCustomerWith(customer.ID(userId))).SetDefault(false).Save(ctx)
+		if allErr != nil {
+			return nil, allErr
+		}
+		_, oneErr := r.db.Address.UpdateOneID(addressId).SetDefault(true).Save(ctx)
+		if oneErr != nil {
+			return nil, oneErr
+		}
+		return r.ReadAllByUser(userId, userType)
 	case "agent":
 		_, allErr := r.db.Address.Update().Where(address.HasAgentWith(agent.ID(userId))).SetDefault(false).Save(ctx)
 		if allErr != nil {
