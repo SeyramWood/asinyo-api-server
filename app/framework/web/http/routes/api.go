@@ -57,7 +57,7 @@ func customerRouter(r fiber.Router, db *database.Adapter) {
 
 	router := r.Group("/auth/customers")
 
-	authRouter := r.Group("/customers", middleware.Auth())
+	authRouter := r.Group("/customers") // middleware.Auth()
 
 	router.Route(
 		"/", func(r fiber.Router) {
@@ -70,7 +70,8 @@ func customerRouter(r fiber.Router, db *database.Adapter) {
 	authRouter.Route(
 		"/", func(r fiber.Router) {
 
-			r.Get("/", h.Fetch()).Name("fetch")
+			r.Get("/", h.Fetch())
+			r.Get("/:id", h.FetchByID())
 			r.Delete("/:id", h.Delete()).Name("delete")
 
 		}, "customers.",

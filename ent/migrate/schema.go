@@ -128,6 +128,32 @@ var (
 			},
 		},
 	}
+	// BusinessCustomersColumns holds the columns for the "business_customers" table.
+	BusinessCustomersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "phone", Type: field.TypeString},
+		{Name: "other_phone", Type: field.TypeString, Nullable: true},
+		{Name: "logo", Type: field.TypeString, Nullable: true},
+		{Name: "contact", Type: field.TypeJSON, Nullable: true},
+		{Name: "customer_business", Type: field.TypeInt, Unique: true},
+	}
+	// BusinessCustomersTable holds the schema information for the "business_customers" table.
+	BusinessCustomersTable = &schema.Table{
+		Name:       "business_customers",
+		Columns:    BusinessCustomersColumns,
+		PrimaryKey: []*schema.Column{BusinessCustomersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "business_customers_customers_business",
+				Columns:    []*schema.Column{BusinessCustomersColumns[8]},
+				RefColumns: []*schema.Column{CustomersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// CustomersColumns holds the columns for the "customers" table.
 	CustomersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -135,10 +161,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "username", Type: field.TypeString, Unique: true},
 		{Name: "password", Type: field.TypeBytes},
-		{Name: "first_name", Type: field.TypeString},
-		{Name: "last_name", Type: field.TypeString},
-		{Name: "phone", Type: field.TypeString},
-		{Name: "other_phone", Type: field.TypeString, Nullable: true},
+		{Name: "type", Type: field.TypeString},
 	}
 	// CustomersTable holds the schema information for the "customers" table.
 	CustomersTable = &schema.Table{
@@ -185,6 +208,31 @@ var (
 				Columns:    []*schema.Column{FavouritesColumns[6]},
 				RefColumns: []*schema.Column{ProductsColumns[0]},
 				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// IndividualCustomersColumns holds the columns for the "individual_customers" table.
+	IndividualCustomersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "last_name", Type: field.TypeString},
+		{Name: "other_name", Type: field.TypeString},
+		{Name: "phone", Type: field.TypeString},
+		{Name: "other_phone", Type: field.TypeString, Nullable: true},
+		{Name: "customer_individual", Type: field.TypeInt, Unique: true},
+	}
+	// IndividualCustomersTable holds the schema information for the "individual_customers" table.
+	IndividualCustomersTable = &schema.Table{
+		Name:       "individual_customers",
+		Columns:    IndividualCustomersColumns,
+		PrimaryKey: []*schema.Column{IndividualCustomersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "individual_customers_customers_individual",
+				Columns:    []*schema.Column{IndividualCustomersColumns[7]},
+				RefColumns: []*schema.Column{CustomersColumns[0]},
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
@@ -566,8 +614,10 @@ var (
 		AdminsTable,
 		AgentsTable,
 		AgentRequestsTable,
+		BusinessCustomersTable,
 		CustomersTable,
 		FavouritesTable,
+		IndividualCustomersTable,
 		LogisticsTable,
 		MerchantsTable,
 		MerchantStoresTable,
@@ -590,10 +640,12 @@ func init() {
 	AddressesTable.ForeignKeys[2].RefTable = MerchantsTable
 	AgentRequestsTable.ForeignKeys[0].RefTable = AgentsTable
 	AgentRequestsTable.ForeignKeys[1].RefTable = MerchantStoresTable
+	BusinessCustomersTable.ForeignKeys[0].RefTable = CustomersTable
 	FavouritesTable.ForeignKeys[0].RefTable = AgentsTable
 	FavouritesTable.ForeignKeys[1].RefTable = CustomersTable
 	FavouritesTable.ForeignKeys[2].RefTable = MerchantsTable
 	FavouritesTable.ForeignKeys[3].RefTable = ProductsTable
+	IndividualCustomersTable.ForeignKeys[0].RefTable = CustomersTable
 	MerchantStoresTable.ForeignKeys[0].RefTable = AgentsTable
 	MerchantStoresTable.ForeignKeys[1].RefTable = MerchantsTable
 	OrdersTable.ForeignKeys[0].RefTable = AddressesTable

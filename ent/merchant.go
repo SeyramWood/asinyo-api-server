@@ -30,7 +30,7 @@ type Merchant struct {
 	// Type holds the value of the "type" field.
 	Type string `json:"type,omitempty"`
 	// Otp holds the value of the "otp" field.
-	Otp *bool `json:"otp,omitempty"`
+	Otp bool `json:"otp,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MerchantQuery when eager-loading is set.
 	Edges MerchantEdges `json:"edges"`
@@ -202,8 +202,7 @@ func (m *Merchant) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field otp", values[i])
 			} else if value.Valid {
-				m.Otp = new(bool)
-				*m.Otp = value.Bool
+				m.Otp = value.Bool
 			}
 		}
 	}
@@ -282,10 +281,8 @@ func (m *Merchant) String() string {
 	builder.WriteString("type=")
 	builder.WriteString(m.Type)
 	builder.WriteString(", ")
-	if v := m.Otp; v != nil {
-		builder.WriteString("otp=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
+	builder.WriteString("otp=")
+	builder.WriteString(fmt.Sprintf("%v", m.Otp))
 	builder.WriteByte(')')
 	return builder.String()
 }

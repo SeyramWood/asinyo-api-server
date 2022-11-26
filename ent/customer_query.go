@@ -12,8 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
+	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/individualcustomer"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
@@ -27,6 +29,8 @@ type CustomerQuery struct {
 	order          []OrderFunc
 	fields         []string
 	predicates     []predicate.Customer
+	withBusiness   *BusinessCustomerQuery
+	withIndividual *IndividualCustomerQuery
 	withAddresses  *AddressQuery
 	withOrders     *OrderQuery
 	withFavourites *FavouriteQuery
@@ -64,6 +68,50 @@ func (cq *CustomerQuery) Unique(unique bool) *CustomerQuery {
 func (cq *CustomerQuery) Order(o ...OrderFunc) *CustomerQuery {
 	cq.order = append(cq.order, o...)
 	return cq
+}
+
+// QueryBusiness chains the current query on the "business" edge.
+func (cq *CustomerQuery) QueryBusiness() *BusinessCustomerQuery {
+	query := &BusinessCustomerQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, selector),
+			sqlgraph.To(businesscustomer.Table, businesscustomer.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, customer.BusinessTable, customer.BusinessColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryIndividual chains the current query on the "individual" edge.
+func (cq *CustomerQuery) QueryIndividual() *IndividualCustomerQuery {
+	query := &IndividualCustomerQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, selector),
+			sqlgraph.To(individualcustomer.Table, individualcustomer.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, customer.IndividualTable, customer.IndividualColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryAddresses chains the current query on the "addresses" edge.
@@ -313,6 +361,8 @@ func (cq *CustomerQuery) Clone() *CustomerQuery {
 		offset:         cq.offset,
 		order:          append([]OrderFunc{}, cq.order...),
 		predicates:     append([]predicate.Customer{}, cq.predicates...),
+		withBusiness:   cq.withBusiness.Clone(),
+		withIndividual: cq.withIndividual.Clone(),
 		withAddresses:  cq.withAddresses.Clone(),
 		withOrders:     cq.withOrders.Clone(),
 		withFavourites: cq.withFavourites.Clone(),
@@ -321,6 +371,28 @@ func (cq *CustomerQuery) Clone() *CustomerQuery {
 		path:   cq.path,
 		unique: cq.unique,
 	}
+}
+
+// WithBusiness tells the query-builder to eager-load the nodes that are connected to
+// the "business" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CustomerQuery) WithBusiness(opts ...func(*BusinessCustomerQuery)) *CustomerQuery {
+	query := &BusinessCustomerQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withBusiness = query
+	return cq
+}
+
+// WithIndividual tells the query-builder to eager-load the nodes that are connected to
+// the "individual" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CustomerQuery) WithIndividual(opts ...func(*IndividualCustomerQuery)) *CustomerQuery {
+	query := &IndividualCustomerQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withIndividual = query
+	return cq
 }
 
 // WithAddresses tells the query-builder to eager-load the nodes that are connected to
@@ -426,7 +498,9 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cus
 	var (
 		nodes       = []*Customer{}
 		_spec       = cq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [5]bool{
+			cq.withBusiness != nil,
+			cq.withIndividual != nil,
 			cq.withAddresses != nil,
 			cq.withOrders != nil,
 			cq.withFavourites != nil,
@@ -449,6 +523,18 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cus
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+	if query := cq.withBusiness; query != nil {
+		if err := cq.loadBusiness(ctx, query, nodes, nil,
+			func(n *Customer, e *BusinessCustomer) { n.Edges.Business = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := cq.withIndividual; query != nil {
+		if err := cq.loadIndividual(ctx, query, nodes, nil,
+			func(n *Customer, e *IndividualCustomer) { n.Edges.Individual = e }); err != nil {
+			return nil, err
+		}
 	}
 	if query := cq.withAddresses; query != nil {
 		if err := cq.loadAddresses(ctx, query, nodes,
@@ -474,6 +560,62 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cus
 	return nodes, nil
 }
 
+func (cq *CustomerQuery) loadBusiness(ctx context.Context, query *BusinessCustomerQuery, nodes []*Customer, init func(*Customer), assign func(*Customer, *BusinessCustomer)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Customer)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.BusinessCustomer(func(s *sql.Selector) {
+		s.Where(sql.InValues(customer.BusinessColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.customer_business
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "customer_business" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "customer_business" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (cq *CustomerQuery) loadIndividual(ctx context.Context, query *IndividualCustomerQuery, nodes []*Customer, init func(*Customer), assign func(*Customer, *IndividualCustomer)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Customer)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.IndividualCustomer(func(s *sql.Selector) {
+		s.Where(sql.InValues(customer.IndividualColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.customer_individual
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "customer_individual" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "customer_individual" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 func (cq *CustomerQuery) loadAddresses(ctx context.Context, query *AddressQuery, nodes []*Customer, init func(*Customer), assign func(*Customer, *Address)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*Customer)

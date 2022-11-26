@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/individualcustomer"
 )
 
 // Customer is the model entity for the Customer schema.
@@ -24,14 +26,8 @@ type Customer struct {
 	Username string `json:"username,omitempty"`
 	// Password holds the value of the "password" field.
 	Password []byte `json:"-"`
-	// FirstName holds the value of the "first_name" field.
-	FirstName string `json:"first_name,omitempty"`
-	// LastName holds the value of the "last_name" field.
-	LastName string `json:"last_name,omitempty"`
-	// Phone holds the value of the "phone" field.
-	Phone string `json:"phone,omitempty"`
-	// OtherPhone holds the value of the "other_phone" field.
-	OtherPhone *string `json:"other_phone,omitempty"`
+	// Type holds the value of the "type" field.
+	Type string `json:"type,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CustomerQuery when eager-loading is set.
 	Edges CustomerEdges `json:"edges"`
@@ -39,6 +35,10 @@ type Customer struct {
 
 // CustomerEdges holds the relations/edges for other nodes in the graph.
 type CustomerEdges struct {
+	// Business holds the value of the business edge.
+	Business *BusinessCustomer `json:"business,omitempty"`
+	// Individual holds the value of the individual edge.
+	Individual *IndividualCustomer `json:"individual,omitempty"`
 	// Addresses holds the value of the addresses edge.
 	Addresses []*Address `json:"addresses,omitempty"`
 	// Orders holds the value of the orders edge.
@@ -47,13 +47,39 @@ type CustomerEdges struct {
 	Favourites []*Favourite `json:"favourites,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [5]bool
+}
+
+// BusinessOrErr returns the Business value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e CustomerEdges) BusinessOrErr() (*BusinessCustomer, error) {
+	if e.loadedTypes[0] {
+		if e.Business == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: businesscustomer.Label}
+		}
+		return e.Business, nil
+	}
+	return nil, &NotLoadedError{edge: "business"}
+}
+
+// IndividualOrErr returns the Individual value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e CustomerEdges) IndividualOrErr() (*IndividualCustomer, error) {
+	if e.loadedTypes[1] {
+		if e.Individual == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: individualcustomer.Label}
+		}
+		return e.Individual, nil
+	}
+	return nil, &NotLoadedError{edge: "individual"}
 }
 
 // AddressesOrErr returns the Addresses value or an error if the edge
 // was not loaded in eager-loading.
 func (e CustomerEdges) AddressesOrErr() ([]*Address, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[2] {
 		return e.Addresses, nil
 	}
 	return nil, &NotLoadedError{edge: "addresses"}
@@ -62,7 +88,7 @@ func (e CustomerEdges) AddressesOrErr() ([]*Address, error) {
 // OrdersOrErr returns the Orders value or an error if the edge
 // was not loaded in eager-loading.
 func (e CustomerEdges) OrdersOrErr() ([]*Order, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[3] {
 		return e.Orders, nil
 	}
 	return nil, &NotLoadedError{edge: "orders"}
@@ -71,7 +97,7 @@ func (e CustomerEdges) OrdersOrErr() ([]*Order, error) {
 // FavouritesOrErr returns the Favourites value or an error if the edge
 // was not loaded in eager-loading.
 func (e CustomerEdges) FavouritesOrErr() ([]*Favourite, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[4] {
 		return e.Favourites, nil
 	}
 	return nil, &NotLoadedError{edge: "favourites"}
@@ -86,7 +112,7 @@ func (*Customer) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case customer.FieldID:
 			values[i] = new(sql.NullInt64)
-		case customer.FieldUsername, customer.FieldFirstName, customer.FieldLastName, customer.FieldPhone, customer.FieldOtherPhone:
+		case customer.FieldUsername, customer.FieldType:
 			values[i] = new(sql.NullString)
 		case customer.FieldCreatedAt, customer.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -135,34 +161,25 @@ func (c *Customer) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				c.Password = *value
 			}
-		case customer.FieldFirstName:
+		case customer.FieldType:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field first_name", values[i])
+				return fmt.Errorf("unexpected type %T for field type", values[i])
 			} else if value.Valid {
-				c.FirstName = value.String
-			}
-		case customer.FieldLastName:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field last_name", values[i])
-			} else if value.Valid {
-				c.LastName = value.String
-			}
-		case customer.FieldPhone:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field phone", values[i])
-			} else if value.Valid {
-				c.Phone = value.String
-			}
-		case customer.FieldOtherPhone:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field other_phone", values[i])
-			} else if value.Valid {
-				c.OtherPhone = new(string)
-				*c.OtherPhone = value.String
+				c.Type = value.String
 			}
 		}
 	}
 	return nil
+}
+
+// QueryBusiness queries the "business" edge of the Customer entity.
+func (c *Customer) QueryBusiness() *BusinessCustomerQuery {
+	return (&CustomerClient{config: c.config}).QueryBusiness(c)
+}
+
+// QueryIndividual queries the "individual" edge of the Customer entity.
+func (c *Customer) QueryIndividual() *IndividualCustomerQuery {
+	return (&CustomerClient{config: c.config}).QueryIndividual(c)
 }
 
 // QueryAddresses queries the "addresses" edge of the Customer entity.
@@ -214,19 +231,8 @@ func (c *Customer) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("password=<sensitive>")
 	builder.WriteString(", ")
-	builder.WriteString("first_name=")
-	builder.WriteString(c.FirstName)
-	builder.WriteString(", ")
-	builder.WriteString("last_name=")
-	builder.WriteString(c.LastName)
-	builder.WriteString(", ")
-	builder.WriteString("phone=")
-	builder.WriteString(c.Phone)
-	builder.WriteString(", ")
-	if v := c.OtherPhone; v != nil {
-		builder.WriteString("other_phone=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("type=")
+	builder.WriteString(c.Type)
 	builder.WriteByte(')')
 	return builder.String()
 }

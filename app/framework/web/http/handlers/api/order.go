@@ -82,6 +82,7 @@ func (h *OrderHandler) FetchByStore() fiber.Handler {
 		if userType == "agent" {
 			return c.JSON(presenters.AgentStoreOrderSuccessResponse(result))
 		}
+
 		return c.JSON(presenters.StoreOrderSuccessResponse(result))
 
 	}

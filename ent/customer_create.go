@@ -11,8 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
+	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/individualcustomer"
 	"github.com/SeyramWood/ent/order"
 )
 
@@ -63,36 +65,48 @@ func (cc *CustomerCreate) SetPassword(b []byte) *CustomerCreate {
 	return cc
 }
 
-// SetFirstName sets the "first_name" field.
-func (cc *CustomerCreate) SetFirstName(s string) *CustomerCreate {
-	cc.mutation.SetFirstName(s)
+// SetType sets the "type" field.
+func (cc *CustomerCreate) SetType(s string) *CustomerCreate {
+	cc.mutation.SetType(s)
 	return cc
 }
 
-// SetLastName sets the "last_name" field.
-func (cc *CustomerCreate) SetLastName(s string) *CustomerCreate {
-	cc.mutation.SetLastName(s)
+// SetBusinessID sets the "business" edge to the BusinessCustomer entity by ID.
+func (cc *CustomerCreate) SetBusinessID(id int) *CustomerCreate {
+	cc.mutation.SetBusinessID(id)
 	return cc
 }
 
-// SetPhone sets the "phone" field.
-func (cc *CustomerCreate) SetPhone(s string) *CustomerCreate {
-	cc.mutation.SetPhone(s)
-	return cc
-}
-
-// SetOtherPhone sets the "other_phone" field.
-func (cc *CustomerCreate) SetOtherPhone(s string) *CustomerCreate {
-	cc.mutation.SetOtherPhone(s)
-	return cc
-}
-
-// SetNillableOtherPhone sets the "other_phone" field if the given value is not nil.
-func (cc *CustomerCreate) SetNillableOtherPhone(s *string) *CustomerCreate {
-	if s != nil {
-		cc.SetOtherPhone(*s)
+// SetNillableBusinessID sets the "business" edge to the BusinessCustomer entity by ID if the given value is not nil.
+func (cc *CustomerCreate) SetNillableBusinessID(id *int) *CustomerCreate {
+	if id != nil {
+		cc = cc.SetBusinessID(*id)
 	}
 	return cc
+}
+
+// SetBusiness sets the "business" edge to the BusinessCustomer entity.
+func (cc *CustomerCreate) SetBusiness(b *BusinessCustomer) *CustomerCreate {
+	return cc.SetBusinessID(b.ID)
+}
+
+// SetIndividualID sets the "individual" edge to the IndividualCustomer entity by ID.
+func (cc *CustomerCreate) SetIndividualID(id int) *CustomerCreate {
+	cc.mutation.SetIndividualID(id)
+	return cc
+}
+
+// SetNillableIndividualID sets the "individual" edge to the IndividualCustomer entity by ID if the given value is not nil.
+func (cc *CustomerCreate) SetNillableIndividualID(id *int) *CustomerCreate {
+	if id != nil {
+		cc = cc.SetIndividualID(*id)
+	}
+	return cc
+}
+
+// SetIndividual sets the "individual" edge to the IndividualCustomer entity.
+func (cc *CustomerCreate) SetIndividual(i *IndividualCustomer) *CustomerCreate {
+	return cc.SetIndividualID(i.ID)
 }
 
 // AddAddressIDs adds the "addresses" edge to the Address entity by IDs.
@@ -251,28 +265,12 @@ func (cc *CustomerCreate) check() error {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "Customer.password": %w`, err)}
 		}
 	}
-	if _, ok := cc.mutation.FirstName(); !ok {
-		return &ValidationError{Name: "first_name", err: errors.New(`ent: missing required field "Customer.first_name"`)}
+	if _, ok := cc.mutation.GetType(); !ok {
+		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Customer.type"`)}
 	}
-	if v, ok := cc.mutation.FirstName(); ok {
-		if err := customer.FirstNameValidator(v); err != nil {
-			return &ValidationError{Name: "first_name", err: fmt.Errorf(`ent: validator failed for field "Customer.first_name": %w`, err)}
-		}
-	}
-	if _, ok := cc.mutation.LastName(); !ok {
-		return &ValidationError{Name: "last_name", err: errors.New(`ent: missing required field "Customer.last_name"`)}
-	}
-	if v, ok := cc.mutation.LastName(); ok {
-		if err := customer.LastNameValidator(v); err != nil {
-			return &ValidationError{Name: "last_name", err: fmt.Errorf(`ent: validator failed for field "Customer.last_name": %w`, err)}
-		}
-	}
-	if _, ok := cc.mutation.Phone(); !ok {
-		return &ValidationError{Name: "phone", err: errors.New(`ent: missing required field "Customer.phone"`)}
-	}
-	if v, ok := cc.mutation.Phone(); ok {
-		if err := customer.PhoneValidator(v); err != nil {
-			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "Customer.phone": %w`, err)}
+	if v, ok := cc.mutation.GetType(); ok {
+		if err := customer.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Customer.type": %w`, err)}
 		}
 	}
 	return nil
@@ -334,37 +332,51 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 		})
 		_node.Password = value
 	}
-	if value, ok := cc.mutation.FirstName(); ok {
+	if value, ok := cc.mutation.GetType(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: customer.FieldFirstName,
+			Column: customer.FieldType,
 		})
-		_node.FirstName = value
+		_node.Type = value
 	}
-	if value, ok := cc.mutation.LastName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldLastName,
-		})
-		_node.LastName = value
+	if nodes := cc.mutation.BusinessIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   customer.BusinessTable,
+			Columns: []string{customer.BusinessColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: businesscustomer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if value, ok := cc.mutation.Phone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldPhone,
-		})
-		_node.Phone = value
-	}
-	if value, ok := cc.mutation.OtherPhone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldOtherPhone,
-		})
-		_node.OtherPhone = &value
+	if nodes := cc.mutation.IndividualIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   customer.IndividualTable,
+			Columns: []string{customer.IndividualColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: individualcustomer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := cc.mutation.AddressesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

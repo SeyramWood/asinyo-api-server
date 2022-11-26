@@ -9,8 +9,10 @@ import (
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/agentrequest"
+	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/individualcustomer"
 	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
@@ -165,6 +167,29 @@ func init() {
 	agentrequest.DefaultUpdatedAt = agentrequestDescUpdatedAt.Default.(func() time.Time)
 	// agentrequest.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	agentrequest.UpdateDefaultUpdatedAt = agentrequestDescUpdatedAt.UpdateDefault.(func() time.Time)
+	businesscustomerMixin := schema.BusinessCustomer{}.Mixin()
+	businesscustomerMixinFields0 := businesscustomerMixin[0].Fields()
+	_ = businesscustomerMixinFields0
+	businesscustomerFields := schema.BusinessCustomer{}.Fields()
+	_ = businesscustomerFields
+	// businesscustomerDescCreatedAt is the schema descriptor for created_at field.
+	businesscustomerDescCreatedAt := businesscustomerMixinFields0[0].Descriptor()
+	// businesscustomer.DefaultCreatedAt holds the default value on creation for the created_at field.
+	businesscustomer.DefaultCreatedAt = businesscustomerDescCreatedAt.Default.(func() time.Time)
+	// businesscustomerDescUpdatedAt is the schema descriptor for updated_at field.
+	businesscustomerDescUpdatedAt := businesscustomerMixinFields0[1].Descriptor()
+	// businesscustomer.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	businesscustomer.DefaultUpdatedAt = businesscustomerDescUpdatedAt.Default.(func() time.Time)
+	// businesscustomer.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	businesscustomer.UpdateDefaultUpdatedAt = businesscustomerDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// businesscustomerDescName is the schema descriptor for name field.
+	businesscustomerDescName := businesscustomerFields[0].Descriptor()
+	// businesscustomer.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	businesscustomer.NameValidator = businesscustomerDescName.Validators[0].(func(string) error)
+	// businesscustomerDescPhone is the schema descriptor for phone field.
+	businesscustomerDescPhone := businesscustomerFields[1].Descriptor()
+	// businesscustomer.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
+	businesscustomer.PhoneValidator = businesscustomerDescPhone.Validators[0].(func(string) error)
 	customerMixin := schema.Customer{}.Mixin()
 	customerMixinFields0 := customerMixin[0].Fields()
 	_ = customerMixinFields0
@@ -188,18 +213,10 @@ func init() {
 	customerDescPassword := customerFields[1].Descriptor()
 	// customer.PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	customer.PasswordValidator = customerDescPassword.Validators[0].(func([]byte) error)
-	// customerDescFirstName is the schema descriptor for first_name field.
-	customerDescFirstName := customerFields[2].Descriptor()
-	// customer.FirstNameValidator is a validator for the "first_name" field. It is called by the builders before save.
-	customer.FirstNameValidator = customerDescFirstName.Validators[0].(func(string) error)
-	// customerDescLastName is the schema descriptor for last_name field.
-	customerDescLastName := customerFields[3].Descriptor()
-	// customer.LastNameValidator is a validator for the "last_name" field. It is called by the builders before save.
-	customer.LastNameValidator = customerDescLastName.Validators[0].(func(string) error)
-	// customerDescPhone is the schema descriptor for phone field.
-	customerDescPhone := customerFields[4].Descriptor()
-	// customer.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
-	customer.PhoneValidator = customerDescPhone.Validators[0].(func(string) error)
+	// customerDescType is the schema descriptor for type field.
+	customerDescType := customerFields[2].Descriptor()
+	// customer.TypeValidator is a validator for the "type" field. It is called by the builders before save.
+	customer.TypeValidator = customerDescType.Validators[0].(func(string) error)
 	favouriteMixin := schema.Favourite{}.Mixin()
 	favouriteMixinFields0 := favouriteMixin[0].Fields()
 	_ = favouriteMixinFields0
@@ -215,6 +232,33 @@ func init() {
 	favourite.DefaultUpdatedAt = favouriteDescUpdatedAt.Default.(func() time.Time)
 	// favourite.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	favourite.UpdateDefaultUpdatedAt = favouriteDescUpdatedAt.UpdateDefault.(func() time.Time)
+	individualcustomerMixin := schema.IndividualCustomer{}.Mixin()
+	individualcustomerMixinFields0 := individualcustomerMixin[0].Fields()
+	_ = individualcustomerMixinFields0
+	individualcustomerFields := schema.IndividualCustomer{}.Fields()
+	_ = individualcustomerFields
+	// individualcustomerDescCreatedAt is the schema descriptor for created_at field.
+	individualcustomerDescCreatedAt := individualcustomerMixinFields0[0].Descriptor()
+	// individualcustomer.DefaultCreatedAt holds the default value on creation for the created_at field.
+	individualcustomer.DefaultCreatedAt = individualcustomerDescCreatedAt.Default.(func() time.Time)
+	// individualcustomerDescUpdatedAt is the schema descriptor for updated_at field.
+	individualcustomerDescUpdatedAt := individualcustomerMixinFields0[1].Descriptor()
+	// individualcustomer.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	individualcustomer.DefaultUpdatedAt = individualcustomerDescUpdatedAt.Default.(func() time.Time)
+	// individualcustomer.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	individualcustomer.UpdateDefaultUpdatedAt = individualcustomerDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// individualcustomerDescLastName is the schema descriptor for last_name field.
+	individualcustomerDescLastName := individualcustomerFields[0].Descriptor()
+	// individualcustomer.LastNameValidator is a validator for the "last_name" field. It is called by the builders before save.
+	individualcustomer.LastNameValidator = individualcustomerDescLastName.Validators[0].(func(string) error)
+	// individualcustomerDescOtherName is the schema descriptor for other_name field.
+	individualcustomerDescOtherName := individualcustomerFields[1].Descriptor()
+	// individualcustomer.OtherNameValidator is a validator for the "other_name" field. It is called by the builders before save.
+	individualcustomer.OtherNameValidator = individualcustomerDescOtherName.Validators[0].(func(string) error)
+	// individualcustomerDescPhone is the schema descriptor for phone field.
+	individualcustomerDescPhone := individualcustomerFields[2].Descriptor()
+	// individualcustomer.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
+	individualcustomer.PhoneValidator = individualcustomerDescPhone.Validators[0].(func(string) error)
 	logisticMixin := schema.Logistic{}.Mixin()
 	logisticMixinFields0 := logisticMixin[0].Fields()
 	_ = logisticMixinFields0

@@ -10,10 +10,10 @@ import (
 
 type (
 	CustomerRepo interface {
-		Insert(customer *models.Customer) (*ent.Customer, error)
+		Insert(customer any, customerType string) (*ent.Customer, error)
 		Read(id int) (*ent.Customer, error)
 		ReadAll() ([]*ent.Customer, error)
-		Update(customer *models.Customer) (*models.Customer, error)
+		Update(customer *models.IndividualCustomer) (*ent.Customer, error)
 		Delete(id string) error
 	}
 	AgentRepo interface {

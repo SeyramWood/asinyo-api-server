@@ -20,10 +20,14 @@ type Tx struct {
 	Agent *AgentClient
 	// AgentRequest is the client for interacting with the AgentRequest builders.
 	AgentRequest *AgentRequestClient
+	// BusinessCustomer is the client for interacting with the BusinessCustomer builders.
+	BusinessCustomer *BusinessCustomerClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
 	// Favourite is the client for interacting with the Favourite builders.
 	Favourite *FavouriteClient
+	// IndividualCustomer is the client for interacting with the IndividualCustomer builders.
+	IndividualCustomer *IndividualCustomerClient
 	// Logistic is the client for interacting with the Logistic builders.
 	Logistic *LogisticClient
 	// Merchant is the client for interacting with the Merchant builders.
@@ -185,8 +189,10 @@ func (tx *Tx) init() {
 	tx.Admin = NewAdminClient(tx.config)
 	tx.Agent = NewAgentClient(tx.config)
 	tx.AgentRequest = NewAgentRequestClient(tx.config)
+	tx.BusinessCustomer = NewBusinessCustomerClient(tx.config)
 	tx.Customer = NewCustomerClient(tx.config)
 	tx.Favourite = NewFavouriteClient(tx.config)
+	tx.IndividualCustomer = NewIndividualCustomerClient(tx.config)
 	tx.Logistic = NewLogisticClient(tx.config)
 	tx.Merchant = NewMerchantClient(tx.config)
 	tx.MerchantStore = NewMerchantStoreClient(tx.config)

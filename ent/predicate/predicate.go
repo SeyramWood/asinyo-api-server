@@ -18,11 +18,17 @@ type Agent func(*sql.Selector)
 // AgentRequest is the predicate function for agentrequest builders.
 type AgentRequest func(*sql.Selector)
 
+// BusinessCustomer is the predicate function for businesscustomer builders.
+type BusinessCustomer func(*sql.Selector)
+
 // Customer is the predicate function for customer builders.
 type Customer func(*sql.Selector)
 
 // Favourite is the predicate function for favourite builders.
 type Favourite func(*sql.Selector)
+
+// IndividualCustomer is the predicate function for individualcustomer builders.
+type IndividualCustomer func(*sql.Selector)
 
 // Logistic is the predicate function for logistic builders.
 type Logistic func(*sql.Selector)

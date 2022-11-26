@@ -43,13 +43,19 @@ func (r *repository) ReadCustomer(username, field string) (*ent.Customer, error)
 
 	if field == "id" {
 		id, _ := strconv.Atoi(username)
-		user, err := r.db.Customer.Query().Where(customer.ID(id)).First(context.Background())
+		user, err := r.db.Customer.Query().Where(customer.ID(id)).
+			WithBusiness().
+			WithIndividual().
+			Only(context.Background())
 		if err != nil {
 			return nil, err
 		}
 		return user, nil
 	}
-	user, err := r.db.Customer.Query().Where(customer.Username(username)).First(context.Background())
+	user, err := r.db.Customer.Query().Where(customer.Username(username)).
+		WithBusiness().
+		WithIndividual().
+		Only(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -73,14 +79,14 @@ func (r *repository) ReadAgent(username, field string) (*ent.Agent, error) {
 func (r *repository) ReadMerchant(username, field string) (*ent.Merchant, error) {
 	if field == "id" {
 		id, _ := strconv.Atoi(username)
-		user, err := r.db.Merchant.Query().Where(merchant.ID(id)).
-			First(context.Background())
+		user, err := r.db.Merchant.Query().Where(merchant.ID(id)).WithSupplier().WithRetailer().
+			Only(context.Background())
 		if err != nil {
 			return nil, err
 		}
 		return user, nil
 	}
-	user, err := r.db.Merchant.Query().Where(merchant.Username(username)).First(context.Background())
+	user, err := r.db.Merchant.Query().Where(merchant.Username(username)).WithSupplier().WithRetailer().Only(context.Background())
 	if err != nil {
 		return nil, err
 	}

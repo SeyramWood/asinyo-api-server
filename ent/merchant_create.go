@@ -396,7 +396,7 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: merchant.FieldOtp,
 		})
-		_node.Otp = &value
+		_node.Otp = value
 	}
 	if nodes := mc.mutation.SupplierIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

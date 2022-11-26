@@ -28,8 +28,10 @@ type hooks struct {
 	Admin                []ent.Hook
 	Agent                []ent.Hook
 	AgentRequest         []ent.Hook
+	BusinessCustomer     []ent.Hook
 	Customer             []ent.Hook
 	Favourite            []ent.Hook
+	IndividualCustomer   []ent.Hook
 	Logistic             []ent.Hook
 	Merchant             []ent.Hook
 	MerchantStore        []ent.Hook

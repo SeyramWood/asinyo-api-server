@@ -16,9 +16,9 @@ func NewCustomerService(repo gateways.CustomerRepo) gateways.CustomerService {
 	}
 }
 
-func (s *service) Create(customer *models.Customer) (*ent.Customer, error) {
+func (s *service) Create(customer any, customerType string) (*ent.Customer, error) {
 
-	return s.repo.Insert(customer)
+	return s.repo.Insert(customer, customerType)
 }
 
 func (s *service) Fetch(id int) (*ent.Customer, error) {
@@ -30,7 +30,7 @@ func (s *service) FetchAll() ([]*ent.Customer, error) {
 	return s.repo.ReadAll()
 }
 
-func (s *service) Update(user *models.Customer) (*models.Customer, error) {
+func (s *service) Update(user *models.IndividualCustomer) (*ent.Customer, error) {
 	return s.repo.Update(user)
 }
 

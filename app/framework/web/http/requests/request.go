@@ -191,14 +191,24 @@ func ValidateAdmin() fiber.Handler {
 
 func ValidateCustomer() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var request models.Customer
-		err := c.BodyParser(&request)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
-		}
-
-		if er := validator.Validate(&request); er != nil {
-			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		if c.Get("customerType") == "individual" {
+			var request models.IndividualCustomer
+			err := c.BodyParser(&request)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
+			}
+			if er := validator.Validate(&request); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		} else {
+			var request models.BusinessCustomer
+			err := c.BodyParser(&request)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
+			}
+			if er := validator.Validate(&request); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
 		}
 		return c.Next()
 	}
@@ -482,7 +492,7 @@ func ValidateMerchantStoreUpdate() fiber.Handler {
 			if er := validator.Validate(&infoRequest); er != nil {
 				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 			}
-			
+
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 		}
 		if formType == "address" {

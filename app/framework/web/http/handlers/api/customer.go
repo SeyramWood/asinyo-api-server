@@ -1,8 +1,6 @@
 package api
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/SeyramWood/app/adapters/gateways"
@@ -52,23 +50,34 @@ func (h *CustomerHandler) Fetch() fiber.Handler {
 func (h *CustomerHandler) Create() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		var request models.Customer
+		var individualRequest models.IndividualCustomer
+		var businessRequest models.BusinessCustomer
+		if c.Get("customerType") == "individual" {
+			err := c.BodyParser(&individualRequest)
+			if err != nil {
+				c.Status(fiber.StatusBadRequest)
+				return c.JSON(presenters.CustomerErrorResponse(err))
+			}
+			result, err := h.service.Create(&individualRequest, c.Get("customerType"))
+			if err != nil {
+				c.Status(fiber.StatusInternalServerError)
+				return c.JSON(presenters.CustomerErrorResponse(err))
+			}
+			return c.JSON(presenters.CustomerSuccessResponse(result))
+		}
 
-		err := c.BodyParser(&request)
-
+		err := c.BodyParser(&businessRequest)
 		if err != nil {
 			c.Status(fiber.StatusBadRequest)
 			return c.JSON(presenters.CustomerErrorResponse(err))
 		}
-		log.Fatalln(request)
-
-		result, err := h.service.Create(&request)
-
+		result, err := h.service.Create(&businessRequest, c.Get("customerType"))
 		if err != nil {
 			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(presenters.CustomerErrorResponse(err))
 		}
 		return c.JSON(presenters.CustomerSuccessResponse(result))
+
 	}
 }
 

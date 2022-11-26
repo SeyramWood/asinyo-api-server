@@ -22,16 +22,17 @@ func (Customer) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("username").NotEmpty().Unique(),
 		field.Bytes("password").NotEmpty().Sensitive(),
-		field.String("first_name").NotEmpty(),
-		field.String("last_name").NotEmpty(),
-		field.String("phone").NotEmpty(),
-		field.String("other_phone").Optional().Nillable(),
+		field.String("type").NotEmpty(),
 	}
 }
 
 // Edges of the Customer.
 func (Customer) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("business", BusinessCustomer.Type).
+			Unique(),
+		edge.To("individual", IndividualCustomer.Type).
+			Unique(),
 		edge.To("addresses", Address.Type),
 		edge.To("orders", Order.Type),
 		edge.To("favourites", Favourite.Type),

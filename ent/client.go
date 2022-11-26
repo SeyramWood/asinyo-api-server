@@ -14,8 +14,10 @@ import (
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/agentrequest"
+	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/individualcustomer"
 	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
@@ -46,10 +48,14 @@ type Client struct {
 	Agent *AgentClient
 	// AgentRequest is the client for interacting with the AgentRequest builders.
 	AgentRequest *AgentRequestClient
+	// BusinessCustomer is the client for interacting with the BusinessCustomer builders.
+	BusinessCustomer *BusinessCustomerClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
 	// Favourite is the client for interacting with the Favourite builders.
 	Favourite *FavouriteClient
+	// IndividualCustomer is the client for interacting with the IndividualCustomer builders.
+	IndividualCustomer *IndividualCustomerClient
 	// Logistic is the client for interacting with the Logistic builders.
 	Logistic *LogisticClient
 	// Merchant is the client for interacting with the Merchant builders.
@@ -89,8 +95,10 @@ func (c *Client) init() {
 	c.Admin = NewAdminClient(c.config)
 	c.Agent = NewAgentClient(c.config)
 	c.AgentRequest = NewAgentRequestClient(c.config)
+	c.BusinessCustomer = NewBusinessCustomerClient(c.config)
 	c.Customer = NewCustomerClient(c.config)
 	c.Favourite = NewFavouriteClient(c.config)
+	c.IndividualCustomer = NewIndividualCustomerClient(c.config)
 	c.Logistic = NewLogisticClient(c.config)
 	c.Merchant = NewMerchantClient(c.config)
 	c.MerchantStore = NewMerchantStoreClient(c.config)
@@ -139,8 +147,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Admin:                NewAdminClient(cfg),
 		Agent:                NewAgentClient(cfg),
 		AgentRequest:         NewAgentRequestClient(cfg),
+		BusinessCustomer:     NewBusinessCustomerClient(cfg),
 		Customer:             NewCustomerClient(cfg),
 		Favourite:            NewFavouriteClient(cfg),
+		IndividualCustomer:   NewIndividualCustomerClient(cfg),
 		Logistic:             NewLogisticClient(cfg),
 		Merchant:             NewMerchantClient(cfg),
 		MerchantStore:        NewMerchantStoreClient(cfg),
@@ -175,8 +185,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Admin:                NewAdminClient(cfg),
 		Agent:                NewAgentClient(cfg),
 		AgentRequest:         NewAgentRequestClient(cfg),
+		BusinessCustomer:     NewBusinessCustomerClient(cfg),
 		Customer:             NewCustomerClient(cfg),
 		Favourite:            NewFavouriteClient(cfg),
+		IndividualCustomer:   NewIndividualCustomerClient(cfg),
 		Logistic:             NewLogisticClient(cfg),
 		Merchant:             NewMerchantClient(cfg),
 		MerchantStore:        NewMerchantStoreClient(cfg),
@@ -221,8 +233,10 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Admin.Use(hooks...)
 	c.Agent.Use(hooks...)
 	c.AgentRequest.Use(hooks...)
+	c.BusinessCustomer.Use(hooks...)
 	c.Customer.Use(hooks...)
 	c.Favourite.Use(hooks...)
+	c.IndividualCustomer.Use(hooks...)
 	c.Logistic.Use(hooks...)
 	c.Merchant.Use(hooks...)
 	c.MerchantStore.Use(hooks...)
@@ -740,6 +754,112 @@ func (c *AgentRequestClient) Hooks() []Hook {
 	return c.hooks.AgentRequest
 }
 
+// BusinessCustomerClient is a client for the BusinessCustomer schema.
+type BusinessCustomerClient struct {
+	config
+}
+
+// NewBusinessCustomerClient returns a client for the BusinessCustomer from the given config.
+func NewBusinessCustomerClient(c config) *BusinessCustomerClient {
+	return &BusinessCustomerClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `businesscustomer.Hooks(f(g(h())))`.
+func (c *BusinessCustomerClient) Use(hooks ...Hook) {
+	c.hooks.BusinessCustomer = append(c.hooks.BusinessCustomer, hooks...)
+}
+
+// Create returns a builder for creating a BusinessCustomer entity.
+func (c *BusinessCustomerClient) Create() *BusinessCustomerCreate {
+	mutation := newBusinessCustomerMutation(c.config, OpCreate)
+	return &BusinessCustomerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of BusinessCustomer entities.
+func (c *BusinessCustomerClient) CreateBulk(builders ...*BusinessCustomerCreate) *BusinessCustomerCreateBulk {
+	return &BusinessCustomerCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for BusinessCustomer.
+func (c *BusinessCustomerClient) Update() *BusinessCustomerUpdate {
+	mutation := newBusinessCustomerMutation(c.config, OpUpdate)
+	return &BusinessCustomerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BusinessCustomerClient) UpdateOne(bc *BusinessCustomer) *BusinessCustomerUpdateOne {
+	mutation := newBusinessCustomerMutation(c.config, OpUpdateOne, withBusinessCustomer(bc))
+	return &BusinessCustomerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BusinessCustomerClient) UpdateOneID(id int) *BusinessCustomerUpdateOne {
+	mutation := newBusinessCustomerMutation(c.config, OpUpdateOne, withBusinessCustomerID(id))
+	return &BusinessCustomerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for BusinessCustomer.
+func (c *BusinessCustomerClient) Delete() *BusinessCustomerDelete {
+	mutation := newBusinessCustomerMutation(c.config, OpDelete)
+	return &BusinessCustomerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BusinessCustomerClient) DeleteOne(bc *BusinessCustomer) *BusinessCustomerDeleteOne {
+	return c.DeleteOneID(bc.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *BusinessCustomerClient) DeleteOneID(id int) *BusinessCustomerDeleteOne {
+	builder := c.Delete().Where(businesscustomer.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BusinessCustomerDeleteOne{builder}
+}
+
+// Query returns a query builder for BusinessCustomer.
+func (c *BusinessCustomerClient) Query() *BusinessCustomerQuery {
+	return &BusinessCustomerQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a BusinessCustomer entity by its id.
+func (c *BusinessCustomerClient) Get(ctx context.Context, id int) (*BusinessCustomer, error) {
+	return c.Query().Where(businesscustomer.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BusinessCustomerClient) GetX(ctx context.Context, id int) *BusinessCustomer {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCustomer queries the customer edge of a BusinessCustomer.
+func (c *BusinessCustomerClient) QueryCustomer(bc *BusinessCustomer) *CustomerQuery {
+	query := &CustomerQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := bc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(businesscustomer.Table, businesscustomer.FieldID, id),
+			sqlgraph.To(customer.Table, customer.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, businesscustomer.CustomerTable, businesscustomer.CustomerColumn),
+		)
+		fromV = sqlgraph.Neighbors(bc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *BusinessCustomerClient) Hooks() []Hook {
+	return c.hooks.BusinessCustomer
+}
+
 // CustomerClient is a client for the Customer schema.
 type CustomerClient struct {
 	config
@@ -823,6 +943,38 @@ func (c *CustomerClient) GetX(ctx context.Context, id int) *Customer {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryBusiness queries the business edge of a Customer.
+func (c *CustomerClient) QueryBusiness(cu *Customer) *BusinessCustomerQuery {
+	query := &BusinessCustomerQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cu.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, id),
+			sqlgraph.To(businesscustomer.Table, businesscustomer.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, customer.BusinessTable, customer.BusinessColumn),
+		)
+		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIndividual queries the individual edge of a Customer.
+func (c *CustomerClient) QueryIndividual(cu *Customer) *IndividualCustomerQuery {
+	query := &IndividualCustomerQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cu.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, id),
+			sqlgraph.To(individualcustomer.Table, individualcustomer.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, customer.IndividualTable, customer.IndividualColumn),
+		)
+		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryAddresses queries the addresses edge of a Customer.
@@ -1030,6 +1182,112 @@ func (c *FavouriteClient) QueryProduct(f *Favourite) *ProductQuery {
 // Hooks returns the client hooks.
 func (c *FavouriteClient) Hooks() []Hook {
 	return c.hooks.Favourite
+}
+
+// IndividualCustomerClient is a client for the IndividualCustomer schema.
+type IndividualCustomerClient struct {
+	config
+}
+
+// NewIndividualCustomerClient returns a client for the IndividualCustomer from the given config.
+func NewIndividualCustomerClient(c config) *IndividualCustomerClient {
+	return &IndividualCustomerClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `individualcustomer.Hooks(f(g(h())))`.
+func (c *IndividualCustomerClient) Use(hooks ...Hook) {
+	c.hooks.IndividualCustomer = append(c.hooks.IndividualCustomer, hooks...)
+}
+
+// Create returns a builder for creating a IndividualCustomer entity.
+func (c *IndividualCustomerClient) Create() *IndividualCustomerCreate {
+	mutation := newIndividualCustomerMutation(c.config, OpCreate)
+	return &IndividualCustomerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IndividualCustomer entities.
+func (c *IndividualCustomerClient) CreateBulk(builders ...*IndividualCustomerCreate) *IndividualCustomerCreateBulk {
+	return &IndividualCustomerCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IndividualCustomer.
+func (c *IndividualCustomerClient) Update() *IndividualCustomerUpdate {
+	mutation := newIndividualCustomerMutation(c.config, OpUpdate)
+	return &IndividualCustomerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IndividualCustomerClient) UpdateOne(ic *IndividualCustomer) *IndividualCustomerUpdateOne {
+	mutation := newIndividualCustomerMutation(c.config, OpUpdateOne, withIndividualCustomer(ic))
+	return &IndividualCustomerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IndividualCustomerClient) UpdateOneID(id int) *IndividualCustomerUpdateOne {
+	mutation := newIndividualCustomerMutation(c.config, OpUpdateOne, withIndividualCustomerID(id))
+	return &IndividualCustomerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IndividualCustomer.
+func (c *IndividualCustomerClient) Delete() *IndividualCustomerDelete {
+	mutation := newIndividualCustomerMutation(c.config, OpDelete)
+	return &IndividualCustomerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IndividualCustomerClient) DeleteOne(ic *IndividualCustomer) *IndividualCustomerDeleteOne {
+	return c.DeleteOneID(ic.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *IndividualCustomerClient) DeleteOneID(id int) *IndividualCustomerDeleteOne {
+	builder := c.Delete().Where(individualcustomer.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IndividualCustomerDeleteOne{builder}
+}
+
+// Query returns a query builder for IndividualCustomer.
+func (c *IndividualCustomerClient) Query() *IndividualCustomerQuery {
+	return &IndividualCustomerQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a IndividualCustomer entity by its id.
+func (c *IndividualCustomerClient) Get(ctx context.Context, id int) (*IndividualCustomer, error) {
+	return c.Query().Where(individualcustomer.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IndividualCustomerClient) GetX(ctx context.Context, id int) *IndividualCustomer {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCustomer queries the customer edge of a IndividualCustomer.
+func (c *IndividualCustomerClient) QueryCustomer(ic *IndividualCustomer) *CustomerQuery {
+	query := &CustomerQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ic.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(individualcustomer.Table, individualcustomer.FieldID, id),
+			sqlgraph.To(customer.Table, customer.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, individualcustomer.CustomerTable, individualcustomer.CustomerColumn),
+		)
+		fromV = sqlgraph.Neighbors(ic.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *IndividualCustomerClient) Hooks() []Hook {
+	return c.hooks.IndividualCustomer
 }
 
 // LogisticClient is a client for the Logistic schema.

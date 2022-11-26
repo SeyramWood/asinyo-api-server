@@ -10,10 +10,10 @@ import (
 
 type (
 	CustomerService interface {
-		Create(customer *models.Customer) (*ent.Customer, error)
+		Create(customer any, customerType string) (*ent.Customer, error)
 		FetchAll() ([]*ent.Customer, error)
 		Fetch(id int) (*ent.Customer, error)
-		Update(customer *models.Customer) (*models.Customer, error)
+		Update(customer *models.IndividualCustomer) (*ent.Customer, error)
 		Remove(id string) error
 	}
 	AgentService interface {

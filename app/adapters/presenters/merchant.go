@@ -40,7 +40,7 @@ func MerchantSuccessResponse(data *ent.Merchant) *fiber.Map {
 	)
 }
 func MerchantsSuccessResponse(data []*ent.Merchant) *fiber.Map {
-	var response []Customer
+	// var response []Customer
 	// wg := sync.WaitGroup{}
 	// for _, v := range data {
 	// 	wg.Add(1)
@@ -55,7 +55,7 @@ func MerchantsSuccessResponse(data []*ent.Merchant) *fiber.Map {
 	// 	}(v)
 	// }
 	// wg.Wait()
-	return successResponse(response)
+	return successResponse(nil)
 }
 
 func MerchantErrorResponse(err error) *fiber.Map {

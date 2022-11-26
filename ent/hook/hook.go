@@ -61,6 +61,19 @@ func (f AgentRequestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return f(ctx, mv)
 }
 
+// The BusinessCustomerFunc type is an adapter to allow the use of ordinary
+// function as BusinessCustomer mutator.
+type BusinessCustomerFunc func(context.Context, *ent.BusinessCustomerMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BusinessCustomerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.BusinessCustomerMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BusinessCustomerMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The CustomerFunc type is an adapter to allow the use of ordinary
 // function as Customer mutator.
 type CustomerFunc func(context.Context, *ent.CustomerMutation) (ent.Value, error)
@@ -83,6 +96,19 @@ func (f FavouriteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	mv, ok := m.(*ent.FavouriteMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FavouriteMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The IndividualCustomerFunc type is an adapter to allow the use of ordinary
+// function as IndividualCustomer mutator.
+type IndividualCustomerFunc func(context.Context, *ent.IndividualCustomerMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f IndividualCustomerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.IndividualCustomerMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IndividualCustomerMutation", m)
 	}
 	return f(ctx, mv)
 }

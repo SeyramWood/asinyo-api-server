@@ -12,8 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
+	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
+	"github.com/SeyramWood/ent/individualcustomer"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
@@ -49,42 +51,48 @@ func (cu *CustomerUpdate) SetPassword(b []byte) *CustomerUpdate {
 	return cu
 }
 
-// SetFirstName sets the "first_name" field.
-func (cu *CustomerUpdate) SetFirstName(s string) *CustomerUpdate {
-	cu.mutation.SetFirstName(s)
+// SetType sets the "type" field.
+func (cu *CustomerUpdate) SetType(s string) *CustomerUpdate {
+	cu.mutation.SetType(s)
 	return cu
 }
 
-// SetLastName sets the "last_name" field.
-func (cu *CustomerUpdate) SetLastName(s string) *CustomerUpdate {
-	cu.mutation.SetLastName(s)
+// SetBusinessID sets the "business" edge to the BusinessCustomer entity by ID.
+func (cu *CustomerUpdate) SetBusinessID(id int) *CustomerUpdate {
+	cu.mutation.SetBusinessID(id)
 	return cu
 }
 
-// SetPhone sets the "phone" field.
-func (cu *CustomerUpdate) SetPhone(s string) *CustomerUpdate {
-	cu.mutation.SetPhone(s)
-	return cu
-}
-
-// SetOtherPhone sets the "other_phone" field.
-func (cu *CustomerUpdate) SetOtherPhone(s string) *CustomerUpdate {
-	cu.mutation.SetOtherPhone(s)
-	return cu
-}
-
-// SetNillableOtherPhone sets the "other_phone" field if the given value is not nil.
-func (cu *CustomerUpdate) SetNillableOtherPhone(s *string) *CustomerUpdate {
-	if s != nil {
-		cu.SetOtherPhone(*s)
+// SetNillableBusinessID sets the "business" edge to the BusinessCustomer entity by ID if the given value is not nil.
+func (cu *CustomerUpdate) SetNillableBusinessID(id *int) *CustomerUpdate {
+	if id != nil {
+		cu = cu.SetBusinessID(*id)
 	}
 	return cu
 }
 
-// ClearOtherPhone clears the value of the "other_phone" field.
-func (cu *CustomerUpdate) ClearOtherPhone() *CustomerUpdate {
-	cu.mutation.ClearOtherPhone()
+// SetBusiness sets the "business" edge to the BusinessCustomer entity.
+func (cu *CustomerUpdate) SetBusiness(b *BusinessCustomer) *CustomerUpdate {
+	return cu.SetBusinessID(b.ID)
+}
+
+// SetIndividualID sets the "individual" edge to the IndividualCustomer entity by ID.
+func (cu *CustomerUpdate) SetIndividualID(id int) *CustomerUpdate {
+	cu.mutation.SetIndividualID(id)
 	return cu
+}
+
+// SetNillableIndividualID sets the "individual" edge to the IndividualCustomer entity by ID if the given value is not nil.
+func (cu *CustomerUpdate) SetNillableIndividualID(id *int) *CustomerUpdate {
+	if id != nil {
+		cu = cu.SetIndividualID(*id)
+	}
+	return cu
+}
+
+// SetIndividual sets the "individual" edge to the IndividualCustomer entity.
+func (cu *CustomerUpdate) SetIndividual(i *IndividualCustomer) *CustomerUpdate {
+	return cu.SetIndividualID(i.ID)
 }
 
 // AddAddressIDs adds the "addresses" edge to the Address entity by IDs.
@@ -135,6 +143,18 @@ func (cu *CustomerUpdate) AddFavourites(f ...*Favourite) *CustomerUpdate {
 // Mutation returns the CustomerMutation object of the builder.
 func (cu *CustomerUpdate) Mutation() *CustomerMutation {
 	return cu.mutation
+}
+
+// ClearBusiness clears the "business" edge to the BusinessCustomer entity.
+func (cu *CustomerUpdate) ClearBusiness() *CustomerUpdate {
+	cu.mutation.ClearBusiness()
+	return cu
+}
+
+// ClearIndividual clears the "individual" edge to the IndividualCustomer entity.
+func (cu *CustomerUpdate) ClearIndividual() *CustomerUpdate {
+	cu.mutation.ClearIndividual()
+	return cu
 }
 
 // ClearAddresses clears all "addresses" edges to the Address entity.
@@ -281,19 +301,9 @@ func (cu *CustomerUpdate) check() error {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "Customer.password": %w`, err)}
 		}
 	}
-	if v, ok := cu.mutation.FirstName(); ok {
-		if err := customer.FirstNameValidator(v); err != nil {
-			return &ValidationError{Name: "first_name", err: fmt.Errorf(`ent: validator failed for field "Customer.first_name": %w`, err)}
-		}
-	}
-	if v, ok := cu.mutation.LastName(); ok {
-		if err := customer.LastNameValidator(v); err != nil {
-			return &ValidationError{Name: "last_name", err: fmt.Errorf(`ent: validator failed for field "Customer.last_name": %w`, err)}
-		}
-	}
-	if v, ok := cu.mutation.Phone(); ok {
-		if err := customer.PhoneValidator(v); err != nil {
-			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "Customer.phone": %w`, err)}
+	if v, ok := cu.mutation.GetType(); ok {
+		if err := customer.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Customer.type": %w`, err)}
 		}
 	}
 	return nil
@@ -338,39 +348,82 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: customer.FieldPassword,
 		})
 	}
-	if value, ok := cu.mutation.FirstName(); ok {
+	if value, ok := cu.mutation.GetType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: customer.FieldFirstName,
+			Column: customer.FieldType,
 		})
 	}
-	if value, ok := cu.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldLastName,
-		})
+	if cu.mutation.BusinessCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   customer.BusinessTable,
+			Columns: []string{customer.BusinessColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: businesscustomer.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := cu.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldPhone,
-		})
+	if nodes := cu.mutation.BusinessIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   customer.BusinessTable,
+			Columns: []string{customer.BusinessColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: businesscustomer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if value, ok := cu.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldOtherPhone,
-		})
+	if cu.mutation.IndividualCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   customer.IndividualTable,
+			Columns: []string{customer.IndividualColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: individualcustomer.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if cu.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: customer.FieldOtherPhone,
-		})
+	if nodes := cu.mutation.IndividualIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   customer.IndividualTable,
+			Columns: []string{customer.IndividualColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: individualcustomer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if cu.mutation.AddressesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -571,42 +624,48 @@ func (cuo *CustomerUpdateOne) SetPassword(b []byte) *CustomerUpdateOne {
 	return cuo
 }
 
-// SetFirstName sets the "first_name" field.
-func (cuo *CustomerUpdateOne) SetFirstName(s string) *CustomerUpdateOne {
-	cuo.mutation.SetFirstName(s)
+// SetType sets the "type" field.
+func (cuo *CustomerUpdateOne) SetType(s string) *CustomerUpdateOne {
+	cuo.mutation.SetType(s)
 	return cuo
 }
 
-// SetLastName sets the "last_name" field.
-func (cuo *CustomerUpdateOne) SetLastName(s string) *CustomerUpdateOne {
-	cuo.mutation.SetLastName(s)
+// SetBusinessID sets the "business" edge to the BusinessCustomer entity by ID.
+func (cuo *CustomerUpdateOne) SetBusinessID(id int) *CustomerUpdateOne {
+	cuo.mutation.SetBusinessID(id)
 	return cuo
 }
 
-// SetPhone sets the "phone" field.
-func (cuo *CustomerUpdateOne) SetPhone(s string) *CustomerUpdateOne {
-	cuo.mutation.SetPhone(s)
-	return cuo
-}
-
-// SetOtherPhone sets the "other_phone" field.
-func (cuo *CustomerUpdateOne) SetOtherPhone(s string) *CustomerUpdateOne {
-	cuo.mutation.SetOtherPhone(s)
-	return cuo
-}
-
-// SetNillableOtherPhone sets the "other_phone" field if the given value is not nil.
-func (cuo *CustomerUpdateOne) SetNillableOtherPhone(s *string) *CustomerUpdateOne {
-	if s != nil {
-		cuo.SetOtherPhone(*s)
+// SetNillableBusinessID sets the "business" edge to the BusinessCustomer entity by ID if the given value is not nil.
+func (cuo *CustomerUpdateOne) SetNillableBusinessID(id *int) *CustomerUpdateOne {
+	if id != nil {
+		cuo = cuo.SetBusinessID(*id)
 	}
 	return cuo
 }
 
-// ClearOtherPhone clears the value of the "other_phone" field.
-func (cuo *CustomerUpdateOne) ClearOtherPhone() *CustomerUpdateOne {
-	cuo.mutation.ClearOtherPhone()
+// SetBusiness sets the "business" edge to the BusinessCustomer entity.
+func (cuo *CustomerUpdateOne) SetBusiness(b *BusinessCustomer) *CustomerUpdateOne {
+	return cuo.SetBusinessID(b.ID)
+}
+
+// SetIndividualID sets the "individual" edge to the IndividualCustomer entity by ID.
+func (cuo *CustomerUpdateOne) SetIndividualID(id int) *CustomerUpdateOne {
+	cuo.mutation.SetIndividualID(id)
 	return cuo
+}
+
+// SetNillableIndividualID sets the "individual" edge to the IndividualCustomer entity by ID if the given value is not nil.
+func (cuo *CustomerUpdateOne) SetNillableIndividualID(id *int) *CustomerUpdateOne {
+	if id != nil {
+		cuo = cuo.SetIndividualID(*id)
+	}
+	return cuo
+}
+
+// SetIndividual sets the "individual" edge to the IndividualCustomer entity.
+func (cuo *CustomerUpdateOne) SetIndividual(i *IndividualCustomer) *CustomerUpdateOne {
+	return cuo.SetIndividualID(i.ID)
 }
 
 // AddAddressIDs adds the "addresses" edge to the Address entity by IDs.
@@ -657,6 +716,18 @@ func (cuo *CustomerUpdateOne) AddFavourites(f ...*Favourite) *CustomerUpdateOne 
 // Mutation returns the CustomerMutation object of the builder.
 func (cuo *CustomerUpdateOne) Mutation() *CustomerMutation {
 	return cuo.mutation
+}
+
+// ClearBusiness clears the "business" edge to the BusinessCustomer entity.
+func (cuo *CustomerUpdateOne) ClearBusiness() *CustomerUpdateOne {
+	cuo.mutation.ClearBusiness()
+	return cuo
+}
+
+// ClearIndividual clears the "individual" edge to the IndividualCustomer entity.
+func (cuo *CustomerUpdateOne) ClearIndividual() *CustomerUpdateOne {
+	cuo.mutation.ClearIndividual()
+	return cuo
 }
 
 // ClearAddresses clears all "addresses" edges to the Address entity.
@@ -816,19 +887,9 @@ func (cuo *CustomerUpdateOne) check() error {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "Customer.password": %w`, err)}
 		}
 	}
-	if v, ok := cuo.mutation.FirstName(); ok {
-		if err := customer.FirstNameValidator(v); err != nil {
-			return &ValidationError{Name: "first_name", err: fmt.Errorf(`ent: validator failed for field "Customer.first_name": %w`, err)}
-		}
-	}
-	if v, ok := cuo.mutation.LastName(); ok {
-		if err := customer.LastNameValidator(v); err != nil {
-			return &ValidationError{Name: "last_name", err: fmt.Errorf(`ent: validator failed for field "Customer.last_name": %w`, err)}
-		}
-	}
-	if v, ok := cuo.mutation.Phone(); ok {
-		if err := customer.PhoneValidator(v); err != nil {
-			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "Customer.phone": %w`, err)}
+	if v, ok := cuo.mutation.GetType(); ok {
+		if err := customer.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Customer.type": %w`, err)}
 		}
 	}
 	return nil
@@ -890,39 +951,82 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Column: customer.FieldPassword,
 		})
 	}
-	if value, ok := cuo.mutation.FirstName(); ok {
+	if value, ok := cuo.mutation.GetType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: customer.FieldFirstName,
+			Column: customer.FieldType,
 		})
 	}
-	if value, ok := cuo.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldLastName,
-		})
+	if cuo.mutation.BusinessCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   customer.BusinessTable,
+			Columns: []string{customer.BusinessColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: businesscustomer.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := cuo.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldPhone,
-		})
+	if nodes := cuo.mutation.BusinessIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   customer.BusinessTable,
+			Columns: []string{customer.BusinessColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: businesscustomer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if value, ok := cuo.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldOtherPhone,
-		})
+	if cuo.mutation.IndividualCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   customer.IndividualTable,
+			Columns: []string{customer.IndividualColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: individualcustomer.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if cuo.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: customer.FieldOtherPhone,
-		})
+	if nodes := cuo.mutation.IndividualIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   customer.IndividualTable,
+			Columns: []string{customer.IndividualColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: individualcustomer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if cuo.mutation.AddressesCleared() {
 		edge := &sqlgraph.EdgeSpec{

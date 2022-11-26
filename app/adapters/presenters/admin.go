@@ -27,7 +27,7 @@ func AdminSuccessResponse(data *ent.Admin) *fiber.Map {
 	)
 }
 func AdminsSuccessResponse(data []*ent.Admin) *fiber.Map {
-	var response []Customer
+	// var response []Customer
 	// wg := sync.WaitGroup{}
 	// for _, v := range data {
 	// 	wg.Add(1)
@@ -42,7 +42,7 @@ func AdminsSuccessResponse(data []*ent.Admin) *fiber.Map {
 	// 	}(v)
 	// }
 	// wg.Wait()
-	return successResponse(response)
+	return successResponse(nil)
 }
 
 func AdminErrorResponse(err error) *fiber.Map {

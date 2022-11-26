@@ -19,14 +19,12 @@ const (
 	FieldUsername = "username"
 	// FieldPassword holds the string denoting the password field in the database.
 	FieldPassword = "password"
-	// FieldFirstName holds the string denoting the first_name field in the database.
-	FieldFirstName = "first_name"
-	// FieldLastName holds the string denoting the last_name field in the database.
-	FieldLastName = "last_name"
-	// FieldPhone holds the string denoting the phone field in the database.
-	FieldPhone = "phone"
-	// FieldOtherPhone holds the string denoting the other_phone field in the database.
-	FieldOtherPhone = "other_phone"
+	// FieldType holds the string denoting the type field in the database.
+	FieldType = "type"
+	// EdgeBusiness holds the string denoting the business edge name in mutations.
+	EdgeBusiness = "business"
+	// EdgeIndividual holds the string denoting the individual edge name in mutations.
+	EdgeIndividual = "individual"
 	// EdgeAddresses holds the string denoting the addresses edge name in mutations.
 	EdgeAddresses = "addresses"
 	// EdgeOrders holds the string denoting the orders edge name in mutations.
@@ -35,6 +33,20 @@ const (
 	EdgeFavourites = "favourites"
 	// Table holds the table name of the customer in the database.
 	Table = "customers"
+	// BusinessTable is the table that holds the business relation/edge.
+	BusinessTable = "business_customers"
+	// BusinessInverseTable is the table name for the BusinessCustomer entity.
+	// It exists in this package in order to avoid circular dependency with the "businesscustomer" package.
+	BusinessInverseTable = "business_customers"
+	// BusinessColumn is the table column denoting the business relation/edge.
+	BusinessColumn = "customer_business"
+	// IndividualTable is the table that holds the individual relation/edge.
+	IndividualTable = "individual_customers"
+	// IndividualInverseTable is the table name for the IndividualCustomer entity.
+	// It exists in this package in order to avoid circular dependency with the "individualcustomer" package.
+	IndividualInverseTable = "individual_customers"
+	// IndividualColumn is the table column denoting the individual relation/edge.
+	IndividualColumn = "customer_individual"
 	// AddressesTable is the table that holds the addresses relation/edge.
 	AddressesTable = "addresses"
 	// AddressesInverseTable is the table name for the Address entity.
@@ -65,10 +77,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldUsername,
 	FieldPassword,
-	FieldFirstName,
-	FieldLastName,
-	FieldPhone,
-	FieldOtherPhone,
+	FieldType,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -92,10 +101,6 @@ var (
 	UsernameValidator func(string) error
 	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	PasswordValidator func([]byte) error
-	// FirstNameValidator is a validator for the "first_name" field. It is called by the builders before save.
-	FirstNameValidator func(string) error
-	// LastNameValidator is a validator for the "last_name" field. It is called by the builders before save.
-	LastNameValidator func(string) error
-	// PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
-	PhoneValidator func(string) error
+	// TypeValidator is a validator for the "type" field. It is called by the builders before save.
+	TypeValidator func(string) error
 )
