@@ -272,7 +272,7 @@ func (r repository) Insert(res *models.OrderPayload) (*ent.Order, error) {
 	switch res.Metadata.UserType {
 	case "retailer", "supplier":
 		return r.insertMerchantOrder(res)
-	case "customer":
+	case "business", "individual":
 		return r.insertCustomerOrder(res)
 	case "agent":
 		return r.insertAgentOrder(res)
