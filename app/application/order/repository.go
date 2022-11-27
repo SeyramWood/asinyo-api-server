@@ -43,7 +43,7 @@ func (r repository) ReadAllByUser(userType string, id int) ([]*ent.Order, error)
 	switch userType {
 	case "retailer", "supplier":
 		return r.readMerchantOrders(id)
-	case "customer":
+	case "business", "individual":
 		return r.readCustomerOrders(id)
 	case "agent":
 		return r.readAgentOrders(id)
@@ -539,6 +539,7 @@ func (r repository) insertCustomerOrder(res *models.OrderPayload) (*ent.Order, e
 	}
 
 	return nil, nil
+
 }
 func (r repository) insertAgentOrder(res *models.OrderPayload) (*ent.Order, error) {
 	ctx := context.Background()

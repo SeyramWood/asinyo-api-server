@@ -626,10 +626,15 @@ func (t *tookan) getFareEstimate(delivery, pickup *services.Coordinate) (*servic
 	}
 	defer res.Body.Close()
 
+	if res.Status != "200" {
+		return nil, reserr
+	}
 	resp_body, _ := ioutil.ReadAll(res.Body)
+
 	if err != nil {
 		return nil, err
 	}
+	
 	resBody, errr := gabs.ParseJSON(resp_body)
 	if errr != nil {
 		return nil, err
