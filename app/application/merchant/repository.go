@@ -174,11 +174,12 @@ func (r repository) SaveCoordinate(coordinate *services.Coordinate, id int) erro
 }
 func (r *repository) Read(id int) (*ent.Merchant, error) {
 
-	// b, err := r.db.User.Query().Where(user.ID(id)).First(context.Background())
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+	m, err := r.db.Merchant.Query().Where(merchant.ID(id)).WithSupplier().WithRetailer().Only(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+
 }
 
 func (r *repository) ReadAll() ([]*ent.Merchant, error) {

@@ -257,7 +257,7 @@ func (s *service) ResetPassword(request *models.ResetPassword, username, userTyp
 func (s *service) SendUserVerificationCode(username string) (string, error) {
 	code, _ := application.GenerateOTP(6)
 	msg := fmt.Sprintf(
-		"We appreciate your effort to join Asinyo! Your OTP code to proceed with your sign up is %s.\nCongratulations! And welcome to Asinyo\n\nTeam Asinyo,\nConnecting farmers, impacting lives.\nTel: +233 24 777 0819",
+		"We appreciate your effort to join Asinyo! Your OTP code to proceed with your sign up is %s.\nCongratulations! And welcome to Asinyo\n\nTeam Asinyo,\nConnecting farmers, impacting lives.\nTel: 0247770819",
 		code,
 	)
 	if application.UsernameType(username, "phone") {
@@ -311,7 +311,7 @@ func (s *service) SendPasswordResetCode(username, userType string) (string, erro
 
 	code, _ := application.GenerateOTP(6)
 	msg := fmt.Sprintf(
-		"You are one step away to complete your password reset! Please enter the RESET Code to proceed. %s",
+		"You are a step away to complete your password reset! Please enter the RESET code to proceed. %s",
 		code,
 	)
 	if application.UsernameType(username, "phone") {

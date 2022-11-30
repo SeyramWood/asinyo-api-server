@@ -31,7 +31,7 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 	agentRouter(r, h.db)
 
-	merchantRouter(r, h.db, h.maps)
+	merchantRouter(r, h.db, h.mail, h.maps)
 
 	retailMerchantRouter(r, h.db, h.mail, h.maps)
 
@@ -97,6 +97,7 @@ func agentRouter(r fiber.Router, db *database.Adapter) {
 	authRouter.Route(
 		"/", func(r fiber.Router) {
 			r.Get("/", h.Fetch())
+			r.Get("/:id", h.FetchByID())
 			r.Get("/my-merchants/:agent", h.FetchAllMerchant())
 			r.Get("/compliance/:agent/get", h.FetchComplianceByID())
 			r.Post("/add-compliance/:agent", request.ValidateAgentCompliance(), h.CreateCompliance())
@@ -180,9 +181,9 @@ func supplierMerchantRouter(
 
 }
 
-func merchantRouter(r fiber.Router, db *database.Adapter, maps gateways.MapService) {
+func merchantRouter(r fiber.Router, db *database.Adapter, mail gateways.EmailService, maps gateways.MapService) {
 
-	// m := handlers.NewMerchantHandler(db)
+	mHandler := handler.NewMerchantHandler(db, mail, maps)
 	msHandler := handler.NewMerchantStoreHandler(db, maps)
 
 	mRouter := r.Group("/merchants")
@@ -191,7 +192,7 @@ func merchantRouter(r fiber.Router, db *database.Adapter, maps gateways.MapServi
 	mRouter.Route(
 		"/", func(r fiber.Router) {
 
-			// r.Post("/store", request.ValidateMerchant(), m.Create()).Name("register")
+			r.Get("/:id", mHandler.FetchByID())
 
 		}, "merchants.",
 	)

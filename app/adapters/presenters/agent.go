@@ -14,7 +14,7 @@ type (
 		ID             int       `json:"id"`
 		GhanaCard      string    `json:"ghanaCard"`
 		LastName       string    `json:"lastName"`
-		OtherName      string    `json:"firstName"`
+		OtherName      string    `json:"otherName"`
 		Phone          string    `json:"phone"`
 		OtherPhone     *string   `json:"otherPhone"`
 		Address        string    `json:"address"`

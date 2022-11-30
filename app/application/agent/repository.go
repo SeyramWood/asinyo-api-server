@@ -49,7 +49,7 @@ func (r *repository) Insert(agent *models.AgentRequest) (*ent.Agent, error) {
 
 func (r *repository) Read(id int) (*ent.Agent, error) {
 
-	result, err := r.db.Agent.Query().Where(agent.ID(id)).First(context.Background())
+	result, err := r.db.Agent.Query().Where(agent.ID(id)).Only(context.Background())
 	if err != nil {
 		return nil, err
 	}

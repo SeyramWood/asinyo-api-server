@@ -38,7 +38,7 @@ func (h *MerchantHandler) FetchByID() fiber.Handler {
 
 		if err != nil {
 
-			return c.Status(fiber.StatusInternalServerError).JSON(presenters.RetailMerchantErrorResponse(err))
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
 		return c.JSON(presenters.MerchantSuccessResponse(result))
 	}
