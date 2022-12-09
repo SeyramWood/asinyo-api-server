@@ -1056,6 +1056,34 @@ func HasAgentWith(preds ...predicate.Agent) predicate.MerchantStore {
 	})
 }
 
+// HasLogistics applies the HasEdge predicate on the "logistics" edge.
+func HasLogistics() predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(LogisticsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, LogisticsTable, LogisticsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLogisticsWith applies the HasEdge predicate on the "logistics" edge with a given conditions (other predicates).
+func HasLogisticsWith(preds ...predicate.Logistic) predicate.MerchantStore {
+	return predicate.MerchantStore(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(LogisticsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, LogisticsTable, LogisticsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasRequests applies the HasEdge predicate on the "requests" edge.
 func HasRequests() predicate.MerchantStore {
 	return predicate.MerchantStore(func(s *sql.Selector) {

@@ -64,6 +64,8 @@ type MerchantStoreEdges struct {
 	Merchant *Merchant `json:"merchant,omitempty"`
 	// Agent holds the value of the agent edge.
 	Agent *Agent `json:"agent,omitempty"`
+	// Logistics holds the value of the logistics edge.
+	Logistics []*Logistic `json:"logistics,omitempty"`
 	// Requests holds the value of the requests edge.
 	Requests []*AgentRequest `json:"requests,omitempty"`
 	// Orders holds the value of the orders edge.
@@ -72,7 +74,7 @@ type MerchantStoreEdges struct {
 	OrderDetails []*OrderDetail `json:"order_details,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // MerchantOrErr returns the Merchant value or an error if the edge
@@ -101,10 +103,19 @@ func (e MerchantStoreEdges) AgentOrErr() (*Agent, error) {
 	return nil, &NotLoadedError{edge: "agent"}
 }
 
+// LogisticsOrErr returns the Logistics value or an error if the edge
+// was not loaded in eager-loading.
+func (e MerchantStoreEdges) LogisticsOrErr() ([]*Logistic, error) {
+	if e.loadedTypes[2] {
+		return e.Logistics, nil
+	}
+	return nil, &NotLoadedError{edge: "logistics"}
+}
+
 // RequestsOrErr returns the Requests value or an error if the edge
 // was not loaded in eager-loading.
 func (e MerchantStoreEdges) RequestsOrErr() ([]*AgentRequest, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Requests, nil
 	}
 	return nil, &NotLoadedError{edge: "requests"}
@@ -113,7 +124,7 @@ func (e MerchantStoreEdges) RequestsOrErr() ([]*AgentRequest, error) {
 // OrdersOrErr returns the Orders value or an error if the edge
 // was not loaded in eager-loading.
 func (e MerchantStoreEdges) OrdersOrErr() ([]*Order, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Orders, nil
 	}
 	return nil, &NotLoadedError{edge: "orders"}
@@ -122,7 +133,7 @@ func (e MerchantStoreEdges) OrdersOrErr() ([]*Order, error) {
 // OrderDetailsOrErr returns the OrderDetails value or an error if the edge
 // was not loaded in eager-loading.
 func (e MerchantStoreEdges) OrderDetailsOrErr() ([]*OrderDetail, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.OrderDetails, nil
 	}
 	return nil, &NotLoadedError{edge: "order_details"}
@@ -295,6 +306,11 @@ func (ms *MerchantStore) QueryMerchant() *MerchantQuery {
 // QueryAgent queries the "agent" edge of the MerchantStore entity.
 func (ms *MerchantStore) QueryAgent() *AgentQuery {
 	return (&MerchantStoreClient{config: ms.config}).QueryAgent(ms)
+}
+
+// QueryLogistics queries the "logistics" edge of the MerchantStore entity.
+func (ms *MerchantStore) QueryLogistics() *LogisticQuery {
+	return (&MerchantStoreClient{config: ms.config}).QueryLogistics(ms)
 }
 
 // QueryRequests queries the "requests" edge of the MerchantStore entity.

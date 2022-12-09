@@ -7227,12 +7227,13 @@ type LogisticMutation struct {
 	id            *int
 	created_at    *time.Time
 	updated_at    *time.Time
-	tracking_link *string
-	tasks         **models.TookanMultiTaskResponse
+	task          **models.TookanPickupAndDeliveryTaskResponse
 	clearedFields map[string]struct{}
 	_order        map[int]struct{}
 	removed_order map[int]struct{}
 	cleared_order bool
+	store         *int
+	clearedstore  bool
 	done          bool
 	oldValue      func(context.Context) (*Logistic, error)
 	predicates    []predicate.Logistic
@@ -7408,102 +7409,53 @@ func (m *LogisticMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
-// SetTrackingLink sets the "tracking_link" field.
-func (m *LogisticMutation) SetTrackingLink(s string) {
-	m.tracking_link = &s
+// SetTask sets the "task" field.
+func (m *LogisticMutation) SetTask(mpadtr *models.TookanPickupAndDeliveryTaskResponse) {
+	m.task = &mpadtr
 }
 
-// TrackingLink returns the value of the "tracking_link" field in the mutation.
-func (m *LogisticMutation) TrackingLink() (r string, exists bool) {
-	v := m.tracking_link
+// Task returns the value of the "task" field in the mutation.
+func (m *LogisticMutation) Task() (r *models.TookanPickupAndDeliveryTaskResponse, exists bool) {
+	v := m.task
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldTrackingLink returns the old "tracking_link" field's value of the Logistic entity.
+// OldTask returns the old "task" field's value of the Logistic entity.
 // If the Logistic object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *LogisticMutation) OldTrackingLink(ctx context.Context) (v string, err error) {
+func (m *LogisticMutation) OldTask(ctx context.Context) (v *models.TookanPickupAndDeliveryTaskResponse, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTrackingLink is only allowed on UpdateOne operations")
+		return v, errors.New("OldTask is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTrackingLink requires an ID field in the mutation")
+		return v, errors.New("OldTask requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTrackingLink: %w", err)
+		return v, fmt.Errorf("querying old value for OldTask: %w", err)
 	}
-	return oldValue.TrackingLink, nil
+	return oldValue.Task, nil
 }
 
-// ClearTrackingLink clears the value of the "tracking_link" field.
-func (m *LogisticMutation) ClearTrackingLink() {
-	m.tracking_link = nil
-	m.clearedFields[logistic.FieldTrackingLink] = struct{}{}
+// ClearTask clears the value of the "task" field.
+func (m *LogisticMutation) ClearTask() {
+	m.task = nil
+	m.clearedFields[logistic.FieldTask] = struct{}{}
 }
 
-// TrackingLinkCleared returns if the "tracking_link" field was cleared in this mutation.
-func (m *LogisticMutation) TrackingLinkCleared() bool {
-	_, ok := m.clearedFields[logistic.FieldTrackingLink]
+// TaskCleared returns if the "task" field was cleared in this mutation.
+func (m *LogisticMutation) TaskCleared() bool {
+	_, ok := m.clearedFields[logistic.FieldTask]
 	return ok
 }
 
-// ResetTrackingLink resets all changes to the "tracking_link" field.
-func (m *LogisticMutation) ResetTrackingLink() {
-	m.tracking_link = nil
-	delete(m.clearedFields, logistic.FieldTrackingLink)
-}
-
-// SetTasks sets the "tasks" field.
-func (m *LogisticMutation) SetTasks(mmtr *models.TookanMultiTaskResponse) {
-	m.tasks = &mmtr
-}
-
-// Tasks returns the value of the "tasks" field in the mutation.
-func (m *LogisticMutation) Tasks() (r *models.TookanMultiTaskResponse, exists bool) {
-	v := m.tasks
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTasks returns the old "tasks" field's value of the Logistic entity.
-// If the Logistic object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *LogisticMutation) OldTasks(ctx context.Context) (v *models.TookanMultiTaskResponse, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTasks is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTasks requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTasks: %w", err)
-	}
-	return oldValue.Tasks, nil
-}
-
-// ClearTasks clears the value of the "tasks" field.
-func (m *LogisticMutation) ClearTasks() {
-	m.tasks = nil
-	m.clearedFields[logistic.FieldTasks] = struct{}{}
-}
-
-// TasksCleared returns if the "tasks" field was cleared in this mutation.
-func (m *LogisticMutation) TasksCleared() bool {
-	_, ok := m.clearedFields[logistic.FieldTasks]
-	return ok
-}
-
-// ResetTasks resets all changes to the "tasks" field.
-func (m *LogisticMutation) ResetTasks() {
-	m.tasks = nil
-	delete(m.clearedFields, logistic.FieldTasks)
+// ResetTask resets all changes to the "task" field.
+func (m *LogisticMutation) ResetTask() {
+	m.task = nil
+	delete(m.clearedFields, logistic.FieldTask)
 }
 
 // AddOrderIDs adds the "order" edge to the Order entity by ids.
@@ -7560,6 +7512,45 @@ func (m *LogisticMutation) ResetOrder() {
 	m.removed_order = nil
 }
 
+// SetStoreID sets the "store" edge to the MerchantStore entity by id.
+func (m *LogisticMutation) SetStoreID(id int) {
+	m.store = &id
+}
+
+// ClearStore clears the "store" edge to the MerchantStore entity.
+func (m *LogisticMutation) ClearStore() {
+	m.clearedstore = true
+}
+
+// StoreCleared reports if the "store" edge to the MerchantStore entity was cleared.
+func (m *LogisticMutation) StoreCleared() bool {
+	return m.clearedstore
+}
+
+// StoreID returns the "store" edge ID in the mutation.
+func (m *LogisticMutation) StoreID() (id int, exists bool) {
+	if m.store != nil {
+		return *m.store, true
+	}
+	return
+}
+
+// StoreIDs returns the "store" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// StoreID instead. It exists only for internal usage by the builders.
+func (m *LogisticMutation) StoreIDs() (ids []int) {
+	if id := m.store; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetStore resets all changes to the "store" edge.
+func (m *LogisticMutation) ResetStore() {
+	m.store = nil
+	m.clearedstore = false
+}
+
 // Where appends a list predicates to the LogisticMutation builder.
 func (m *LogisticMutation) Where(ps ...predicate.Logistic) {
 	m.predicates = append(m.predicates, ps...)
@@ -7579,18 +7570,15 @@ func (m *LogisticMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *LogisticMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 3)
 	if m.created_at != nil {
 		fields = append(fields, logistic.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, logistic.FieldUpdatedAt)
 	}
-	if m.tracking_link != nil {
-		fields = append(fields, logistic.FieldTrackingLink)
-	}
-	if m.tasks != nil {
-		fields = append(fields, logistic.FieldTasks)
+	if m.task != nil {
+		fields = append(fields, logistic.FieldTask)
 	}
 	return fields
 }
@@ -7604,10 +7592,8 @@ func (m *LogisticMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case logistic.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case logistic.FieldTrackingLink:
-		return m.TrackingLink()
-	case logistic.FieldTasks:
-		return m.Tasks()
+	case logistic.FieldTask:
+		return m.Task()
 	}
 	return nil, false
 }
@@ -7621,10 +7607,8 @@ func (m *LogisticMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldCreatedAt(ctx)
 	case logistic.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case logistic.FieldTrackingLink:
-		return m.OldTrackingLink(ctx)
-	case logistic.FieldTasks:
-		return m.OldTasks(ctx)
+	case logistic.FieldTask:
+		return m.OldTask(ctx)
 	}
 	return nil, fmt.Errorf("unknown Logistic field %s", name)
 }
@@ -7648,19 +7632,12 @@ func (m *LogisticMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
-	case logistic.FieldTrackingLink:
-		v, ok := value.(string)
+	case logistic.FieldTask:
+		v, ok := value.(*models.TookanPickupAndDeliveryTaskResponse)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetTrackingLink(v)
-		return nil
-	case logistic.FieldTasks:
-		v, ok := value.(*models.TookanMultiTaskResponse)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTasks(v)
+		m.SetTask(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Logistic field %s", name)
@@ -7692,11 +7669,8 @@ func (m *LogisticMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *LogisticMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(logistic.FieldTrackingLink) {
-		fields = append(fields, logistic.FieldTrackingLink)
-	}
-	if m.FieldCleared(logistic.FieldTasks) {
-		fields = append(fields, logistic.FieldTasks)
+	if m.FieldCleared(logistic.FieldTask) {
+		fields = append(fields, logistic.FieldTask)
 	}
 	return fields
 }
@@ -7712,11 +7686,8 @@ func (m *LogisticMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *LogisticMutation) ClearField(name string) error {
 	switch name {
-	case logistic.FieldTrackingLink:
-		m.ClearTrackingLink()
-		return nil
-	case logistic.FieldTasks:
-		m.ClearTasks()
+	case logistic.FieldTask:
+		m.ClearTask()
 		return nil
 	}
 	return fmt.Errorf("unknown Logistic nullable field %s", name)
@@ -7732,11 +7703,8 @@ func (m *LogisticMutation) ResetField(name string) error {
 	case logistic.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
-	case logistic.FieldTrackingLink:
-		m.ResetTrackingLink()
-		return nil
-	case logistic.FieldTasks:
-		m.ResetTasks()
+	case logistic.FieldTask:
+		m.ResetTask()
 		return nil
 	}
 	return fmt.Errorf("unknown Logistic field %s", name)
@@ -7744,9 +7712,12 @@ func (m *LogisticMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *LogisticMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m._order != nil {
 		edges = append(edges, logistic.EdgeOrder)
+	}
+	if m.store != nil {
+		edges = append(edges, logistic.EdgeStore)
 	}
 	return edges
 }
@@ -7761,13 +7732,17 @@ func (m *LogisticMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case logistic.EdgeStore:
+		if id := m.store; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *LogisticMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removed_order != nil {
 		edges = append(edges, logistic.EdgeOrder)
 	}
@@ -7790,9 +7765,12 @@ func (m *LogisticMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *LogisticMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.cleared_order {
 		edges = append(edges, logistic.EdgeOrder)
+	}
+	if m.clearedstore {
+		edges = append(edges, logistic.EdgeStore)
 	}
 	return edges
 }
@@ -7803,6 +7781,8 @@ func (m *LogisticMutation) EdgeCleared(name string) bool {
 	switch name {
 	case logistic.EdgeOrder:
 		return m.cleared_order
+	case logistic.EdgeStore:
+		return m.clearedstore
 	}
 	return false
 }
@@ -7811,6 +7791,9 @@ func (m *LogisticMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *LogisticMutation) ClearEdge(name string) error {
 	switch name {
+	case logistic.EdgeStore:
+		m.ClearStore()
+		return nil
 	}
 	return fmt.Errorf("unknown Logistic unique edge %s", name)
 }
@@ -7821,6 +7804,9 @@ func (m *LogisticMutation) ResetEdge(name string) error {
 	switch name {
 	case logistic.EdgeOrder:
 		m.ResetOrder()
+		return nil
+	case logistic.EdgeStore:
+		m.ResetStore()
 		return nil
 	}
 	return fmt.Errorf("unknown Logistic edge %s", name)
@@ -8974,6 +8960,9 @@ type MerchantStoreMutation struct {
 	clearedmerchant      bool
 	agent                *int
 	clearedagent         bool
+	logistics            map[int]struct{}
+	removedlogistics     map[int]struct{}
+	clearedlogistics     bool
 	requests             map[int]struct{}
 	removedrequests      map[int]struct{}
 	clearedrequests      bool
@@ -9782,6 +9771,60 @@ func (m *MerchantStoreMutation) ResetAgent() {
 	m.clearedagent = false
 }
 
+// AddLogisticIDs adds the "logistics" edge to the Logistic entity by ids.
+func (m *MerchantStoreMutation) AddLogisticIDs(ids ...int) {
+	if m.logistics == nil {
+		m.logistics = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.logistics[ids[i]] = struct{}{}
+	}
+}
+
+// ClearLogistics clears the "logistics" edge to the Logistic entity.
+func (m *MerchantStoreMutation) ClearLogistics() {
+	m.clearedlogistics = true
+}
+
+// LogisticsCleared reports if the "logistics" edge to the Logistic entity was cleared.
+func (m *MerchantStoreMutation) LogisticsCleared() bool {
+	return m.clearedlogistics
+}
+
+// RemoveLogisticIDs removes the "logistics" edge to the Logistic entity by IDs.
+func (m *MerchantStoreMutation) RemoveLogisticIDs(ids ...int) {
+	if m.removedlogistics == nil {
+		m.removedlogistics = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.logistics, ids[i])
+		m.removedlogistics[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedLogistics returns the removed IDs of the "logistics" edge to the Logistic entity.
+func (m *MerchantStoreMutation) RemovedLogisticsIDs() (ids []int) {
+	for id := range m.removedlogistics {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// LogisticsIDs returns the "logistics" edge IDs in the mutation.
+func (m *MerchantStoreMutation) LogisticsIDs() (ids []int) {
+	for id := range m.logistics {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetLogistics resets all changes to the "logistics" edge.
+func (m *MerchantStoreMutation) ResetLogistics() {
+	m.logistics = nil
+	m.clearedlogistics = false
+	m.removedlogistics = nil
+}
+
 // AddRequestIDs adds the "requests" edge to the AgentRequest entity by ids.
 func (m *MerchantStoreMutation) AddRequestIDs(ids ...int) {
 	if m.requests == nil {
@@ -10339,12 +10382,15 @@ func (m *MerchantStoreMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *MerchantStoreMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.merchant != nil {
 		edges = append(edges, merchantstore.EdgeMerchant)
 	}
 	if m.agent != nil {
 		edges = append(edges, merchantstore.EdgeAgent)
+	}
+	if m.logistics != nil {
+		edges = append(edges, merchantstore.EdgeLogistics)
 	}
 	if m.requests != nil {
 		edges = append(edges, merchantstore.EdgeRequests)
@@ -10370,6 +10416,12 @@ func (m *MerchantStoreMutation) AddedIDs(name string) []ent.Value {
 		if id := m.agent; id != nil {
 			return []ent.Value{*id}
 		}
+	case merchantstore.EdgeLogistics:
+		ids := make([]ent.Value, 0, len(m.logistics))
+		for id := range m.logistics {
+			ids = append(ids, id)
+		}
+		return ids
 	case merchantstore.EdgeRequests:
 		ids := make([]ent.Value, 0, len(m.requests))
 		for id := range m.requests {
@@ -10394,7 +10446,10 @@ func (m *MerchantStoreMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *MerchantStoreMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
+	if m.removedlogistics != nil {
+		edges = append(edges, merchantstore.EdgeLogistics)
+	}
 	if m.removedrequests != nil {
 		edges = append(edges, merchantstore.EdgeRequests)
 	}
@@ -10411,6 +10466,12 @@ func (m *MerchantStoreMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *MerchantStoreMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case merchantstore.EdgeLogistics:
+		ids := make([]ent.Value, 0, len(m.removedlogistics))
+		for id := range m.removedlogistics {
+			ids = append(ids, id)
+		}
+		return ids
 	case merchantstore.EdgeRequests:
 		ids := make([]ent.Value, 0, len(m.removedrequests))
 		for id := range m.removedrequests {
@@ -10435,12 +10496,15 @@ func (m *MerchantStoreMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *MerchantStoreMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedmerchant {
 		edges = append(edges, merchantstore.EdgeMerchant)
 	}
 	if m.clearedagent {
 		edges = append(edges, merchantstore.EdgeAgent)
+	}
+	if m.clearedlogistics {
+		edges = append(edges, merchantstore.EdgeLogistics)
 	}
 	if m.clearedrequests {
 		edges = append(edges, merchantstore.EdgeRequests)
@@ -10462,6 +10526,8 @@ func (m *MerchantStoreMutation) EdgeCleared(name string) bool {
 		return m.clearedmerchant
 	case merchantstore.EdgeAgent:
 		return m.clearedagent
+	case merchantstore.EdgeLogistics:
+		return m.clearedlogistics
 	case merchantstore.EdgeRequests:
 		return m.clearedrequests
 	case merchantstore.EdgeOrders:
@@ -10495,6 +10561,9 @@ func (m *MerchantStoreMutation) ResetEdge(name string) error {
 		return nil
 	case merchantstore.EdgeAgent:
 		m.ResetAgent()
+		return nil
+	case merchantstore.EdgeLogistics:
+		m.ResetLogistics()
 		return nil
 	case merchantstore.EdgeRequests:
 		m.ResetRequests()

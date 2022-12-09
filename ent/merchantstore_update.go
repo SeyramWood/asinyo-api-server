@@ -15,6 +15,7 @@ import (
 	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/agentrequest"
+	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -209,6 +210,21 @@ func (msu *MerchantStoreUpdate) SetAgent(a *Agent) *MerchantStoreUpdate {
 	return msu.SetAgentID(a.ID)
 }
 
+// AddLogisticIDs adds the "logistics" edge to the Logistic entity by IDs.
+func (msu *MerchantStoreUpdate) AddLogisticIDs(ids ...int) *MerchantStoreUpdate {
+	msu.mutation.AddLogisticIDs(ids...)
+	return msu
+}
+
+// AddLogistics adds the "logistics" edges to the Logistic entity.
+func (msu *MerchantStoreUpdate) AddLogistics(l ...*Logistic) *MerchantStoreUpdate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return msu.AddLogisticIDs(ids...)
+}
+
 // AddRequestIDs adds the "requests" edge to the AgentRequest entity by IDs.
 func (msu *MerchantStoreUpdate) AddRequestIDs(ids ...int) *MerchantStoreUpdate {
 	msu.mutation.AddRequestIDs(ids...)
@@ -269,6 +285,27 @@ func (msu *MerchantStoreUpdate) ClearMerchant() *MerchantStoreUpdate {
 func (msu *MerchantStoreUpdate) ClearAgent() *MerchantStoreUpdate {
 	msu.mutation.ClearAgent()
 	return msu
+}
+
+// ClearLogistics clears all "logistics" edges to the Logistic entity.
+func (msu *MerchantStoreUpdate) ClearLogistics() *MerchantStoreUpdate {
+	msu.mutation.ClearLogistics()
+	return msu
+}
+
+// RemoveLogisticIDs removes the "logistics" edge to Logistic entities by IDs.
+func (msu *MerchantStoreUpdate) RemoveLogisticIDs(ids ...int) *MerchantStoreUpdate {
+	msu.mutation.RemoveLogisticIDs(ids...)
+	return msu
+}
+
+// RemoveLogistics removes "logistics" edges to Logistic entities.
+func (msu *MerchantStoreUpdate) RemoveLogistics(l ...*Logistic) *MerchantStoreUpdate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return msu.RemoveLogisticIDs(ids...)
 }
 
 // ClearRequests clears all "requests" edges to the AgentRequest entity.
@@ -665,6 +702,60 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if msu.mutation.LogisticsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.LogisticsTable,
+			Columns: []string{merchantstore.LogisticsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := msu.mutation.RemovedLogisticsIDs(); len(nodes) > 0 && !msu.mutation.LogisticsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.LogisticsTable,
+			Columns: []string{merchantstore.LogisticsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := msu.mutation.LogisticsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.LogisticsTable,
+			Columns: []string{merchantstore.LogisticsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if msu.mutation.RequestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -1020,6 +1111,21 @@ func (msuo *MerchantStoreUpdateOne) SetAgent(a *Agent) *MerchantStoreUpdateOne {
 	return msuo.SetAgentID(a.ID)
 }
 
+// AddLogisticIDs adds the "logistics" edge to the Logistic entity by IDs.
+func (msuo *MerchantStoreUpdateOne) AddLogisticIDs(ids ...int) *MerchantStoreUpdateOne {
+	msuo.mutation.AddLogisticIDs(ids...)
+	return msuo
+}
+
+// AddLogistics adds the "logistics" edges to the Logistic entity.
+func (msuo *MerchantStoreUpdateOne) AddLogistics(l ...*Logistic) *MerchantStoreUpdateOne {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return msuo.AddLogisticIDs(ids...)
+}
+
 // AddRequestIDs adds the "requests" edge to the AgentRequest entity by IDs.
 func (msuo *MerchantStoreUpdateOne) AddRequestIDs(ids ...int) *MerchantStoreUpdateOne {
 	msuo.mutation.AddRequestIDs(ids...)
@@ -1080,6 +1186,27 @@ func (msuo *MerchantStoreUpdateOne) ClearMerchant() *MerchantStoreUpdateOne {
 func (msuo *MerchantStoreUpdateOne) ClearAgent() *MerchantStoreUpdateOne {
 	msuo.mutation.ClearAgent()
 	return msuo
+}
+
+// ClearLogistics clears all "logistics" edges to the Logistic entity.
+func (msuo *MerchantStoreUpdateOne) ClearLogistics() *MerchantStoreUpdateOne {
+	msuo.mutation.ClearLogistics()
+	return msuo
+}
+
+// RemoveLogisticIDs removes the "logistics" edge to Logistic entities by IDs.
+func (msuo *MerchantStoreUpdateOne) RemoveLogisticIDs(ids ...int) *MerchantStoreUpdateOne {
+	msuo.mutation.RemoveLogisticIDs(ids...)
+	return msuo
+}
+
+// RemoveLogistics removes "logistics" edges to Logistic entities.
+func (msuo *MerchantStoreUpdateOne) RemoveLogistics(l ...*Logistic) *MerchantStoreUpdateOne {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return msuo.RemoveLogisticIDs(ids...)
 }
 
 // ClearRequests clears all "requests" edges to the AgentRequest entity.
@@ -1498,6 +1625,60 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: agent.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if msuo.mutation.LogisticsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.LogisticsTable,
+			Columns: []string{merchantstore.LogisticsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := msuo.mutation.RemovedLogisticsIDs(); len(nodes) > 0 && !msuo.mutation.LogisticsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.LogisticsTable,
+			Columns: []string{merchantstore.LogisticsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := msuo.mutation.LogisticsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.LogisticsTable,
+			Columns: []string{merchantstore.LogisticsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
 				},
 			},
 		}

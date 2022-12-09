@@ -14,6 +14,7 @@ import (
 	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/agentrequest"
+	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -185,6 +186,21 @@ func (msc *MerchantStoreCreate) SetNillableAgentID(id *int) *MerchantStoreCreate
 // SetAgent sets the "agent" edge to the Agent entity.
 func (msc *MerchantStoreCreate) SetAgent(a *Agent) *MerchantStoreCreate {
 	return msc.SetAgentID(a.ID)
+}
+
+// AddLogisticIDs adds the "logistics" edge to the Logistic entity by IDs.
+func (msc *MerchantStoreCreate) AddLogisticIDs(ids ...int) *MerchantStoreCreate {
+	msc.mutation.AddLogisticIDs(ids...)
+	return msc
+}
+
+// AddLogistics adds the "logistics" edges to the Logistic entity.
+func (msc *MerchantStoreCreate) AddLogistics(l ...*Logistic) *MerchantStoreCreate {
+	ids := make([]int, len(l))
+	for i := range l {
+		ids[i] = l[i].ID
+	}
+	return msc.AddLogisticIDs(ids...)
 }
 
 // AddRequestIDs adds the "requests" edge to the AgentRequest entity by IDs.
@@ -572,6 +588,25 @@ func (msc *MerchantStoreCreate) createSpec() (*MerchantStore, *sqlgraph.CreateSp
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.agent_store = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := msc.mutation.LogisticsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchantstore.LogisticsTable,
+			Columns: []string{merchantstore.LogisticsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: logistic.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := msc.mutation.RequestsIDs(); len(nodes) > 0 {

@@ -137,7 +137,9 @@ func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
 			func(aq *ent.AddressQuery) {
 				aq.Select(
 					address.FieldID, address.FieldLastName, address.FieldOtherName, address.FieldAddress,
-					address.FieldCity, address.FieldRegion, address.FieldPhone, address.FieldOtherPhone,
+					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
+					address.FieldRegion, address.FieldCountry,
+					address.FieldPhone, address.FieldOtherPhone,
 				)
 			},
 		).
@@ -158,7 +160,11 @@ func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
 		WithLogistic(
 			func(lg *ent.LogisticQuery) {
 				lg.Select(
-					logistic.FieldID, logistic.FieldTrackingLink, logistic.FieldTasks,
+					logistic.FieldID, logistic.FieldTask,
+				).WithStore(
+					func(msq *ent.MerchantStoreQuery) {
+						msq.Select(merchantstore.FieldID, merchantstore.FieldName)
+					},
 				)
 			},
 		).
@@ -208,7 +214,9 @@ func (r repository) ReadByAgentStore(id, agentId int) (*ent.Order, error) {
 			func(aq *ent.AddressQuery) {
 				aq.Select(
 					address.FieldID, address.FieldLastName, address.FieldOtherName, address.FieldAddress,
-					address.FieldCity, address.FieldRegion, address.FieldPhone, address.FieldOtherPhone,
+					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
+					address.FieldRegion, address.FieldCountry,
+					address.FieldPhone, address.FieldOtherPhone,
 				)
 			},
 		).
@@ -306,7 +314,9 @@ func (r repository) Read(id int) (*ent.Order, error) {
 			func(aq *ent.AddressQuery) {
 				aq.Select(
 					address.FieldID, address.FieldLastName, address.FieldOtherName, address.FieldAddress,
-					address.FieldCity, address.FieldRegion,
+					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
+					address.FieldRegion, address.FieldCountry,
+					address.FieldPhone, address.FieldOtherPhone,
 				)
 			},
 		).
@@ -322,7 +332,11 @@ func (r repository) Read(id int) (*ent.Order, error) {
 		WithLogistic(
 			func(lg *ent.LogisticQuery) {
 				lg.Select(
-					logistic.FieldID, logistic.FieldTrackingLink, logistic.FieldTasks,
+					logistic.FieldID, logistic.FieldTask,
+				).WithStore(
+					func(msq *ent.MerchantStoreQuery) {
+						msq.Select(merchantstore.FieldID, merchantstore.FieldName)
+					},
 				)
 			},
 		).
@@ -392,6 +406,19 @@ func (r repository) UpdateOrderDetailStatus(requests map[string]*gabs.Container)
 		return r.ReadByAgentStore(oId, mId)
 	}
 	return r.ReadByStore(oId, mId)
+}
+
+func (r repository) ReadOrderStoreMerchants(orderId int) (*ent.Order, error) {
+	result, err := r.db.Order.Query().Where(order.ID(orderId)).WithStores(
+		func(msq *ent.MerchantStoreQuery) {
+			msq.WithMerchant()
+		},
+	).
+		Only(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (r repository) checkOrderStatus(data []*ent.OrderDetail) order.Status {

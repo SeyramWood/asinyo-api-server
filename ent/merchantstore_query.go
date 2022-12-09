@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/agentrequest"
+	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -31,6 +32,7 @@ type MerchantStoreQuery struct {
 	predicates       []predicate.MerchantStore
 	withMerchant     *MerchantQuery
 	withAgent        *AgentQuery
+	withLogistics    *LogisticQuery
 	withRequests     *AgentRequestQuery
 	withOrders       *OrderQuery
 	withOrderDetails *OrderDetailQuery
@@ -108,6 +110,28 @@ func (msq *MerchantStoreQuery) QueryAgent() *AgentQuery {
 			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, selector),
 			sqlgraph.To(agent.Table, agent.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, merchantstore.AgentTable, merchantstore.AgentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(msq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLogistics chains the current query on the "logistics" edge.
+func (msq *MerchantStoreQuery) QueryLogistics() *LogisticQuery {
+	query := &LogisticQuery{config: msq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := msq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := msq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, selector),
+			sqlgraph.To(logistic.Table, logistic.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchantstore.LogisticsTable, merchantstore.LogisticsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(msq.driver.Dialect(), step)
 		return fromU, nil
@@ -364,6 +388,7 @@ func (msq *MerchantStoreQuery) Clone() *MerchantStoreQuery {
 		predicates:       append([]predicate.MerchantStore{}, msq.predicates...),
 		withMerchant:     msq.withMerchant.Clone(),
 		withAgent:        msq.withAgent.Clone(),
+		withLogistics:    msq.withLogistics.Clone(),
 		withRequests:     msq.withRequests.Clone(),
 		withOrders:       msq.withOrders.Clone(),
 		withOrderDetails: msq.withOrderDetails.Clone(),
@@ -393,6 +418,17 @@ func (msq *MerchantStoreQuery) WithAgent(opts ...func(*AgentQuery)) *MerchantSto
 		opt(query)
 	}
 	msq.withAgent = query
+	return msq
+}
+
+// WithLogistics tells the query-builder to eager-load the nodes that are connected to
+// the "logistics" edge. The optional arguments are used to configure the query builder of the edge.
+func (msq *MerchantStoreQuery) WithLogistics(opts ...func(*LogisticQuery)) *MerchantStoreQuery {
+	query := &LogisticQuery{config: msq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	msq.withLogistics = query
 	return msq
 }
 
@@ -500,9 +536,10 @@ func (msq *MerchantStoreQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 		nodes       = []*MerchantStore{}
 		withFKs     = msq.withFKs
 		_spec       = msq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			msq.withMerchant != nil,
 			msq.withAgent != nil,
+			msq.withLogistics != nil,
 			msq.withRequests != nil,
 			msq.withOrders != nil,
 			msq.withOrderDetails != nil,
@@ -541,6 +578,13 @@ func (msq *MerchantStoreQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	if query := msq.withAgent; query != nil {
 		if err := msq.loadAgent(ctx, query, nodes, nil,
 			func(n *MerchantStore, e *Agent) { n.Edges.Agent = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := msq.withLogistics; query != nil {
+		if err := msq.loadLogistics(ctx, query, nodes,
+			func(n *MerchantStore) { n.Edges.Logistics = []*Logistic{} },
+			func(n *MerchantStore, e *Logistic) { n.Edges.Logistics = append(n.Edges.Logistics, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -623,6 +667,37 @@ func (msq *MerchantStoreQuery) loadAgent(ctx context.Context, query *AgentQuery,
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (msq *MerchantStoreQuery) loadLogistics(ctx context.Context, query *LogisticQuery, nodes []*MerchantStore, init func(*MerchantStore), assign func(*MerchantStore, *Logistic)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*MerchantStore)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Logistic(func(s *sql.Selector) {
+		s.Where(sql.InValues(merchantstore.LogisticsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.merchant_store_logistics
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "merchant_store_logistics" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "merchant_store_logistics" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

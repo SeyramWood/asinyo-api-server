@@ -41,9 +41,9 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 	productRouter(r, h.db)
 
-	paymentRouter(r, h.db, h.logis)
+	paymentRouter(r, h.db, h.logis, h.mail)
 
-	orderRouter(r, h.db, h.logis)
+	orderRouter(r, h.db, h.logis, h.mail)
 
 	adminRouter(r, h.db)
 
@@ -308,10 +308,12 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 
 }
 
-func paymentRouter(router fiber.Router, db *database.Adapter, logis gateways.LogisticService) {
+func paymentRouter(
+	router fiber.Router, db *database.Adapter, logis gateways.LogisticService, mail gateways.EmailService,
+) {
 
-	ph := handler.NewPaystackHandler(db, logis)
-	oh := handler.NewOrderHandler(db, logis)
+	ph := handler.NewPaystackHandler(db, logis, mail)
+	oh := handler.NewOrderHandler(db, logis, mail)
 
 	router.Route(
 		"/payment", func(r fiber.Router) {
@@ -327,9 +329,11 @@ func paymentRouter(router fiber.Router, db *database.Adapter, logis gateways.Log
 
 }
 
-func orderRouter(router fiber.Router, db *database.Adapter, logis gateways.LogisticService) {
+func orderRouter(
+	router fiber.Router, db *database.Adapter, logis gateways.LogisticService, mail gateways.EmailService,
+) {
 
-	h := handler.NewOrderHandler(db, logis)
+	h := handler.NewOrderHandler(db, logis, mail)
 
 	router.Route(
 		"/orders", func(r fiber.Router) {
@@ -345,6 +349,9 @@ func orderRouter(router fiber.Router, db *database.Adapter, logis gateways.Logis
 			r.Put("/update-order-details-status", h.UpdateOrderDetailStatus())
 
 			r.Post("/get-fare-estimate", h.FetchOrderFareEstimate())
+			r.Post("/webhook/update-order-details-status", h.ListenTookanWebhook())
+			r.Post("/test/order/creation", h.TestOrderCreation())
+
 		}, "order.",
 	)
 

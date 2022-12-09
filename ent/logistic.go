@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/logistic"
+	"github.com/SeyramWood/ent/merchantstore"
 )
 
 // Logistic is the model entity for the Logistic schema.
@@ -22,22 +23,23 @@ type Logistic struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// TrackingLink holds the value of the "tracking_link" field.
-	TrackingLink string `json:"tracking_link,omitempty"`
-	// Tasks holds the value of the "tasks" field.
-	Tasks *models.TookanMultiTaskResponse `json:"tasks,omitempty"`
+	// Task holds the value of the "task" field.
+	Task *models.TookanPickupAndDeliveryTaskResponse `json:"task,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the LogisticQuery when eager-loading is set.
-	Edges LogisticEdges `json:"edges"`
+	Edges                    LogisticEdges `json:"edges"`
+	merchant_store_logistics *int
 }
 
 // LogisticEdges holds the relations/edges for other nodes in the graph.
 type LogisticEdges struct {
 	// Order holds the value of the order edge.
 	Order []*Order `json:"order,omitempty"`
+	// Store holds the value of the store edge.
+	Store *MerchantStore `json:"store,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // OrderOrErr returns the Order value or an error if the edge
@@ -49,19 +51,32 @@ func (e LogisticEdges) OrderOrErr() ([]*Order, error) {
 	return nil, &NotLoadedError{edge: "order"}
 }
 
+// StoreOrErr returns the Store value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e LogisticEdges) StoreOrErr() (*MerchantStore, error) {
+	if e.loadedTypes[1] {
+		if e.Store == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: merchantstore.Label}
+		}
+		return e.Store, nil
+	}
+	return nil, &NotLoadedError{edge: "store"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Logistic) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case logistic.FieldTasks:
+		case logistic.FieldTask:
 			values[i] = new([]byte)
 		case logistic.FieldID:
 			values[i] = new(sql.NullInt64)
-		case logistic.FieldTrackingLink:
-			values[i] = new(sql.NullString)
 		case logistic.FieldCreatedAt, logistic.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case logistic.ForeignKeys[0]: // merchant_store_logistics
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Logistic", columns[i])
 		}
@@ -95,19 +110,20 @@ func (l *Logistic) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				l.UpdatedAt = value.Time
 			}
-		case logistic.FieldTrackingLink:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field tracking_link", values[i])
-			} else if value.Valid {
-				l.TrackingLink = value.String
-			}
-		case logistic.FieldTasks:
+		case logistic.FieldTask:
 			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field tasks", values[i])
+				return fmt.Errorf("unexpected type %T for field task", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &l.Tasks); err != nil {
-					return fmt.Errorf("unmarshal field tasks: %w", err)
+				if err := json.Unmarshal(*value, &l.Task); err != nil {
+					return fmt.Errorf("unmarshal field task: %w", err)
 				}
+			}
+		case logistic.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field merchant_store_logistics", value)
+			} else if value.Valid {
+				l.merchant_store_logistics = new(int)
+				*l.merchant_store_logistics = int(value.Int64)
 			}
 		}
 	}
@@ -117,6 +133,11 @@ func (l *Logistic) assignValues(columns []string, values []any) error {
 // QueryOrder queries the "order" edge of the Logistic entity.
 func (l *Logistic) QueryOrder() *OrderQuery {
 	return (&LogisticClient{config: l.config}).QueryOrder(l)
+}
+
+// QueryStore queries the "store" edge of the Logistic entity.
+func (l *Logistic) QueryStore() *MerchantStoreQuery {
+	return (&LogisticClient{config: l.config}).QueryStore(l)
 }
 
 // Update returns a builder for updating this Logistic.
@@ -148,11 +169,8 @@ func (l *Logistic) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(l.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("tracking_link=")
-	builder.WriteString(l.TrackingLink)
-	builder.WriteString(", ")
-	builder.WriteString("tasks=")
-	builder.WriteString(fmt.Sprintf("%v", l.Tasks))
+	builder.WriteString("task=")
+	builder.WriteString(fmt.Sprintf("%v", l.Task))
 	builder.WriteByte(')')
 	return builder.String()
 }

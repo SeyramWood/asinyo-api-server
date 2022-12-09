@@ -133,9 +133,12 @@ type (
 		Delete(id string) error
 	}
 	LogisticRepo interface {
-		InsertResponse(response *models.TookanMultiTaskResponse) (*ent.Logistic, error)
-		UpdateResponse(response *models.TookanMultiTaskResponse) (*ent.Logistic, error)
-		UpdateOrderDeliveryTask(orderId string, ids []int) error
+		InsertResponse(
+			orderNum string, storeId int, response *models.TookanPickupAndDeliveryTaskResponse,
+		) (*ent.Logistic, error)
+		UpdateResponse(response *models.TookanPickupAndDeliveryTaskResponse) (*ent.Logistic, error)
+		UpdateOrderStatus(token, status string) error
+		UpdateOrderDeliveryTask(orderNum string, storeId int) error
 		Delete(id string) error
 	}
 	MapRepo interface {
@@ -153,6 +156,7 @@ type (
 		ReadAllByAgentStore(agentId int) ([]*ent.Order, error)
 		ReadByStore(id, merchantId int) (*ent.Order, error)
 		ReadByAgentStore(id, agentId int) (*ent.Order, error)
+		ReadOrderStoreMerchants(orderId int) (*ent.Order, error)
 		Update(order *services.PaystackResponse) (*ent.Order, error)
 		Delete(id string) error
 		UpdateOrderDetailStatus(requests map[string]*gabs.Container) (*ent.Order, error)

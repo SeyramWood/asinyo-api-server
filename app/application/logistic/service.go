@@ -10,22 +10,25 @@ import (
 )
 
 type logistic struct {
-	WG        *sync.WaitGroup
-	DataChan  chan *ent.Order
-	DoneChan  chan bool
-	ErrorChan chan error
+	WG          *sync.WaitGroup
+	DataChan    chan *ent.Order
+	WebhookChan chan any
+	DoneChan    chan bool
+	ErrorChan   chan error
 }
 
 func NewLogistic(wg *sync.WaitGroup, adapter *database.Adapter) gateways.LogisticService {
 	dataChan := make(chan *ent.Order, 1024)
+	WebhookChan := make(chan any, 1024)
 	doneChan := make(chan bool)
 	errorChan := make(chan error)
 
 	conf := &logistic{
-		WG:        wg,
-		DataChan:  dataChan,
-		DoneChan:  doneChan,
-		ErrorChan: errorChan,
+		WG:          wg,
+		DataChan:    dataChan,
+		WebhookChan: WebhookChan,
+		DoneChan:    doneChan,
+		ErrorChan:   errorChan,
 	}
 
 	repo := NewLogisticRepo(adapter)

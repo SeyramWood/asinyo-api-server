@@ -11,7 +11,7 @@ type (
 		Region       string `json:"region" validate:"required|string"`
 		City         string `json:"city" validate:"required|string"`
 		District     string `json:"district" validate:"required|string"`
-		StreetName   string `json:"streetName" validate:"required|string"`
+		StreetName   string `json:"streetName" validate:"required"`
 		StreetNumber string `json:"streetNumber" validate:"string"`
 		Default      bool   `json:"default"`
 	}

@@ -1391,6 +1391,22 @@ func (c *LogisticClient) QueryOrder(l *Logistic) *OrderQuery {
 	return query
 }
 
+// QueryStore queries the store edge of a Logistic.
+func (c *LogisticClient) QueryStore(l *Logistic) *MerchantStoreQuery {
+	query := &MerchantStoreQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := l.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(logistic.Table, logistic.FieldID, id),
+			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, logistic.StoreTable, logistic.StoreColumn),
+		)
+		fromV = sqlgraph.Neighbors(l.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *LogisticClient) Hooks() []Hook {
 	return c.hooks.Logistic
@@ -1708,6 +1724,22 @@ func (c *MerchantStoreClient) QueryAgent(ms *MerchantStore) *AgentQuery {
 			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, id),
 			sqlgraph.To(agent.Table, agent.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, merchantstore.AgentTable, merchantstore.AgentColumn),
+		)
+		fromV = sqlgraph.Neighbors(ms.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLogistics queries the logistics edge of a MerchantStore.
+func (c *MerchantStoreClient) QueryLogistics(ms *MerchantStore) *LogisticQuery {
+	query := &LogisticQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ms.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchantstore.Table, merchantstore.FieldID, id),
+			sqlgraph.To(logistic.Table, logistic.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchantstore.LogisticsTable, merchantstore.LogisticsColumn),
 		)
 		fromV = sqlgraph.Neighbors(ms.driver.Dialect(), step)
 		return fromV, nil
