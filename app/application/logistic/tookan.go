@@ -101,14 +101,13 @@ func (t *tookan) FareEstimate(coordinates *models.OrderFareEstimateRequest) (
 	var response []*services.FareEstimateResponseData
 	wg := &sync.WaitGroup{}
 	mu := &sync.Mutex{}
-
 	for _, coordinate := range coordinates.Pickups {
 		wg.Add(1)
 		go func(pickup *services.Coordinate) {
 			defer wg.Done()
 			result, err := t.getFareEstimate(coordinates.Delivery, pickup)
 			if err != nil {
-				fmt.Println(err)
+				panic(fmt.Errorf("%s", err))
 			}
 			mu.Lock()
 			response = append(response, result)
@@ -811,7 +810,6 @@ func (t *tookan) getFareEstimate(delivery, pickup *services.Coordinate) (*servic
 			GoogleAPIKey: t.GoogleAPIKey,
 		},
 	}
-
 	payloadBytes, err := json.Marshal(resData)
 	if err != nil {
 		return nil, err
@@ -831,22 +829,21 @@ func (t *tookan) getFareEstimate(delivery, pickup *services.Coordinate) (*servic
 		return nil, reserr
 	}
 	defer res.Body.Close()
-
-	if res.Status != "200" {
+	if res.Status != "200 OK" {
 		return nil, reserr
 	}
-	resp_body, _ := ioutil.ReadAll(res.Body)
-
+	resp_body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
-	
 	resBody, errr := gabs.ParseJSON(resp_body)
 	if errr != nil {
+		return nil, errr
+	}
+	formulas, err := resBody.Path("data.formula_fields").Children()
+	if err != nil {
 		return nil, err
 	}
-
-	formulas, err := resBody.Path("data.formula_fields").Children()
 	var respFormulas []*services.FareEstimateResponseFormula
 	for _, formula := range formulas {
 		respFormulas = append(
@@ -872,7 +869,6 @@ func (t *tookan) getFareEstimate(delivery, pickup *services.Coordinate) (*servic
 		Formula:       respFormulas,
 		EstimatedFare: resBody.Path("data.estimated_fare").Data().(float64),
 	}
-
 	return response, nil
 }
 
