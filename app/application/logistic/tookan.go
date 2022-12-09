@@ -146,19 +146,21 @@ func (t *tookan) processWebhookResponse(response any) {
 	res, err := t.formatWebhookPayload(response)
 	if err != nil {
 		t.ErrorChan <- err
-	}
-	switch res.JobStatus {
-	case 1:
-		// Job Started
-		if err := t.repo.UpdateOrderStatus(res.JobToken, "dispatched"); err != nil {
-			t.ErrorChan <- err
+	} else {
+		switch res.JobStatus {
+		case 1:
+			// Job Started
+			if err := t.repo.UpdateOrderStatus(res.JobToken, "dispatched"); err != nil {
+				t.ErrorChan <- err
+			}
+		case 2:
+			// Job Successful
+			if err := t.repo.UpdateOrderStatus(res.JobToken, "delivered"); err != nil {
+				t.ErrorChan <- err
+			}
 		}
-	case 2:
-		// Job Successful
-		if err := t.repo.UpdateOrderStatus(res.JobToken, "delivered"); err != nil {
-			t.ErrorChan <- err
-		}
 	}
+
 }
 
 func (t *tookan) createPickupAndDeliveryTask(order *ent.Order) error {
@@ -906,6 +908,7 @@ func (t *tookan) formatWebhookPayload(request any) (*services.TookanWebhookRespo
 			return nil, fmt.Errorf("could not cast job status to the appropriate type")
 		}
 	}
+
 	response = &services.TookanWebhookResponse{
 		JobStatus: status,
 		JobState:  resBody.Path("job_state").Data().(string),
