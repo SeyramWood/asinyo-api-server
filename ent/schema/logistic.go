@@ -22,8 +22,7 @@ func (Logistic) Mixin() []ent.Mixin {
 // Fields of the Logistic.
 func (Logistic) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("tracking_link").Optional(),
-		field.JSON("tasks", &models.TookanMultiTaskResponse{}).Optional(),
+		field.JSON("task", &models.TookanPickupAndDeliveryTaskResponse{}).Optional(),
 	}
 }
 
@@ -31,5 +30,8 @@ func (Logistic) Fields() []ent.Field {
 func (Logistic) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("order", Order.Type),
+		edge.From("store", MerchantStore.Type).
+			Ref("logistics").
+			Unique(),
 	}
 }

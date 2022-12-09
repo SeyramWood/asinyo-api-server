@@ -58,9 +58,9 @@ type (
 		Region         string `json:"region" validate:"required|string"`
 		City           string `json:"city" validate:"required|string"`
 		District       string `json:"district" validate:"required|string"`
-		StreetName     string `json:"streetName" validate:"required|string"`
+		StreetName     string `json:"streetName" validate:"required"`
 		StreetNumber   string `json:"streetNumber" validate:"string"`
-		DigitalAddress string `json:"digitalAddress" validate:"required|string|digital_address"`
+		DigitalAddress string `json:"digitalAddress" validate:"required|digital_address"`
 	}
 	MerchantStoreInfo struct {
 		BusinessName   string `json:"businessName" validate:"required|string"`

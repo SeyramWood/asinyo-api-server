@@ -129,6 +129,7 @@ type (
 	}
 	OrderService interface {
 		Create(order *models.OrderPayload) (*ent.Order, error)
+		TesCreate(orderId int) (*ent.Order, error)
 		FetchAll() ([]*ent.Order, error)
 		FetchAllByUser(userType string, id int) ([]*ent.Order, error)
 		FetchByStore(id, userId int, userType string) (*ent.Order, error)
@@ -175,8 +176,8 @@ type (
 	}
 	LogisticService interface {
 		New(repo OrderRepo) LogisticService
-		DoTask(order *ent.Order, deliveryType string)
-		ListenOnWebhook()
+		ExecuteTask(order *ent.Order, deliveryType string)
+		ExecuteWebhook(response any)
 		FareEstimate(coordinates *models.OrderFareEstimateRequest) ([]*services.FareEstimateResponseData, error)
 		Listen()
 		Done()

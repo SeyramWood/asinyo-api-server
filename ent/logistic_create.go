@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/logistic"
+	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 )
 
@@ -50,23 +51,9 @@ func (lc *LogisticCreate) SetNillableUpdatedAt(t *time.Time) *LogisticCreate {
 	return lc
 }
 
-// SetTrackingLink sets the "tracking_link" field.
-func (lc *LogisticCreate) SetTrackingLink(s string) *LogisticCreate {
-	lc.mutation.SetTrackingLink(s)
-	return lc
-}
-
-// SetNillableTrackingLink sets the "tracking_link" field if the given value is not nil.
-func (lc *LogisticCreate) SetNillableTrackingLink(s *string) *LogisticCreate {
-	if s != nil {
-		lc.SetTrackingLink(*s)
-	}
-	return lc
-}
-
-// SetTasks sets the "tasks" field.
-func (lc *LogisticCreate) SetTasks(mmtr *models.TookanMultiTaskResponse) *LogisticCreate {
-	lc.mutation.SetTasks(mmtr)
+// SetTask sets the "task" field.
+func (lc *LogisticCreate) SetTask(mpadtr *models.TookanPickupAndDeliveryTaskResponse) *LogisticCreate {
+	lc.mutation.SetTask(mpadtr)
 	return lc
 }
 
@@ -83,6 +70,25 @@ func (lc *LogisticCreate) AddOrder(o ...*Order) *LogisticCreate {
 		ids[i] = o[i].ID
 	}
 	return lc.AddOrderIDs(ids...)
+}
+
+// SetStoreID sets the "store" edge to the MerchantStore entity by ID.
+func (lc *LogisticCreate) SetStoreID(id int) *LogisticCreate {
+	lc.mutation.SetStoreID(id)
+	return lc
+}
+
+// SetNillableStoreID sets the "store" edge to the MerchantStore entity by ID if the given value is not nil.
+func (lc *LogisticCreate) SetNillableStoreID(id *int) *LogisticCreate {
+	if id != nil {
+		lc = lc.SetStoreID(*id)
+	}
+	return lc
+}
+
+// SetStore sets the "store" edge to the MerchantStore entity.
+func (lc *LogisticCreate) SetStore(m *MerchantStore) *LogisticCreate {
+	return lc.SetStoreID(m.ID)
 }
 
 // Mutation returns the LogisticMutation object of the builder.
@@ -223,21 +229,13 @@ func (lc *LogisticCreate) createSpec() (*Logistic, *sqlgraph.CreateSpec) {
 		})
 		_node.UpdatedAt = value
 	}
-	if value, ok := lc.mutation.TrackingLink(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: logistic.FieldTrackingLink,
-		})
-		_node.TrackingLink = value
-	}
-	if value, ok := lc.mutation.Tasks(); ok {
+	if value, ok := lc.mutation.Task(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeJSON,
 			Value:  value,
-			Column: logistic.FieldTasks,
+			Column: logistic.FieldTask,
 		})
-		_node.Tasks = value
+		_node.Task = value
 	}
 	if nodes := lc.mutation.OrderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -256,6 +254,26 @@ func (lc *LogisticCreate) createSpec() (*Logistic, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := lc.mutation.StoreIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   logistic.StoreTable,
+			Columns: []string{logistic.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.merchant_store_logistics = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

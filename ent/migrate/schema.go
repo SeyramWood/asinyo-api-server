@@ -241,14 +241,22 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "tracking_link", Type: field.TypeString, Nullable: true},
-		{Name: "tasks", Type: field.TypeJSON, Nullable: true},
+		{Name: "task", Type: field.TypeJSON, Nullable: true},
+		{Name: "merchant_store_logistics", Type: field.TypeInt, Nullable: true},
 	}
 	// LogisticsTable holds the schema information for the "logistics" table.
 	LogisticsTable = &schema.Table{
 		Name:       "logistics",
 		Columns:    LogisticsColumns,
 		PrimaryKey: []*schema.Column{LogisticsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "logistics_merchant_stores_logistics",
+				Columns:    []*schema.Column{LogisticsColumns[4]},
+				RefColumns: []*schema.Column{MerchantStoresColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// MerchantsColumns holds the columns for the "merchants" table.
 	MerchantsColumns = []*schema.Column{
@@ -646,6 +654,7 @@ func init() {
 	FavouritesTable.ForeignKeys[2].RefTable = MerchantsTable
 	FavouritesTable.ForeignKeys[3].RefTable = ProductsTable
 	IndividualCustomersTable.ForeignKeys[0].RefTable = CustomersTable
+	LogisticsTable.ForeignKeys[0].RefTable = MerchantStoresTable
 	MerchantStoresTable.ForeignKeys[0].RefTable = AgentsTable
 	MerchantStoresTable.ForeignKeys[1].RefTable = MerchantsTable
 	OrdersTable.ForeignKeys[0].RefTable = AddressesTable

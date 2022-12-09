@@ -46,6 +46,8 @@ const (
 	EdgeMerchant = "merchant"
 	// EdgeAgent holds the string denoting the agent edge name in mutations.
 	EdgeAgent = "agent"
+	// EdgeLogistics holds the string denoting the logistics edge name in mutations.
+	EdgeLogistics = "logistics"
 	// EdgeRequests holds the string denoting the requests edge name in mutations.
 	EdgeRequests = "requests"
 	// EdgeOrders holds the string denoting the orders edge name in mutations.
@@ -68,6 +70,13 @@ const (
 	AgentInverseTable = "agents"
 	// AgentColumn is the table column denoting the agent relation/edge.
 	AgentColumn = "agent_store"
+	// LogisticsTable is the table that holds the logistics relation/edge.
+	LogisticsTable = "logistics"
+	// LogisticsInverseTable is the table name for the Logistic entity.
+	// It exists in this package in order to avoid circular dependency with the "logistic" package.
+	LogisticsInverseTable = "logistics"
+	// LogisticsColumn is the table column denoting the logistics relation/edge.
+	LogisticsColumn = "merchant_store_logistics"
 	// RequestsTable is the table that holds the requests relation/edge.
 	RequestsTable = "agent_requests"
 	// RequestsInverseTable is the table name for the AgentRequest entity.

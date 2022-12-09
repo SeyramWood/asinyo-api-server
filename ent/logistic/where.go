@@ -95,13 +95,6 @@ func UpdatedAt(v time.Time) predicate.Logistic {
 	})
 }
 
-// TrackingLink applies equality check predicate on the "tracking_link" field. It's identical to TrackingLinkEQ.
-func TrackingLink(v string) predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldTrackingLink), v))
-	})
-}
-
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Logistic {
 	return predicate.Logistic(func(s *sql.Selector) {
@@ -230,130 +223,17 @@ func UpdatedAtLTE(v time.Time) predicate.Logistic {
 	})
 }
 
-// TrackingLinkEQ applies the EQ predicate on the "tracking_link" field.
-func TrackingLinkEQ(v string) predicate.Logistic {
+// TaskIsNil applies the IsNil predicate on the "task" field.
+func TaskIsNil() predicate.Logistic {
 	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldTrackingLink), v))
+		s.Where(sql.IsNull(s.C(FieldTask)))
 	})
 }
 
-// TrackingLinkNEQ applies the NEQ predicate on the "tracking_link" field.
-func TrackingLinkNEQ(v string) predicate.Logistic {
+// TaskNotNil applies the NotNil predicate on the "task" field.
+func TaskNotNil() predicate.Logistic {
 	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldTrackingLink), v))
-	})
-}
-
-// TrackingLinkIn applies the In predicate on the "tracking_link" field.
-func TrackingLinkIn(vs ...string) predicate.Logistic {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldTrackingLink), v...))
-	})
-}
-
-// TrackingLinkNotIn applies the NotIn predicate on the "tracking_link" field.
-func TrackingLinkNotIn(vs ...string) predicate.Logistic {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldTrackingLink), v...))
-	})
-}
-
-// TrackingLinkGT applies the GT predicate on the "tracking_link" field.
-func TrackingLinkGT(v string) predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldTrackingLink), v))
-	})
-}
-
-// TrackingLinkGTE applies the GTE predicate on the "tracking_link" field.
-func TrackingLinkGTE(v string) predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldTrackingLink), v))
-	})
-}
-
-// TrackingLinkLT applies the LT predicate on the "tracking_link" field.
-func TrackingLinkLT(v string) predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldTrackingLink), v))
-	})
-}
-
-// TrackingLinkLTE applies the LTE predicate on the "tracking_link" field.
-func TrackingLinkLTE(v string) predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldTrackingLink), v))
-	})
-}
-
-// TrackingLinkContains applies the Contains predicate on the "tracking_link" field.
-func TrackingLinkContains(v string) predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldTrackingLink), v))
-	})
-}
-
-// TrackingLinkHasPrefix applies the HasPrefix predicate on the "tracking_link" field.
-func TrackingLinkHasPrefix(v string) predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldTrackingLink), v))
-	})
-}
-
-// TrackingLinkHasSuffix applies the HasSuffix predicate on the "tracking_link" field.
-func TrackingLinkHasSuffix(v string) predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldTrackingLink), v))
-	})
-}
-
-// TrackingLinkIsNil applies the IsNil predicate on the "tracking_link" field.
-func TrackingLinkIsNil() predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldTrackingLink)))
-	})
-}
-
-// TrackingLinkNotNil applies the NotNil predicate on the "tracking_link" field.
-func TrackingLinkNotNil() predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldTrackingLink)))
-	})
-}
-
-// TrackingLinkEqualFold applies the EqualFold predicate on the "tracking_link" field.
-func TrackingLinkEqualFold(v string) predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldTrackingLink), v))
-	})
-}
-
-// TrackingLinkContainsFold applies the ContainsFold predicate on the "tracking_link" field.
-func TrackingLinkContainsFold(v string) predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldTrackingLink), v))
-	})
-}
-
-// TasksIsNil applies the IsNil predicate on the "tasks" field.
-func TasksIsNil() predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldTasks)))
-	})
-}
-
-// TasksNotNil applies the NotNil predicate on the "tasks" field.
-func TasksNotNil() predicate.Logistic {
-	return predicate.Logistic(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldTasks)))
+		s.Where(sql.NotNull(s.C(FieldTask)))
 	})
 }
 
@@ -376,6 +256,34 @@ func HasOrderWith(preds ...predicate.Order) predicate.Logistic {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(OrderInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, OrderTable, OrderPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasStore applies the HasEdge predicate on the "store" edge.
+func HasStore() predicate.Logistic {
+	return predicate.Logistic(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StoreTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, StoreTable, StoreColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStoreWith applies the HasEdge predicate on the "store" edge with a given conditions (other predicates).
+func HasStoreWith(preds ...predicate.MerchantStore) predicate.Logistic {
+	return predicate.Logistic(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StoreInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, StoreTable, StoreColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

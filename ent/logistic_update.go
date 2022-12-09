@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/logistic"
+	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
@@ -36,35 +37,15 @@ func (lu *LogisticUpdate) SetUpdatedAt(t time.Time) *LogisticUpdate {
 	return lu
 }
 
-// SetTrackingLink sets the "tracking_link" field.
-func (lu *LogisticUpdate) SetTrackingLink(s string) *LogisticUpdate {
-	lu.mutation.SetTrackingLink(s)
+// SetTask sets the "task" field.
+func (lu *LogisticUpdate) SetTask(mpadtr *models.TookanPickupAndDeliveryTaskResponse) *LogisticUpdate {
+	lu.mutation.SetTask(mpadtr)
 	return lu
 }
 
-// SetNillableTrackingLink sets the "tracking_link" field if the given value is not nil.
-func (lu *LogisticUpdate) SetNillableTrackingLink(s *string) *LogisticUpdate {
-	if s != nil {
-		lu.SetTrackingLink(*s)
-	}
-	return lu
-}
-
-// ClearTrackingLink clears the value of the "tracking_link" field.
-func (lu *LogisticUpdate) ClearTrackingLink() *LogisticUpdate {
-	lu.mutation.ClearTrackingLink()
-	return lu
-}
-
-// SetTasks sets the "tasks" field.
-func (lu *LogisticUpdate) SetTasks(mmtr *models.TookanMultiTaskResponse) *LogisticUpdate {
-	lu.mutation.SetTasks(mmtr)
-	return lu
-}
-
-// ClearTasks clears the value of the "tasks" field.
-func (lu *LogisticUpdate) ClearTasks() *LogisticUpdate {
-	lu.mutation.ClearTasks()
+// ClearTask clears the value of the "task" field.
+func (lu *LogisticUpdate) ClearTask() *LogisticUpdate {
+	lu.mutation.ClearTask()
 	return lu
 }
 
@@ -81,6 +62,25 @@ func (lu *LogisticUpdate) AddOrder(o ...*Order) *LogisticUpdate {
 		ids[i] = o[i].ID
 	}
 	return lu.AddOrderIDs(ids...)
+}
+
+// SetStoreID sets the "store" edge to the MerchantStore entity by ID.
+func (lu *LogisticUpdate) SetStoreID(id int) *LogisticUpdate {
+	lu.mutation.SetStoreID(id)
+	return lu
+}
+
+// SetNillableStoreID sets the "store" edge to the MerchantStore entity by ID if the given value is not nil.
+func (lu *LogisticUpdate) SetNillableStoreID(id *int) *LogisticUpdate {
+	if id != nil {
+		lu = lu.SetStoreID(*id)
+	}
+	return lu
+}
+
+// SetStore sets the "store" edge to the MerchantStore entity.
+func (lu *LogisticUpdate) SetStore(m *MerchantStore) *LogisticUpdate {
+	return lu.SetStoreID(m.ID)
 }
 
 // Mutation returns the LogisticMutation object of the builder.
@@ -107,6 +107,12 @@ func (lu *LogisticUpdate) RemoveOrder(o ...*Order) *LogisticUpdate {
 		ids[i] = o[i].ID
 	}
 	return lu.RemoveOrderIDs(ids...)
+}
+
+// ClearStore clears the "store" edge to the MerchantStore entity.
+func (lu *LogisticUpdate) ClearStore() *LogisticUpdate {
+	lu.mutation.ClearStore()
+	return lu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -197,30 +203,17 @@ func (lu *LogisticUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: logistic.FieldUpdatedAt,
 		})
 	}
-	if value, ok := lu.mutation.TrackingLink(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: logistic.FieldTrackingLink,
-		})
-	}
-	if lu.mutation.TrackingLinkCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: logistic.FieldTrackingLink,
-		})
-	}
-	if value, ok := lu.mutation.Tasks(); ok {
+	if value, ok := lu.mutation.Task(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeJSON,
 			Value:  value,
-			Column: logistic.FieldTasks,
+			Column: logistic.FieldTask,
 		})
 	}
-	if lu.mutation.TasksCleared() {
+	if lu.mutation.TaskCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeJSON,
-			Column: logistic.FieldTasks,
+			Column: logistic.FieldTask,
 		})
 	}
 	if lu.mutation.OrderCleared() {
@@ -277,6 +270,41 @@ func (lu *LogisticUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if lu.mutation.StoreCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   logistic.StoreTable,
+			Columns: []string{logistic.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := lu.mutation.StoreIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   logistic.StoreTable,
+			Columns: []string{logistic.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, lu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{logistic.Label}
@@ -302,35 +330,15 @@ func (luo *LogisticUpdateOne) SetUpdatedAt(t time.Time) *LogisticUpdateOne {
 	return luo
 }
 
-// SetTrackingLink sets the "tracking_link" field.
-func (luo *LogisticUpdateOne) SetTrackingLink(s string) *LogisticUpdateOne {
-	luo.mutation.SetTrackingLink(s)
+// SetTask sets the "task" field.
+func (luo *LogisticUpdateOne) SetTask(mpadtr *models.TookanPickupAndDeliveryTaskResponse) *LogisticUpdateOne {
+	luo.mutation.SetTask(mpadtr)
 	return luo
 }
 
-// SetNillableTrackingLink sets the "tracking_link" field if the given value is not nil.
-func (luo *LogisticUpdateOne) SetNillableTrackingLink(s *string) *LogisticUpdateOne {
-	if s != nil {
-		luo.SetTrackingLink(*s)
-	}
-	return luo
-}
-
-// ClearTrackingLink clears the value of the "tracking_link" field.
-func (luo *LogisticUpdateOne) ClearTrackingLink() *LogisticUpdateOne {
-	luo.mutation.ClearTrackingLink()
-	return luo
-}
-
-// SetTasks sets the "tasks" field.
-func (luo *LogisticUpdateOne) SetTasks(mmtr *models.TookanMultiTaskResponse) *LogisticUpdateOne {
-	luo.mutation.SetTasks(mmtr)
-	return luo
-}
-
-// ClearTasks clears the value of the "tasks" field.
-func (luo *LogisticUpdateOne) ClearTasks() *LogisticUpdateOne {
-	luo.mutation.ClearTasks()
+// ClearTask clears the value of the "task" field.
+func (luo *LogisticUpdateOne) ClearTask() *LogisticUpdateOne {
+	luo.mutation.ClearTask()
 	return luo
 }
 
@@ -347,6 +355,25 @@ func (luo *LogisticUpdateOne) AddOrder(o ...*Order) *LogisticUpdateOne {
 		ids[i] = o[i].ID
 	}
 	return luo.AddOrderIDs(ids...)
+}
+
+// SetStoreID sets the "store" edge to the MerchantStore entity by ID.
+func (luo *LogisticUpdateOne) SetStoreID(id int) *LogisticUpdateOne {
+	luo.mutation.SetStoreID(id)
+	return luo
+}
+
+// SetNillableStoreID sets the "store" edge to the MerchantStore entity by ID if the given value is not nil.
+func (luo *LogisticUpdateOne) SetNillableStoreID(id *int) *LogisticUpdateOne {
+	if id != nil {
+		luo = luo.SetStoreID(*id)
+	}
+	return luo
+}
+
+// SetStore sets the "store" edge to the MerchantStore entity.
+func (luo *LogisticUpdateOne) SetStore(m *MerchantStore) *LogisticUpdateOne {
+	return luo.SetStoreID(m.ID)
 }
 
 // Mutation returns the LogisticMutation object of the builder.
@@ -373,6 +400,12 @@ func (luo *LogisticUpdateOne) RemoveOrder(o ...*Order) *LogisticUpdateOne {
 		ids[i] = o[i].ID
 	}
 	return luo.RemoveOrderIDs(ids...)
+}
+
+// ClearStore clears the "store" edge to the MerchantStore entity.
+func (luo *LogisticUpdateOne) ClearStore() *LogisticUpdateOne {
+	luo.mutation.ClearStore()
+	return luo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -493,30 +526,17 @@ func (luo *LogisticUpdateOne) sqlSave(ctx context.Context) (_node *Logistic, err
 			Column: logistic.FieldUpdatedAt,
 		})
 	}
-	if value, ok := luo.mutation.TrackingLink(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: logistic.FieldTrackingLink,
-		})
-	}
-	if luo.mutation.TrackingLinkCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: logistic.FieldTrackingLink,
-		})
-	}
-	if value, ok := luo.mutation.Tasks(); ok {
+	if value, ok := luo.mutation.Task(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeJSON,
 			Value:  value,
-			Column: logistic.FieldTasks,
+			Column: logistic.FieldTask,
 		})
 	}
-	if luo.mutation.TasksCleared() {
+	if luo.mutation.TaskCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeJSON,
-			Column: logistic.FieldTasks,
+			Column: logistic.FieldTask,
 		})
 	}
 	if luo.mutation.OrderCleared() {
@@ -565,6 +585,41 @@ func (luo *LogisticUpdateOne) sqlSave(ctx context.Context) (_node *Logistic, err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if luo.mutation.StoreCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   logistic.StoreTable,
+			Columns: []string{logistic.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := luo.mutation.StoreIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   logistic.StoreTable,
+			Columns: []string{logistic.StoreColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: merchantstore.FieldID,
 				},
 			},
 		}

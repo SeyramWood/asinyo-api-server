@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -28,6 +29,7 @@ type tookan struct {
 	TaskType     string
 	WG           *sync.WaitGroup
 	DataChan     chan *ent.Order
+	WebhookChan  chan any
 	DoneChan     chan bool
 	ErrorChan    chan error
 	StoreIds     []int
@@ -43,6 +45,7 @@ func newTookanService(conf *logistic, repo gateways.LogisticRepo) gateways.Logis
 		TaskType:     "create_multiple_tasks",
 		WG:           conf.WG,
 		DataChan:     conf.DataChan,
+		WebhookChan:  conf.WebhookChan,
 		DoneChan:     conf.DoneChan,
 		ErrorChan:    conf.ErrorChan,
 	}
@@ -53,7 +56,7 @@ func (t *tookan) New(repo gateways.OrderRepo) gateways.LogisticService {
 	return t
 }
 
-func (t *tookan) DoTask(order *ent.Order, deliveryType string) {
+func (t *tookan) ExecuteTask(order *ent.Order, deliveryType string) {
 	t.WG.Add(1)
 	t.DataChan <- order
 	if deliveryType != "" {
@@ -61,11 +64,18 @@ func (t *tookan) DoTask(order *ent.Order, deliveryType string) {
 	}
 }
 
+func (t *tookan) ExecuteWebhook(response any) {
+	t.WG.Add(1)
+	t.WebhookChan <- response
+}
+
 func (t *tookan) Listen() {
 	for {
 		select {
 		case ord := <-t.DataChan:
 			go t.createTask(ord, t.ErrorChan)
+		case response := <-t.WebhookChan:
+			go t.processWebhookResponse(response)
 		case err := <-t.ErrorChan:
 			fmt.Println(err)
 		case <-t.DoneChan:
@@ -80,13 +90,9 @@ func (t *tookan) Done() {
 
 func (t *tookan) CloseChannels() {
 	close(t.DataChan)
+	close(t.WebhookChan)
 	close(t.ErrorChan)
 	close(t.DoneChan)
-}
-
-func (t *tookan) ListenOnWebhook() {
-	// TODO implement me
-	panic("implement me")
 }
 
 func (t *tookan) FareEstimate(coordinates *models.OrderFareEstimateRequest) (
@@ -122,6 +128,10 @@ func (t *tookan) createTask(order *ent.Order, errorChan chan error) {
 		if err := t.createDeliveryTask(order); err != nil {
 			errorChan <- err
 		}
+	case "pickup_delivery_tasks":
+		if err := t.createPickupAndDeliveryTask(order); err != nil {
+			errorChan <- err
+		}
 	case "create_multiple_tasks":
 		if err := t.createPickupDeliveryTasks(order); err != nil {
 			errorChan <- err
@@ -132,7 +142,79 @@ func (t *tookan) createTask(order *ent.Order, errorChan chan error) {
 		}
 	}
 }
+func (t *tookan) processWebhookResponse(response any) {
+	defer t.WG.Done()
+	res, err := t.formatWebhookPayload(response)
+	if err != nil {
+		t.ErrorChan <- err
+	}
+	switch res.JobStatus {
+	case 1:
+		// Job Started
+		if err := t.repo.UpdateOrderStatus(res.JobToken, "dispatched"); err != nil {
+			t.ErrorChan <- err
+		}
+	case 2:
+		// Job Successful
+		if err := t.repo.UpdateOrderStatus(res.JobToken, "delivered"); err != nil {
+			t.ErrorChan <- err
+		}
+	}
+}
 
+func (t *tookan) createPickupAndDeliveryTask(order *ent.Order) error {
+	tasks, stores := t.formatPickupAndDelivery(order)
+	if len(tasks) == 0 {
+		return nil
+	}
+	for index, task := range tasks {
+		payloadBytes, err := json.Marshal(&task)
+		if err != nil {
+			return err
+		}
+		body := bytes.NewReader(payloadBytes)
+		req, reqerr := http.NewRequest("POST", fmt.Sprintf("%s/create_task", t.URL), body)
+		if reqerr != nil {
+			return reqerr
+		}
+		// req.Header.Set("Cache-Control", fmt.Sprintf("no-cache"))
+		req.Header.Set("Content-Type", "application/json")
+
+		res, reserr := http.DefaultClient.Do(req)
+		if reserr != nil {
+			return reserr
+		}
+		var response services.TookanPickupAndDeliveryResponse
+		derr := json.NewDecoder(res.Body).Decode(&response)
+		if derr != nil {
+			return derr
+		}
+		defer res.Body.Close()
+		if lo.Contains[int]([]int{100, 101, 201, 404}, response.Status) {
+			return fmt.Errorf("%s", response.Message)
+		}
+		err = t.repo.UpdateOrderDeliveryTask(order.OrderNumber, stores[index])
+		if err != nil {
+			return err
+		}
+		resData := &models.TookanPickupAndDeliveryTaskResponse{
+			PickupTrackingLink:  response.Data.PickupTrackingLink,
+			DeliveryTracingLink: response.Data.DeliveryTracingLink,
+			JobID:               response.Data.JobID,
+			JobToken:            response.Data.JobToken,
+			PickupHash:          response.Data.PickupHash,
+			DeliveryHash:        response.Data.DeliveryHash,
+			CustomerName:        response.Data.CustomerName,
+			CustomerAddress:     response.Data.CustomerAddress,
+			GeofenceDetails:     response.Data.GeofenceDetails,
+		}
+		_, err = t.repo.InsertResponse(order.OrderNumber, stores[index], resData)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func (t *tookan) createDeliveryTask(order *ent.Order) error {
 	currentTime := time.Date(2022, time.December, 25, 23, 0, 0, 0, time.UTC)
 	task := &services.TookanDeliveryTask{
@@ -143,15 +225,15 @@ func (t *tookan) createDeliveryTask(order *ent.Order) error {
 		CustomerUsername: fmt.Sprintf("%s %s", order.Edges.Address.OtherName, order.Edges.Address.LastName),
 		CustomerPhone:    fmt.Sprintf("%s", order.Edges.Address.Phone),
 		CustomerAddress: fmt.Sprintf(
-			"%s %s\n%s\n%s, %s.\n%s", order.Edges.Address.OtherName, order.Edges.Address.LastName,
-			order.Edges.Address.Address,
-			order.Edges.Address.City, order.Edges.Address.Region, order.Edges.Address.Phone,
+			"%s\n%s,%s\n%s-%s", order.Edges.Address.City,
+			order.Edges.Address.StreetName,
+			order.Edges.Address.District, order.Edges.Address.Region, order.Edges.Address.Country,
 		),
 		Latitude:            "",
 		Longitude:           "",
 		JobDeliveryDatetime: currentTime.Format("01-02-2006 15:04"),
 		CustomFieldTemplate: "order_delivery",
-		MetaData:            t.formatMetadata(order),
+		MetaData:            t.formatMetadata(order, 0),
 		TeamID:              "",
 		AutoAssignment:      "1",
 		HasPickup:           "0",
@@ -235,12 +317,12 @@ func (t *tookan) createPickupDeliveryTasks(order *ent.Order) error {
 	if reqerr != nil {
 		return reqerr
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 
 	res, reserr := http.DefaultClient.Do(req)
 	if reserr != nil {
 		return reserr
-
 	}
 	var response services.TookanPickupDeliveryResponse
 	derr := json.NewDecoder(res.Body).Decode(&response)
@@ -248,18 +330,20 @@ func (t *tookan) createPickupDeliveryTasks(order *ent.Order) error {
 		return derr
 	}
 	defer res.Body.Close()
-
+	if lo.Contains[int]([]int{100, 101, 201, 404}, response.Status) {
+		return fmt.Errorf("%s", response.Message)
+	}
 	if response.Status == 200 {
-		_ = t.repo.UpdateOrderDeliveryTask(response.Data.Deliveries[0].OrderID, t.StoreIds)
-		resData := &models.TookanMultiTaskResponse{
-			Pickups:    response.Data.Pickups,
-			Deliveries: response.Data.Deliveries,
-			Geofence:   response.Data.GeofenceDetails,
-		}
-		_, err := t.repo.InsertResponse(resData)
-		if err != nil {
-			t.ErrorChan <- err
-		}
+		// _ = t.repo.UpdateOrderDeliveryTask(response.Data.Deliveries[0].OrderID, t.StoreIds)
+		// resData := &models.TookanMultiTaskResponse{
+		// 	Pickups:    response.Data.Pickups,
+		// 	Deliveries: response.Data.Deliveries,
+		// 	Geofence:   response.Data.GeofenceDetails,
+		// }
+		// _, err := t.repo.InsertResponse(resData)
+		// if err != nil {
+		// 	return err
+		// }
 	}
 
 	return nil
@@ -303,36 +387,39 @@ func (t *tookan) updatePickupDeliveryTasks(order *ent.Order) error {
 
 	// fmt.Println(response)
 	if response.Status == 200 {
-		resData := &models.TookanMultiTaskResponse{
-			Pickups:    response.Data.Pickups,
-			Deliveries: response.Data.Deliveries,
-			Geofence:   response.Data.GeofenceDetails,
-		}
-		_, err := t.repo.UpdateResponse(resData)
-		if err != nil {
-			t.ErrorChan <- err
-		}
+		// resData := &models.TookanMultiTaskResponse{
+		// 	Pickups:    response.Data.Pickups,
+		// 	Deliveries: response.Data.Deliveries,
+		// 	Geofence:   response.Data.GeofenceDetails,
+		// }
+		// _, err := t.repo.UpdateResponse(resData)
+		// if err != nil {
+		// 	t.ErrorChan <- err
+		// }
 	}
 
 	return nil
 }
 
-func (t *tookan) formatMetadata(data *ent.Order) []services.TookanMetadata {
+func (t *tookan) formatMetadata(data *ent.Order, storeId int) []*services.TookanMetadata {
 	type statusCheck struct {
 		details []*ent.OrderDetail
 	}
 	var orderStatus statusCheck
+	var amount float64
 
 	for _, detail := range data.Edges.Details {
 		if lo.Contains[int](data.StoreTasksCreated, detail.Edges.Store.ID) {
 			continue
 		}
+		if detail.Edges.Store.ID == storeId {
+			amount = amount + detail.Amount
+		}
 		orderStatus = statusCheck{
 			details: append(orderStatus.details, detail),
 		}
 	}
-
-	return []services.TookanMetadata{
+	return []*services.TookanMetadata{
 		{
 			Label: "Reference",
 			Data:  data.OrderNumber,
@@ -347,7 +434,7 @@ func (t *tookan) formatMetadata(data *ent.Order) []services.TookanMetadata {
 		},
 		{
 			Label: "Amount",
-			Data:  data.Amount,
+			Data:  amount,
 		},
 		{
 			Label: "DeliveryMethod",
@@ -364,30 +451,31 @@ func (t *tookan) formatMetadata(data *ent.Order) []services.TookanMetadata {
 		{
 			Label: "Address",
 			Data: fmt.Sprintf(
-				"%s %s\n%s\n%s, %s\n%s", data.Edges.Address.OtherName, data.Edges.Address.LastName,
-				data.Edges.Address.Address,
-				data.Edges.Address.City, data.Edges.Address.Region, data.Edges.Address.Phone,
+				"%s %s\n%s\n%s,\n%s %s\n%s-%s\n%s", data.Edges.Address.OtherName, data.Edges.Address.LastName,
+				data.Edges.Address.Address, data.Edges.Address.City, data.Edges.Address.StreetName,
+				data.Edges.Address.District, data.Edges.Address.Region, data.Edges.Address.Country,
+				data.Edges.Address.Phone,
 			),
 		},
 		{
 			Label: "Products",
-			Data:  t.formatOrderDetails(orderStatus.details, 0),
+			Data:  t.formatOrderDetails(orderStatus.details, storeId),
 		},
 	}
 }
 
 func (t *tookan) formatPickupMetadata(
-	data []*ent.OrderDetail, orderNum string, storeId int, pickupStatus string,
-) []services.TookanMetadata {
+	data []*ent.OrderDetail, orderNum string, storeId int,
+) []*services.TookanMetadata {
 
-	return []services.TookanMetadata{
+	return []*services.TookanMetadata{
 		{
 			Label: "Reference",
 			Data:  orderNum,
 		},
 		{
 			Label: "Status",
-			Data:  pickupStatus,
+			Data:  t.generatePickupStatus(data),
 		},
 		{
 			Label: "Address",
@@ -400,118 +488,236 @@ func (t *tookan) formatPickupMetadata(
 	}
 }
 
-func (t *tookan) formatPickups(order *ent.Order) []services.TookanPickupDelivery {
+func (t *tookan) formatPickupAndDelivery(order *ent.Order) ([]*services.TookanPickupAndDeliveryTask, []int) {
 
-	currentTime := time.Date(2022, time.December, 25, 23, 0, 0, 0, time.UTC)
-	var response []services.TookanPickupDelivery
-	type statusCheck struct {
-		detail *ent.OrderDetail
-		status []string
-	}
-
-	orderStatus := make(map[int]statusCheck)
+	var response []*services.TookanPickupAndDeliveryTask
+	var storeIds []int
+	pickupTime := time.Date(2022, time.December, 15, 23, 0, 0, 0, time.UTC)
+	deliveryTime := time.Date(2022, time.December, 25, 23, 0, 0, 0, time.UTC)
 
 	for _, detail := range order.Edges.Details {
 		if lo.Contains[int](order.StoreTasksCreated, detail.Edges.Store.ID) {
 			continue
 		}
-		if !lo.Contains[int](t.StoreIds, detail.Edges.Store.ID) {
-			t.StoreIds = append(t.StoreIds, detail.Edges.Store.ID)
-		}
-		orderStatus[detail.Edges.Store.ID] = statusCheck{
-			detail: detail,
-			status: append(orderStatus[detail.Edges.Store.ID].status, string(detail.Status)),
+		if !lo.Contains[int](storeIds, detail.Edges.Store.ID) && detail.Status == "processing" {
+			tasks := func() *services.TookanPickupAndDeliveryTask {
+				if s, err := detail.Edges.Store.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
+					return &services.TookanPickupAndDeliveryTask{
+						APIKey:         t.APIKey,
+						OrderID:        order.OrderNumber,
+						TeamID:         "",
+						AutoAssignment: "0",
+						JobDescription: "Order Pickup and Delivery",
+						JobPickupPhone: s.Phone,
+						JobPickupName:  fmt.Sprintf("%s %s", s.OtherName, s.LastName),
+						JobPickupEmail: "",
+						JobPickupAddress: fmt.Sprintf(
+							"%s\n%s, %s\n%s-%s", detail.Edges.Store.Address.City,
+							detail.Edges.Store.Address.StreetName,
+							detail.Edges.Store.Address.District, detail.Edges.Store.Address.Region,
+							detail.Edges.Store.Address.Country,
+						),
+						JobPickupLatitude:  "",
+						JobPickupLongitude: "",
+						JobPickupDatetime:  pickupTime.Format("01-02-2006 15:04"),
+						CustomerEmail:      "",
+						CustomerUsername: fmt.Sprintf(
+							"%s %s", order.Edges.Address.OtherName, order.Edges.Address.LastName,
+						),
+						CustomerPhone: fmt.Sprintf("%s", order.Edges.Address.Phone),
+						CustomerAddress: fmt.Sprintf(
+							"%s\n%s, %s\n%s-%s", order.Edges.Address.City, order.Edges.Address.StreetName,
+							order.Edges.Address.District,
+							order.Edges.Address.Region, order.Edges.Address.Country,
+						),
+						Latitude:                  "",
+						Longitude:                 "",
+						JobDeliveryDatetime:       deliveryTime.Format("01-02-2006 15:04"),
+						HasPickup:                 "1",
+						HasDelivery:               "1",
+						LayoutType:                "0",
+						TrackingLink:              1,
+						Timezone:                  "-330",
+						CustomFieldTemplate:       "order_delivery",
+						MetaData:                  t.formatMetadata(order, detail.Edges.Store.ID),
+						PickupCustomFieldTemplate: "order_pickup",
+						PickupMetaData: t.formatPickupMetadata(
+							order.Edges.Details, order.OrderNumber, detail.Edges.Store.ID,
+						),
+						FleetID:    "",
+						PRefImages: nil,
+						RefImages:  nil,
+						Notify:     0,
+						Tags:       "pickup, delivery, order",
+						Geofence:   0,
+						RideType:   0,
+					}
+				}
+				if r, err := detail.Edges.Store.Edges.Merchant.Edges.RetailerOrErr(); err == nil {
+					return &services.TookanPickupAndDeliveryTask{
+						APIKey:         t.APIKey,
+						OrderID:        order.OrderNumber,
+						TeamID:         "",
+						AutoAssignment: "0",
+						JobDescription: "Order Pickup and Delivery",
+						JobPickupPhone: r.Phone,
+						JobPickupName:  fmt.Sprintf("%s %s", r.OtherName, r.LastName),
+						JobPickupEmail: "",
+						JobPickupAddress: fmt.Sprintf(
+							"%s\n%s, %s\n%s-%s", detail.Edges.Store.Address.City,
+							detail.Edges.Store.Address.StreetName,
+							detail.Edges.Store.Address.District, detail.Edges.Store.Address.Region,
+							detail.Edges.Store.Address.Country,
+						),
+						JobPickupLatitude:  "",
+						JobPickupLongitude: "",
+						JobPickupDatetime:  pickupTime.Format("01-02-2006 15:04"),
+						CustomerEmail:      "",
+						CustomerUsername: fmt.Sprintf(
+							"%s %s", order.Edges.Address.OtherName, order.Edges.Address.LastName,
+						),
+						CustomerPhone: fmt.Sprintf("%s", order.Edges.Address.Phone),
+						CustomerAddress: fmt.Sprintf(
+							"%s\n%s, %s\n%s-%s", order.Edges.Address.City, order.Edges.Address.StreetName,
+							order.Edges.Address.District,
+							order.Edges.Address.Region, order.Edges.Address.Country,
+						),
+						Latitude:                  "",
+						Longitude:                 "",
+						JobDeliveryDatetime:       deliveryTime.Format("01-02-2006 15:04"),
+						HasPickup:                 "1",
+						HasDelivery:               "1",
+						LayoutType:                "0",
+						TrackingLink:              1,
+						Timezone:                  "-330",
+						CustomFieldTemplate:       "order_delivery",
+						MetaData:                  t.formatMetadata(order, detail.Edges.Store.ID),
+						PickupCustomFieldTemplate: "order_pickup",
+						PickupMetaData: t.formatPickupMetadata(
+							order.Edges.Details, order.OrderNumber, detail.Edges.Store.ID,
+						),
+						FleetID:    "",
+						PRefImages: nil,
+						RefImages:  nil,
+						Notify:     0,
+						Tags:       "pickup, delivery, order",
+						Geofence:   0,
+						RideType:   0,
+					}
+				}
+				return nil
+			}()
+			response = append(response, tasks)
+
+			storeIds = append(storeIds, detail.Edges.Store.ID)
 		}
 	}
 
-	for _, o := range orderStatus {
-		formattedPickup := func() *services.TookanPickupDelivery {
-			pickupStatus := func() string {
-				canceled := lo.CountBy[string](
-					o.status, func(s string) bool {
-						return s == "canceled"
-					},
-				)
-				if canceled == len(o.status) {
-					return "Declined"
+	return response, storeIds
+}
+
+func (t *tookan) formatPickups(order *ent.Order) []*services.TookanPickupDelivery {
+
+	currentTime := time.Date(2022, time.December, 25, 23, 0, 0, 0, time.UTC)
+	var response []*services.TookanPickupDelivery
+
+	for _, detail := range order.Edges.Details {
+		if lo.Contains[int](order.StoreTasksCreated, detail.Edges.Store.ID) {
+			continue
+		}
+		if !lo.Contains[int](t.StoreIds, detail.Edges.Store.ID) && detail.Status == "processing" {
+			formattedPickup := func() *services.TookanPickupDelivery {
+				if s, err := detail.Edges.Store.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
+					return &services.TookanPickupDelivery{
+						Address: fmt.Sprintf(
+							"%s %s\n%s, %s.", detail.Edges.Store.Address.StreetName,
+							detail.Edges.Store.Address.StreetName,
+							detail.Edges.Store.Address.City, detail.Edges.Store.Address.Region,
+						),
+						Latitude:       0,
+						Longitude:      0,
+						Time:           currentTime.Format("01-02-2006 15:04"),
+						Phone:          s.Phone,
+						JobDescription: "Order Pickup",
+						TemplateName:   "order_pickup",
+						TemplateData: t.formatPickupMetadata(
+							order.Edges.Details, order.OrderNumber, detail.Edges.Store.ID,
+						),
+						RefImages: nil,
+						Name:      fmt.Sprintf("%s %s", s.OtherName, s.LastName),
+						Email:     "",
+						OrderID:   order.OrderNumber,
+					}
 				}
-				return "Accepted"
+				if r, err := detail.Edges.Store.Edges.Merchant.Edges.RetailerOrErr(); err == nil {
+					return &services.TookanPickupDelivery{
+						Address: fmt.Sprintf(
+							"%s %s\n%s, %s.", detail.Edges.Store.Address.StreetName,
+							detail.Edges.Store.Address.StreetName,
+							detail.Edges.Store.Address.City, detail.Edges.Store.Address.Region,
+						),
+						Latitude:       0,
+						Longitude:      0,
+						Time:           currentTime.Format("01-02-2006 15:04"),
+						Phone:          r.Phone,
+						JobDescription: "Order Pickup",
+						TemplateName:   "order_pickup",
+						TemplateData: t.formatPickupMetadata(
+							order.Edges.Details, order.OrderNumber, detail.Edges.Store.ID,
+						),
+						RefImages: nil,
+						Name:      fmt.Sprintf("%s %s", r.OtherName, r.LastName),
+						Email:     "",
+						OrderID:   order.OrderNumber,
+					}
+				}
+				return nil
 			}()
-			if s, err := o.detail.Edges.Store.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
-				return &services.TookanPickupDelivery{
-					Address: fmt.Sprintf(
-						"%s %s\n%s, %s.", o.detail.Edges.Store.Address.StreetName,
-						o.detail.Edges.Store.Address.StreetName,
-						o.detail.Edges.Store.Address.City, o.detail.Edges.Store.Address.Region,
-					),
-					Latitude:       0,
-					Longitude:      0,
-					Time:           currentTime.Format("01-02-2006 15:04"),
-					Phone:          s.Phone,
-					JobDescription: "Order Pickup",
-					TemplateName:   "order_pickup",
-					TemplateData: t.formatPickupMetadata(
-						order.Edges.Details, order.OrderNumber, o.detail.Edges.Store.ID, pickupStatus,
-					),
-					RefImages: nil,
-					Name:      fmt.Sprintf("%s %s", s.OtherName, s.LastName),
-					Email:     "",
-					OrderID:   order.OrderNumber,
-				}
-			}
-			if r, err := o.detail.Edges.Store.Edges.Merchant.Edges.RetailerOrErr(); err == nil {
-				return &services.TookanPickupDelivery{
-					Address: fmt.Sprintf(
-						"%s %s\n%s, %s.", o.detail.Edges.Store.Address.StreetName,
-						o.detail.Edges.Store.Address.StreetName,
-						o.detail.Edges.Store.Address.City, o.detail.Edges.Store.Address.Region,
-					),
-					Latitude:       0,
-					Longitude:      0,
-					Time:           currentTime.Format("01-02-2006 15:04"),
-					Phone:          r.Phone,
-					JobDescription: "Order Pickup",
-					TemplateName:   "order_pickup",
-					TemplateData: t.formatPickupMetadata(
-						order.Edges.Details, order.OrderNumber, o.detail.Edges.Store.ID, pickupStatus,
-					),
-					RefImages: nil,
-					Name:      fmt.Sprintf("%s %s", r.OtherName, r.LastName),
-					Email:     "",
-					OrderID:   order.OrderNumber,
-				}
-			}
-			return nil
-		}()
-		response = append(response, *formattedPickup)
+			response = append(response, formattedPickup)
+			t.StoreIds = append(t.StoreIds, detail.Edges.Store.ID)
+		}
 	}
 
 	return response
 }
 
-func (t *tookan) formatDeliveries(order *ent.Order) []services.TookanPickupDelivery {
+func (t *tookan) formatDeliveries(order *ent.Order) []*services.TookanPickupDelivery {
 	currentTime := time.Date(2022, time.December, 25, 23, 0, 0, 0, time.UTC)
+	var response []*services.TookanPickupDelivery
+	var storeIds []int
+	for _, detail := range order.Edges.Details {
+		if lo.Contains[int](order.StoreTasksCreated, detail.Edges.Store.ID) {
+			continue
+		}
+		if !lo.Contains[int](storeIds, detail.Edges.Store.ID) && detail.Status == "processing" {
+			response = append(
+				response, &services.TookanPickupDelivery{
 
-	return []services.TookanPickupDelivery{
-		{
-			Address: fmt.Sprintf(
-				"%s %s\n%s\n%s, %s.\n%s", order.Edges.Address.OtherName, order.Edges.Address.LastName,
-				order.Edges.Address.Address,
-				order.Edges.Address.City, order.Edges.Address.Region, order.Edges.Address.Phone,
-			),
-			Latitude:       0,
-			Longitude:      0,
-			Time:           currentTime.Format("01-02-2006 15:04"),
-			Phone:          fmt.Sprintf("%s", order.Edges.Address.Phone),
-			JobDescription: "Order Delivery",
-			TemplateName:   "order_delivery",
-			TemplateData:   t.formatMetadata(order),
-			RefImages:      nil,
-			Name:           fmt.Sprintf("%s %s", order.Edges.Address.OtherName, order.Edges.Address.LastName),
-			Email:          "",
-			OrderID:        order.OrderNumber,
-		},
+					Address: fmt.Sprintf(
+						"%s\n%s, %s\n%s-%s",
+						order.Edges.Address.City, order.Edges.Address.StreetName, order.Edges.Address.District,
+						order.Edges.Address.Region, order.Edges.Address.Country,
+					),
+					Latitude:       0,
+					Longitude:      0,
+					Time:           currentTime.Format("01-02-2006 15:04"),
+					Phone:          fmt.Sprintf("%s", order.Edges.Address.Phone),
+					JobDescription: "Order Delivery",
+					TemplateName:   "order_delivery",
+					TemplateData:   t.formatMetadata(order, detail.Edges.Store.ID),
+					RefImages:      nil,
+					Name:           fmt.Sprintf("%s %s", order.Edges.Address.OtherName, order.Edges.Address.LastName),
+					Email:          "",
+					OrderID:        order.OrderNumber,
+				},
+			)
+
+			storeIds = append(storeIds, detail.Edges.Store.ID)
+		}
+		break
 	}
+
+	return response
 }
 
 func (t *tookan) formatOrderDetails(data []*ent.OrderDetail, storeId int) [][]any {
@@ -662,5 +868,47 @@ func (t *tookan) getFareEstimate(delivery, pickup *services.Coordinate) (*servic
 		EstimatedFare: resBody.Path("data.estimated_fare").Data().(float64),
 	}
 
+	return response, nil
+}
+
+func (t *tookan) generatePickupStatus(data []*ent.OrderDetail) string {
+	var status []string
+	for _, d := range data {
+		status = append(status, string(d.Status))
+	}
+	canceled := lo.CountBy[string](
+		status, func(s string) bool {
+			return s == "canceled"
+		},
+	)
+	if canceled == len(status) {
+		return "Declined"
+	}
+	return "Accepted"
+}
+
+func (t *tookan) formatWebhookPayload(request any) (*services.TookanWebhookResponse, error) {
+	var response *services.TookanWebhookResponse
+	resBody, err := gabs.ParseJSON(request.([]byte))
+	if err != nil {
+		return nil, err
+	}
+	var status int
+	val, ok := resBody.Path("job_status").Data().(float64)
+	if ok {
+		status, _ = strconv.Atoi(fmt.Sprintf("%g", val))
+	} else {
+		val, ok := resBody.Path("job_status").Data().(string)
+		if ok {
+			status, _ = strconv.Atoi(val)
+		} else {
+			return nil, fmt.Errorf("could not cast job status to the appropriate type")
+		}
+	}
+	response = &services.TookanWebhookResponse{
+		JobStatus: status,
+		JobState:  resBody.Path("job_state").Data().(string),
+		JobToken:  resBody.Path("job_token").Data().(string),
+	}
 	return response, nil
 }

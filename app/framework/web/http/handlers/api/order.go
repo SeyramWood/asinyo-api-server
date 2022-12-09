@@ -19,8 +19,8 @@ type OrderHandler struct {
 	logis          gateways.LogisticService
 }
 
-func NewOrderHandler(db *database.Adapter, logis gateways.LogisticService) *OrderHandler {
-	service := order.NewOrderService(order.NewOrderRepo(db), logis)
+func NewOrderHandler(db *database.Adapter, logis gateways.LogisticService, mail gateways.EmailService) *OrderHandler {
+	service := order.NewOrderService(order.NewOrderRepo(db), logis, mail)
 	paymentService := payment.NewPaymentService(payment.NewPaymentRepo(db))
 	return &OrderHandler{
 		service:        service,
@@ -134,6 +134,37 @@ func (h *OrderHandler) SaveOrder() fiber.Handler {
 				},
 			},
 		)
+	}
+}
+func (h *OrderHandler) TestOrderCreation() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		request := struct {
+			ID int `json:"id"`
+		}{}
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+		}
+		_, err = h.service.TesCreate(request.ID)
+
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))
+		}
+		return c.Status(fiber.StatusOK).JSON(
+			fiber.Map{
+				"data": map[string]any{
+					"status": true,
+					"msg":    "Order successfully placed",
+				},
+			},
+		)
+	}
+}
+
+func (h *OrderHandler) ListenTookanWebhook() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		h.logis.ExecuteWebhook(c.Body())
+		return nil
 	}
 }
 

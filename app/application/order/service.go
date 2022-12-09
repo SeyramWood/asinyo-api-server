@@ -1,27 +1,103 @@
 package order
 
 import (
+	"fmt"
+
 	"github.com/Jeffail/gabs"
 
 	"github.com/SeyramWood/app/adapters/gateways"
+	"github.com/SeyramWood/app/application"
+	"github.com/SeyramWood/app/application/sms"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/domain/services"
+	"github.com/SeyramWood/config"
 	"github.com/SeyramWood/ent"
 )
 
 type service struct {
 	repo     gateways.OrderRepo
 	logistic gateways.LogisticService
+	sms      gateways.SMSService
+	mail     gateways.EmailService
 }
 
-func NewOrderService(repo gateways.OrderRepo, logistic gateways.LogisticService) gateways.OrderService {
-	return &service{repo: repo, logistic: logistic.New(repo)}
+func NewOrderService(
+	repo gateways.OrderRepo, logistic gateways.LogisticService, mail gateways.EmailService,
+) gateways.OrderService {
+	smsService := sms.NewSMSService()
+	return &service{
+		repo:     repo,
+		logistic: logistic.New(repo),
+		sms:      smsService,
+		mail:     mail,
+	}
 }
 
 func (s service) Create(order *models.OrderPayload) (*ent.Order, error) {
+	result, err := s.repo.Insert(order)
+	if err != nil {
+		return nil, err
+	}
+	storeMerchant, err := s.repo.ReadOrderStoreMerchants(result.ID)
+	if err != nil {
+		return nil, err
+	}
+	msg := fmt.Sprintf(
+		"New Order Recieved! Please visit your portal to start the order process. %s",
+		config.App().AppURL,
+	)
+	for _, store := range storeMerchant.Edges.Stores {
+		if application.UsernameType(store.Edges.Merchant.Username, "phone") {
+			_, _ = s.sms.Send(
+				&services.SMSPayload{
+					Recipients: []string{store.Edges.Merchant.Username},
+					Message:    msg,
+				},
+			)
+		}
+		if application.UsernameType(store.Edges.Merchant.Username, "email") {
+			s.mail.Send(
+				&services.Message{
+					To:      store.Edges.Merchant.Username,
+					Subject: "ASINYO ORDER NOTIFICATION",
+					Data:    msg,
+				},
+			)
+		}
+	}
+	return result, nil
+}
 
-	return s.repo.Insert(order)
-
+func (s service) TesCreate(orderId int) (*ent.Order, error) {
+	// TODO Send SMS OR Email to store
+	storeMerchant, err := s.repo.ReadOrderStoreMerchants(orderId)
+	if err != nil {
+		return nil, err
+	}
+	msg := fmt.Sprintf(
+		"New Order Recieved! Please visit your portal to start the order process. %s",
+		config.App().AppURL,
+	)
+	for _, store := range storeMerchant.Edges.Stores {
+		if application.UsernameType(store.Edges.Merchant.Username, "phone") {
+			_, _ = s.sms.Send(
+				&services.SMSPayload{
+					Recipients: []string{store.Edges.Merchant.Username},
+					Message:    msg,
+				},
+			)
+		}
+		if application.UsernameType(store.Edges.Merchant.Username, "email") {
+			s.mail.Send(
+				&services.Message{
+					To:      store.Edges.Merchant.Username,
+					Subject: "ASINYO ORDER NOTIFICATION",
+					Data:    msg,
+				},
+			)
+		}
+	}
+	return storeMerchant, nil
 }
 
 func (s service) FetchAllByUser(userType string, id int) ([]*ent.Order, error) {
@@ -77,7 +153,7 @@ func (s service) UpdateOrderDetailStatus(request []byte) (*ent.Order, error) {
 		return nil, err
 	} else {
 		if result.Status == "in_progress" {
-			s.logistic.DoTask(result, "create_multiple_tasks")
+			s.logistic.ExecuteTask(result, "pickup_delivery_tasks")
 			// if result.DeliveryTask {
 			// 	s.logistic.DoTask(result, "edit_multiple_tasks")
 			// } else {

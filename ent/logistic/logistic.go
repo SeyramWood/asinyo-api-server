@@ -15,12 +15,12 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldTrackingLink holds the string denoting the tracking_link field in the database.
-	FieldTrackingLink = "tracking_link"
-	// FieldTasks holds the string denoting the tasks field in the database.
-	FieldTasks = "tasks"
+	// FieldTask holds the string denoting the task field in the database.
+	FieldTask = "task"
 	// EdgeOrder holds the string denoting the order edge name in mutations.
 	EdgeOrder = "order"
+	// EdgeStore holds the string denoting the store edge name in mutations.
+	EdgeStore = "store"
 	// Table holds the table name of the logistic in the database.
 	Table = "logistics"
 	// OrderTable is the table that holds the order relation/edge. The primary key declared below.
@@ -28,6 +28,13 @@ const (
 	// OrderInverseTable is the table name for the Order entity.
 	// It exists in this package in order to avoid circular dependency with the "order" package.
 	OrderInverseTable = "orders"
+	// StoreTable is the table that holds the store relation/edge.
+	StoreTable = "logistics"
+	// StoreInverseTable is the table name for the MerchantStore entity.
+	// It exists in this package in order to avoid circular dependency with the "merchantstore" package.
+	StoreInverseTable = "merchant_stores"
+	// StoreColumn is the table column denoting the store relation/edge.
+	StoreColumn = "merchant_store_logistics"
 )
 
 // Columns holds all SQL columns for logistic fields.
@@ -35,8 +42,13 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldTrackingLink,
-	FieldTasks,
+	FieldTask,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the "logistics"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"merchant_store_logistics",
 }
 
 var (
@@ -49,6 +61,11 @@ var (
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}

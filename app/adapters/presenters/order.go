@@ -17,12 +17,15 @@ type (
 		Name string `json:"name"`
 	}
 	OrderAddress struct {
-		ID        int    `json:"id"`
-		LastName  string `json:"lastName"`
-		OtherName string `json:"otherName"`
-		Address   string `json:"address"`
-		City      string `json:"city"`
-		Region    string `json:"region"`
+		ID         int    `json:"id"`
+		LastName   string `json:"lastName"`
+		OtherName  string `json:"otherName"`
+		Address    string `json:"address"`
+		City       string `json:"city"`
+		StreetName string `json:"streetName"`
+		District   string `json:"district"`
+		Region     string `json:"region"`
+		Country    string `json:"country"`
 	}
 	OrderPickup struct {
 		ID      int    `json:"id"`
@@ -51,9 +54,9 @@ type (
 		Store      *OrderProductStore  `json:"store"`
 	}
 	OrderLogisticDetail struct {
-		ID           int                             `json:"id"`
-		TrackingLink string                          `json:"trackingLink"`
-		Tasks        *models.TookanMultiTaskResponse `json:"tasks"`
+		ID    int                                         `json:"id"`
+		Store *OrderProductStore                          `json:"store"`
+		Task  *models.TookanPickupAndDeliveryTaskResponse `json:"task"`
 	}
 	DetailOrder struct {
 		ID             int                    `json:"id"`
@@ -126,12 +129,15 @@ func OrderSuccessResponse(data *ent.Order) *fiber.Map {
 			Address: func(edges *ent.Order) *OrderAddress {
 				if add, err := edges.Edges.AddressOrErr(); err == nil {
 					return &OrderAddress{
-						ID:        add.ID,
-						LastName:  add.LastName,
-						OtherName: add.OtherName,
-						Address:   add.Address,
-						City:      add.City,
-						Region:    add.Region,
+						ID:         add.ID,
+						LastName:   add.LastName,
+						OtherName:  add.OtherName,
+						Address:    add.Address,
+						City:       add.City,
+						Region:     add.Region,
+						StreetName: add.StreetName,
+						District:   add.District,
+						Country:    add.Country,
 					}
 				}
 				return nil
@@ -154,9 +160,12 @@ func OrderSuccessResponse(data *ent.Order) *fiber.Map {
 					for _, l := range logis {
 						results = append(
 							results, &OrderLogisticDetail{
-								ID:           l.ID,
-								TrackingLink: l.TrackingLink,
-								Tasks:        l.Tasks,
+								ID: l.ID,
+								Store: &OrderProductStore{
+									ID:   l.Edges.Store.ID,
+									Name: l.Edges.Store.Name,
+								},
+								Task: l.Task,
 							},
 						)
 					}
@@ -189,12 +198,15 @@ func StoreOrderSuccessResponse(data *ent.Order) *fiber.Map {
 			Address: func(edges *ent.Order) *OrderAddress {
 				if add, err := edges.Edges.AddressOrErr(); err == nil {
 					return &OrderAddress{
-						ID:        add.ID,
-						LastName:  add.LastName,
-						OtherName: add.OtherName,
-						Address:   add.Address,
-						City:      add.City,
-						Region:    add.Region,
+						ID:         add.ID,
+						LastName:   add.LastName,
+						OtherName:  add.OtherName,
+						Address:    add.Address,
+						City:       add.City,
+						Region:     add.Region,
+						StreetName: add.StreetName,
+						District:   add.District,
+						Country:    add.Country,
 					}
 				}
 				return nil
@@ -217,9 +229,12 @@ func StoreOrderSuccessResponse(data *ent.Order) *fiber.Map {
 					for _, l := range logis {
 						results = append(
 							results, &OrderLogisticDetail{
-								ID:           l.ID,
-								TrackingLink: l.TrackingLink,
-								Tasks:        l.Tasks,
+								ID: l.ID,
+								Store: &OrderProductStore{
+									ID:   l.Edges.Store.ID,
+									Name: l.Edges.Store.Name,
+								},
+								Task: l.Task,
 							},
 						)
 					}
@@ -253,12 +268,15 @@ func AgentStoreOrderSuccessResponse(data *ent.Order) *fiber.Map {
 			Address: func(edges *ent.Order) *OrderAddress {
 				if add, err := edges.Edges.AddressOrErr(); err == nil {
 					return &OrderAddress{
-						ID:        add.ID,
-						LastName:  add.LastName,
-						OtherName: add.OtherName,
-						Address:   add.Address,
-						City:      add.City,
-						Region:    add.Region,
+						ID:         add.ID,
+						LastName:   add.LastName,
+						OtherName:  add.OtherName,
+						Address:    add.Address,
+						City:       add.City,
+						Region:     add.Region,
+						StreetName: add.StreetName,
+						District:   add.District,
+						Country:    add.Country,
 					}
 				}
 				return nil
@@ -486,12 +504,15 @@ func calculateStoreAmountOrderDetails(data []*ent.OrderDetail) map[string]any {
 func formatOrderAddress(edges *ent.Order) *OrderAddress {
 	if add, err := edges.Edges.AddressOrErr(); err == nil {
 		return &OrderAddress{
-			ID:        add.ID,
-			LastName:  add.LastName,
-			OtherName: add.OtherName,
-			Address:   add.Address,
-			City:      add.City,
-			Region:    add.Region,
+			ID:         add.ID,
+			LastName:   add.LastName,
+			OtherName:  add.OtherName,
+			Address:    add.Address,
+			City:       add.City,
+			Region:     add.Region,
+			StreetName: add.StreetName,
+			District:   add.District,
+			Country:    add.Country,
 		}
 	}
 	return nil

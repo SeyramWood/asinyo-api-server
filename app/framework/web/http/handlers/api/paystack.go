@@ -21,9 +21,11 @@ type PaystackHandler struct {
 	orderServ gateways.OrderService
 }
 
-func NewPaystackHandler(db *database.Adapter, logis gateways.LogisticService) *PaystackHandler {
+func NewPaystackHandler(
+	db *database.Adapter, logis gateways.LogisticService, mail gateways.EmailService,
+) *PaystackHandler {
 	service := payment.NewPaymentService(payment.NewPaymentRepo(db))
-	serv := order.NewOrderService(order.NewOrderRepo(db), logis)
+	serv := order.NewOrderService(order.NewOrderRepo(db), logis, mail)
 	return &PaystackHandler{
 		service:   service,
 		orderServ: serv,
