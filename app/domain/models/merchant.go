@@ -53,7 +53,6 @@ type (
 		Username     string `json:"username" validate:"required|email_phone|unique:merchants"`
 	}
 	MerchantStoreAddress struct {
-		Address        string `json:"postalAddress" validate:"required"`
 		Country        string `json:"country,omitempty" validate:"string"`
 		Region         string `json:"region" validate:"required|string"`
 		City           string `json:"city" validate:"required|string"`

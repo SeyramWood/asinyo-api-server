@@ -40,17 +40,8 @@ type (
 		OtherImages    []byte `json:"otherImages"`
 		MerchantType   string `json:"merchantType" validate:"required|string"`
 	}
-	// StoreAddress struct {
-	// 	Address      string `json:"postalAddress" validate:"required|string"`
-	// 	Country      string `json:"country,omitempty" validate:"required|string"`
-	// 	Region       string `json:"region" validate:"required|string"`
-	// 	City         string `json:"city" validate:"required|string"`
-	// 	District     string `json:"district" validate:"required|string"`
-	// 	StreetName   string `json:"streetName" validate:"required|string"`
-	// 	StreetNumber string `json:"streetNumber" validate:"string"`
-	// }
 	MerchantStoreRequest struct {
-		Info    *MerchantStore        `json:"postalAddress"`
+		Info    *MerchantStore        `json:"store"`
 		Address *MerchantStoreAddress `json:"address"`
 	}
 )

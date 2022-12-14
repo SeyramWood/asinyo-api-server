@@ -183,12 +183,6 @@ func (au *AddressUpdate) SetNillableCountry(s *string) *AddressUpdate {
 	return au
 }
 
-// SetAddress sets the "address" field.
-func (au *AddressUpdate) SetAddress(s string) *AddressUpdate {
-	au.mutation.SetAddress(s)
-	return au
-}
-
 // SetDefault sets the "default" field.
 func (au *AddressUpdate) SetDefault(b bool) *AddressUpdate {
 	au.mutation.SetDefault(b)
@@ -427,11 +421,6 @@ func (au *AddressUpdate) check() error {
 			return &ValidationError{Name: "Region", err: fmt.Errorf(`ent: validator failed for field "Address.Region": %w`, err)}
 		}
 	}
-	if v, ok := au.mutation.Address(); ok {
-		if err := address.AddressValidator(v); err != nil {
-			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "Address.address": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -565,13 +554,6 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeString,
 			Value:  value,
 			Column: address.FieldCountry,
-		})
-	}
-	if value, ok := au.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldAddress,
 		})
 	}
 	if value, ok := au.mutation.Default(); ok {
@@ -922,12 +904,6 @@ func (auo *AddressUpdateOne) SetNillableCountry(s *string) *AddressUpdateOne {
 	return auo
 }
 
-// SetAddress sets the "address" field.
-func (auo *AddressUpdateOne) SetAddress(s string) *AddressUpdateOne {
-	auo.mutation.SetAddress(s)
-	return auo
-}
-
 // SetDefault sets the "default" field.
 func (auo *AddressUpdateOne) SetDefault(b bool) *AddressUpdateOne {
 	auo.mutation.SetDefault(b)
@@ -1179,11 +1155,6 @@ func (auo *AddressUpdateOne) check() error {
 			return &ValidationError{Name: "Region", err: fmt.Errorf(`ent: validator failed for field "Address.Region": %w`, err)}
 		}
 	}
-	if v, ok := auo.mutation.Address(); ok {
-		if err := address.AddressValidator(v); err != nil {
-			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "Address.address": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -1334,13 +1305,6 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Type:   field.TypeString,
 			Value:  value,
 			Column: address.FieldCountry,
-		})
-	}
-	if value, ok := auo.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldAddress,
 		})
 	}
 	if value, ok := auo.mutation.Default(); ok {

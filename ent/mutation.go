@@ -84,7 +84,6 @@ type AddressMutation struct {
 	district        *string
 	_Region         *string
 	_Country        *string
-	address         *string
 	_default        *bool
 	coordinate      **services.Coordinate
 	clearedFields   map[string]struct{}
@@ -733,42 +732,6 @@ func (m *AddressMutation) ResetCountry() {
 	m._Country = nil
 }
 
-// SetAddress sets the "address" field.
-func (m *AddressMutation) SetAddress(s string) {
-	m.address = &s
-}
-
-// Address returns the value of the "address" field in the mutation.
-func (m *AddressMutation) Address() (r string, exists bool) {
-	v := m.address
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAddress returns the old "address" field's value of the Address entity.
-// If the Address object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AddressMutation) OldAddress(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAddress is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAddress requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAddress: %w", err)
-	}
-	return oldValue.Address, nil
-}
-
-// ResetAddress resets all changes to the "address" field.
-func (m *AddressMutation) ResetAddress() {
-	m.address = nil
-}
-
 // SetDefault sets the "default" field.
 func (m *AddressMutation) SetDefault(b bool) {
 	m._default = &b
@@ -1044,7 +1007,7 @@ func (m *AddressMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AddressMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, address.FieldCreatedAt)
 	}
@@ -1083,9 +1046,6 @@ func (m *AddressMutation) Fields() []string {
 	}
 	if m._Country != nil {
 		fields = append(fields, address.FieldCountry)
-	}
-	if m.address != nil {
-		fields = append(fields, address.FieldAddress)
 	}
 	if m._default != nil {
 		fields = append(fields, address.FieldDefault)
@@ -1127,8 +1087,6 @@ func (m *AddressMutation) Field(name string) (ent.Value, bool) {
 		return m.Region()
 	case address.FieldCountry:
 		return m.Country()
-	case address.FieldAddress:
-		return m.Address()
 	case address.FieldDefault:
 		return m.Default()
 	case address.FieldCoordinate:
@@ -1168,8 +1126,6 @@ func (m *AddressMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldRegion(ctx)
 	case address.FieldCountry:
 		return m.OldCountry(ctx)
-	case address.FieldAddress:
-		return m.OldAddress(ctx)
 	case address.FieldDefault:
 		return m.OldDefault(ctx)
 	case address.FieldCoordinate:
@@ -1273,13 +1229,6 @@ func (m *AddressMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCountry(v)
-		return nil
-	case address.FieldAddress:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAddress(v)
 		return nil
 	case address.FieldDefault:
 		v, ok := value.(bool)
@@ -1421,9 +1370,6 @@ func (m *AddressMutation) ResetField(name string) error {
 		return nil
 	case address.FieldCountry:
 		m.ResetCountry()
-		return nil
-	case address.FieldAddress:
-		m.ResetAddress()
 		return nil
 	case address.FieldDefault:
 		m.ResetDefault()

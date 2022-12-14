@@ -106,7 +106,7 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 					return "The The ID field must be a valid Ghana Card."
 				}
 			case "digital_address":
-				r, _ := regexp.Compile(`[A-Z]{2}-\d{3}-\d{4}$`)
+				r, _ := regexp.Compile(`[A-Z]{2}-\d{1,4}-\d{4}$`)
 				if !r.MatchString(value.String()) {
 					return "The address field must be a valid digital address."
 				}

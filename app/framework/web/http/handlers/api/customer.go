@@ -1,17 +1,21 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/customer"
+	"github.com/SeyramWood/app/application/storage"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 )
 
 type CustomerHandler struct {
-	service gateways.CustomerService
+	service    gateways.CustomerService
+	storageSrv gateways.StorageService
 }
 
 func NewCustomerHandler(db *database.Adapter) *CustomerHandler {
@@ -19,7 +23,8 @@ func NewCustomerHandler(db *database.Adapter) *CustomerHandler {
 	service := customer.NewCustomerService(repo)
 
 	return &CustomerHandler{
-		service: service,
+		service:    service,
+		storageSrv: storage.NewStorageService(),
 	}
 }
 
@@ -90,6 +95,31 @@ func (h *CustomerHandler) Update() fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.CustomerErrorResponse(err))
 		}
 		return c.JSON(presenters.CustomersSuccessResponse(result))
+	}
+
+}
+func (h *CustomerHandler) UpdateBusinessLogo() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var request struct {
+			Logo []byte `json:"logo" form:"logo"`
+		}
+		err := c.BodyParser(&request)
+
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
+		}
+		logo, err := c.FormFile("logo")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		logoPath, _ := h.storageSrv.Disk("uploadcare").UploadFile("customer", logo)
+		fmt.Println(logoPath)
+		return nil
+		// return c.JSON(presenters.CustomersSuccessResponse(result))
 	}
 
 }

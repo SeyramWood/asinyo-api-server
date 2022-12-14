@@ -72,7 +72,8 @@ func customerRouter(r fiber.Router, db *database.Adapter) {
 
 			r.Get("/", h.Fetch())
 			r.Get("/:id", h.FetchByID())
-			r.Delete("/:id", h.Delete()).Name("delete")
+			r.Put("/update-logo", h.UpdateBusinessLogo())
+			r.Delete("/:id", h.Delete())
 
 		}, "customers.",
 	)

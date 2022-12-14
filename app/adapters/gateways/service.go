@@ -1,6 +1,8 @@
 package gateways
 
 import (
+	"mime/multipart"
+
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/SeyramWood/app/domain/models"
@@ -192,5 +194,12 @@ type (
 		Listen()
 		Done()
 		CloseChannels()
+	}
+	StorageService interface {
+		UploadFile(dir string, f *multipart.FileHeader) (string, error)
+		UploadFiles(dir string, f []*multipart.FileHeader) ([]*string, error)
+		DeleteFile(path *string) error
+		DeleteFiles(path []*string) error
+		Disk(disk string) StorageService
 	}
 )

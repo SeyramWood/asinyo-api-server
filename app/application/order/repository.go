@@ -136,7 +136,7 @@ func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
 		WithAddress(
 			func(aq *ent.AddressQuery) {
 				aq.Select(
-					address.FieldID, address.FieldLastName, address.FieldOtherName, address.FieldAddress,
+					address.FieldID, address.FieldLastName,
 					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
 					address.FieldRegion, address.FieldCountry,
 					address.FieldPhone, address.FieldOtherPhone,
@@ -213,7 +213,7 @@ func (r repository) ReadByAgentStore(id, agentId int) (*ent.Order, error) {
 		WithAddress(
 			func(aq *ent.AddressQuery) {
 				aq.Select(
-					address.FieldID, address.FieldLastName, address.FieldOtherName, address.FieldAddress,
+					address.FieldID, address.FieldLastName,
 					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
 					address.FieldRegion, address.FieldCountry,
 					address.FieldPhone, address.FieldOtherPhone,
@@ -313,7 +313,7 @@ func (r repository) Read(id int) (*ent.Order, error) {
 		WithAddress(
 			func(aq *ent.AddressQuery) {
 				aq.Select(
-					address.FieldID, address.FieldLastName, address.FieldOtherName, address.FieldAddress,
+					address.FieldID, address.FieldLastName, address.FieldOtherName,
 					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
 					address.FieldRegion, address.FieldCountry,
 					address.FieldPhone, address.FieldOtherPhone,

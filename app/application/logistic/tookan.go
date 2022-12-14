@@ -452,8 +452,8 @@ func (t *tookan) formatMetadata(data *ent.Order, storeId int) []*services.Tookan
 		{
 			Label: "Address",
 			Data: fmt.Sprintf(
-				"%s %s\n%s\n%s,\n%s %s\n%s-%s\n%s", data.Edges.Address.OtherName, data.Edges.Address.LastName,
-				data.Edges.Address.Address, data.Edges.Address.City, data.Edges.Address.StreetName,
+				"%s %s\n%s,\n%s %s\n%s-%s\n%s", data.Edges.Address.OtherName, data.Edges.Address.LastName,
+				data.Edges.Address.City, data.Edges.Address.StreetName,
 				data.Edges.Address.District, data.Edges.Address.Region, data.Edges.Address.Country,
 				data.Edges.Address.Phone,
 			),

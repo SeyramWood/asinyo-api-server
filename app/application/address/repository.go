@@ -106,7 +106,6 @@ func (r repository) ReadByUser(userId int, userType string) (*ent.Address, error
 
 func (r repository) Update(addressId int, addr *models.Address) (*ent.Address, error) {
 	result, err := r.db.Address.UpdateOneID(addressId).
-		SetAddress(addr.Address).
 		SetRegion(addr.Region).
 		SetDistrict(addr.District).
 		SetCity(addr.City).
@@ -186,7 +185,6 @@ func (r repository) insertMerchantAddress(addr *models.Address, userId int) (*en
 	mq := r.db.Merchant.Query().Where(merchant.ID(userId)).OnlyX(ctx)
 	result, err := r.db.Address.Create().
 		SetMerchant(mq).
-		SetAddress(addr.Address).
 		SetRegion(addr.Region).
 		SetDistrict(addr.District).
 		SetCity(addr.City).
@@ -208,7 +206,6 @@ func (r repository) insertAgentAddress(addr *models.Address, userId int) (*ent.A
 	mq := r.db.Agent.Query().Where(agent.ID(userId)).OnlyX(ctx)
 	result, err := r.db.Address.Create().
 		SetAgent(mq).
-		SetAddress(addr.Address).
 		SetRegion(addr.Region).
 		SetDistrict(addr.District).
 		SetCity(addr.City).
@@ -230,7 +227,6 @@ func (r repository) insertCustomerAddress(addr *models.Address, userId int) (*en
 	mq := r.db.Customer.Query().Where(customer.ID(userId)).OnlyX(ctx)
 	result, err := r.db.Address.Create().
 		SetCustomer(mq).
-		SetAddress(addr.Address).
 		SetRegion(addr.Region).
 		SetDistrict(addr.District).
 		SetCity(addr.City).

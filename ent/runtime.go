@@ -70,12 +70,8 @@ func init() {
 	addressDescCountry := addressFields[10].Descriptor()
 	// address.DefaultCountry holds the default value on creation for the Country field.
 	address.DefaultCountry = addressDescCountry.Default.(string)
-	// addressDescAddress is the schema descriptor for address field.
-	addressDescAddress := addressFields[11].Descriptor()
-	// address.AddressValidator is a validator for the "address" field. It is called by the builders before save.
-	address.AddressValidator = addressDescAddress.Validators[0].(func(string) error)
 	// addressDescDefault is the schema descriptor for default field.
-	addressDescDefault := addressFields[12].Descriptor()
+	addressDescDefault := addressFields[11].Descriptor()
 	// address.DefaultDefault holds the default value on creation for the default field.
 	address.DefaultDefault = addressDescDefault.Default.(bool)
 	adminMixin := schema.Admin{}.Mixin()

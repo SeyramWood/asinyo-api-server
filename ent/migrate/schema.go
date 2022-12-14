@@ -24,7 +24,6 @@ var (
 		{Name: "district", Type: field.TypeString, Nullable: true},
 		{Name: "region", Type: field.TypeString},
 		{Name: "country", Type: field.TypeString, Default: "Ghana"},
-		{Name: "address", Type: field.TypeString, Size: 2147483647},
 		{Name: "default", Type: field.TypeBool, Default: false},
 		{Name: "coordinate", Type: field.TypeJSON, Nullable: true},
 		{Name: "agent_addresses", Type: field.TypeInt, Nullable: true},
@@ -39,19 +38,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "addresses_agents_addresses",
-				Columns:    []*schema.Column{AddressesColumns[17]},
+				Columns:    []*schema.Column{AddressesColumns[16]},
 				RefColumns: []*schema.Column{AgentsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "addresses_customers_addresses",
-				Columns:    []*schema.Column{AddressesColumns[18]},
+				Columns:    []*schema.Column{AddressesColumns[17]},
 				RefColumns: []*schema.Column{CustomersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "addresses_merchants_addresses",
-				Columns:    []*schema.Column{AddressesColumns[19]},
+				Columns:    []*schema.Column{AddressesColumns[18]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

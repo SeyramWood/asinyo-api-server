@@ -167,12 +167,6 @@ func (ac *AddressCreate) SetNillableCountry(s *string) *AddressCreate {
 	return ac
 }
 
-// SetAddress sets the "address" field.
-func (ac *AddressCreate) SetAddress(s string) *AddressCreate {
-	ac.mutation.SetAddress(s)
-	return ac
-}
-
 // SetDefault sets the "default" field.
 func (ac *AddressCreate) SetDefault(b bool) *AddressCreate {
 	ac.mutation.SetDefault(b)
@@ -411,14 +405,6 @@ func (ac *AddressCreate) check() error {
 	if _, ok := ac.mutation.Country(); !ok {
 		return &ValidationError{Name: "Country", err: errors.New(`ent: missing required field "Address.Country"`)}
 	}
-	if _, ok := ac.mutation.Address(); !ok {
-		return &ValidationError{Name: "address", err: errors.New(`ent: missing required field "Address.address"`)}
-	}
-	if v, ok := ac.mutation.Address(); ok {
-		if err := address.AddressValidator(v); err != nil {
-			return &ValidationError{Name: "address", err: fmt.Errorf(`ent: validator failed for field "Address.address": %w`, err)}
-		}
-	}
 	if _, ok := ac.mutation.Default(); !ok {
 		return &ValidationError{Name: "default", err: errors.New(`ent: missing required field "Address.default"`)}
 	}
@@ -552,14 +538,6 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 			Column: address.FieldCountry,
 		})
 		_node.Country = value
-	}
-	if value, ok := ac.mutation.Address(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldAddress,
-		})
-		_node.Address = value
 	}
 	if value, ok := ac.mutation.Default(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
