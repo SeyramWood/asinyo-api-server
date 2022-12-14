@@ -34,6 +34,10 @@ func (s *service) Update(user *models.IndividualCustomer) (*ent.Customer, error)
 	return s.repo.Update(user)
 }
 
+func (s *service) UpdateLogo(customer int, logo string) (string, error) {
+	return s.repo.UpdateLogo(customer, logo)
+}
+
 func (s *service) Remove(ID string) error {
 	return s.repo.Delete(ID)
 }

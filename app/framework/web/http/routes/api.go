@@ -11,16 +11,18 @@ import (
 )
 
 type ApiRouter struct {
-	db    *database.Adapter
-	mail  gateways.EmailService
-	logis gateways.LogisticService
-	maps  gateways.MapService
+	db         *database.Adapter
+	mail       gateways.EmailService
+	logis      gateways.LogisticService
+	maps       gateways.MapService
+	storageSrv gateways.StorageService
 }
 
 func NewApiRouter(
 	db *database.Adapter, mail gateways.EmailService, logis gateways.LogisticService, maps gateways.MapService,
+	storageSrv gateways.StorageService,
 ) *ApiRouter {
-	return &ApiRouter{db, mail, logis, maps}
+	return &ApiRouter{db, mail, logis, maps, storageSrv}
 }
 
 func (h *ApiRouter) Router(app *fiber.App) {
@@ -37,7 +39,7 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 	supplierMerchantRouter(r, h.db, h.mail, h.maps)
 
-	customerRouter(r, h.db)
+	customerRouter(r, h.db, h.storageSrv)
 
 	productRouter(r, h.db)
 
@@ -51,9 +53,9 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 }
 
-func customerRouter(r fiber.Router, db *database.Adapter) {
+func customerRouter(r fiber.Router, db *database.Adapter, storageSrv gateways.StorageService) {
 
-	h := handler.NewCustomerHandler(db)
+	h := handler.NewCustomerHandler(db, storageSrv)
 
 	router := r.Group("/auth/customers")
 
@@ -72,7 +74,7 @@ func customerRouter(r fiber.Router, db *database.Adapter) {
 
 			r.Get("/", h.Fetch())
 			r.Get("/:id", h.FetchByID())
-			r.Put("/update-logo", h.UpdateBusinessLogo())
+			r.Post("/upload-logo", h.UpdateBusinessLogo())
 			r.Delete("/:id", h.Delete())
 
 		}, "customers.",

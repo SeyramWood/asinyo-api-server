@@ -14,6 +14,7 @@ type (
 		Read(id int) (*ent.Customer, error)
 		ReadAll() ([]*ent.Customer, error)
 		Update(customer *models.IndividualCustomer) (*ent.Customer, error)
+		UpdateLogo(customer int, logo string) (string, error)
 		Delete(id string) error
 	}
 	AgentRepo interface {

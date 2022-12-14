@@ -15,8 +15,8 @@ import (
 	"github.com/SeyramWood/app/application/logistic"
 	"github.com/SeyramWood/app/application/mailer"
 	"github.com/SeyramWood/app/application/maps"
+	"github.com/SeyramWood/app/application/storage"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/ent/migrate"
 	"github.com/SeyramWood/pkg/app"
 	"github.com/SeyramWood/pkg/env"
@@ -30,9 +30,9 @@ func init() {
 func App() {
 
 	db := database.NewDB()
-	defer func(DB *ent.Client) {
-		_ = DB.Close()
-	}(db.DB)
+	// defer func(DB *ent.Client) {
+	// 	_ = DB.Close()
+	// }(db.DB)
 
 	ctx := context.Background()
 	// Run migration.
@@ -61,13 +61,17 @@ func App() {
 
 	ms := maps.NewMaps(newApp.WG)
 
-	router.NewRouter(newApp.HTTP, db, mail, logis, ms)
+	storageSrv := storage.NewStorageService(newApp.WG)
+
+	router.NewRouter(newApp.HTTP, db, mail, logis, ms, storageSrv)
 
 	go mail.Listen()
 
 	go logis.Listen()
 
 	go ms.Listen()
+
+	go storageSrv.Listen()
 
 	go newApp.Run()
 
@@ -87,12 +91,18 @@ func App() {
 
 	// Your cleanup tasks go here
 	_ = db.DB.Close()
+
 	mail.Done()
 	mail.CloseChannels()
+
 	logis.Done()
 	logis.CloseChannels()
+
 	ms.Done()
 	ms.CloseChannels()
+
+	storageSrv.Done()
+	storageSrv.CloseChannels()
 
 	fmt.Println("Fiber was successful shutdown.")
 }

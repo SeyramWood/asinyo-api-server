@@ -16,6 +16,7 @@ type (
 		FetchAll() ([]*ent.Customer, error)
 		Fetch(id int) (*ent.Customer, error)
 		Update(customer *models.IndividualCustomer) (*ent.Customer, error)
+		UpdateLogo(customer int, logo string) (string, error)
 		Remove(id string) error
 	}
 	AgentService interface {
@@ -198,8 +199,10 @@ type (
 	StorageService interface {
 		UploadFile(dir string, f *multipart.FileHeader) (string, error)
 		UploadFiles(dir string, f []*multipart.FileHeader) ([]*string, error)
-		DeleteFile(path *string) error
-		DeleteFiles(path []*string) error
 		Disk(disk string) StorageService
+		ExecuteTask(data any, taskType string)
+		Listen()
+		Done()
+		CloseChannels()
 	}
 )

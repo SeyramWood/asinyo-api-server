@@ -111,6 +111,15 @@ func (r *repository) Update(i *models.IndividualCustomer) (*ent.Customer, error)
 	return nil, nil
 }
 
+func (r *repository) UpdateLogo(c int, logo string) (string, error) {
+	ctx := context.Background()
+	_, err := r.db.BusinessCustomer.UpdateOneID(r.db.Customer.Query().Where(customer.ID(c)).QueryBusiness().OnlyIDX(ctx)).SetLogo(logo).Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	return logo, nil
+}
+
 func (r *repository) Delete(ID string) error {
 	return fmt.Errorf("failed creating book")
 	// return r.Delete(ID).Error
