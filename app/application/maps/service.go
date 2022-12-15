@@ -154,10 +154,15 @@ func (m *maps) getCoordinate(data any) error {
 func (m *maps) formatAddress(data any) (*services.GeocodingData, int, error) {
 	if m.repoType == "address" {
 		a := data.(*ent.Address)
-		num, _ := strconv.Atoi(a.StreetNumber)
 		return &services.GeocodingData{
-			Street:   a.StreetName,
-			Number:   num,
+			Street: a.StreetName,
+			Number: func(a *ent.Address) int {
+				if a.StreetNumber == "" {
+					return 0
+				}
+				num, _ := strconv.Atoi(a.StreetNumber)
+				return num
+			}(a),
 			City:     a.City,
 			District: a.District,
 			State:    a.Region,
@@ -166,22 +171,37 @@ func (m *maps) formatAddress(data any) (*services.GeocodingData, int, error) {
 	}
 	if m.repoType == "merchant" {
 		mr := data.(*ent.Merchant)
-		num, _ := strconv.Atoi(mr.Edges.Store.Address.StreetNumber)
-		return &services.GeocodingData{
-			Street:   mr.Edges.Store.Address.StreetName,
-			Number:   num,
-			City:     mr.Edges.Store.Address.City,
-			District: mr.Edges.Store.Address.District,
-			State:    mr.Edges.Store.Address.Region,
-			Country:  mr.Edges.Store.Address.Country,
-		}, mr.Edges.Store.ID, nil
+		if s, err := mr.Edges.StoreOrErr(); err != nil {
+			return nil, 0, err
+		} else {
+			return &services.GeocodingData{
+				Street: s.Address.StreetName,
+				Number: func(s *ent.MerchantStore) int {
+					if s.Address.StreetNumber == "" {
+						return 0
+					}
+					num, _ := strconv.Atoi(s.Address.StreetNumber)
+					return num
+				}(s),
+				City:     s.Address.City,
+				District: s.Address.District,
+				State:    s.Address.Region,
+				Country:  s.Address.Country,
+			}, s.ID, nil
+		}
+
 	}
 	if m.repoType == "store" {
 		ms := data.(*ent.MerchantStore)
-		num, _ := strconv.Atoi(ms.Address.StreetNumber)
 		return &services.GeocodingData{
-			Street:   ms.Address.StreetName,
-			Number:   num,
+			Street: ms.Address.StreetName,
+			Number: func(ms *ent.MerchantStore) int {
+				if ms.Address.StreetNumber == "" {
+					return 0
+				}
+				num, _ := strconv.Atoi(ms.Address.StreetNumber)
+				return num
+			}(ms),
 			City:     ms.Address.City,
 			District: ms.Address.District,
 			State:    ms.Address.Region,

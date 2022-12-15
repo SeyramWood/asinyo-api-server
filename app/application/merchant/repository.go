@@ -74,6 +74,7 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 		if err = tx.Commit(); err != nil {
 			return nil, fmt.Errorf("failed commiting merchant transaction: %w", err)
 		}
+
 		return merc.Unwrap(), nil
 
 	}
@@ -148,8 +149,7 @@ func (r *repository) Onboard(
 		return nil, merr
 	}
 	ctx := context.Background()
-	mq := r.db.Merchant.Query().Where(merchant.ID(m.ID)).OnlyX(ctx)
-	_, err := r.db.MerchantStore.Create().SetMerchant(mq).
+	_, err := r.db.MerchantStore.Create().SetMerchantID(m.ID).
 		SetAgentID(agentId).
 		SetName(merc.StoreInfo.BusinessName).
 		SetSlogan(merc.StoreInfo.BusinessSlogan).
@@ -163,7 +163,12 @@ func (r *repository) Onboard(
 	if err != nil {
 		return nil, fmt.Errorf("failed creating merchant store: %w", err)
 	}
-	return m, nil
+	result, err := r.db.Merchant.Query().Where(merchant.ID(m.ID)).WithStore().Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	return result, nil
 }
 func (r repository) SaveCoordinate(coordinate *services.Coordinate, id int) error {
 	_, err := r.db.MerchantStore.UpdateOneID(id).SetCoordinate(coordinate).Save(context.Background())
