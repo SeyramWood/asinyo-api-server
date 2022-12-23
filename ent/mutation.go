@@ -2013,8 +2013,8 @@ type AgentMutation struct {
 	district          *string
 	city              *string
 	default_account   *agent.DefaultAccount
-	bank_account      **models.MerchantBankAccount
-	momo_account      **models.MerchantMomoAccount
+	bank_account      **models.AgentBankAccount
+	momo_account      **models.AgentMomoAccount
 	verified          *bool
 	compliance        **models.AgentComplianceModel
 	clearedFields     map[string]struct{}
@@ -2742,12 +2742,12 @@ func (m *AgentMutation) ResetDefaultAccount() {
 }
 
 // SetBankAccount sets the "bank_account" field.
-func (m *AgentMutation) SetBankAccount(mba *models.MerchantBankAccount) {
+func (m *AgentMutation) SetBankAccount(mba *models.AgentBankAccount) {
 	m.bank_account = &mba
 }
 
 // BankAccount returns the value of the "bank_account" field in the mutation.
-func (m *AgentMutation) BankAccount() (r *models.MerchantBankAccount, exists bool) {
+func (m *AgentMutation) BankAccount() (r *models.AgentBankAccount, exists bool) {
 	v := m.bank_account
 	if v == nil {
 		return
@@ -2758,7 +2758,7 @@ func (m *AgentMutation) BankAccount() (r *models.MerchantBankAccount, exists boo
 // OldBankAccount returns the old "bank_account" field's value of the Agent entity.
 // If the Agent object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AgentMutation) OldBankAccount(ctx context.Context) (v *models.MerchantBankAccount, err error) {
+func (m *AgentMutation) OldBankAccount(ctx context.Context) (v *models.AgentBankAccount, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldBankAccount is only allowed on UpdateOne operations")
 	}
@@ -2791,12 +2791,12 @@ func (m *AgentMutation) ResetBankAccount() {
 }
 
 // SetMomoAccount sets the "momo_account" field.
-func (m *AgentMutation) SetMomoAccount(mma *models.MerchantMomoAccount) {
+func (m *AgentMutation) SetMomoAccount(mma *models.AgentMomoAccount) {
 	m.momo_account = &mma
 }
 
 // MomoAccount returns the value of the "momo_account" field in the mutation.
-func (m *AgentMutation) MomoAccount() (r *models.MerchantMomoAccount, exists bool) {
+func (m *AgentMutation) MomoAccount() (r *models.AgentMomoAccount, exists bool) {
 	v := m.momo_account
 	if v == nil {
 		return
@@ -2807,7 +2807,7 @@ func (m *AgentMutation) MomoAccount() (r *models.MerchantMomoAccount, exists boo
 // OldMomoAccount returns the old "momo_account" field's value of the Agent entity.
 // If the Agent object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AgentMutation) OldMomoAccount(ctx context.Context) (v *models.MerchantMomoAccount, err error) {
+func (m *AgentMutation) OldMomoAccount(ctx context.Context) (v *models.AgentMomoAccount, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldMomoAccount is only allowed on UpdateOne operations")
 	}
@@ -3479,14 +3479,14 @@ func (m *AgentMutation) SetField(name string, value ent.Value) error {
 		m.SetDefaultAccount(v)
 		return nil
 	case agent.FieldBankAccount:
-		v, ok := value.(*models.MerchantBankAccount)
+		v, ok := value.(*models.AgentBankAccount)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBankAccount(v)
 		return nil
 	case agent.FieldMomoAccount:
-		v, ok := value.(*models.MerchantMomoAccount)
+		v, ok := value.(*models.AgentMomoAccount)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

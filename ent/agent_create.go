@@ -173,13 +173,13 @@ func (ac *AgentCreate) SetNillableDefaultAccount(aa *agent.DefaultAccount) *Agen
 }
 
 // SetBankAccount sets the "bank_account" field.
-func (ac *AgentCreate) SetBankAccount(mba *models.MerchantBankAccount) *AgentCreate {
+func (ac *AgentCreate) SetBankAccount(mba *models.AgentBankAccount) *AgentCreate {
 	ac.mutation.SetBankAccount(mba)
 	return ac
 }
 
 // SetMomoAccount sets the "momo_account" field.
-func (ac *AgentCreate) SetMomoAccount(mma *models.MerchantMomoAccount) *AgentCreate {
+func (ac *AgentCreate) SetMomoAccount(mma *models.AgentMomoAccount) *AgentCreate {
 	ac.mutation.SetMomoAccount(mma)
 	return ac
 }

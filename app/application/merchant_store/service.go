@@ -33,7 +33,7 @@ func (s service) Create(store *models.MerchantStoreRequest, merchantId int, logo
 	return s.repo.Insert(store, merchantId, logo, images)
 }
 
-func (s service) SaveAccount(store interface{}, storeId int, accountType string) (*ent.MerchantStore, error) {
+func (s service) SaveAccount(store any, storeId int, accountType string) (*ent.MerchantStore, error) {
 	return s.repo.UpdateAccount(store, storeId, accountType)
 }
 
@@ -61,19 +61,29 @@ func (s service) FetchByMerchant(merchantId int) (*ent.MerchantStore, error) {
 func (s service) FetchAgent(store int) (*ent.Agent, error) {
 	return s.repo.ReadAgent(store)
 }
-func (s service) Update(store *models.MerchantStore, storeId int) (*ent.MerchantStore, error) {
-	// TODO implement me
-	panic("implement me")
+func (s service) Update(request *models.MerchantStoreUpdate, storeId int) (*ent.MerchantStore, error) {
+	return s.repo.Update(request, storeId)
 }
 func (s service) UpdateAddress(address *models.MerchantStoreAddress, storeId int) (*ent.MerchantStore, error) {
 	return s.repo.UpdateAddress(address, storeId)
 }
+func (s service) UpdateBanner(storeId int, bannerPath string) (string, error) {
+	return s.repo.UpdateBanner(storeId, bannerPath)
+}
+
+func (s service) UpdateImages(storeId int, newPath, oldPath string) ([]string, error) {
+	return s.repo.UpdateImages(storeId, newPath, oldPath)
+}
+func (s service) AppendNewImages(storeId int, urls []string) ([]string, error) {
+	return s.repo.AppendNewImages(storeId, urls)
+}
+
 func (s service) Remove(id string) error {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (s service) SaveLogo(c *fiber.Ctx, field, directory string) (interface{}, error) {
+func (s service) SaveLogo(c *fiber.Ctx, field, directory string) (any, error) {
 	file, _ := c.FormFile(field)
 	pubDisk := storage.NewStorage().Disk("public")
 	if !pubDisk.Exist(directory) {
@@ -93,7 +103,7 @@ func (s service) SaveLogo(c *fiber.Ctx, field, directory string) (interface{}, e
 	}
 	return fmt.Sprintf("%s/%s", c.BaseURL(), filepath.Join(directory, filename.(string))), nil
 }
-func (s service) SavePhotos(c *fiber.Ctx, field, directory string) (interface{}, error) {
+func (s service) SavePhotos(c *fiber.Ctx, field, directory string) (any, error) {
 	form, err := c.MultipartForm()
 	if err != nil {
 		return nil, err
@@ -133,7 +143,7 @@ func (s service) SavePhotos(c *fiber.Ctx, field, directory string) (interface{},
 	return urls, nil
 }
 
-func (s service) saveFile(c *fiber.Ctx, file *multipart.FileHeader, directory string) (interface{}, error) {
+func (s service) saveFile(c *fiber.Ctx, file *multipart.FileHeader, directory string) (any, error) {
 	buffer, err := file.Open()
 	if err != nil {
 		return nil, err

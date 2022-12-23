@@ -4,8 +4,8 @@ type (
 	Address struct {
 		LastName     string `json:"lastName" validate:"required|string"`
 		OtherName    string `json:"otherName" validate:"required|string"`
-		Phone        string `json:"phone" validate:"required|string"`
-		OtherPhone   string `json:"otherPhone" validate:"string"`
+		Phone        string `json:"phone" validate:"required|phone"`
+		OtherPhone   string `json:"otherPhone" validate:"phone"`
 		Country      string `json:"country,omitempty" validate:"required|string"`
 		Region       string `json:"region" validate:"required|string"`
 		City         string `json:"city" validate:"required|string"`

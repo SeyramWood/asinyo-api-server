@@ -75,8 +75,8 @@ func (s *service) FetchAll() ([]*ent.Merchant, error) {
 	return s.repo.ReadAll()
 }
 
-func (s *service) Update(user *models.Merchant) (*models.Merchant, error) {
-	return s.repo.Update(user)
+func (s *service) Update(id int, request any) (*ent.Merchant, error) {
+	return s.repo.Update(id, request)
 }
 
 func (s *service) Remove(ID string) error {

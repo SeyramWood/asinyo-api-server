@@ -20,7 +20,7 @@ type (
 
 	MerchantMomoAccountRequest struct {
 		AccountName    string `json:"accountName" validate:"required|string"`
-		PhoneNumber    string `json:"phoneNumber" validate:"required"`
+		PhoneNumber    string `json:"phoneNumber" validate:"required|phone"`
 		Provider       string `json:"provider" validate:"required|string"`
 		DefaultAccount bool   `json:"defaultAccount"`
 	}
@@ -33,12 +33,18 @@ type (
 	}
 	MerchantStore struct {
 		BusinessName   string `json:"businessName" validate:"required|string"`
-		BusinessSlogan string `json:"businessLogan" validate:"required|string"`
+		BusinessSlogan string `json:"businessSLogan" validate:"required|string"`
 		About          string `json:"about" validate:"required"`
 		Description    string `json:"description" validate:"required"`
 		Banner         []byte `json:"banner"`
 		OtherImages    []byte `json:"otherImages"`
 		MerchantType   string `json:"merchantType" validate:"required|string"`
+	}
+	MerchantStoreUpdate struct {
+		BusinessName   string `json:"businessName" validate:"required|string"`
+		BusinessSlogan string `json:"businessSLogan" validate:"required|string"`
+		About          string `json:"about" validate:"required"`
+		Description    string `json:"description" validate:"required"`
 	}
 	MerchantStoreRequest struct {
 		Info    *MerchantStore        `json:"store"`

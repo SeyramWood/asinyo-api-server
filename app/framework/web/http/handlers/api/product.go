@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,15 +16,17 @@ import (
 )
 
 type ProductHandler struct {
-	service gateways.ProductService
+	service    gateways.ProductService
+	storageSrv gateways.StorageService
 }
 
-func NewProductHandler(db *database.Adapter) *ProductHandler {
+func NewProductHandler(db *database.Adapter, storageSrv gateways.StorageService) *ProductHandler {
 	repo := product.NewProductRepo(db)
 	service := product.NewProductService(repo)
 
 	return &ProductHandler{
-		service: service,
+		service:    service,
+		storageSrv: storageSrv,
 	}
 }
 
@@ -240,7 +243,7 @@ func (h *ProductHandler) FetchMerchantBestSellerProducts() fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(err))
 		}
 		return c.JSON(presenters.ProductsWithMerchantResponse(products))
-		
+
 	}
 }
 
@@ -334,21 +337,72 @@ func (h *ProductHandler) Create() fiber.Handler {
 func (h *ProductHandler) Update() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		limit, _ := strconv.Atoi(c.Query("limit", "0"))
-		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+		var request models.ProductUpdate
 
-		result, err := h.service.FetchAll(limit, offset)
+		err := c.BodyParser(&request)
 
 		if err != nil {
+
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
+		}
+
+		productId, _ := c.ParamsInt("id")
+
+		result, err := h.service.Update(productId, &request)
+		fmt.Println(result)
+		if err != nil {
+
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
-		return c.JSON(presenters.ProductsWithStoreResponse(result))
+		return c.JSON(presenters.ProductWithMerchantResponse(result))
+	}
+
+}
+func (h *ProductHandler) UpdateImage() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		image, err := c.FormFile("file")
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
+		}
+		imagePath, err := h.storageSrv.Disk("uploadcare").UploadFile("product", image)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+
+		productId, _ := strconv.Atoi(c.Query("id"))
+		prevUrl := c.Query("file", "")
+
+		result, err := h.service.UpdateImage(productId, imagePath)
+		if err != nil {
+			if prevUrl != "" {
+				h.storageSrv.Disk("uploadcare").ExecuteTask(prevUrl, "delete_file")
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		if prevUrl != "" {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(prevUrl, "delete_file")
+		}
+		return c.Status(fiber.StatusOK).JSON(
+			fiber.Map{
+				"status": true,
+				"data":   result,
+			},
+		)
 	}
 
 }
 func (h *ProductHandler) Delete() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		if err := h.service.Remove(c.Params("id")); err != nil {
+		productId, _ := c.ParamsInt("id")
+		if err := h.service.Remove(productId); err != nil {
 			return c.Status(fiber.StatusNotFound).JSON(presenters.ProductErrorResponse(err))
 		}
 		return c.Status(fiber.StatusOK).JSON(

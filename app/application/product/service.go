@@ -108,12 +108,16 @@ func (s *service) FetchBestSellerByRetailer(limit, offset int) ([]*ent.Product, 
 func (s *service) FetchBestSellerByMerchant(id, limit, offset int) ([]*ent.Product, error) {
 	return s.repo.ReadBestSellerByMerchant(id, limit, offset)
 }
-func (s *service) Update(user *models.Product) (*models.Product, error) {
-	return s.repo.Update(user)
+
+func (s *service) Update(id int, request *models.ProductUpdate) (*ent.Product, error) {
+	return s.repo.Update(id, request)
 }
 
-func (s *service) Remove(ID string) error {
-	return s.repo.Delete(ID)
+func (s *service) UpdateImage(id int, imagePath string) (string, error) {
+	return s.repo.UpdateImage(id, imagePath)
+}
+func (s *service) Remove(id int) error {
+	return s.repo.Delete(id)
 }
 
 func (s service) SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error) {

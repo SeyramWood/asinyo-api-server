@@ -11,8 +11,9 @@ import (
 func NewRouter(
 	app *fiber.App, db *database.Adapter, mail gateways.EmailService, logis gateways.LogisticService,
 	maps gateways.MapService,
+	storageSrv gateways.StorageService,
 ) {
-	setup(app, routes.NewApiRouter(db, mail, logis, maps), routes.NewPageRouter(db, mail, logis))
+	setup(app, routes.NewApiRouter(db, mail, logis, maps, storageSrv), routes.NewPageRouter(db, mail, logis))
 }
 
 func setup(app *fiber.App, routers ...Router) {

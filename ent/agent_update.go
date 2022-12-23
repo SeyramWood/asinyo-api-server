@@ -189,7 +189,7 @@ func (au *AgentUpdate) ClearDefaultAccount() *AgentUpdate {
 }
 
 // SetBankAccount sets the "bank_account" field.
-func (au *AgentUpdate) SetBankAccount(mba *models.MerchantBankAccount) *AgentUpdate {
+func (au *AgentUpdate) SetBankAccount(mba *models.AgentBankAccount) *AgentUpdate {
 	au.mutation.SetBankAccount(mba)
 	return au
 }
@@ -201,7 +201,7 @@ func (au *AgentUpdate) ClearBankAccount() *AgentUpdate {
 }
 
 // SetMomoAccount sets the "momo_account" field.
-func (au *AgentUpdate) SetMomoAccount(mma *models.MerchantMomoAccount) *AgentUpdate {
+func (au *AgentUpdate) SetMomoAccount(mma *models.AgentMomoAccount) *AgentUpdate {
 	au.mutation.SetMomoAccount(mma)
 	return au
 }
@@ -1178,7 +1178,7 @@ func (auo *AgentUpdateOne) ClearDefaultAccount() *AgentUpdateOne {
 }
 
 // SetBankAccount sets the "bank_account" field.
-func (auo *AgentUpdateOne) SetBankAccount(mba *models.MerchantBankAccount) *AgentUpdateOne {
+func (auo *AgentUpdateOne) SetBankAccount(mba *models.AgentBankAccount) *AgentUpdateOne {
 	auo.mutation.SetBankAccount(mba)
 	return auo
 }
@@ -1190,7 +1190,7 @@ func (auo *AgentUpdateOne) ClearBankAccount() *AgentUpdateOne {
 }
 
 // SetMomoAccount sets the "momo_account" field.
-func (auo *AgentUpdateOne) SetMomoAccount(mma *models.MerchantMomoAccount) *AgentUpdateOne {
+func (auo *AgentUpdateOne) SetMomoAccount(mma *models.AgentMomoAccount) *AgentUpdateOne {
 	auo.mutation.SetMomoAccount(mma)
 	return auo
 }

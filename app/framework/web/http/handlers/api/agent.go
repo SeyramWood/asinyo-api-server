@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -14,15 +15,17 @@ import (
 )
 
 type AgentHandler struct {
-	service gateways.AgentService
+	service    gateways.AgentService
+	storageSrv gateways.StorageService
 }
 
-func NewAgentHandler(db *database.Adapter) *AgentHandler {
+func NewAgentHandler(db *database.Adapter, storageSrv gateways.StorageService) *AgentHandler {
 	repo := agent.NewAgentRepo(db)
 	service := agent.NewAgentService(repo)
 
 	return &AgentHandler{
-		service: service,
+		service:    service,
+		storageSrv: storageSrv,
 	}
 }
 
@@ -141,15 +144,215 @@ func (h *AgentHandler) CreateCompliance() fiber.Handler {
 func (h *AgentHandler) Update() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		result, err := h.service.FetchAll()
+		var request models.AgentProfile
+
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
+		}
+		agentId, _ := c.ParamsInt("id")
+
+		result, err := h.service.Update(agentId, &request)
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.CustomerErrorResponse(err))
 		}
-		return c.JSON(presenters.AgentsSuccessResponse(result))
+		return c.JSON(presenters.AgentSuccessResponse(result))
 	}
 
 }
+
+func (h *AgentHandler) UpdateGuarantor() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		var request models.AgentGuarantorUpdate
+
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
+		}
+		agentId, _ := c.ParamsInt("id")
+
+		result, err := h.service.UpdateGuarantor(agentId, &request)
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.CustomerErrorResponse(err))
+		}
+
+		return c.JSON(presenters.AgentsComplianceSuccessResponse(result))
+	}
+
+}
+
+func (h *AgentHandler) UpdateAgentComplianceCard() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		cardFile, err := c.FormFile("file")
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
+		}
+		newPath, err := h.storageSrv.Disk("uploadcare").UploadFile("agent_id", cardFile)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		agentId, _ := strconv.Atoi(c.Query("id"))
+		oldPath := c.Query("file", "")
+		result, err := h.service.UpdateAgentComplianceCard(agentId, newPath, oldPath)
+		if err != nil {
+			if oldPath != "" {
+				h.storageSrv.Disk("uploadcare").ExecuteTask(oldPath, "delete_file")
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		if oldPath != "" {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(oldPath, "delete_file")
+		}
+		return c.Status(fiber.StatusOK).JSON(
+			fiber.Map{
+				"status": true,
+				"data":   result,
+			},
+		)
+	}
+
+}
+func (h *AgentHandler) UpdateAgentPoliceReport() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		reportFile, err := c.FormFile("file")
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
+		}
+		filePath, err := h.storageSrv.Disk("uploadcare").UploadFile("agent_police_report", reportFile)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		agentId, _ := strconv.Atoi(c.Query("id"))
+		prevUrl := c.Query("file", "")
+		result, err := h.service.UpdateAgentPoliceReport(agentId, filePath)
+		if err != nil {
+			if prevUrl != "" {
+				h.storageSrv.Disk("uploadcare").ExecuteTask(prevUrl, "delete_file")
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		if prevUrl != "" {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(prevUrl, "delete_file")
+		}
+		return c.Status(fiber.StatusOK).JSON(
+			fiber.Map{
+				"status": true,
+				"data":   result,
+			},
+		)
+	}
+
+}
+func (h *AgentHandler) UpdateGuarantorComplianceCard() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		cardFile, err := c.FormFile("file")
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
+		}
+		newPath, err := h.storageSrv.Disk("uploadcare").UploadFile("guarantor_id", cardFile)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		agentId, _ := strconv.Atoi(c.Query("id"))
+		oldPath := c.Query("file", "")
+		result, err := h.service.UpdateGuarantorComplianceCard(agentId, newPath, oldPath)
+		if err != nil {
+			if oldPath != "" {
+				h.storageSrv.Disk("uploadcare").ExecuteTask(oldPath, "delete_file")
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		if oldPath != "" {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(oldPath, "delete_file")
+		}
+		return c.Status(fiber.StatusOK).JSON(
+			fiber.Map{
+				"status": true,
+				"data":   result,
+			},
+		)
+	}
+
+}
+
+func (h *AgentHandler) SaveAccount() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var momoRequest models.AgentMomoAccountRequest
+		var bankRequest models.AgentBankAccountRequest
+
+		agentId, _ := c.ParamsInt("id")
+		accountType := c.Params("accountType")
+		if accountType == "bank" {
+			err := c.BodyParser(&bankRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
+			}
+			result, err := h.service.SaveAccount(&bankRequest, agentId, accountType)
+			if err != nil {
+
+				return c.Status(fiber.StatusInternalServerError).JSON(presenters.AgentErrorResponse(err))
+			}
+			return c.JSON(presenters.AgentSuccessResponse(result))
+		}
+
+		err := c.BodyParser(&momoRequest)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
+		}
+		result, err := h.service.SaveAccount(&momoRequest, agentId, accountType)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.AgentErrorResponse(err))
+		}
+
+		return c.JSON(presenters.AgentSuccessResponse(result))
+
+	}
+
+}
+func (h *AgentHandler) SaveDefaultAccount() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		agentId, _ := c.ParamsInt("id")
+		accountType := c.Params("accountType")
+
+		result, err := h.service.SaveDefaultAccount(agentId, accountType)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.AgentErrorResponse(err))
+		}
+
+		return c.JSON(presenters.AgentSuccessResponse(result))
+
+	}
+
+}
+
 func (h *AgentHandler) Delete() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if err := h.service.Remove(c.Params("id")); err != nil {

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -31,14 +32,14 @@ func (Merchant) Fields() []ent.Field {
 func (Merchant) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("supplier", SupplierMerchant.Type).
-			Unique(),
+			Unique().Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 		edge.To("retailer", RetailMerchant.Type).
-			Unique(),
+			Unique().Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 		edge.To("store", MerchantStore.Type).
-			Unique(),
-		edge.To("products", Product.Type),
-		edge.To("addresses", Address.Type),
-		edge.To("orders", Order.Type),
-		edge.To("favourites", Favourite.Type),
+			Unique().Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("products", Product.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("addresses", Address.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("orders", Order.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("favourites", Favourite.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 	}
 }
