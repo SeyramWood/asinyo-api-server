@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -89,36 +88,45 @@ func (h *CustomerHandler) Create() fiber.Handler {
 func (h *CustomerHandler) Update() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		result, err := h.service.FetchAll()
-
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(presenters.CustomerErrorResponse(err))
+		customerId, _ := c.ParamsInt("id")
+		if c.Get("customerType") == "individual" {
+			var individualRequest models.IndividualCustomerUpdate
+			err := c.BodyParser(&individualRequest)
+			if err != nil {
+				c.Status(fiber.StatusBadRequest)
+				return c.JSON(presenters.CustomerErrorResponse(err))
+			}
+			result, err := h.service.Update(customerId, &individualRequest)
+			if err != nil {
+				c.Status(fiber.StatusInternalServerError)
+				return c.JSON(presenters.CustomerErrorResponse(err))
+			}
+			return c.JSON(presenters.CustomerSuccessResponse(result))
 		}
-		return c.JSON(presenters.CustomersSuccessResponse(result))
+
+		var businessRequest models.BusinessCustomerUpdate
+		err := c.BodyParser(&businessRequest)
+		if err != nil {
+			c.Status(fiber.StatusBadRequest)
+			return c.JSON(presenters.CustomerErrorResponse(err))
+		}
+		result, err := h.service.Update(customerId, &businessRequest)
+		if err != nil {
+			c.Status(fiber.StatusInternalServerError)
+			return c.JSON(presenters.CustomerErrorResponse(err))
+		}
+		return c.JSON(presenters.CustomerSuccessResponse(result))
 	}
 
 }
 func (h *CustomerHandler) UpdateBusinessLogo() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var request struct {
-			Logo []byte `json:"file" form:"file"`
-		}
-		err := c.BodyParser(&request)
-
+		logo, err := c.FormFile("file")
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
 		}
-		logo, err := c.FormFile("file")
+		logoPath, err := h.storageSrv.Disk("uploadcare").UploadFile("customer_logo", logo)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(
-				fiber.Map{
-					"msg": "Upload error",
-				},
-			)
-		}
-		logoPath, err := h.storageSrv.Disk("uploadcare").UploadFile("customer", logo)
-		if err != nil {
-			fmt.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
 					"msg": "Upload error",
@@ -129,7 +137,6 @@ func (h *CustomerHandler) UpdateBusinessLogo() fiber.Handler {
 		prevUrl := c.Query("file", "")
 		result, err := h.service.UpdateLogo(customerId, logoPath)
 		if err != nil {
-			fmt.Println(err)
 			if prevUrl != "" {
 				h.storageSrv.Disk("uploadcare").ExecuteTask(prevUrl, "delete_file")
 			}
@@ -142,7 +149,6 @@ func (h *CustomerHandler) UpdateBusinessLogo() fiber.Handler {
 		if prevUrl != "" {
 			h.storageSrv.Disk("uploadcare").ExecuteTask(prevUrl, "delete_file")
 		}
-		fmt.Println(result)
 		return c.Status(fiber.StatusOK).JSON(
 			fiber.Map{
 				"status": true,

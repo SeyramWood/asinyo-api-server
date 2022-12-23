@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
+
 	"github.com/SeyramWood/app/application"
 	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/retailmerchant"
+	"github.com/SeyramWood/ent/suppliermerchant"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -192,13 +196,49 @@ func (r *repository) ReadAll() ([]*ent.Merchant, error) {
 	return nil, nil
 }
 
-func (r *repository) Update(i *models.Merchant) (*models.Merchant, error) {
-	// book.UpdatedAt = time.Now()
-	// _, err := r.Collection.UpdateOne(context.Background(), bson.M{"_id": book.ID}, bson.M{"$set": book})
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return i, nil
+func (r *repository) Update(id int, request any) (*ent.Merchant, error) {
+	ctx := context.Background()
+	if req, ok := request.(*models.RetailerProfileUpdate); ok {
+		_, err := r.db.RetailMerchant.Update().Where(
+			retailmerchant.HasMerchantWith(
+				func(rm *sql.Selector) {
+					rm.Where(sql.InInts(merchant.RetailerColumn, id))
+				},
+			),
+		).
+			SetLastName(req.LastName).
+			SetOtherName(req.OtherName).
+			SetPhone(req.Phone).
+			SetOtherPhone(req.OtherPhone).
+			Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if req, ok := request.(*models.SupplierProfileUpdate); ok {
+		_, err := r.db.SupplierMerchant.Update().Where(
+			suppliermerchant.HasMerchantWith(
+				func(sm *sql.Selector) {
+					sm.Where(sql.InInts(merchant.SupplierColumn, id))
+				},
+			),
+		).
+			SetLastName(req.LastName).
+			SetOtherName(req.OtherName).
+			SetPhone(req.Phone).
+			SetOtherPhone(req.OtherPhone).
+			Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	result, err := r.db.Merchant.Query().Where(merchant.ID(id)).WithSupplier().WithRetailer().Only(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+
 }
 
 func (r *repository) Delete(ID string) error {

@@ -22,4 +22,15 @@ type (
 		Description   string  `json:"description" form:"description" validate:"required"`
 		Image         []byte  `json:"image" form:"image"`
 	}
+	ProductUpdate struct {
+		CategoryMajor int     `json:"categoryMajor" form:"categoryMajor" validate:"required"`
+		CategoryMinor int     `json:"categoryMinor" form:"categoryMinor" validate:"required"`
+		Quantity      int     `json:"quantity" form:"quantity" validate:"required"`
+		Weight        int     `json:"weight" form:"weight" validate:"required"`
+		Unit          string  `json:"unit" form:"unit" validate:"required|string"`
+		Name          string  `json:"name" form:"name" validate:"required|string"`
+		Price         float64 `json:"price" form:"price" validate:"required"`
+		PromoPrice    float64 `json:"promoPrice" form:"promoPrice" validate:"required"`
+		Description   string  `json:"description" form:"description" validate:"required"`
+	}
 )

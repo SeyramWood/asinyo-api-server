@@ -15,16 +15,22 @@ type (
 		Create(customer any, customerType string) (*ent.Customer, error)
 		FetchAll() ([]*ent.Customer, error)
 		Fetch(id int) (*ent.Customer, error)
-		Update(customer *models.IndividualCustomer) (*ent.Customer, error)
+		Update(id int, customer any) (*ent.Customer, error)
 		UpdateLogo(customer int, logo string) (string, error)
 		Remove(id string) error
 	}
 	AgentService interface {
 		Create(agent *models.AgentRequest) (*ent.Agent, error)
+		SaveAccount(account any, agentId int, accountType string) (*ent.Agent, error)
+		SaveDefaultAccount(agentId int, accountType string) (*ent.Agent, error)
 		FetchAll() ([]*ent.Agent, error)
 		FetchAllMerchant(agentId int) ([]*ent.MerchantStore, error)
 		Fetch(id int) (*ent.Agent, error)
-		Update(agent *models.Agent) (*models.Agent, error)
+		Update(id int, profile *models.AgentProfile) (*ent.Agent, error)
+		UpdateGuarantor(id int, request *models.AgentGuarantorUpdate) (*ent.Agent, error)
+		UpdateAgentComplianceCard(agentId int, newPath, oldPath string) ([]string, error)
+		UpdateAgentPoliceReport(agentId int, filePath string) (string, error)
+		UpdateGuarantorComplianceCard(agentId int, newPath, oldPath string) ([]string, error)
 		Remove(id string) error
 		CreateCompliance(
 			request *models.AgentComplianceRequest, id int, report string, personal []string, guarantor []string,
@@ -37,7 +43,7 @@ type (
 		)
 		FetchAll() ([]*ent.Merchant, error)
 		Fetch(id int) (*ent.Merchant, error)
-		Update(merchant *models.Merchant) (*models.Merchant, error)
+		Update(id int, request any) (*ent.Merchant, error)
 		Remove(id string) error
 	}
 	SupplierMerchantService interface {
@@ -58,18 +64,21 @@ type (
 		Create(store *models.MerchantStoreRequest, merchantId int, logo string, images []string) (
 			*ent.MerchantStore, error,
 		)
-		SaveAccount(store interface{}, storeId int, logo string) (*ent.MerchantStore, error)
+		SaveAccount(store any, storeId int, accountType string) (*ent.MerchantStore, error)
 		SaveDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
 		SaveAgentPermission(request bool, storeId int) (*ent.MerchantStore, error)
-		SaveLogo(c *fiber.Ctx, field, directory string) (interface{}, error)
-		SavePhotos(c *fiber.Ctx, field, directory string) (interface{}, error)
+		SaveLogo(c *fiber.Ctx, field, directory string) (any, error)
+		SavePhotos(c *fiber.Ctx, field, directory string) (any, error)
 		FetchAll() ([]*ent.MerchantStore, error)
 		FetchAllByMerchant(merchantType string, limit, offset int) ([]*ent.MerchantStore, error)
 		Fetch(id int) (*ent.MerchantStore, error)
 		FetchAgent(store int) (*ent.Agent, error)
 		FetchByMerchant(merchantId int) (*ent.MerchantStore, error)
-		Update(store *models.MerchantStore, storeId int) (*ent.MerchantStore, error)
+		Update(request *models.MerchantStoreUpdate, storeId int) (*ent.MerchantStore, error)
 		UpdateAddress(address *models.MerchantStoreAddress, storeId int) (*ent.MerchantStore, error)
+		UpdateBanner(storeId int, bannerPath string) (string, error)
+		UpdateImages(storeId int, newPath, oldPath string) ([]string, error)
+		AppendNewImages(storeId int, urls []string) ([]string, error)
 		Remove(id string) error
 	}
 
@@ -94,8 +103,10 @@ type (
 		FetchAllBySlugCategoryMinor(merchantType, slug string, limit, offset int) ([]*ent.Product, error)
 		FetchBestSellerByMerchant(id, limit, offset int) ([]*ent.Product, error)
 
-		Update(merchant *models.Product) (*models.Product, error)
-		Remove(id string) error
+		Update(id int, request *models.ProductUpdate) (*ent.Product, error)
+		UpdateImage(id int, imagePath string) (string, error)
+
+		Remove(id int) error
 		SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error)
 	}
 	ProductCatMajorService interface {
@@ -198,7 +209,7 @@ type (
 	}
 	StorageService interface {
 		UploadFile(dir string, f *multipart.FileHeader) (string, error)
-		UploadFiles(dir string, f []*multipart.FileHeader) ([]*string, error)
+		UploadFiles(dir string, files []*multipart.FileHeader) ([]string, error)
 		Disk(disk string) StorageService
 		ExecuteTask(data any, taskType string)
 		Listen()

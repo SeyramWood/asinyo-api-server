@@ -647,20 +647,40 @@ func (r *repository) ReadBestSellerByMerchant(id, limit, offset int) ([]*ent.Pro
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(products)
 	return products, nil
 }
 
-func (r *repository) Update(i *models.Product) (*models.Product, error) {
-	// book.UpdatedAt = time.Now()
-	// _, err := r.Collection.UpdateOne(context.Background(), bson.M{"_id": book.ID}, bson.M{"$set": book})
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return i, nil
+func (r *repository) Update(id int, request *models.ProductUpdate) (*ent.Product, error) {
+	_, err := r.db.Product.UpdateOneID(id).
+		SetName(request.Name).
+		SetQuantity(uint32(request.Quantity)).
+		SetWeight(uint32(request.Weight)).
+		SetUnit(request.Unit).
+		SetPrice(request.Price).
+		SetPromoPrice(request.PromoPrice).
+		SetDescription(request.Description).
+		SetMajorID(request.CategoryMajor).
+		SetMinorID(request.CategoryMinor).
+		Save(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return r.Read(id)
 }
 
-func (r *repository) Delete(id string) error {
-	return fmt.Errorf("failed creating book")
-	// return r.Delete(ID).Error
+func (r *repository) UpdateImage(id int, imagePath string) (string, error) {
+	ctx := context.Background()
+	_, err := r.db.Product.UpdateOneID(id).SetImage(imagePath).Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	return imagePath, nil
+}
+
+func (r *repository) Delete(id int) error {
+	err := r.db.Product.DeleteOneID(id).Exec(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
 }

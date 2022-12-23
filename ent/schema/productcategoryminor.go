@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -33,6 +34,6 @@ func (ProductCategoryMinor) Edges() []ent.Edge {
 			Ref("minors").
 			Unique().
 			Required(),
-		edge.To("products", Product.Type),
+		edge.To("products", Product.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 	}
 }

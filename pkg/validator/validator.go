@@ -85,7 +85,7 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 					return fmt.Sprintf("The %s must be a valid email address.", formattedField)
 				}
 			case "phone":
-				if phone, _ := regexp.Compile(`^+\d{12}$`); !phone.MatchString(value.String()) {
+				if phone, _ := regexp.Compile(`^\+\d{12}$`); !phone.MatchString(value.String()) {
 					return fmt.Sprintf("The %s must be a valid phone number.", formattedField)
 				}
 			case "email_phone":

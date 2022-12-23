@@ -31,9 +31,9 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 	authRouter(r, h.db, h.mail)
 
-	agentRouter(r, h.db)
+	agentRouter(r, h.db, h.storageSrv)
 
-	merchantRouter(r, h.db, h.mail, h.maps)
+	merchantRouter(r, h.db, h.mail, h.maps, h.storageSrv)
 
 	retailMerchantRouter(r, h.db, h.mail, h.maps)
 
@@ -41,7 +41,7 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 	customerRouter(r, h.db, h.storageSrv)
 
-	productRouter(r, h.db)
+	productRouter(r, h.db, h.storageSrv)
 
 	paymentRouter(r, h.db, h.logis, h.mail)
 
@@ -75,15 +75,16 @@ func customerRouter(r fiber.Router, db *database.Adapter, storageSrv gateways.St
 			r.Get("/", h.Fetch())
 			r.Get("/:id", h.FetchByID())
 			r.Post("/upload-logo", h.UpdateBusinessLogo())
+			r.Put("/update/:id", request.ValidateCustomerUpdate(), h.Update())
 			r.Delete("/:id", h.Delete())
 
 		}, "customers.",
 	)
 
 }
-func agentRouter(r fiber.Router, db *database.Adapter) {
+func agentRouter(r fiber.Router, db *database.Adapter, storageSrv gateways.StorageService) {
 
-	h := handler.NewAgentHandler(db)
+	h := handler.NewAgentHandler(db, storageSrv)
 
 	router := r.Group("/auth/agents")
 
@@ -104,6 +105,13 @@ func agentRouter(r fiber.Router, db *database.Adapter) {
 			r.Get("/my-merchants/:agent", h.FetchAllMerchant())
 			r.Get("/compliance/:agent/get", h.FetchComplianceByID())
 			r.Post("/add-compliance/:agent", request.ValidateAgentCompliance(), h.CreateCompliance())
+			r.Post("/update/agent/compliance/card", h.UpdateAgentComplianceCard())
+			r.Post("/update/agent/compliance/police-report", h.UpdateAgentPoliceReport())
+			r.Post("/update/guarantor/compliance/card", h.UpdateGuarantorComplianceCard())
+			r.Put("/update/:id/profile", request.ValidateAgentUpdate(), h.Update())
+			r.Put("/update-compliance-guarantor/:id", request.ValidateAgentGuarantor(), h.UpdateGuarantor())
+			r.Put("/update-account/:id/:accountType", request.ValidateAgentAccount(), h.SaveAccount())
+			r.Put("/update-account/:id/default-account/:accountType", h.SaveDefaultAccount())
 			r.Delete("/:id", h.Delete()).Name("delete")
 
 		}, "agents.",
@@ -184,10 +192,13 @@ func supplierMerchantRouter(
 
 }
 
-func merchantRouter(r fiber.Router, db *database.Adapter, mail gateways.EmailService, maps gateways.MapService) {
+func merchantRouter(
+	r fiber.Router, db *database.Adapter, mail gateways.EmailService, maps gateways.MapService,
+	storageSrv gateways.StorageService,
+) {
 
 	mHandler := handler.NewMerchantHandler(db, mail, maps)
-	msHandler := handler.NewMerchantStoreHandler(db, maps)
+	msHandler := handler.NewMerchantStoreHandler(db, maps, storageSrv)
 
 	mRouter := r.Group("/merchants")
 	msRouter := mRouter.Group("/storefront")
@@ -196,6 +207,7 @@ func merchantRouter(r fiber.Router, db *database.Adapter, mail gateways.EmailSer
 		"/", func(r fiber.Router) {
 
 			r.Get("/:id", mHandler.FetchByID())
+			r.Put("/update/:id/profile", request.ValidateMerchantProfileUpdate(), mHandler.Update())
 
 		}, "merchants.",
 	)
@@ -212,12 +224,12 @@ func merchantRouter(r fiber.Router, db *database.Adapter, mail gateways.EmailSer
 			r.Get("/:merchantId/:merchant", msHandler.FetchByMerchantID())
 
 			r.Post("/:merchantId/profile", request.ValidateMerchantStore(), msHandler.Create())
+			r.Post("/update/business/banner", msHandler.UpdateBusinessBanner())
+			r.Post("/update/business/image", msHandler.UpdateBusinessImages())
 
 			r.Put("/:storeId/profile", request.ValidateMerchantStoreUpdate(), msHandler.Update())
 
-			r.Put("/:storeId/account/momo", request.ValidateMerchantMomoAccount(), msHandler.SaveMomoAccount())
-
-			r.Put("/:storeId/account/bank", request.ValidateMerchantBankAccount(), msHandler.SaveBankAccount())
+			r.Put("/update-account/:id/:accountType", request.ValidateMerchantAccount(), msHandler.SaveAccount())
 
 			r.Put("/:storeId/update-agent-permission/:permission", msHandler.SaveAgentPermission())
 
@@ -256,9 +268,9 @@ func adminRouter(r fiber.Router, db *database.Adapter) {
 
 }
 
-func productRouter(r fiber.Router, db *database.Adapter) {
+func productRouter(r fiber.Router, db *database.Adapter, storageSrv gateways.StorageService) {
 
-	h := handler.NewProductHandler(db)
+	h := handler.NewProductHandler(db, storageSrv)
 	majorH := handler.NewProductCatMajorHandler(db)
 	minorH := handler.NewProductCatMinorHandler(db)
 
@@ -290,6 +302,9 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 			r.Get("/:merchant/:id/:slug", h.FetchByIDMerchantProduct())
 
 			r.Post("/create/:merchant", request.ValidateProduct(), h.Create())
+			r.Post("/update/product-image", h.UpdateImage())
+			r.Put("/update/:id", request.ValidateProductUpdate(), h.Update())
+			r.Delete("/delete/:id", h.Delete())
 
 		}, "products.",
 	)
@@ -297,10 +312,6 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 	authRouter.Route(
 		"/", func(r fiber.Router) {
 			r.Post("/", request.ValidateProduct(), h.Create()).Name("create")
-
-			// r.Get("/", h.Fetch()).Name("fetch")
-			// r.Get("/:id", h.FetchByID()).Name("fetch.id")
-			// r.Delete("/:id", h.Delete()).Name("delete")
 
 			r.Post("/majors", request.ValidateProductCatMajor(), majorH.Create()).Name("majors.create")
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/samber/lo"
+
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/domain/services"
@@ -56,71 +58,72 @@ func (r repository) SaveCoordinate(coordinate *services.Coordinate, id int) erro
 	return nil
 }
 
-func (r repository) UpdateAccount(store interface{}, storeId int, accountType string) (*ent.MerchantStore, error) {
+func (r repository) UpdateAccount(account any, storeId int, accountType string) (*ent.MerchantStore, error) {
 	ctx := context.Background()
 	if accountType == "bank" {
-		account := store.(*models.MerchantBankAccountRequest)
-		if account.DefaultAccount {
+		request := account.(*models.MerchantBankAccountRequest)
+		if request.DefaultAccount {
 			result, err := r.db.MerchantStore.UpdateOneID(storeId).
-				SetDefaultAccount("momo").
+				SetDefaultAccount("bank").
 				SetBankAccount(
 					&models.MerchantBankAccount{
-						Name:   account.AccountName,
-						Number: account.AccountNumber,
-						Bank:   account.Bank,
-						Branch: account.Branch,
+						Name:   request.AccountName,
+						Number: request.AccountNumber,
+						Bank:   request.Bank,
+						Branch: request.Branch,
 					},
 				).
 				Save(ctx)
 			if err != nil {
-				return nil, fmt.Errorf("failed to update merchant momo account : %w", err)
+				return nil, err
 			}
 			return result, nil
 		}
+
 		result, err := r.db.MerchantStore.UpdateOneID(storeId).
 			SetBankAccount(
 				&models.MerchantBankAccount{
-					Name:   account.AccountName,
-					Number: account.AccountNumber,
-					Bank:   account.Bank,
-					Branch: account.Branch,
+					Name:   request.AccountName,
+					Number: request.AccountNumber,
+					Bank:   request.Bank,
+					Branch: request.Branch,
 				},
 			).
 			Save(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed update merchant momo account : %w", err)
+			return nil, err
 		}
 		return result, nil
 	}
 
-	account := store.(*models.MerchantMomoAccountRequest)
-	if account.DefaultAccount {
+	request := account.(*models.MerchantMomoAccountRequest)
+	if request.DefaultAccount {
 		result, err := r.db.MerchantStore.UpdateOneID(storeId).
 			SetDefaultAccount("momo").
 			SetMomoAccount(
 				&models.MerchantMomoAccount{
-					Name:     account.AccountName,
-					Number:   account.PhoneNumber,
-					Provider: account.Provider,
+					Name:     request.AccountName,
+					Number:   request.PhoneNumber,
+					Provider: request.Provider,
 				},
 			).
 			Save(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed update merchant momo account : %w", err)
+			return nil, err
 		}
 		return result, nil
 	}
 	result, err := r.db.MerchantStore.UpdateOneID(storeId).
 		SetMomoAccount(
 			&models.MerchantMomoAccount{
-				Name:     account.AccountName,
-				Number:   account.PhoneNumber,
-				Provider: account.Provider,
+				Name:     request.AccountName,
+				Number:   request.PhoneNumber,
+				Provider: request.Provider,
 			},
 		).
 		Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update merchant bank account : %w", err)
+		return nil, err
 	}
 	return result, nil
 
@@ -153,7 +156,7 @@ func (r repository) UpdateDefaultAccount(storeId int, accountType string) (*ent.
 		SetDefaultAccount(merchantstore.DefaultAccountMomo).
 		Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed update merchant default account : %w", err)
+		return nil, fmt.Errorf("failed to update merchant default account: %w", err)
 	}
 	return result, nil
 
@@ -230,11 +233,19 @@ func (r repository) ReadAllByMerchant(merchantType string, limit, offset int) ([
 	return results, nil
 }
 
-func (r repository) Update(store *models.MerchantStore, storeId int) (*ent.MerchantStore, error) {
-	// TODO implement me
-	panic("implement me")
-}
+func (r repository) Update(request *models.MerchantStoreUpdate, storeId int) (*ent.MerchantStore, error) {
+	result, err := r.db.MerchantStore.UpdateOneID(storeId).
+		SetName(request.BusinessName).
+		SetSlogan(request.BusinessSlogan).
+		SetAbout(request.About).
+		SetDescription(request.Description).
+		Save(context.Background())
 
+	if err != nil {
+		return nil, fmt.Errorf("failed to update merchant storefront: %w", err)
+	}
+	return result, nil
+}
 func (r repository) UpdateAddress(address *models.MerchantStoreAddress, storeId int) (*ent.MerchantStore, error) {
 
 	result, err := r.db.MerchantStore.UpdateOneID(storeId).SetAddress(address).Save(context.Background())
@@ -242,6 +253,50 @@ func (r repository) UpdateAddress(address *models.MerchantStoreAddress, storeId 
 		return nil, err
 	}
 	return result, nil
+}
+func (r repository) UpdateBanner(storeId int, bannerPath string) (string, error) {
+	ctx := context.Background()
+	_, err := r.db.MerchantStore.UpdateOneID(storeId).SetLogo(bannerPath).Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	return bannerPath, nil
+}
+
+func (r repository) UpdateImages(storeId int, newPath, oldPath string) ([]string, error) {
+	ctx := context.Background()
+	old := r.db.MerchantStore.Query().Where(merchantstore.ID(storeId)).OnlyX(ctx)
+	newImages := lo.Map[string](
+		old.Images, func(path string, index int) string {
+			if path == oldPath {
+				return newPath
+			}
+			return path
+		},
+	)
+	_, err := old.Update().
+		SetImages(newImages).
+		Save(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return newImages, nil
+}
+
+func (r repository) AppendNewImages(storeId int, urls []string) ([]string, error) {
+	ctx := context.Background()
+	old := r.db.MerchantStore.Query().Where(merchantstore.ID(storeId)).OnlyX(ctx)
+	var newImages []string
+	newImages = append(newImages, old.Images...)
+	newImages = append(newImages, urls...)
+
+	_, err := old.Update().
+		SetImages(newImages).
+		Save(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return newImages, nil
 }
 func (r repository) Delete(id string) error {
 	// TODO implement me

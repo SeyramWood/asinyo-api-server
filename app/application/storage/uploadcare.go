@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"log"
 	"mime/multipart"
+	"regexp"
 	"sync"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
+	"github.com/uploadcare/uploadcare-go/file"
 	"github.com/uploadcare/uploadcare-go/ucare"
 	"github.com/uploadcare/uploadcare-go/upload"
 
-	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/config"
 )
 
@@ -23,14 +24,9 @@ type uploadcare struct {
 	client    ucare.Client
 	ctx       context.Context
 	TaskType  string
-	WG        *sync.WaitGroup
-	DataChan  chan any
-	DoneChan  chan bool
-	ErrorChan chan error
-	conf      *storage
 }
 
-func newUploadcare(conf *storage) gateways.StorageService {
+func newUploadcare() storageDriverService {
 	client, err := ucare.NewClient(
 		ucare.APICreds{
 			SecretKey: config.Uploadcare().SecKey,
@@ -51,56 +47,16 @@ func newUploadcare(conf *storage) gateways.StorageService {
 		client:    client,
 		ctx:       context.Background(),
 		TaskType:  "delete_file",
-		WG:        conf.WG,
-		DataChan:  conf.DataChan,
-		DoneChan:  conf.DoneChan,
-		ErrorChan: conf.ErrorChan,
-		conf:      conf,
 	}
 }
 
-func (u *uploadcare) Listen() {
-	for {
-		select {
-		case data := <-u.DataChan:
-			go u.runTask(data)
-		case err := <-u.ErrorChan:
-			fmt.Println(err)
-		case <-u.DoneChan:
-			return
-		}
-	}
-}
-func (u *uploadcare) ExecuteTask(data any, taskType string) {
-	u.WG.Add(1)
-	u.DataChan <- data
-	if taskType != "" {
-		u.TaskType = taskType
-	}
-}
-func (u *uploadcare) Done() {
-	u.DoneChan <- true
-}
-func (u *uploadcare) CloseChannels() {
-	close(u.DataChan)
-	close(u.ErrorChan)
-	close(u.DoneChan)
-}
-
-func (u *uploadcare) Disk(disk string) gateways.StorageService {
-	if disk == drivers["uploadcare"] {
-		return newUploadcare(u.conf)
-	}
-	return newLocal(u.conf)
-}
-
-func (u *uploadcare) UploadFile(dir string, f *multipart.FileHeader) (string, error) {
+func (u *uploadcare) uploadFile(dir string, f *multipart.FileHeader) (string, error) {
 	file, err := f.Open()
-	defer file.Close()
 	if err != nil {
 		return "", err
 	}
-	info, err := u.getFileInfo(file, dir)
+	defer file.Close()
+	info, err := u.getFileInfo(f, dir)
 	if err != nil {
 		return "", err
 	}
@@ -114,42 +70,68 @@ func (u *uploadcare) UploadFile(dir string, f *multipart.FileHeader) (string, er
 	if err != nil {
 		return "", err
 	}
-
 	fPath := fmt.Sprintf("%s/%s/", u.url, fID)
 	return fPath, nil
 }
 
-func (u *uploadcare) UploadFiles(dir string, f []*multipart.FileHeader) ([]*string, error) {
-	// TODO implement me
-	panic("implement me")
+func (u *uploadcare) uploadFiles(dir string, files []*multipart.FileHeader) ([]string, error) {
+	var urls []string
+	wg := sync.WaitGroup{}
+	for _, f := range files {
+		wg.Add(1)
+		go func(f *multipart.FileHeader) {
+			defer wg.Done()
+			path, err := u.uploadFile(dir, f)
+			if err != nil {
+				panic(fmt.Sprintf("error uploading file [error]: %s", err))
+			}
+			urls = append(urls, path)
+		}(f)
+	}
+	wg.Wait()
+	return urls, nil
 }
 
-func (u *uploadcare) runTask(data any) {
-	defer u.WG.Done()
-	switch u.TaskType {
-	case "delete_file":
-		if err := u.deleteFile(data); err != nil {
-			u.ErrorChan <- err
-		}
-	}
-}
 func (u *uploadcare) deleteFile(path any) error {
 	fPath := path.(string)
-	fmt.Println(fPath)
+	r, _ := regexp.Compile(`^(?:https://ucarecdn.com/)([0-9a-zA-Z]{8}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{12})(?:/)$`)
+	matches := r.FindAllStringSubmatch(fPath, -1)[0]
+	fileSvc := file.NewService(u.client)
+	_, err := fileSvc.Delete(u.ctx, matches[1])
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (u *uploadcare) deleteFiles(path []*string) error {
-	// TODO implement me
-	panic("implement me")
+func (u *uploadcare) deleteFiles(paths []any) error {
+	var ids []string
+	for _, path := range paths {
+		fPath := path.(string)
+		r, _ := regexp.Compile(`^(?:https://ucarecdn.com/)([0-9a-zA-Z]{8}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{12})(?:/)$`)
+		matches := r.FindAllStringSubmatch(fPath, -1)[0]
+		ids = append(ids, matches[1])
+	}
+	fileSvc := file.NewService(u.client)
+	_, err := fileSvc.BatchDelete(u.ctx, ids)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (u *uploadcare) getFileInfo(buffer multipart.File, prefix string) (map[string]string, error) {
-	head := make([]byte, 512)
-	_, err := buffer.Read(head)
+func (u *uploadcare) getFileInfo(f *multipart.FileHeader, prefix string) (map[string]string, error) {
+	buffer, err := f.Open()
 	if err != nil {
 		return nil, err
 	}
+	defer buffer.Close()
+	head := make([]byte, 512)
+	_, err = buffer.Read(head)
+	if err != nil {
+		return nil, err
+	}
+
 	mtype := mimetype.Detect(head)
 	filename := fmt.Sprintf("%s_%s%s", prefix, uuid.New(), mtype.Extension())
 

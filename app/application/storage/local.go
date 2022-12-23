@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"mime/multipart"
-	"sync"
 
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/google/uuid"
 	"github.com/uploadcare/uploadcare-go/ucare"
 
-	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/config"
 )
 
@@ -24,14 +24,9 @@ type local struct {
 	client    ucare.Client
 	ctx       context.Context
 	TaskType  string
-	WG        *sync.WaitGroup
-	DataChan  chan any
-	DoneChan  chan bool
-	ErrorChan chan error
-	conf      *storage
 }
 
-func newLocal(conf *storage) gateways.StorageService {
+func newLocal() storageDriverService {
 	return &local{
 		secretKey: config.Uploadcare().SecKey,
 		publicKey: config.Uploadcare().PubKey,
@@ -39,78 +34,49 @@ func newLocal(conf *storage) gateways.StorageService {
 		client:    nil,
 		ctx:       context.Background(),
 		TaskType:  "delete_file",
-		WG:        conf.WG,
-		DataChan:  conf.DataChan,
-		DoneChan:  conf.DoneChan,
-		ErrorChan: conf.ErrorChan,
-		conf:      conf,
 	}
 }
 
-func (l *local) Listen() {
-	for {
-		select {
-		case data := <-l.DataChan:
-			go l.runTask(data)
-		case err := <-l.ErrorChan:
-			fmt.Println(err)
-		case <-l.DoneChan:
-			return
-		}
-	}
-}
-
-func (l *local) ExecuteTask(data any, taskType string) {
-	l.WG.Add(1)
-	l.DataChan <- data
-	if taskType != "" {
-		l.TaskType = taskType
-	}
-}
-
-func (l *local) Done() {
-	l.DoneChan <- true
-}
-
-func (l *local) CloseChannels() {
-	close(l.DataChan)
-	close(l.ErrorChan)
-	close(l.DoneChan)
-}
-
-func (l *local) Disk(disk string) gateways.StorageService {
-	if disk == drivers["uploadcare"] {
-		return newUploadcare(l.conf)
-	}
-	return newLocal(l.conf)
-}
-
-func (l *local) UploadFile(dir string, f *multipart.FileHeader) (string, error) {
+func (l *local) uploadFile(dir string, f *multipart.FileHeader) (string, error) {
 	// TODO implement me
-	panic("implement me local")
+
+	panic("implement me UploadFiles")
 }
 
-func (l *local) UploadFiles(dir string, f []*multipart.FileHeader) ([]*string, error) {
+func (l *local) uploadFiles(dir string, files []*multipart.FileHeader) ([]string, error) {
 	// TODO implement me
-	panic("implement me")
-}
 
-func (l *local) runTask(data any) {
-	defer l.WG.Done()
-	switch l.TaskType {
-	case "delete_file":
-		if err := l.deleteFile(data); err != nil {
-			l.ErrorChan <- err
-		}
-	}
+	panic("implement me UploadFiles")
 }
 
 func (l *local) deleteFile(path any) error {
+	fPath := path.(string)
+	fmt.Println("local", fPath)
+	return nil
+}
+
+func (l *local) deleteFiles(paths []any) error {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (l *local) deleteFiles(path []*string) error {
-	// TODO implement me
-	panic("implement me")
+func (l *local) getFileInfo(f *multipart.FileHeader, prefix string) (map[string]string, error) {
+	buffer, err := f.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer buffer.Close()
+	head := make([]byte, 512)
+	_, err = buffer.Read(head)
+	if err != nil {
+		return nil, err
+	}
+
+	mtype := mimetype.Detect(head)
+	filename := fmt.Sprintf("%s_%s%s", prefix, uuid.New(), mtype.Extension())
+
+	return map[string]string{
+		"name": filename,
+		"mime": mtype.String(),
+	}, nil
 }
