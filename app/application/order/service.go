@@ -43,7 +43,7 @@ func (s service) Create(order *models.OrderPayload) (*ent.Order, error) {
 		return nil, err
 	}
 	msg := fmt.Sprintf(
-		"New Order Recieved! Please visit your portal to start the order process. %s",
+		"New Order Received! Please visit your portal to start the order process. %s",
 		config.App().AppURL,
 	)
 	for _, store := range storeMerchant.Edges.Stores {
@@ -68,14 +68,14 @@ func (s service) Create(order *models.OrderPayload) (*ent.Order, error) {
 	return result, nil
 }
 
-func (s service) TesCreate(orderId int) (*ent.Order, error) {
+func (s service) TestCreate(orderId int) (*ent.Order, error) {
 	// TODO Send SMS OR Email to store
 	storeMerchant, err := s.repo.ReadOrderStoreMerchants(orderId)
 	if err != nil {
 		return nil, err
 	}
 	msg := fmt.Sprintf(
-		"New Order Recieved! Please visit your portal to start the order process. %s",
+		"New Order Received! Please visit your portal to start the order process. %s",
 		config.App().AppURL,
 	)
 	for _, store := range storeMerchant.Edges.Stores {

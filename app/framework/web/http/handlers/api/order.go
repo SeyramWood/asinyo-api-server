@@ -21,7 +21,7 @@ type OrderHandler struct {
 
 func NewOrderHandler(db *database.Adapter, logis gateways.LogisticService, mail gateways.EmailService) *OrderHandler {
 	service := order.NewOrderService(order.NewOrderRepo(db), logis, mail)
-	paymentService := payment.NewPaymentService(payment.NewPaymentRepo(db))
+	paymentService := payment.NewPaymentService(payment.NewPaymentRepo(db), "pay_on_delivery")
 	return &OrderHandler{
 		service:        service,
 		paymentService: paymentService,
@@ -119,6 +119,7 @@ func (h *OrderHandler) SaveOrder() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		orderData, err := h.paymentService.FormatPayload(c.Body())
+
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))
 		}
@@ -145,7 +146,7 @@ func (h *OrderHandler) TestOrderCreation() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
-		_, err = h.service.TesCreate(request.ID)
+		_, err = h.service.TestCreate(request.ID)
 
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))

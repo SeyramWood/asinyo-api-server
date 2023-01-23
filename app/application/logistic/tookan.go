@@ -72,8 +72,8 @@ func (t *tookan) ExecuteWebhook(response any) {
 func (t *tookan) Listen() {
 	for {
 		select {
-		case ord := <-t.DataChan:
-			go t.createTask(ord, t.ErrorChan)
+		case data := <-t.DataChan:
+			go t.createTask(data)
 		case response := <-t.WebhookChan:
 			go t.processWebhookResponse(response)
 		case err := <-t.ErrorChan:
@@ -121,24 +121,16 @@ func (t *tookan) FareEstimate(coordinates *models.OrderFareEstimateRequest) (
 	return response, nil
 }
 
-func (t *tookan) createTask(order *ent.Order, errorChan chan error) {
+func (t *tookan) createTask(order *ent.Order) {
 	defer t.WG.Done()
 	switch t.TaskType {
-	case "delivery_task":
-		if err := t.createDeliveryTask(order); err != nil {
-			errorChan <- err
-		}
 	case "pickup_delivery_tasks":
 		if err := t.createPickupAndDeliveryTask(order); err != nil {
-			errorChan <- err
-		}
-	case "create_multiple_tasks":
-		if err := t.createPickupDeliveryTasks(order); err != nil {
-			errorChan <- err
+			t.ErrorChan <- err
 		}
 	case "edit_multiple_tasks":
 		if err := t.updatePickupDeliveryTasks(order); err != nil {
-			errorChan <- err
+			t.ErrorChan <- err
 		}
 	}
 }
@@ -148,6 +140,7 @@ func (t *tookan) processWebhookResponse(response any) {
 	if err != nil {
 		t.ErrorChan <- err
 	}
+	fmt.Println(res)
 	switch res.JobStatus {
 	case 1:
 		// Job Started
@@ -167,11 +160,13 @@ func (t *tookan) createPickupAndDeliveryTask(order *ent.Order) error {
 	if len(tasks) == 0 {
 		return nil
 	}
+
 	for index, task := range tasks {
 		payloadBytes, err := json.Marshal(&task)
 		if err != nil {
 			return err
 		}
+
 		body := bytes.NewReader(payloadBytes)
 		req, reqerr := http.NewRequest("POST", fmt.Sprintf("%s/create_task", t.URL), body)
 		if reqerr != nil {
@@ -190,8 +185,8 @@ func (t *tookan) createPickupAndDeliveryTask(order *ent.Order) error {
 			return derr
 		}
 		defer res.Body.Close()
-		if lo.Contains[int]([]int{100, 101, 201, 404}, response.Status) {
-			return fmt.Errorf("%s", response.Message)
+		if lo.Contains([]int{100, 101, 201, 404}, response.Status) {
+			return fmt.Errorf("(%d) %s", response.Status, response.Message)
 		}
 		err = t.repo.UpdateOrderDeliveryTask(order.OrderNumber, stores[index])
 		if err != nil {
@@ -215,140 +210,6 @@ func (t *tookan) createPickupAndDeliveryTask(order *ent.Order) error {
 	}
 	return nil
 }
-func (t *tookan) createDeliveryTask(order *ent.Order) error {
-	currentTime := time.Date(2022, time.December, 25, 23, 0, 0, 0, time.UTC)
-	task := &services.TookanDeliveryTask{
-		APIKey:           t.APIKey,
-		OrderID:          order.OrderNumber,
-		JobDescription:   "Order Delivery",
-		CustomerEmail:    "",
-		CustomerUsername: fmt.Sprintf("%s %s", order.Edges.Address.OtherName, order.Edges.Address.LastName),
-		CustomerPhone:    fmt.Sprintf("%s", order.Edges.Address.Phone),
-		CustomerAddress: fmt.Sprintf(
-			"%s\n%s,%s\n%s-%s", order.Edges.Address.City,
-			order.Edges.Address.StreetName,
-			order.Edges.Address.District, order.Edges.Address.Region, order.Edges.Address.Country,
-		),
-		Latitude:            "",
-		Longitude:           "",
-		JobDeliveryDatetime: currentTime.Format("01-02-2006 15:04"),
-		CustomFieldTemplate: "order_delivery",
-		MetaData:            t.formatMetadata(order, 0),
-		TeamID:              "",
-		AutoAssignment:      "1",
-		HasPickup:           "0",
-		HasDelivery:         "1",
-		LayoutType:          "0",
-		TrackingLink:        1,
-		Timezone:            "-330",
-		FleetID:             "",
-		RefImages:           nil,
-		Notify:              1,
-		Tags:                "delivery, order",
-		Geofence:            1,
-	}
-
-	// log.Fatalln(task)
-
-	payloadBytes, err := json.Marshal(&task)
-
-	if err != nil {
-		return err
-	}
-
-	body := bytes.NewReader(payloadBytes)
-
-	req, reqerr := http.NewRequest("POST", fmt.Sprintf("%s/create_task", t.URL), body)
-
-	if reqerr != nil {
-		return reqerr
-	}
-
-	// req.Header.Set("Cache-Control", fmt.Sprintf("no-cache"))
-	req.Header.Set("Content-Type", "application/json")
-
-	res, reserr := http.DefaultClient.Do(req)
-	if reserr != nil {
-		return reserr
-
-	}
-	defer res.Body.Close()
-	// TODO work with response
-	var response services.TookanTaskResponse
-	derr := json.NewDecoder(res.Body).Decode(&response)
-	if derr != nil {
-		return derr
-	}
-	fmt.Println(response)
-
-	if response.Status == 200 {
-		// TODO save data to db
-
-	}
-
-	return nil
-}
-
-func (t *tookan) createPickupDeliveryTasks(order *ent.Order) error {
-	task := &services.TookanPickupDeliveryTask{
-		APIKey:         t.APIKey,
-		FleetID:        0,
-		Timezone:       -330,
-		HasPickup:      1,
-		HasDelivery:    1,
-		LayoutType:     0,
-		Geofence:       0,
-		TeamID:         "",
-		AutoAssignment: 0,
-		Tags:           "order, pickup, delivery",
-		Pickups:        t.formatPickups(order),
-		Deliveries:     t.formatDeliveries(order),
-	}
-	payloadBytes, err := json.Marshal(&task)
-
-	if err != nil {
-		return err
-	}
-
-	body := bytes.NewReader(payloadBytes)
-
-	req, reqerr := http.NewRequest("POST", fmt.Sprintf("%s/create_multiple_tasks", t.URL), body)
-
-	if reqerr != nil {
-		return reqerr
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	res, reserr := http.DefaultClient.Do(req)
-	if reserr != nil {
-		return reserr
-	}
-	var response services.TookanPickupDeliveryResponse
-	derr := json.NewDecoder(res.Body).Decode(&response)
-	if derr != nil {
-		return derr
-	}
-	defer res.Body.Close()
-	if lo.Contains[int]([]int{100, 101, 201, 404}, response.Status) {
-		return fmt.Errorf("%s", response.Message)
-	}
-	if response.Status == 200 {
-		// _ = t.repo.UpdateOrderDeliveryTask(response.Data.Deliveries[0].OrderID, t.StoreIds)
-		// resData := &models.TookanMultiTaskResponse{
-		// 	Pickups:    response.Data.Pickups,
-		// 	Deliveries: response.Data.Deliveries,
-		// 	Geofence:   response.Data.GeofenceDetails,
-		// }
-		// _, err := t.repo.InsertResponse(resData)
-		// if err != nil {
-		// 	return err
-		// }
-	}
-
-	return nil
-}
-
 func (t *tookan) updatePickupDeliveryTasks(order *ent.Order) error {
 	task := &services.TookanPickupDeliveryUpdateTask{
 		APIKey:     t.APIKey,
@@ -409,7 +270,7 @@ func (t *tookan) formatMetadata(data *ent.Order, storeId int) []*services.Tookan
 	var amount float64
 
 	for _, detail := range data.Edges.Details {
-		if lo.Contains[int](data.StoreTasksCreated, detail.Edges.Store.ID) {
+		if lo.Contains(data.StoreTasksCreated, detail.Edges.Store.ID) {
 			continue
 		}
 		if detail.Edges.Store.ID == storeId {
@@ -492,14 +353,15 @@ func (t *tookan) formatPickupAndDelivery(order *ent.Order) ([]*services.TookanPi
 
 	var response []*services.TookanPickupAndDeliveryTask
 	var storeIds []int
-	pickupTime := time.Date(2022, time.December, 15, 23, 0, 0, 0, time.UTC)
-	deliveryTime := time.Date(2022, time.December, 25, 23, 0, 0, 0, time.UTC)
+
+	pickupTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 23, 0, 0, 0, time.UTC)
+	deliveryTime := time.Date(time.Now().Year(), time.Now().Month(), (time.Now().Day() + 3), 23, 0, 0, 0, time.UTC)
 
 	for _, detail := range order.Edges.Details {
-		if lo.Contains[int](order.StoreTasksCreated, detail.Edges.Store.ID) {
+		if lo.Contains(order.StoreTasksCreated, detail.Edges.Store.ID) {
 			continue
 		}
-		if !lo.Contains[int](storeIds, detail.Edges.Store.ID) && detail.Status == "processing" {
+		if !lo.Contains(storeIds, detail.Edges.Store.ID) && detail.Status == "processing" {
 			tasks := func() *services.TookanPickupAndDeliveryTask {
 				if s, err := detail.Edges.Store.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
 					return &services.TookanPickupAndDeliveryTask{
@@ -607,12 +469,12 @@ func (t *tookan) formatPickupAndDelivery(order *ent.Order) ([]*services.TookanPi
 				}
 				return nil
 			}()
+
 			response = append(response, tasks)
 
 			storeIds = append(storeIds, detail.Edges.Store.ID)
 		}
 	}
-
 	return response, storeIds
 }
 
@@ -622,10 +484,10 @@ func (t *tookan) formatPickups(order *ent.Order) []*services.TookanPickupDeliver
 	var response []*services.TookanPickupDelivery
 
 	for _, detail := range order.Edges.Details {
-		if lo.Contains[int](order.StoreTasksCreated, detail.Edges.Store.ID) {
+		if lo.Contains(order.StoreTasksCreated, detail.Edges.Store.ID) {
 			continue
 		}
-		if !lo.Contains[int](t.StoreIds, detail.Edges.Store.ID) && detail.Status == "processing" {
+		if !lo.Contains(t.StoreIds, detail.Edges.Store.ID) && detail.Status == "processing" {
 			formattedPickup := func() *services.TookanPickupDelivery {
 				if s, err := detail.Edges.Store.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
 					return &services.TookanPickupDelivery{
@@ -685,11 +547,12 @@ func (t *tookan) formatDeliveries(order *ent.Order) []*services.TookanPickupDeli
 	currentTime := time.Date(2022, time.December, 25, 23, 0, 0, 0, time.UTC)
 	var response []*services.TookanPickupDelivery
 	var storeIds []int
+
 	for _, detail := range order.Edges.Details {
-		if lo.Contains[int](order.StoreTasksCreated, detail.Edges.Store.ID) {
+		if lo.Contains(order.StoreTasksCreated, detail.Edges.Store.ID) {
 			continue
 		}
-		if !lo.Contains[int](storeIds, detail.Edges.Store.ID) && detail.Status == "processing" {
+		if !lo.Contains(storeIds, detail.Edges.Store.ID) && detail.Status == "processing" {
 			response = append(
 				response, &services.TookanPickupDelivery{
 
@@ -701,7 +564,7 @@ func (t *tookan) formatDeliveries(order *ent.Order) []*services.TookanPickupDeli
 					Latitude:       0,
 					Longitude:      0,
 					Time:           currentTime.Format("01-02-2006 15:04"),
-					Phone:          fmt.Sprintf("%s", order.Edges.Address.Phone),
+					Phone:          order.Edges.Address.Phone,
 					JobDescription: "Order Delivery",
 					TemplateName:   "order_delivery",
 					TemplateData:   t.formatMetadata(order, detail.Edges.Store.ID),

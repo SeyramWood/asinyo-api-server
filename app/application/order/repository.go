@@ -43,7 +43,7 @@ func (r repository) ReadAllByUser(userType string, id int) ([]*ent.Order, error)
 	switch userType {
 	case "retailer", "supplier":
 		return r.readMerchantOrders(id)
-	case "customer":
+	case "individual", "business":
 		return r.readCustomerOrders(id)
 	case "agent":
 		return r.readAgentOrders(id)
@@ -280,7 +280,7 @@ func (r repository) Insert(res *models.OrderPayload) (*ent.Order, error) {
 	switch res.Metadata.UserType {
 	case "retailer", "supplier":
 		return r.insertMerchantOrder(res)
-	case "customer":
+	case "individual", "business":
 		return r.insertCustomerOrder(res)
 	case "agent":
 		return r.insertAgentOrder(res)
@@ -705,7 +705,7 @@ func (r repository) getNewStores(products []*services.ProductDetails) []*ent.Mer
 		"instances": []*ent.MerchantStore{},
 	}
 	for _, p := range products {
-		if !lo.Contains[int](stores["ids"].([]int), p.Store) {
+		if !lo.Contains(stores["ids"].([]int), p.Store) {
 			stores["ids"] = append(stores["ids"].([]int), p.Store)
 			stores["instances"] = append(
 				stores["instances"].([]*ent.MerchantStore),

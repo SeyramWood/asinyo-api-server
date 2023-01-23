@@ -2,6 +2,7 @@ package logistic
 
 import (
 	"context"
+	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqljson"
@@ -14,6 +15,7 @@ import (
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/samber/lo"
 )
 
 type repository struct {
@@ -58,7 +60,7 @@ func (r repository) UpdateOrderStatus(token, status string) error {
 		).
 		WithOrder(
 			func(orq *ent.OrderQuery) {
-				orq.Select(order.FieldID)
+				orq.Select(order.FieldID, order.FieldOrderNumber)
 			},
 		).
 		Only(ctx)
@@ -66,6 +68,7 @@ func (r repository) UpdateOrderStatus(token, status string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(result.Edges.Order[0].ID, result.Edges.Order[0].OrderNumber, result.Edges.Store.ID)
 	_, err = r.db.OrderDetail.Update().Where(
 		orderdetail.HasOrderWith(
 			func(ord *sql.Selector) {
@@ -81,8 +84,25 @@ func (r repository) UpdateOrderStatus(token, status string) error {
 	if err != nil {
 		return err
 	}
+
+	o, err := r.db.Order.Query().Where(order.ID(result.Edges.Order[0].ID)).WithDetails(func(odq *ent.OrderDetailQuery) {
+		odq.Select(orderdetail.FieldStatus)
+	}).Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	// fmt.Println(o.Edges.Details)
+
+	if (r.isOrderStatusFulfilled(o.Edges.Details)){
+		_, err := o.Update().SetStatus(order.StatusFulfilled).Save(ctx)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
+
 
 func (r repository) UpdateResponse(response *models.TookanPickupAndDeliveryTaskResponse) (*ent.Logistic, error) {
 	// ctx := context.Background()
@@ -97,7 +117,7 @@ func (r repository) UpdateOrderDeliveryTask(orderId string, storeId int) error {
 	o := r.db.Order.Query().Where(order.OrderNumber(orderId)).OnlyX(ctx)
 	newIds := []int{storeId}
 	newIds = append(newIds, o.StoreTasksCreated...)
-	if _, err := r.db.Order.Update().Where(order.OrderNumber(orderId)).SetStoreTasksCreated(newIds).Save(context.Background()); err != nil {
+	if _, err := o.Update().SetStoreTasksCreated(newIds).Save(context.Background()); err != nil {
 		return err
 	}
 	return nil
@@ -105,4 +125,16 @@ func (r repository) UpdateOrderDeliveryTask(orderId string, storeId int) error {
 func (r repository) Delete(id string) error {
 	// TODO implement me
 	panic("implement me")
+}
+
+func (r repository) isOrderStatusFulfilled(data []*ent.OrderDetail) bool {
+	delivered := lo.CountBy[*ent.OrderDetail](
+		data, func(d *ent.OrderDetail) bool {
+			return d.Status == "delivered"
+		},
+	)
+	if delivered == len(data) {
+		return true
+	}
+	return false
 }

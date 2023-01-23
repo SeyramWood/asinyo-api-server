@@ -86,7 +86,6 @@ func (h *PaystackHandler) VerifyTransaction() fiber.Handler {
 func (h *PaystackHandler) SaveOrder() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		orderData, err := h.service.FormatPayload(c.Body())
-		fmt.Println(orderData)
 		if err != nil {
 			fmt.Println(err)
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.PaymentErrorResponse(err))

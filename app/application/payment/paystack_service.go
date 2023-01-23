@@ -64,100 +64,51 @@ func (p *paystackService) FormatPayload(request any) (*models.OrderPayload, erro
 	if err != nil {
 		return nil, err
 	}
-	if strings.Compare(resBody.Path("data.metadata.paymentMethod").Data().(string), "POD") == 0 {
-		response = &services.PaystackResponse{
-			Event:     resBody.Path("event").Data().(string),
-			Amount:    resBody.Path("data.amount").Data().(float64),
-			Currency:  resBody.Path("data.currency").Data().(string),
-			Channel:   resBody.Path("data.channel").Data().(string),
-			Reference: resBody.Path("data.reference").Data().(string),
-			PaidAt:    "",
-			MetaData: &services.OrderResponseMetadata{
-				User:           resBody.Path("data.metadata.user").Data().(string),
-				UserType:       resBody.Path("data.metadata.userType").Data().(string),
-				OrderNumber:    resBody.Path("data.metadata.orderNumber").Data().(string),
-				Address:        resBody.Path("data.metadata.address").Data().(string),
-				DeliveryMethod: resBody.Path("data.metadata.deliveryMethod").Data().(string),
-				PaymentMethod:  resBody.Path("data.metadata.paymentMethod").Data().(string),
-				DeliveryFee:    resBody.Path("data.metadata.deliveryFee").Data().(string),
-				Pickup:         resBody.Path("data.metadata.pickup").Data().(string),
-				Products: func() []*services.ProductDetails {
-					var products []*services.ProductDetails
-					children, _ := resBody.Path("data.metadata.products").Children()
-					wg := sync.WaitGroup{}
-					for _, child := range children {
-						wg.Add(1)
-						go func(child *gabs.Container) {
-							defer wg.Done()
-							pro := child.Data().(map[string]interface{})
-							id, _ := strconv.Atoi(pro["id"].(string))
-							store, _ := strconv.Atoi(pro["store"].(string))
-							quantity, _ := strconv.Atoi(pro["quantity"].(string))
-							price, _ := strconv.ParseFloat(pro["price"].(string), 64)
-							promoPrice, _ := strconv.ParseFloat(pro["promoPrice"].(string), 64)
-							products = append(
-								products, &services.ProductDetails{
-									ID:         id,
-									Store:      store,
-									Quantity:   quantity,
-									Price:      price,
-									PromoPrice: promoPrice,
-								},
-							)
-						}(child)
-					}
-					wg.Wait()
-					return products
-				}(),
-			},
-		}
-	} else {
-		response = &services.PaystackResponse{
-			Event:     resBody.Path("event").Data().(string),
-			Amount:    resBody.Path("data.amount").Data().(float64),
-			Currency:  resBody.Path("data.currency").Data().(string),
-			Channel:   resBody.Path("data.channel").Data().(string),
-			Reference: resBody.Path("data.reference").Data().(string),
-			PaidAt:    resBody.Path("data.paid_at").Data().(string),
-			MetaData: &services.OrderResponseMetadata{
-				User:           resBody.Path("data.metadata.user").Data().(string),
-				UserType:       resBody.Path("data.metadata.userType").Data().(string),
-				OrderNumber:    resBody.Path("data.metadata.orderNumber").Data().(string),
-				Address:        resBody.Path("data.metadata.address").Data().(string),
-				DeliveryMethod: resBody.Path("data.metadata.deliveryMethod").Data().(string),
-				PaymentMethod:  resBody.Path("data.metadata.paymentMethod").Data().(string),
-				DeliveryFee:    resBody.Path("data.metadata.deliveryFee").Data().(string),
-				Pickup:         resBody.Path("data.metadata.pickup").Data().(string),
-				Products: func() []*services.ProductDetails {
-					var products []*services.ProductDetails
-					children, _ := resBody.Path("data.metadata.products").Children()
-					wg := sync.WaitGroup{}
-					for _, child := range children {
-						wg.Add(1)
-						go func(child *gabs.Container) {
-							defer wg.Done()
-							pro := child.Data().(map[string]interface{})
-							id, _ := strconv.Atoi(pro["id"].(string))
-							store, _ := strconv.Atoi(pro["store"].(string))
-							quantity, _ := strconv.Atoi(pro["quantity"].(string))
-							price, _ := strconv.ParseFloat(pro["price"].(string), 64)
-							promoPrice, _ := strconv.ParseFloat(pro["promoPrice"].(string), 64)
-							products = append(
-								products, &services.ProductDetails{
-									ID:         id,
-									Store:      store,
-									Quantity:   quantity,
-									Price:      price,
-									PromoPrice: promoPrice,
-								},
-							)
-						}(child)
-					}
-					wg.Wait()
-					return products
-				}(),
-			},
-		}
+	response = &services.PaystackResponse{
+		Event:     resBody.Path("event").Data().(string),
+		Amount:    resBody.Path("data.amount").Data().(float64),
+		Currency:  resBody.Path("data.currency").Data().(string),
+		Channel:   resBody.Path("data.channel").Data().(string),
+		Reference: resBody.Path("data.reference").Data().(string),
+		PaidAt:    resBody.Path("data.paid_at").Data().(string),
+		MetaData: &services.OrderResponseMetadata{
+			User:           resBody.Path("data.metadata.user").Data().(string),
+			UserType:       resBody.Path("data.metadata.userType").Data().(string),
+			OrderNumber:    resBody.Path("data.metadata.orderNumber").Data().(string),
+			Address:        resBody.Path("data.metadata.address").Data().(string),
+			DeliveryMethod: resBody.Path("data.metadata.deliveryMethod").Data().(string),
+			PaymentMethod:  resBody.Path("data.metadata.paymentMethod").Data().(string),
+			DeliveryFee:    resBody.Path("data.metadata.deliveryFee").Data().(string),
+			Pickup:         resBody.Path("data.metadata.pickup").Data().(string),
+			Products: func() []*services.ProductDetails {
+				var products []*services.ProductDetails
+				children, _ := resBody.Path("data.metadata.products").Children()
+				wg := sync.WaitGroup{}
+				for _, child := range children {
+					wg.Add(1)
+					go func(child *gabs.Container) {
+						defer wg.Done()
+						pro := child.Data().(map[string]interface{})
+						id, _ := strconv.Atoi(pro["id"].(string))
+						store, _ := strconv.Atoi(pro["store"].(string))
+						quantity, _ := strconv.Atoi(pro["quantity"].(string))
+						price, _ := strconv.ParseFloat(pro["price"].(string), 64)
+						promoPrice, _ := strconv.ParseFloat(pro["promoPrice"].(string), 64)
+						products = append(
+							products, &services.ProductDetails{
+								ID:         id,
+								Store:      store,
+								Quantity:   quantity,
+								Price:      price,
+								PromoPrice: promoPrice,
+							},
+						)
+					}(child)
+				}
+				wg.Wait()
+				return products
+			}(),
+		},
 	}
 	if strings.Compare(response.Event, "charge.success") == 0 {
 		userId, _ := strconv.Atoi(response.MetaData.User)
