@@ -1,6 +1,8 @@
 package presenters
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,12 +18,20 @@ type (
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
 	}
+	ProductCatMinors struct {
+		ID        int       `json:"id"`
+		Category  string    `json:"category"`
+		Slug      string    `json:"slug"`
+		Image     string    `json:"image"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
 	ProductCatMajorChildren struct {
-		Key  int             `json:"key"`
-		Data ProductCatMajor `json:"data"`
+		Key  string           `json:"key"`
+		Data ProductCatMinors `json:"data"`
 	}
 	ProductCatMajors struct {
-		Key          int                        `json:"key"`
+		Key          string                     `json:"key"`
 		Data         ProductCatMajor            `json:"data"`
 		ProductCount int                        `json:"productCount,omitempty"`
 		Children     []*ProductCatMajorChildren `json:"children"`
@@ -45,7 +55,7 @@ func ProductCatMajorsSuccessResponse(data []*ent.ProductCategoryMajor) *fiber.Ma
 
 	for _, v := range data {
 		major := &ProductCatMajors{
-			Key: v.ID,
+			Key: strconv.Itoa(v.ID),
 			Data: ProductCatMajor{
 				ID:        v.ID,
 				Category:  v.Category,
@@ -59,11 +69,12 @@ func ProductCatMajorsSuccessResponse(data []*ent.ProductCategoryMajor) *fiber.Ma
 				for _, m := range v.Edges.Minors {
 					children = append(
 						children, &ProductCatMajorChildren{
-							Key: m.ID,
-							Data: ProductCatMajor{
+							Key: fmt.Sprintf("%s-%s", strconv.Itoa(v.ID), strconv.Itoa(m.ID)),
+							Data: ProductCatMinors{
 								ID:        m.ID,
 								Category:  m.Category,
 								Slug:      m.Slug,
+								Image:     m.Image,
 								CreatedAt: m.CreatedAt,
 								UpdatedAt: m.UpdatedAt,
 							},

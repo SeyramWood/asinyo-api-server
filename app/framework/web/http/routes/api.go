@@ -292,15 +292,14 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 
 	authRouter.Route(
 		"/", func(r fiber.Router) {
-			r.Post("/", request.ValidateProduct(), h.Create()).Name("create")
-
-			// r.Get("/", h.Fetch()).Name("fetch")
-			// r.Get("/:id", h.FetchByID()).Name("fetch.id")
-			// r.Delete("/:id", h.Delete()).Name("delete")
-
-			r.Post("/majors", request.ValidateProductCatMajor(), majorH.Create()).Name("majors.create")
-
-			r.Post("/minors", request.ValidateProductCatMinor(), minorH.Create()).Name("minors.create")
+			r.Post("/", request.ValidateProduct(), h.Create())
+			r.Post("/majors", request.ValidateProductCatMajor(), majorH.Create())
+			r.Post("/minors", request.ValidateProductCatMinor(), minorH.Create())
+			r.Put("/majors/:id", request.ValidateProductCatMajor(), majorH.Update())
+			r.Put("/minors/:id", request.ValidateProductCatMajor(), minorH.Update())
+			r.Post("/minors/update/category-image", request.ValidateProductCatMajor(), minorH.Update())
+			r.Delete("/majors/:id", majorH.Delete())
+			r.Delete("/minors/:id", minorH.Delete())
 
 		}, "product.",
 	)
