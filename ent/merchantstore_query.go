@@ -479,7 +479,6 @@ func (msq *MerchantStoreQuery) WithOrderDetails(opts ...func(*OrderDetailQuery))
 //		GroupBy(merchantstore.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (msq *MerchantStoreQuery) GroupBy(field string, fields ...string) *MerchantStoreGroupBy {
 	grbuild := &MerchantStoreGroupBy{config: msq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -506,7 +505,6 @@ func (msq *MerchantStoreQuery) GroupBy(field string, fields ...string) *Merchant
 //	client.MerchantStore.Query().
 //		Select(merchantstore.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (msq *MerchantStoreQuery) Select(fields ...string) *MerchantStoreSelect {
 	msq.fields = append(msq.fields, fields...)
 	selbuild := &MerchantStoreSelect{MerchantStoreQuery: msq}

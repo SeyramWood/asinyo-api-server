@@ -15,23 +15,7 @@ import (
 
 func ValidateUser() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
-		userType := c.Get("Asinyo-Authorization-Type")
 		var request models.User
-		var merchantRequest models.UserMerchant
-
-		if userType == "supplier" || userType == "retailer" {
-			err := c.BodyParser(&merchantRequest)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
-			}
-			if er := validator.Validate(&merchantRequest); er != nil {
-				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
-			}
-
-			return c.Next()
-		}
-
 		err := c.BodyParser(&request)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
@@ -175,13 +159,23 @@ func ValidateUserName(checkUsernameExists bool) fiber.Handler {
 func ValidateAdmin() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		var request models.Admin
+		if c.Method() == "PUT" {
+			var updateRequest models.AdminUserUpdateRequest
+			err := c.BodyParser(&updateRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.AdminErrorResponse(err))
+			}
+			if er := validator.Validate(&updateRequest); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+			return c.Next()
+		}
 
+		var request models.AdminUserRequest
 		err := c.BodyParser(&request)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.AdminErrorResponse(err))
 		}
-
 		if er := validator.Validate(&request); er != nil {
 			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 		}
@@ -202,6 +196,30 @@ func ValidateCustomer() fiber.Handler {
 			}
 		} else {
 			var request models.BusinessCustomer
+			err := c.BodyParser(&request)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
+			}
+			if er := validator.Validate(&request); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		}
+		return c.Next()
+	}
+}
+func ValidateCustomerUpdate() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		if c.Get("customerType") == "individual" {
+			var request models.IndividualCustomerUpdate
+			err := c.BodyParser(&request)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
+			}
+			if er := validator.Validate(&request); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		} else {
+			var request models.BusinessCustomerUpdate
 			err := c.BodyParser(&request)
 			if err != nil {
 				return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
@@ -249,18 +267,18 @@ func ValidateAgent() fiber.Handler {
 func ValidateAgentCompliance() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		var compliance models.AgentCompliance
+		// var compliance models.AgentCompliance
 		var guarantor models.AgentGuarantor
 
 		if c.Get("step") == "personal" {
-			err := c.BodyParser(&compliance)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
-			}
-
-			if er := validator.Validate(&compliance); er != nil {
-				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
-			}
+			// err := c.BodyParser(&compliance)
+			// if err != nil {
+			// 	return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
+			// }
+			//
+			// if er := validator.Validate(&compliance); er != nil {
+			// 	return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			// }
 
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 
@@ -275,6 +293,62 @@ func ValidateAgentCompliance() fiber.Handler {
 
 			return c.Next()
 		}
+	}
+}
+func ValidateAgentUpdate() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		var guarantor models.AgentProfile
+		err := c.BodyParser(&guarantor)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
+		}
+		if er := validator.Validate(&guarantor); er != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
+
+		return c.Next()
+	}
+}
+func ValidateAgentGuarantor() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var guarantor models.AgentGuarantorUpdate
+		err := c.BodyParser(&guarantor)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AgentErrorResponse(err))
+		}
+		if er := validator.Validate(&guarantor); er != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
+
+		return c.Next()
+	}
+}
+func ValidateAgentAccount() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var momoRequest models.AgentMomoAccountRequest
+		var bankRequest models.AgentBankAccountRequest
+		accountType := c.Params("accountType")
+
+		if accountType == "bank" {
+			err := c.BodyParser(&bankRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(err)
+			}
+			if er := validator.Validate(&bankRequest); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		} else {
+			err := c.BodyParser(&momoRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(err)
+			}
+			if err := validator.Validate(&momoRequest); err != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(err)
+			}
+		}
+		return c.Next()
+
 	}
 }
 
@@ -480,7 +554,7 @@ func ValidateMerchantStore() fiber.Handler {
 }
 func ValidateMerchantStoreUpdate() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var infoRequest models.MerchantStore
+		var infoRequest models.MerchantStoreUpdate
 		var addressRequest models.MerchantStoreAddress
 
 		formType := c.Get("formType")
@@ -493,7 +567,6 @@ func ValidateMerchantStoreUpdate() fiber.Handler {
 				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 			}
 
-			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 		}
 		if formType == "address" {
 			err := c.BodyParser(&addressRequest)
@@ -509,30 +582,55 @@ func ValidateMerchantStoreUpdate() fiber.Handler {
 
 	}
 }
-
-func ValidateMerchantMomoAccount() fiber.Handler {
+func ValidateMerchantAccount() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var request models.MerchantMomoAccountRequest
-		err := c.BodyParser(&request)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
-		}
+		var momoRequest models.MerchantMomoAccountRequest
+		var bankRequest models.MerchantBankAccountRequest
+		accountType := c.Params("accountType")
 
+		if accountType == "bank" {
+			err := c.BodyParser(&bankRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(err)
+			}
+			if er := validator.Validate(&bankRequest); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		} else {
+			err := c.BodyParser(&momoRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(err)
+			}
+			if err := validator.Validate(&momoRequest); err != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(err)
+			}
+		}
 		return c.Next()
 
 	}
 }
-
-func ValidateMerchantBankAccount() fiber.Handler {
+func ValidateMerchantProfileUpdate() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var request models.MerchantBankAccountRequest
-		err := c.BodyParser(&request)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+		if c.Get("userType") == "retailer" {
+			var request models.RetailerProfileUpdate
+			err := c.BodyParser(&request)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
+			}
+			if er := validator.Validate(&request); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		} else {
+			var request models.SupplierProfileUpdate
+			err := c.BodyParser(&request)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
+			}
+			if er := validator.Validate(&request); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
 		}
-
 		return c.Next()
-
 	}
 }
 
@@ -540,6 +638,23 @@ func ValidateProduct() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		var request models.Product
+
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
+		}
+		if er := validator.Validate(&request); er != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
+
+		return c.Next()
+
+	}
+}
+func ValidateProductUpdate() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		var request models.ProductUpdate
 
 		err := c.BodyParser(&request)
 		if err != nil {
@@ -587,5 +702,39 @@ func ValidateProductCatMinor() fiber.Handler {
 
 		return c.Next()
 
+	}
+}
+func ValidateProductCatMinorUpdate() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		var request models.ProductCategoryMinorUpdate
+
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductCatMinorErrorResponse(err))
+		}
+		if er := validator.Validate(&request); er != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
+
+		return c.Next()
+
+	}
+}
+
+func ValidateRole() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		var request models.RoleRequest
+
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AdminErrorResponse(err))
+		}
+
+		if er := validator.Validate(&request); er != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
+		return c.Next()
 	}
 }

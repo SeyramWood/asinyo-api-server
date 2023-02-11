@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -43,7 +44,7 @@ func (Order) Fields() []ent.Field {
 // Edges of the Order.
 func (Order) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("details", OrderDetail.Type),
+		edge.To("details", OrderDetail.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 		edge.From("merchant", Merchant.Type).
 			Ref("orders").
 			Unique(),

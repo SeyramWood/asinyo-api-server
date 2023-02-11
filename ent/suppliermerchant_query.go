@@ -298,7 +298,6 @@ func (smq *SupplierMerchantQuery) WithMerchant(opts ...func(*MerchantQuery)) *Su
 //		GroupBy(suppliermerchant.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (smq *SupplierMerchantQuery) GroupBy(field string, fields ...string) *SupplierMerchantGroupBy {
 	grbuild := &SupplierMerchantGroupBy{config: smq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -325,7 +324,6 @@ func (smq *SupplierMerchantQuery) GroupBy(field string, fields ...string) *Suppl
 //	client.SupplierMerchant.Query().
 //		Select(suppliermerchant.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (smq *SupplierMerchantQuery) Select(fields ...string) *SupplierMerchantSelect {
 	smq.fields = append(smq.fields, fields...)
 	selbuild := &SupplierMerchantSelect{SupplierMerchantQuery: smq}

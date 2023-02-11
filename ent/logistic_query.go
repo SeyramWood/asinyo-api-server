@@ -335,7 +335,6 @@ func (lq *LogisticQuery) WithStore(opts ...func(*MerchantStoreQuery)) *LogisticQ
 //		GroupBy(logistic.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (lq *LogisticQuery) GroupBy(field string, fields ...string) *LogisticGroupBy {
 	grbuild := &LogisticGroupBy{config: lq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -362,7 +361,6 @@ func (lq *LogisticQuery) GroupBy(field string, fields ...string) *LogisticGroupB
 //	client.Logistic.Query().
 //		Select(logistic.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (lq *LogisticQuery) Select(fields ...string) *LogisticSelect {
 	lq.fields = append(lq.fields, fields...)
 	selbuild := &LogisticSelect{LogisticQuery: lq}

@@ -3,6 +3,7 @@
 package admin
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -19,8 +20,23 @@ const (
 	FieldUsername = "username"
 	// FieldPassword holds the string denoting the password field in the database.
 	FieldPassword = "password"
+	// FieldLastName holds the string denoting the last_name field in the database.
+	FieldLastName = "last_name"
+	// FieldOtherName holds the string denoting the other_name field in the database.
+	FieldOtherName = "other_name"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
+	// FieldLastActive holds the string denoting the last_active field in the database.
+	FieldLastActive = "last_active"
+	// EdgeRoles holds the string denoting the roles edge name in mutations.
+	EdgeRoles = "roles"
 	// Table holds the table name of the admin in the database.
 	Table = "admins"
+	// RolesTable is the table that holds the roles relation/edge. The primary key declared below.
+	RolesTable = "admin_roles"
+	// RolesInverseTable is the table name for the Role entity.
+	// It exists in this package in order to avoid circular dependency with the "role" package.
+	RolesInverseTable = "roles"
 )
 
 // Columns holds all SQL columns for admin fields.
@@ -30,7 +46,17 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldUsername,
 	FieldPassword,
+	FieldLastName,
+	FieldOtherName,
+	FieldStatus,
+	FieldLastActive,
 }
+
+var (
+	// RolesPrimaryKey and RolesColumn2 are the table columns denoting the
+	// primary key for the roles relation (M2M).
+	RolesPrimaryKey = []string{"admin_id", "role_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -53,4 +79,34 @@ var (
 	UsernameValidator func(string) error
 	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	PasswordValidator func([]byte) error
+	// LastNameValidator is a validator for the "last_name" field. It is called by the builders before save.
+	LastNameValidator func(string) error
+	// OtherNameValidator is a validator for the "other_name" field. It is called by the builders before save.
+	OtherNameValidator func(string) error
 )
+
+// Status defines the type for the "status" enum field.
+type Status string
+
+// StatusOffline is the default value of the Status enum.
+const DefaultStatus = StatusOffline
+
+// Status values.
+const (
+	StatusOffline Status = "offline"
+	StatusOnline  Status = "online"
+)
+
+func (s Status) String() string {
+	return string(s)
+}
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s Status) error {
+	switch s {
+	case StatusOffline, StatusOnline:
+		return nil
+	default:
+		return fmt.Errorf("admin: invalid enum value for status field: %q", s)
+	}
+}

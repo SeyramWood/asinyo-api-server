@@ -514,7 +514,6 @@ func (mq *MerchantQuery) WithFavourites(opts ...func(*FavouriteQuery)) *Merchant
 //		GroupBy(merchant.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (mq *MerchantQuery) GroupBy(field string, fields ...string) *MerchantGroupBy {
 	grbuild := &MerchantGroupBy{config: mq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -541,7 +540,6 @@ func (mq *MerchantQuery) GroupBy(field string, fields ...string) *MerchantGroupB
 //	client.Merchant.Query().
 //		Select(merchant.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (mq *MerchantQuery) Select(fields ...string) *MerchantSelect {
 	mq.fields = append(mq.fields, fields...)
 	selbuild := &MerchantSelect{MerchantQuery: mq}

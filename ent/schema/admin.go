@@ -2,6 +2,8 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -21,10 +23,16 @@ func (Admin) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("username").NotEmpty().Unique(),
 		field.Bytes("password").NotEmpty().Sensitive(),
+		field.String("last_name").NotEmpty(),
+		field.String("other_name").NotEmpty(),
+		field.Enum("status").Values("offline", "online").Default("offline"),
+		field.String("last_active").Optional(),
 	}
 }
 
 // Edges of the Admin.
 func (Admin) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("roles", Role.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+	}
 }

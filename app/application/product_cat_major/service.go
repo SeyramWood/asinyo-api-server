@@ -29,11 +29,10 @@ func (s *service) FetchAll() ([]*ent.ProductCategoryMajor, error) {
 	return s.repo.ReadAll()
 }
 
-func (s *service) Update(user *models.ProductCategoryMajor) (*models.ProductCategoryMajor, error) {
-	return s.repo.Update(user)
+func (s *service) Update(id int, request *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error) {
+	return s.repo.Update(id, request)
 }
 
-//RemoveBook is a service layer that helps remove books from BookShop
-func (s *service) Remove(ID string) error {
-	return s.repo.Delete(ID)
+func (s *service) Remove(id int) error {
+	return s.repo.Delete(id)
 }

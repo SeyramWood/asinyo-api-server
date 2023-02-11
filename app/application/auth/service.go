@@ -181,7 +181,7 @@ func (s *service) FetchAuthUser(c *fiber.Ctx) error {
 func (s *service) UpdatePassword(id string, request any, userType string, isOTP bool) (bool, error) {
 	data := request.(*models.ChangePassword)
 	switch userType {
-	case "customer":
+	case "business", "individual":
 		if user, err := s.repo.ReadCustomer(id, "id"); err != nil {
 			return false, fmt.Errorf("no record found for %d", user.ID)
 		} else {
@@ -257,7 +257,7 @@ func (s *service) ResetPassword(request *models.ResetPassword, username, userTyp
 func (s *service) SendUserVerificationCode(username string) (string, error) {
 	code, _ := application.GenerateOTP(6)
 	msg := fmt.Sprintf(
-		"Congratulations for your attempt to join Asinyo! Please enter the OTP Code to proceed with your sign up. %s",
+		"We appreciate your effort to join Asinyo! Your OTP code to proceed with your sign up is %s.\nCongratulations! And welcome to Asinyo\n\nTeam Asinyo,\nConnecting farmers, impacting lives.\nTel: 0247770819",
 		code,
 	)
 	if application.UsernameType(username, "phone") {
@@ -311,7 +311,7 @@ func (s *service) SendPasswordResetCode(username, userType string) (string, erro
 
 	code, _ := application.GenerateOTP(6)
 	msg := fmt.Sprintf(
-		"You are one step away to complete your password reset! Please enter the RESET Code to proceed. %s",
+		"You are a step away to complete your password reset! Please enter the RESET code to proceed. %s",
 		code,
 	)
 	if application.UsernameType(username, "phone") {

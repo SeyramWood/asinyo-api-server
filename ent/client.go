@@ -23,11 +23,13 @@ import (
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/SeyramWood/ent/permission"
 	"github.com/SeyramWood/ent/pickupstation"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
 	"github.com/SeyramWood/ent/retailmerchant"
+	"github.com/SeyramWood/ent/role"
 	"github.com/SeyramWood/ent/suppliermerchant"
 
 	"entgo.io/ent/dialect"
@@ -66,6 +68,8 @@ type Client struct {
 	Order *OrderClient
 	// OrderDetail is the client for interacting with the OrderDetail builders.
 	OrderDetail *OrderDetailClient
+	// Permission is the client for interacting with the Permission builders.
+	Permission *PermissionClient
 	// PickupStation is the client for interacting with the PickupStation builders.
 	PickupStation *PickupStationClient
 	// Product is the client for interacting with the Product builders.
@@ -76,6 +80,8 @@ type Client struct {
 	ProductCategoryMinor *ProductCategoryMinorClient
 	// RetailMerchant is the client for interacting with the RetailMerchant builders.
 	RetailMerchant *RetailMerchantClient
+	// Role is the client for interacting with the Role builders.
+	Role *RoleClient
 	// SupplierMerchant is the client for interacting with the SupplierMerchant builders.
 	SupplierMerchant *SupplierMerchantClient
 }
@@ -104,11 +110,13 @@ func (c *Client) init() {
 	c.MerchantStore = NewMerchantStoreClient(c.config)
 	c.Order = NewOrderClient(c.config)
 	c.OrderDetail = NewOrderDetailClient(c.config)
+	c.Permission = NewPermissionClient(c.config)
 	c.PickupStation = NewPickupStationClient(c.config)
 	c.Product = NewProductClient(c.config)
 	c.ProductCategoryMajor = NewProductCategoryMajorClient(c.config)
 	c.ProductCategoryMinor = NewProductCategoryMinorClient(c.config)
 	c.RetailMerchant = NewRetailMerchantClient(c.config)
+	c.Role = NewRoleClient(c.config)
 	c.SupplierMerchant = NewSupplierMerchantClient(c.config)
 }
 
@@ -156,11 +164,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		MerchantStore:        NewMerchantStoreClient(cfg),
 		Order:                NewOrderClient(cfg),
 		OrderDetail:          NewOrderDetailClient(cfg),
+		Permission:           NewPermissionClient(cfg),
 		PickupStation:        NewPickupStationClient(cfg),
 		Product:              NewProductClient(cfg),
 		ProductCategoryMajor: NewProductCategoryMajorClient(cfg),
 		ProductCategoryMinor: NewProductCategoryMinorClient(cfg),
 		RetailMerchant:       NewRetailMerchantClient(cfg),
+		Role:                 NewRoleClient(cfg),
 		SupplierMerchant:     NewSupplierMerchantClient(cfg),
 	}, nil
 }
@@ -194,11 +204,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		MerchantStore:        NewMerchantStoreClient(cfg),
 		Order:                NewOrderClient(cfg),
 		OrderDetail:          NewOrderDetailClient(cfg),
+		Permission:           NewPermissionClient(cfg),
 		PickupStation:        NewPickupStationClient(cfg),
 		Product:              NewProductClient(cfg),
 		ProductCategoryMajor: NewProductCategoryMajorClient(cfg),
 		ProductCategoryMinor: NewProductCategoryMinorClient(cfg),
 		RetailMerchant:       NewRetailMerchantClient(cfg),
+		Role:                 NewRoleClient(cfg),
 		SupplierMerchant:     NewSupplierMerchantClient(cfg),
 	}, nil
 }
@@ -209,7 +221,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 //		Address.
 //		Query().
 //		Count(ctx)
-//
 func (c *Client) Debug() *Client {
 	if c.debug {
 		return c
@@ -242,11 +253,13 @@ func (c *Client) Use(hooks ...Hook) {
 	c.MerchantStore.Use(hooks...)
 	c.Order.Use(hooks...)
 	c.OrderDetail.Use(hooks...)
+	c.Permission.Use(hooks...)
 	c.PickupStation.Use(hooks...)
 	c.Product.Use(hooks...)
 	c.ProductCategoryMajor.Use(hooks...)
 	c.ProductCategoryMinor.Use(hooks...)
 	c.RetailMerchant.Use(hooks...)
+	c.Role.Use(hooks...)
 	c.SupplierMerchant.Use(hooks...)
 }
 
@@ -487,6 +500,22 @@ func (c *AdminClient) GetX(ctx context.Context, id int) *Admin {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryRoles queries the roles edge of a Admin.
+func (c *AdminClient) QueryRoles(a *Admin) *RoleQuery {
+	query := &RoleQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(admin.Table, admin.FieldID, id),
+			sqlgraph.To(role.Table, role.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, admin.RolesTable, admin.RolesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -2156,6 +2185,112 @@ func (c *OrderDetailClient) Hooks() []Hook {
 	return c.hooks.OrderDetail
 }
 
+// PermissionClient is a client for the Permission schema.
+type PermissionClient struct {
+	config
+}
+
+// NewPermissionClient returns a client for the Permission from the given config.
+func NewPermissionClient(c config) *PermissionClient {
+	return &PermissionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `permission.Hooks(f(g(h())))`.
+func (c *PermissionClient) Use(hooks ...Hook) {
+	c.hooks.Permission = append(c.hooks.Permission, hooks...)
+}
+
+// Create returns a builder for creating a Permission entity.
+func (c *PermissionClient) Create() *PermissionCreate {
+	mutation := newPermissionMutation(c.config, OpCreate)
+	return &PermissionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Permission entities.
+func (c *PermissionClient) CreateBulk(builders ...*PermissionCreate) *PermissionCreateBulk {
+	return &PermissionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Permission.
+func (c *PermissionClient) Update() *PermissionUpdate {
+	mutation := newPermissionMutation(c.config, OpUpdate)
+	return &PermissionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PermissionClient) UpdateOne(pe *Permission) *PermissionUpdateOne {
+	mutation := newPermissionMutation(c.config, OpUpdateOne, withPermission(pe))
+	return &PermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PermissionClient) UpdateOneID(id int) *PermissionUpdateOne {
+	mutation := newPermissionMutation(c.config, OpUpdateOne, withPermissionID(id))
+	return &PermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Permission.
+func (c *PermissionClient) Delete() *PermissionDelete {
+	mutation := newPermissionMutation(c.config, OpDelete)
+	return &PermissionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PermissionClient) DeleteOne(pe *Permission) *PermissionDeleteOne {
+	return c.DeleteOneID(pe.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *PermissionClient) DeleteOneID(id int) *PermissionDeleteOne {
+	builder := c.Delete().Where(permission.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PermissionDeleteOne{builder}
+}
+
+// Query returns a query builder for Permission.
+func (c *PermissionClient) Query() *PermissionQuery {
+	return &PermissionQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Permission entity by its id.
+func (c *PermissionClient) Get(ctx context.Context, id int) (*Permission, error) {
+	return c.Query().Where(permission.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PermissionClient) GetX(ctx context.Context, id int) *Permission {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRole queries the role edge of a Permission.
+func (c *PermissionClient) QueryRole(pe *Permission) *RoleQuery {
+	query := &RoleQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pe.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(permission.Table, permission.FieldID, id),
+			sqlgraph.To(role.Table, role.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, permission.RoleTable, permission.RolePrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pe.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PermissionClient) Hooks() []Hook {
+	return c.hooks.Permission
+}
+
 // PickupStationClient is a client for the PickupStation schema.
 type PickupStationClient struct {
 	config
@@ -2780,6 +2915,128 @@ func (c *RetailMerchantClient) QueryMerchant(rm *RetailMerchant) *MerchantQuery 
 // Hooks returns the client hooks.
 func (c *RetailMerchantClient) Hooks() []Hook {
 	return c.hooks.RetailMerchant
+}
+
+// RoleClient is a client for the Role schema.
+type RoleClient struct {
+	config
+}
+
+// NewRoleClient returns a client for the Role from the given config.
+func NewRoleClient(c config) *RoleClient {
+	return &RoleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `role.Hooks(f(g(h())))`.
+func (c *RoleClient) Use(hooks ...Hook) {
+	c.hooks.Role = append(c.hooks.Role, hooks...)
+}
+
+// Create returns a builder for creating a Role entity.
+func (c *RoleClient) Create() *RoleCreate {
+	mutation := newRoleMutation(c.config, OpCreate)
+	return &RoleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Role entities.
+func (c *RoleClient) CreateBulk(builders ...*RoleCreate) *RoleCreateBulk {
+	return &RoleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Role.
+func (c *RoleClient) Update() *RoleUpdate {
+	mutation := newRoleMutation(c.config, OpUpdate)
+	return &RoleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RoleClient) UpdateOne(r *Role) *RoleUpdateOne {
+	mutation := newRoleMutation(c.config, OpUpdateOne, withRole(r))
+	return &RoleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RoleClient) UpdateOneID(id int) *RoleUpdateOne {
+	mutation := newRoleMutation(c.config, OpUpdateOne, withRoleID(id))
+	return &RoleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Role.
+func (c *RoleClient) Delete() *RoleDelete {
+	mutation := newRoleMutation(c.config, OpDelete)
+	return &RoleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RoleClient) DeleteOne(r *Role) *RoleDeleteOne {
+	return c.DeleteOneID(r.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *RoleClient) DeleteOneID(id int) *RoleDeleteOne {
+	builder := c.Delete().Where(role.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RoleDeleteOne{builder}
+}
+
+// Query returns a query builder for Role.
+func (c *RoleClient) Query() *RoleQuery {
+	return &RoleQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Role entity by its id.
+func (c *RoleClient) Get(ctx context.Context, id int) (*Role, error) {
+	return c.Query().Where(role.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RoleClient) GetX(ctx context.Context, id int) *Role {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPermissions queries the permissions edge of a Role.
+func (c *RoleClient) QueryPermissions(r *Role) *PermissionQuery {
+	query := &PermissionQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(role.Table, role.FieldID, id),
+			sqlgraph.To(permission.Table, permission.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, role.PermissionsTable, role.PermissionsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAdmin queries the admin edge of a Role.
+func (c *RoleClient) QueryAdmin(r *Role) *AdminQuery {
+	query := &AdminQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(role.Table, role.FieldID, id),
+			sqlgraph.To(admin.Table, admin.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, role.AdminTable, role.AdminPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RoleClient) Hooks() []Hook {
+	return c.hooks.Role
 }
 
 // SupplierMerchantClient is a client for the SupplierMerchant schema.

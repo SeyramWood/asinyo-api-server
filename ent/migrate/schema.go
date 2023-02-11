@@ -24,7 +24,6 @@ var (
 		{Name: "district", Type: field.TypeString, Nullable: true},
 		{Name: "region", Type: field.TypeString},
 		{Name: "country", Type: field.TypeString, Default: "Ghana"},
-		{Name: "address", Type: field.TypeString, Size: 2147483647},
 		{Name: "default", Type: field.TypeBool, Default: false},
 		{Name: "coordinate", Type: field.TypeJSON, Nullable: true},
 		{Name: "agent_addresses", Type: field.TypeInt, Nullable: true},
@@ -39,21 +38,21 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "addresses_agents_addresses",
-				Columns:    []*schema.Column{AddressesColumns[17]},
+				Columns:    []*schema.Column{AddressesColumns[16]},
 				RefColumns: []*schema.Column{AgentsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "addresses_customers_addresses",
-				Columns:    []*schema.Column{AddressesColumns[18]},
+				Columns:    []*schema.Column{AddressesColumns[17]},
 				RefColumns: []*schema.Column{CustomersColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "addresses_merchants_addresses",
-				Columns:    []*schema.Column{AddressesColumns[19]},
+				Columns:    []*schema.Column{AddressesColumns[18]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -64,6 +63,10 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "username", Type: field.TypeString, Unique: true},
 		{Name: "password", Type: field.TypeBytes},
+		{Name: "last_name", Type: field.TypeString},
+		{Name: "other_name", Type: field.TypeString},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"offline", "online"}, Default: "offline"},
+		{Name: "last_active", Type: field.TypeString, Nullable: true},
 	}
 	// AdminsTable holds the schema information for the "admins" table.
 	AdminsTable = &schema.Table{
@@ -118,13 +121,13 @@ var (
 				Symbol:     "agent_requests_agents_requests",
 				Columns:    []*schema.Column{AgentRequestsColumns[3]},
 				RefColumns: []*schema.Column{AgentsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "agent_requests_merchant_stores_requests",
 				Columns:    []*schema.Column{AgentRequestsColumns[4]},
 				RefColumns: []*schema.Column{MerchantStoresColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -150,7 +153,7 @@ var (
 				Symbol:     "business_customers_customers_business",
 				Columns:    []*schema.Column{BusinessCustomersColumns[8]},
 				RefColumns: []*schema.Column{CustomersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -189,25 +192,25 @@ var (
 				Symbol:     "favourites_agents_favourites",
 				Columns:    []*schema.Column{FavouritesColumns[3]},
 				RefColumns: []*schema.Column{AgentsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "favourites_customers_favourites",
 				Columns:    []*schema.Column{FavouritesColumns[4]},
 				RefColumns: []*schema.Column{CustomersColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "favourites_merchants_favourites",
 				Columns:    []*schema.Column{FavouritesColumns[5]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "favourites_products_favourites",
 				Columns:    []*schema.Column{FavouritesColumns[6]},
 				RefColumns: []*schema.Column{ProductsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -232,7 +235,7 @@ var (
 				Symbol:     "individual_customers_customers_individual",
 				Columns:    []*schema.Column{IndividualCustomersColumns[7]},
 				RefColumns: []*schema.Column{CustomersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -254,7 +257,7 @@ var (
 				Symbol:     "logistics_merchant_stores_logistics",
 				Columns:    []*schema.Column{LogisticsColumns[4]},
 				RefColumns: []*schema.Column{MerchantStoresColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -305,13 +308,13 @@ var (
 				Symbol:     "merchant_stores_agents_store",
 				Columns:    []*schema.Column{MerchantStoresColumns[16]},
 				RefColumns: []*schema.Column{AgentsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "merchant_stores_merchants_store",
 				Columns:    []*schema.Column{MerchantStoresColumns[17]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -354,25 +357,25 @@ var (
 				Symbol:     "orders_agents_orders",
 				Columns:    []*schema.Column{OrdersColumns[16]},
 				RefColumns: []*schema.Column{AgentsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "orders_customers_orders",
 				Columns:    []*schema.Column{OrdersColumns[17]},
 				RefColumns: []*schema.Column{CustomersColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "orders_merchants_orders",
 				Columns:    []*schema.Column{OrdersColumns[18]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "orders_pickup_stations_orders",
 				Columns:    []*schema.Column{OrdersColumns[19]},
 				RefColumns: []*schema.Column{PickupStationsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -400,21 +403,34 @@ var (
 				Symbol:     "order_details_merchant_stores_order_details",
 				Columns:    []*schema.Column{OrderDetailsColumns[8]},
 				RefColumns: []*schema.Column{MerchantStoresColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "order_details_orders_details",
 				Columns:    []*schema.Column{OrderDetailsColumns[9]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "order_details_products_order_details",
 				Columns:    []*schema.Column{OrderDetailsColumns[10]},
 				RefColumns: []*schema.Column{ProductsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
+	}
+	// PermissionsColumns holds the columns for the "permissions" table.
+	PermissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "permission", Type: field.TypeString, Default: "Read"},
+	}
+	// PermissionsTable holds the schema information for the "permissions" table.
+	PermissionsTable = &schema.Table{
+		Name:       "permissions",
+		Columns:    PermissionsColumns,
+		PrimaryKey: []*schema.Column{PermissionsColumns[0]},
 	}
 	// PickupStationsColumns holds the columns for the "pickup_stations" table.
 	PickupStationsColumns = []*schema.Column{
@@ -460,19 +476,19 @@ var (
 				Symbol:     "products_merchants_products",
 				Columns:    []*schema.Column{ProductsColumns[12]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "products_product_category_majors_products",
 				Columns:    []*schema.Column{ProductsColumns[13]},
 				RefColumns: []*schema.Column{ProductCategoryMajorsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "products_product_category_minors_products",
 				Columns:    []*schema.Column{ProductsColumns[14]},
 				RefColumns: []*schema.Column{ProductCategoryMinorsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -510,7 +526,7 @@ var (
 				Symbol:     "product_category_minors_product_category_majors_minors",
 				Columns:    []*schema.Column{ProductCategoryMinorsColumns[6]},
 				RefColumns: []*schema.Column{ProductCategoryMajorsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -536,9 +552,22 @@ var (
 				Symbol:     "retail_merchants_merchants_retailer",
 				Columns:    []*schema.Column{RetailMerchantsColumns[8]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
+	}
+	// RolesColumns holds the columns for the "roles" table.
+	RolesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "role", Type: field.TypeString, Default: "User"},
+	}
+	// RolesTable holds the schema information for the "roles" table.
+	RolesTable = &schema.Table{
+		Name:       "roles",
+		Columns:    RolesColumns,
+		PrimaryKey: []*schema.Column{RolesColumns[0]},
 	}
 	// SupplierMerchantsColumns holds the columns for the "supplier_merchants" table.
 	SupplierMerchantsColumns = []*schema.Column{
@@ -562,7 +591,32 @@ var (
 				Symbol:     "supplier_merchants_merchants_supplier",
 				Columns:    []*schema.Column{SupplierMerchantsColumns[8]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// AdminRolesColumns holds the columns for the "admin_roles" table.
+	AdminRolesColumns = []*schema.Column{
+		{Name: "admin_id", Type: field.TypeInt},
+		{Name: "role_id", Type: field.TypeInt},
+	}
+	// AdminRolesTable holds the schema information for the "admin_roles" table.
+	AdminRolesTable = &schema.Table{
+		Name:       "admin_roles",
+		Columns:    AdminRolesColumns,
+		PrimaryKey: []*schema.Column{AdminRolesColumns[0], AdminRolesColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "admin_roles_admin_id",
+				Columns:    []*schema.Column{AdminRolesColumns[0]},
+				RefColumns: []*schema.Column{AdminsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "admin_roles_role_id",
+				Columns:    []*schema.Column{AdminRolesColumns[1]},
+				RefColumns: []*schema.Column{RolesColumns[0]},
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -616,6 +670,31 @@ var (
 			},
 		},
 	}
+	// RolePermissionsColumns holds the columns for the "role_permissions" table.
+	RolePermissionsColumns = []*schema.Column{
+		{Name: "role_id", Type: field.TypeInt},
+		{Name: "permission_id", Type: field.TypeInt},
+	}
+	// RolePermissionsTable holds the schema information for the "role_permissions" table.
+	RolePermissionsTable = &schema.Table{
+		Name:       "role_permissions",
+		Columns:    RolePermissionsColumns,
+		PrimaryKey: []*schema.Column{RolePermissionsColumns[0], RolePermissionsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "role_permissions_role_id",
+				Columns:    []*schema.Column{RolePermissionsColumns[0]},
+				RefColumns: []*schema.Column{RolesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "role_permissions_permission_id",
+				Columns:    []*schema.Column{RolePermissionsColumns[1]},
+				RefColumns: []*schema.Column{PermissionsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AddressesTable,
@@ -631,14 +710,18 @@ var (
 		MerchantStoresTable,
 		OrdersTable,
 		OrderDetailsTable,
+		PermissionsTable,
 		PickupStationsTable,
 		ProductsTable,
 		ProductCategoryMajorsTable,
 		ProductCategoryMinorsTable,
 		RetailMerchantsTable,
+		RolesTable,
 		SupplierMerchantsTable,
+		AdminRolesTable,
 		LogisticOrderTable,
 		MerchantStoreOrdersTable,
+		RolePermissionsTable,
 	}
 )
 
@@ -671,8 +754,12 @@ func init() {
 	ProductCategoryMinorsTable.ForeignKeys[0].RefTable = ProductCategoryMajorsTable
 	RetailMerchantsTable.ForeignKeys[0].RefTable = MerchantsTable
 	SupplierMerchantsTable.ForeignKeys[0].RefTable = MerchantsTable
+	AdminRolesTable.ForeignKeys[0].RefTable = AdminsTable
+	AdminRolesTable.ForeignKeys[1].RefTable = RolesTable
 	LogisticOrderTable.ForeignKeys[0].RefTable = LogisticsTable
 	LogisticOrderTable.ForeignKeys[1].RefTable = OrdersTable
 	MerchantStoreOrdersTable.ForeignKeys[0].RefTable = MerchantStoresTable
 	MerchantStoreOrdersTable.ForeignKeys[1].RefTable = OrdersTable
+	RolePermissionsTable.ForeignKeys[0].RefTable = RolesTable
+	RolePermissionsTable.ForeignKeys[1].RefTable = PermissionsTable
 }

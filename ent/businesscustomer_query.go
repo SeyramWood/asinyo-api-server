@@ -298,7 +298,6 @@ func (bcq *BusinessCustomerQuery) WithCustomer(opts ...func(*CustomerQuery)) *Bu
 //		GroupBy(businesscustomer.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (bcq *BusinessCustomerQuery) GroupBy(field string, fields ...string) *BusinessCustomerGroupBy {
 	grbuild := &BusinessCustomerGroupBy{config: bcq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -325,7 +324,6 @@ func (bcq *BusinessCustomerQuery) GroupBy(field string, fields ...string) *Busin
 //	client.BusinessCustomer.Query().
 //		Select(businesscustomer.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (bcq *BusinessCustomerQuery) Select(fields ...string) *BusinessCustomerSelect {
 	bcq.fields = append(bcq.fields, fields...)
 	selbuild := &BusinessCustomerSelect{BusinessCustomerQuery: bcq}

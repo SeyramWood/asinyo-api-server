@@ -37,8 +37,6 @@ const (
 	FieldRegion = "region"
 	// FieldCountry holds the string denoting the country field in the database.
 	FieldCountry = "country"
-	// FieldAddress holds the string denoting the address field in the database.
-	FieldAddress = "address"
 	// FieldDefault holds the string denoting the default field in the database.
 	FieldDefault = "default"
 	// FieldCoordinate holds the string denoting the coordinate field in the database.
@@ -99,7 +97,6 @@ var Columns = []string{
 	FieldDistrict,
 	FieldRegion,
 	FieldCountry,
-	FieldAddress,
 	FieldDefault,
 	FieldCoordinate,
 }
@@ -146,8 +143,6 @@ var (
 	RegionValidator func(string) error
 	// DefaultCountry holds the default value on creation for the "Country" field.
 	DefaultCountry string
-	// AddressValidator is a validator for the "address" field. It is called by the builders before save.
-	AddressValidator func(string) error
 	// DefaultDefault holds the default value on creation for the "default" field.
 	DefaultDefault bool
 )

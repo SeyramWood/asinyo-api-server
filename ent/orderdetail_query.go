@@ -370,7 +370,6 @@ func (odq *OrderDetailQuery) WithStore(opts ...func(*MerchantStoreQuery)) *Order
 //		GroupBy(orderdetail.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (odq *OrderDetailQuery) GroupBy(field string, fields ...string) *OrderDetailGroupBy {
 	grbuild := &OrderDetailGroupBy{config: odq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -397,7 +396,6 @@ func (odq *OrderDetailQuery) GroupBy(field string, fields ...string) *OrderDetai
 //	client.OrderDetail.Query().
 //		Select(orderdetail.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (odq *OrderDetailQuery) Select(fields ...string) *OrderDetailSelect {
 	odq.fields = append(odq.fields, fields...)
 	selbuild := &OrderDetailSelect{OrderDetailQuery: odq}

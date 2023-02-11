@@ -10,27 +10,22 @@ import (
 )
 
 type (
-	AuthAdmin struct {
-		ID        int    `json:"id"`
-		Username  string `json:"username"`
-		LastName  string `json:"lastName"`
-		OtherName string `json:"otherName"`
-	}
 	AuthSession struct {
 		ID          int    `json:"id"`
 		Username    string `json:"username"`
 		SessionName string `json:"sessionName"`
-		DisplayName string `json:"displayName"`
-		UserType    string `json:"userType"`
+		DisplayName string `json:"displayName,omitempty"`
+		UserType    string `json:"userType,omitempty"`
 		OTP         any    `json:"otp,omitempty"`
 	}
 )
 
 func AuthAdminResponse(data *ent.Admin) *fiber.Map {
 	return successResponse(
-		&AuthAdmin{
-			ID:       data.ID,
-			Username: data.Username,
+		&AuthSession{
+			ID:          data.ID,
+			Username:    data.Username,
+			SessionName: strings.Split(data.OtherName, " ")[0],
 		},
 	)
 }

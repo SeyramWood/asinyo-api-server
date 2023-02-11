@@ -49,9 +49,9 @@ type Agent struct {
 	// DefaultAccount holds the value of the "default_account" field.
 	DefaultAccount agent.DefaultAccount `json:"default_account,omitempty"`
 	// BankAccount holds the value of the "bank_account" field.
-	BankAccount *models.MerchantBankAccount `json:"bank_account,omitempty"`
+	BankAccount *models.AgentBankAccount `json:"bank_account,omitempty"`
 	// MomoAccount holds the value of the "momo_account" field.
-	MomoAccount *models.MerchantMomoAccount `json:"momo_account,omitempty"`
+	MomoAccount *models.AgentMomoAccount `json:"momo_account,omitempty"`
 	// Verified holds the value of the "verified" field.
 	Verified bool `json:"verified,omitempty"`
 	// Compliance holds the value of the "compliance" field.

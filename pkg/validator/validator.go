@@ -85,7 +85,7 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 					return fmt.Sprintf("The %s must be a valid email address.", formattedField)
 				}
 			case "phone":
-				if phone, _ := regexp.Compile(`^+\d{12}$`); !phone.MatchString(value.String()) {
+				if phone, _ := regexp.Compile(`^\+\d{12}$`); !phone.MatchString(value.String()) {
 					return fmt.Sprintf("The %s must be a valid phone number.", formattedField)
 				}
 			case "email_phone":
@@ -106,7 +106,7 @@ func validator(index int, t reflect.Type, v reflect.Value) interface{} {
 					return "The The ID field must be a valid Ghana Card."
 				}
 			case "digital_address":
-				r, _ := regexp.Compile(`[A-Z]{2}-\d{3}-\d{4}$`)
+				r, _ := regexp.Compile(`[A-Z]{2}-\d{1,4}-\d{4}$`)
 				if !r.MatchString(value.String()) {
 					return "The address field must be a valid digital address."
 				}

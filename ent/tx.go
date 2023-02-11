@@ -38,6 +38,8 @@ type Tx struct {
 	Order *OrderClient
 	// OrderDetail is the client for interacting with the OrderDetail builders.
 	OrderDetail *OrderDetailClient
+	// Permission is the client for interacting with the Permission builders.
+	Permission *PermissionClient
 	// PickupStation is the client for interacting with the PickupStation builders.
 	PickupStation *PickupStationClient
 	// Product is the client for interacting with the Product builders.
@@ -48,6 +50,8 @@ type Tx struct {
 	ProductCategoryMinor *ProductCategoryMinorClient
 	// RetailMerchant is the client for interacting with the RetailMerchant builders.
 	RetailMerchant *RetailMerchantClient
+	// Role is the client for interacting with the Role builders.
+	Role *RoleClient
 	// SupplierMerchant is the client for interacting with the SupplierMerchant builders.
 	SupplierMerchant *SupplierMerchantClient
 
@@ -198,11 +202,13 @@ func (tx *Tx) init() {
 	tx.MerchantStore = NewMerchantStoreClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.OrderDetail = NewOrderDetailClient(tx.config)
+	tx.Permission = NewPermissionClient(tx.config)
 	tx.PickupStation = NewPickupStationClient(tx.config)
 	tx.Product = NewProductClient(tx.config)
 	tx.ProductCategoryMajor = NewProductCategoryMajorClient(tx.config)
 	tx.ProductCategoryMinor = NewProductCategoryMinorClient(tx.config)
 	tx.RetailMerchant = NewRetailMerchantClient(tx.config)
+	tx.Role = NewRoleClient(tx.config)
 	tx.SupplierMerchant = NewSupplierMerchantClient(tx.config)
 }
 

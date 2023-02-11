@@ -20,7 +20,7 @@ type (
 
 	MerchantMomoAccountRequest struct {
 		AccountName    string `json:"accountName" validate:"required|string"`
-		PhoneNumber    string `json:"phoneNumber" validate:"required"`
+		PhoneNumber    string `json:"phoneNumber" validate:"required|phone"`
 		Provider       string `json:"provider" validate:"required|string"`
 		DefaultAccount bool   `json:"defaultAccount"`
 	}
@@ -33,24 +33,21 @@ type (
 	}
 	MerchantStore struct {
 		BusinessName   string `json:"businessName" validate:"required|string"`
-		BusinessSlogan string `json:"businessLogan" validate:"required|string"`
+		BusinessSlogan string `json:"businessSLogan" validate:"required|string"`
 		About          string `json:"about" validate:"required"`
 		Description    string `json:"description" validate:"required"`
 		Banner         []byte `json:"banner"`
 		OtherImages    []byte `json:"otherImages"`
 		MerchantType   string `json:"merchantType" validate:"required|string"`
 	}
-	// StoreAddress struct {
-	// 	Address      string `json:"postalAddress" validate:"required|string"`
-	// 	Country      string `json:"country,omitempty" validate:"required|string"`
-	// 	Region       string `json:"region" validate:"required|string"`
-	// 	City         string `json:"city" validate:"required|string"`
-	// 	District     string `json:"district" validate:"required|string"`
-	// 	StreetName   string `json:"streetName" validate:"required|string"`
-	// 	StreetNumber string `json:"streetNumber" validate:"string"`
-	// }
+	MerchantStoreUpdate struct {
+		BusinessName   string `json:"businessName" validate:"required|string"`
+		BusinessSlogan string `json:"businessSLogan" validate:"required|string"`
+		About          string `json:"about" validate:"required"`
+		Description    string `json:"description" validate:"required"`
+	}
 	MerchantStoreRequest struct {
-		Info    *MerchantStore        `json:"postalAddress"`
+		Info    *MerchantStore        `json:"store"`
 		Address *MerchantStoreAddress `json:"address"`
 	}
 )

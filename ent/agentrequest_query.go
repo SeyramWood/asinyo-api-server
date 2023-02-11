@@ -262,7 +262,6 @@ func (arq *AgentRequestQuery) Clone() *AgentRequestQuery {
 //		GroupBy(agentrequest.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (arq *AgentRequestQuery) GroupBy(field string, fields ...string) *AgentRequestGroupBy {
 	grbuild := &AgentRequestGroupBy{config: arq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -289,7 +288,6 @@ func (arq *AgentRequestQuery) GroupBy(field string, fields ...string) *AgentRequ
 //	client.AgentRequest.Query().
 //		Select(agentrequest.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (arq *AgentRequestQuery) Select(fields ...string) *AgentRequestSelect {
 	arq.fields = append(arq.fields, fields...)
 	selbuild := &AgentRequestSelect{AgentRequestQuery: arq}

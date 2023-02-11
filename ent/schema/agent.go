@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 
@@ -35,8 +36,8 @@ func (Agent) Fields() []ent.Field {
 		field.String("district").Optional().Nillable(),
 		field.String("city").Optional().Nillable(),
 		field.Enum("default_account").Values("bank", "momo").Optional(),
-		field.JSON("bank_account", &models.MerchantBankAccount{}).Optional(),
-		field.JSON("momo_account", &models.MerchantMomoAccount{}).Optional(),
+		field.JSON("bank_account", &models.AgentBankAccount{}).Optional(),
+		field.JSON("momo_account", &models.AgentMomoAccount{}).Optional(),
 		field.Bool("verified").Default(false),
 		field.JSON("compliance", &models.AgentComplianceModel{}).Optional(),
 	}
@@ -45,10 +46,10 @@ func (Agent) Fields() []ent.Field {
 // Edges of the Agent.
 func (Agent) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("addresses", Address.Type),
-		edge.To("orders", Order.Type),
-		edge.To("favourites", Favourite.Type),
-		edge.To("store", MerchantStore.Type),
-		edge.To("requests", AgentRequest.Type),
+		edge.To("addresses", Address.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("orders", Order.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("favourites", Favourite.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("store", MerchantStore.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("requests", AgentRequest.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 	}
 }

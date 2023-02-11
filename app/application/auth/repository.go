@@ -96,7 +96,7 @@ func (r *repository) UpdatePassword(id int, password string, userType string, is
 	ctx := context.Background()
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 16)
 	switch userType {
-	case "customer":
+	case "business", "individual":
 		_, err := r.db.Customer.UpdateOneID(id).SetPassword(hashPassword).Save(ctx)
 		if err != nil {
 			return false, fmt.Errorf("failed to update password")

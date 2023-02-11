@@ -64,16 +64,27 @@ func (r *repository) ReadAll(limit, offset int) ([]*ent.ProductCategoryMinor, er
 	return cats, nil
 }
 
-func (r *repository) Update(i *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error) {
-	// book.UpdatedAt = time.Now()
-	// _, err := r.Collection.UpdateOne(context.Background(), bson.M{"_id": book.ID}, bson.M{"$set": book})
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return i, nil
+func (r *repository) Update(id int, request *models.ProductCategoryMinorUpdate) (*ent.ProductCategoryMinor, error) {
+	ctx := context.Background()
+	result, err := r.db.ProductCategoryMinor.UpdateOneID(id).SetCategory(request.Category).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+func (r *repository) UpdateImage(id int, imagePath string) (string, error) {
+	ctx := context.Background()
+	_, err := r.db.ProductCategoryMinor.UpdateOneID(id).SetImage(imagePath).Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	return imagePath, nil
 }
 
-func (r *repository) Delete(ID string) error {
-	return fmt.Errorf("failed creating book")
-	// return r.Delete(ID).Error
+func (r *repository) Delete(id int) error {
+	err := r.db.ProductCategoryMinor.DeleteOneID(id).Exec(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
 }

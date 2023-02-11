@@ -335,7 +335,6 @@ func (pcmq *ProductCategoryMinorQuery) WithProducts(opts ...func(*ProductQuery))
 //		GroupBy(productcategoryminor.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (pcmq *ProductCategoryMinorQuery) GroupBy(field string, fields ...string) *ProductCategoryMinorGroupBy {
 	grbuild := &ProductCategoryMinorGroupBy{config: pcmq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -362,7 +361,6 @@ func (pcmq *ProductCategoryMinorQuery) GroupBy(field string, fields ...string) *
 //	client.ProductCategoryMinor.Query().
 //		Select(productcategoryminor.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (pcmq *ProductCategoryMinorQuery) Select(fields ...string) *ProductCategoryMinorSelect {
 	pcmq.fields = append(pcmq.fields, fields...)
 	selbuild := &ProductCategoryMinorSelect{ProductCategoryMinorQuery: pcmq}

@@ -18,11 +18,13 @@ import (
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/SeyramWood/ent/permission"
 	"github.com/SeyramWood/ent/pickupstation"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
 	"github.com/SeyramWood/ent/retailmerchant"
+	"github.com/SeyramWood/ent/role"
 	"github.com/SeyramWood/ent/schema"
 	"github.com/SeyramWood/ent/suppliermerchant"
 )
@@ -70,12 +72,8 @@ func init() {
 	addressDescCountry := addressFields[10].Descriptor()
 	// address.DefaultCountry holds the default value on creation for the Country field.
 	address.DefaultCountry = addressDescCountry.Default.(string)
-	// addressDescAddress is the schema descriptor for address field.
-	addressDescAddress := addressFields[11].Descriptor()
-	// address.AddressValidator is a validator for the "address" field. It is called by the builders before save.
-	address.AddressValidator = addressDescAddress.Validators[0].(func(string) error)
 	// addressDescDefault is the schema descriptor for default field.
-	addressDescDefault := addressFields[12].Descriptor()
+	addressDescDefault := addressFields[11].Descriptor()
 	// address.DefaultDefault holds the default value on creation for the default field.
 	address.DefaultDefault = addressDescDefault.Default.(bool)
 	adminMixin := schema.Admin{}.Mixin()
@@ -101,6 +99,14 @@ func init() {
 	adminDescPassword := adminFields[1].Descriptor()
 	// admin.PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	admin.PasswordValidator = adminDescPassword.Validators[0].(func([]byte) error)
+	// adminDescLastName is the schema descriptor for last_name field.
+	adminDescLastName := adminFields[2].Descriptor()
+	// admin.LastNameValidator is a validator for the "last_name" field. It is called by the builders before save.
+	admin.LastNameValidator = adminDescLastName.Validators[0].(func(string) error)
+	// adminDescOtherName is the schema descriptor for other_name field.
+	adminDescOtherName := adminFields[3].Descriptor()
+	// admin.OtherNameValidator is a validator for the "other_name" field. It is called by the builders before save.
+	admin.OtherNameValidator = adminDescOtherName.Validators[0].(func(string) error)
 	agentMixin := schema.Agent{}.Mixin()
 	agentMixinFields0 := agentMixin[0].Fields()
 	_ = agentMixinFields0
@@ -406,6 +412,25 @@ func init() {
 	orderdetailDescQuantity := orderdetailFields[3].Descriptor()
 	// orderdetail.DefaultQuantity holds the default value on creation for the quantity field.
 	orderdetail.DefaultQuantity = orderdetailDescQuantity.Default.(int)
+	permissionMixin := schema.Permission{}.Mixin()
+	permissionMixinFields0 := permissionMixin[0].Fields()
+	_ = permissionMixinFields0
+	permissionFields := schema.Permission{}.Fields()
+	_ = permissionFields
+	// permissionDescCreatedAt is the schema descriptor for created_at field.
+	permissionDescCreatedAt := permissionMixinFields0[0].Descriptor()
+	// permission.DefaultCreatedAt holds the default value on creation for the created_at field.
+	permission.DefaultCreatedAt = permissionDescCreatedAt.Default.(func() time.Time)
+	// permissionDescUpdatedAt is the schema descriptor for updated_at field.
+	permissionDescUpdatedAt := permissionMixinFields0[1].Descriptor()
+	// permission.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	permission.DefaultUpdatedAt = permissionDescUpdatedAt.Default.(func() time.Time)
+	// permission.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	permission.UpdateDefaultUpdatedAt = permissionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// permissionDescPermission is the schema descriptor for permission field.
+	permissionDescPermission := permissionFields[0].Descriptor()
+	// permission.DefaultPermission holds the default value on creation for the permission field.
+	permission.DefaultPermission = permissionDescPermission.Default.(string)
 	pickupstationMixin := schema.PickupStation{}.Mixin()
 	pickupstationMixinFields0 := pickupstationMixin[0].Fields()
 	_ = pickupstationMixinFields0
@@ -569,6 +594,25 @@ func init() {
 	retailmerchantDescPhone := retailmerchantFields[3].Descriptor()
 	// retailmerchant.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
 	retailmerchant.PhoneValidator = retailmerchantDescPhone.Validators[0].(func(string) error)
+	roleMixin := schema.Role{}.Mixin()
+	roleMixinFields0 := roleMixin[0].Fields()
+	_ = roleMixinFields0
+	roleFields := schema.Role{}.Fields()
+	_ = roleFields
+	// roleDescCreatedAt is the schema descriptor for created_at field.
+	roleDescCreatedAt := roleMixinFields0[0].Descriptor()
+	// role.DefaultCreatedAt holds the default value on creation for the created_at field.
+	role.DefaultCreatedAt = roleDescCreatedAt.Default.(func() time.Time)
+	// roleDescUpdatedAt is the schema descriptor for updated_at field.
+	roleDescUpdatedAt := roleMixinFields0[1].Descriptor()
+	// role.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	role.DefaultUpdatedAt = roleDescUpdatedAt.Default.(func() time.Time)
+	// role.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	role.UpdateDefaultUpdatedAt = roleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// roleDescRole is the schema descriptor for role field.
+	roleDescRole := roleFields[0].Descriptor()
+	// role.DefaultRole holds the default value on creation for the role field.
+	role.DefaultRole = roleDescRole.Default.(string)
 	suppliermerchantMixin := schema.SupplierMerchant{}.Mixin()
 	suppliermerchantMixinFields0 := suppliermerchantMixin[0].Fields()
 	_ = suppliermerchantMixinFields0

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
+	"github.com/uploadcare/uploadcare-go/file"
 	"github.com/uploadcare/uploadcare-go/ucare"
 	"github.com/uploadcare/uploadcare-go/upload"
 
@@ -20,6 +21,7 @@ type uploadcare struct {
 	publicKey string
 	url       string
 	client    ucare.Client
+	ctx       context.Context
 }
 
 func NewUploadCare() *uploadcare {
@@ -28,6 +30,7 @@ func NewUploadCare() *uploadcare {
 		publicKey: config.Uploadcare().PubKey,
 		url:       config.Uploadcare().URL,
 		client:    nil,
+		ctx:       context.Background(),
 	}
 }
 
@@ -166,6 +169,7 @@ func (c *uploadcare) UploadMerchantStore(file *multipart.FileHeader, form *multi
 
 	return resLogo.FP, resImages.FP, nil
 }
+
 func (c *uploadcare) UploadAgentCompliance(file *multipart.FileHeader, form *multipart.Form) (
 	string, []string, []string, error,
 ) {
@@ -268,6 +272,16 @@ func (c *uploadcare) UploadAgentCompliance(file *multipart.FileHeader, form *mul
 	}
 
 	return resReport.FP, resPersonal.FP, resGuarantor.FP, nil
+}
+
+func (c *uploadcare) deleteFile(fileId string) error {
+	fileSvc := file.NewService(c.client)
+	info, err := fileSvc.Delete(c.ctx, fileId)
+	if err != nil {
+		return err
+	}
+	fmt.Println(info)
+	return nil
 }
 
 func (c *uploadcare) getFileInfo(f *multipart.FileHeader, prefix string) (map[string]string, error) {

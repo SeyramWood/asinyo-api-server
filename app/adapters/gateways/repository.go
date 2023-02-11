@@ -3,6 +3,7 @@ package gateways
 import (
 	"github.com/Jeffail/gabs"
 
+	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent"
@@ -13,19 +14,26 @@ type (
 		Insert(customer any, customerType string) (*ent.Customer, error)
 		Read(id int) (*ent.Customer, error)
 		ReadAll() ([]*ent.Customer, error)
-		Update(customer *models.IndividualCustomer) (*ent.Customer, error)
+		Update(id int, customer any) (*ent.Customer, error)
+		UpdateLogo(customer int, logo string) (string, error)
 		Delete(id string) error
 	}
 	AgentRepo interface {
 		Insert(agent *models.AgentRequest) (*ent.Agent, error)
-		Read(id int) (*ent.Agent, error)
-		ReadAll() ([]*ent.Agent, error)
-		ReadAllMerchant(agentId int) ([]*ent.MerchantStore, error)
-		Update(agent *models.Agent) (*models.Agent, error)
-		Delete(id string) error
 		CreateCompliance(
 			request *models.AgentComplianceRequest, id int, report string, personal []string, guarantor []string,
 		) (*ent.Agent, error)
+		UpdateAccount(account any, agentId int, accountType string) (*ent.Agent, error)
+		UpdateDefaultAccount(agentId int, accountType string) (*ent.Agent, error)
+		Read(id int) (*ent.Agent, error)
+		ReadAll() ([]*ent.Agent, error)
+		ReadAllMerchant(agentId int) ([]*ent.MerchantStore, error)
+		Update(id int, profile *models.AgentProfile) (*ent.Agent, error)
+		UpdateGuarantor(id int, request *models.AgentGuarantorUpdate) (*ent.Agent, error)
+		UpdateAgentComplianceCard(agentId int, newPath, oldPath string) ([]string, error)
+		UpdateAgentPoliceReport(agentId int, filePath string) (string, error)
+		UpdateGuarantorComplianceCard(agentId int, newPath, oldPath string) ([]string, error)
+		Delete(id string) error
 	}
 	MerchantRepo interface {
 		Insert(merchant *models.MerchantRequest, onboard bool) (*ent.Merchant, error)
@@ -35,7 +43,7 @@ type (
 		SaveCoordinate(coordinate *services.Coordinate, id int) error
 		Read(id int) (*ent.Merchant, error)
 		ReadAll() ([]*ent.Merchant, error)
-		Update(merchant *models.Merchant) (*models.Merchant, error)
+		Update(id int, request any) (*ent.Merchant, error)
 		Delete(id string) error
 	}
 	SupplierMerchantRepo interface {
@@ -56,7 +64,7 @@ type (
 		Insert(store *models.MerchantStoreRequest, merchantId int, logo string, images []string) (
 			*ent.MerchantStore, error,
 		)
-		UpdateAccount(store interface{}, storeId int, logo string) (*ent.MerchantStore, error)
+		UpdateAccount(store any, storeId int, logo string) (*ent.MerchantStore, error)
 		UpdateDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
 		UpdateAgentPermission(permission bool, storeId int) (*ent.MerchantStore, error)
 		SaveCoordinate(coordinate *services.Coordinate, id int) error
@@ -65,8 +73,11 @@ type (
 		ReadAgent(store int) (*ent.Agent, error)
 		ReadAll() ([]*ent.MerchantStore, error)
 		ReadAllByMerchant(merchantType string, limit, offset int) ([]*ent.MerchantStore, error)
-		Update(store *models.MerchantStore, storeId int) (*ent.MerchantStore, error)
+		Update(request *models.MerchantStoreUpdate, storeId int) (*ent.MerchantStore, error)
 		UpdateAddress(address *models.MerchantStoreAddress, storeId int) (*ent.MerchantStore, error)
+		UpdateBanner(storeId int, bannerPath string) (string, error)
+		UpdateImages(storeId int, newPath, oldPath string) ([]string, error)
+		AppendNewImages(storeId int, urls []string) ([]string, error)
 		Delete(id string) error
 	}
 	ProductRepo interface {
@@ -90,29 +101,40 @@ type (
 		ReadAllBySlugCategoryMinor(merchantType, slug string, limit, offset int) ([]*ent.Product, error)
 		ReadBestSellerByMerchant(id, limit, offset int) ([]*ent.Product, error)
 
-		Update(merchant *models.Product) (*models.Product, error)
-		Delete(id string) error
+		Update(id int, request *models.ProductUpdate) (*ent.Product, error)
+		UpdateImage(id int, imagePath string) (string, error)
+
+		Delete(id int) error
 	}
 	ProductCatMajorRepo interface {
 		Insert(merchant *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error)
 		Read(id int) (*ent.ProductCategoryMajor, error)
 		ReadAll() ([]*ent.ProductCategoryMajor, error)
-		Update(merchant *models.ProductCategoryMajor) (*models.ProductCategoryMajor, error)
-		Delete(id string) error
+		Update(id int, request *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error)
+		Delete(id int) error
 	}
 	ProductCatMinorRepo interface {
 		Insert(merchant *models.ProductCategoryMinor, image string) (*ent.ProductCategoryMinor, error)
 		Read(id int) (*ent.ProductCategoryMinor, error)
 		ReadAll(limit, offset int) ([]*ent.ProductCategoryMinor, error)
-		Update(merchant *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error)
-		Delete(id string) error
+		Update(id int, request *models.ProductCategoryMinorUpdate) (*ent.ProductCategoryMinor, error)
+		UpdateImage(id int, imagePath string) (string, error)
+		Delete(id int) error
 	}
 	AdminRepo interface {
-		Insert(user *models.Admin) (*ent.Admin, error)
+		Insert(user *models.AdminUserRequest, password string) (*ent.Admin, error)
 		Read(id int) (*ent.Admin, error)
-		ReadAll() ([]*ent.Admin, error)
-		Update(user *models.Admin) (*models.Admin, error)
-		Delete(id string) error
+		ReadAll(limit, offset int) (*presenters.ResponseWithTotalRecords, error)
+		Update(id int, user *models.AdminUserRequest) (*ent.Admin, error)
+		Delete(id int) error
+	}
+	RoleAndPermissionRepo interface {
+		Insert(role *models.RoleRequest) (*ent.Role, error)
+		ReadAll(limit, offset int) (*presenters.ResponseWithTotalRecords, error)
+		ReadAllPermission() ([]*ent.Permission, error)
+		Read(id int) (*ent.Role, error)
+		Update(id int, role *models.RoleRequest) (*ent.Role, error)
+		Delete(id int) error
 	}
 	AddressRepo interface {
 		Insert(user *models.Address, userId int, userType string) (*ent.Address, error)

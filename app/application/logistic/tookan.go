@@ -101,14 +101,13 @@ func (t *tookan) FareEstimate(coordinates *models.OrderFareEstimateRequest) (
 	var response []*services.FareEstimateResponseData
 	wg := &sync.WaitGroup{}
 	mu := &sync.Mutex{}
-
 	for _, coordinate := range coordinates.Pickups {
 		wg.Add(1)
 		go func(pickup *services.Coordinate) {
 			defer wg.Done()
 			result, err := t.getFareEstimate(coordinates.Delivery, pickup)
 			if err != nil {
-				fmt.Println(err)
+				panic(fmt.Errorf("%s", err))
 			}
 			mu.Lock()
 			response = append(response, result)
@@ -140,7 +139,6 @@ func (t *tookan) processWebhookResponse(response any) {
 	if err != nil {
 		t.ErrorChan <- err
 	}
-	fmt.Println(res)
 	switch res.JobStatus {
 	case 1:
 		// Job Started
@@ -152,7 +150,9 @@ func (t *tookan) processWebhookResponse(response any) {
 		if err := t.repo.UpdateOrderStatus(res.JobToken, "delivered"); err != nil {
 			t.ErrorChan <- err
 		}
+
 	}
+
 }
 
 func (t *tookan) createPickupAndDeliveryTask(order *ent.Order) error {
@@ -312,8 +312,8 @@ func (t *tookan) formatMetadata(data *ent.Order, storeId int) []*services.Tookan
 		{
 			Label: "Address",
 			Data: fmt.Sprintf(
-				"%s %s\n%s\n%s,\n%s %s\n%s-%s\n%s", data.Edges.Address.OtherName, data.Edges.Address.LastName,
-				data.Edges.Address.Address, data.Edges.Address.City, data.Edges.Address.StreetName,
+				"%s %s\n%s,\n%s %s\n%s-%s\n%s", data.Edges.Address.OtherName, data.Edges.Address.LastName,
+				data.Edges.Address.City, data.Edges.Address.StreetName,
 				data.Edges.Address.District, data.Edges.Address.Region, data.Edges.Address.Country,
 				data.Edges.Address.Phone,
 			),
@@ -674,7 +674,6 @@ func (t *tookan) getFareEstimate(delivery, pickup *services.Coordinate) (*servic
 			GoogleAPIKey: t.GoogleAPIKey,
 		},
 	}
-
 	payloadBytes, err := json.Marshal(resData)
 	if err != nil {
 		return nil, err
@@ -694,17 +693,21 @@ func (t *tookan) getFareEstimate(delivery, pickup *services.Coordinate) (*servic
 		return nil, reserr
 	}
 	defer res.Body.Close()
-
-	resp_body, _ := ioutil.ReadAll(res.Body)
+	if res.Status != "200 OK" {
+		return nil, reserr
+	}
+	resp_body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
 	resBody, errr := gabs.ParseJSON(resp_body)
 	if errr != nil {
+		return nil, errr
+	}
+	formulas, err := resBody.Path("data.formula_fields").Children()
+	if err != nil {
 		return nil, err
 	}
-
-	formulas, err := resBody.Path("data.formula_fields").Children()
 	var respFormulas []*services.FareEstimateResponseFormula
 	for _, formula := range formulas {
 		respFormulas = append(
@@ -730,7 +733,6 @@ func (t *tookan) getFareEstimate(delivery, pickup *services.Coordinate) (*servic
 		Formula:       respFormulas,
 		EstimatedFare: resBody.Path("data.estimated_fare").Data().(float64),
 	}
-
 	return response, nil
 }
 
@@ -768,6 +770,7 @@ func (t *tookan) formatWebhookPayload(request any) (*services.TookanWebhookRespo
 			return nil, fmt.Errorf("could not cast job status to the appropriate type")
 		}
 	}
+
 	response = &services.TookanWebhookResponse{
 		JobStatus: status,
 		JobState:  resBody.Path("job_state").Data().(string),

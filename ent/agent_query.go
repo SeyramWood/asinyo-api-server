@@ -442,7 +442,6 @@ func (aq *AgentQuery) WithRequests(opts ...func(*AgentRequestQuery)) *AgentQuery
 //		GroupBy(agent.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (aq *AgentQuery) GroupBy(field string, fields ...string) *AgentGroupBy {
 	grbuild := &AgentGroupBy{config: aq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -469,7 +468,6 @@ func (aq *AgentQuery) GroupBy(field string, fields ...string) *AgentGroupBy {
 //	client.Agent.Query().
 //		Select(agent.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (aq *AgentQuery) Select(fields ...string) *AgentSelect {
 	aq.fields = append(aq.fields, fields...)
 	selbuild := &AgentSelect{AgentQuery: aq}

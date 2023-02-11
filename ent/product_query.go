@@ -443,7 +443,6 @@ func (pq *ProductQuery) WithMinor(opts ...func(*ProductCategoryMinorQuery)) *Pro
 //		GroupBy(product.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (pq *ProductQuery) GroupBy(field string, fields ...string) *ProductGroupBy {
 	grbuild := &ProductGroupBy{config: pq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -470,7 +469,6 @@ func (pq *ProductQuery) GroupBy(field string, fields ...string) *ProductGroupBy 
 //	client.Product.Query().
 //		Select(product.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (pq *ProductQuery) Select(fields ...string) *ProductSelect {
 	pq.fields = append(pq.fields, fields...)
 	selbuild := &ProductSelect{ProductQuery: pq}

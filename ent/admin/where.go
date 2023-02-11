@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/SeyramWood/ent/predicate"
 )
 
@@ -105,6 +106,27 @@ func Username(v string) predicate.Admin {
 func Password(v []byte) predicate.Admin {
 	return predicate.Admin(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldPassword), v))
+	})
+}
+
+// LastName applies equality check predicate on the "last_name" field. It's identical to LastNameEQ.
+func LastName(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldLastName), v))
+	})
+}
+
+// OtherName applies equality check predicate on the "other_name" field. It's identical to OtherNameEQ.
+func OtherName(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldOtherName), v))
+	})
+}
+
+// LastActive applies equality check predicate on the "last_active" field. It's identical to LastActiveEQ.
+func LastActive(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldLastActive), v))
 	})
 }
 
@@ -396,6 +418,381 @@ func PasswordLT(v []byte) predicate.Admin {
 func PasswordLTE(v []byte) predicate.Admin {
 	return predicate.Admin(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldPassword), v))
+	})
+}
+
+// LastNameEQ applies the EQ predicate on the "last_name" field.
+func LastNameEQ(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldLastName), v))
+	})
+}
+
+// LastNameNEQ applies the NEQ predicate on the "last_name" field.
+func LastNameNEQ(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldLastName), v))
+	})
+}
+
+// LastNameIn applies the In predicate on the "last_name" field.
+func LastNameIn(vs ...string) predicate.Admin {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldLastName), v...))
+	})
+}
+
+// LastNameNotIn applies the NotIn predicate on the "last_name" field.
+func LastNameNotIn(vs ...string) predicate.Admin {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldLastName), v...))
+	})
+}
+
+// LastNameGT applies the GT predicate on the "last_name" field.
+func LastNameGT(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldLastName), v))
+	})
+}
+
+// LastNameGTE applies the GTE predicate on the "last_name" field.
+func LastNameGTE(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldLastName), v))
+	})
+}
+
+// LastNameLT applies the LT predicate on the "last_name" field.
+func LastNameLT(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldLastName), v))
+	})
+}
+
+// LastNameLTE applies the LTE predicate on the "last_name" field.
+func LastNameLTE(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldLastName), v))
+	})
+}
+
+// LastNameContains applies the Contains predicate on the "last_name" field.
+func LastNameContains(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldLastName), v))
+	})
+}
+
+// LastNameHasPrefix applies the HasPrefix predicate on the "last_name" field.
+func LastNameHasPrefix(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldLastName), v))
+	})
+}
+
+// LastNameHasSuffix applies the HasSuffix predicate on the "last_name" field.
+func LastNameHasSuffix(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldLastName), v))
+	})
+}
+
+// LastNameEqualFold applies the EqualFold predicate on the "last_name" field.
+func LastNameEqualFold(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldLastName), v))
+	})
+}
+
+// LastNameContainsFold applies the ContainsFold predicate on the "last_name" field.
+func LastNameContainsFold(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldLastName), v))
+	})
+}
+
+// OtherNameEQ applies the EQ predicate on the "other_name" field.
+func OtherNameEQ(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldOtherName), v))
+	})
+}
+
+// OtherNameNEQ applies the NEQ predicate on the "other_name" field.
+func OtherNameNEQ(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldOtherName), v))
+	})
+}
+
+// OtherNameIn applies the In predicate on the "other_name" field.
+func OtherNameIn(vs ...string) predicate.Admin {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldOtherName), v...))
+	})
+}
+
+// OtherNameNotIn applies the NotIn predicate on the "other_name" field.
+func OtherNameNotIn(vs ...string) predicate.Admin {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldOtherName), v...))
+	})
+}
+
+// OtherNameGT applies the GT predicate on the "other_name" field.
+func OtherNameGT(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldOtherName), v))
+	})
+}
+
+// OtherNameGTE applies the GTE predicate on the "other_name" field.
+func OtherNameGTE(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldOtherName), v))
+	})
+}
+
+// OtherNameLT applies the LT predicate on the "other_name" field.
+func OtherNameLT(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldOtherName), v))
+	})
+}
+
+// OtherNameLTE applies the LTE predicate on the "other_name" field.
+func OtherNameLTE(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldOtherName), v))
+	})
+}
+
+// OtherNameContains applies the Contains predicate on the "other_name" field.
+func OtherNameContains(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldOtherName), v))
+	})
+}
+
+// OtherNameHasPrefix applies the HasPrefix predicate on the "other_name" field.
+func OtherNameHasPrefix(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldOtherName), v))
+	})
+}
+
+// OtherNameHasSuffix applies the HasSuffix predicate on the "other_name" field.
+func OtherNameHasSuffix(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldOtherName), v))
+	})
+}
+
+// OtherNameEqualFold applies the EqualFold predicate on the "other_name" field.
+func OtherNameEqualFold(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldOtherName), v))
+	})
+}
+
+// OtherNameContainsFold applies the ContainsFold predicate on the "other_name" field.
+func OtherNameContainsFold(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldOtherName), v))
+	})
+}
+
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v Status) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldStatus), v))
+	})
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v Status) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldStatus), v))
+	})
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...Status) predicate.Admin {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldStatus), v...))
+	})
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...Status) predicate.Admin {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldStatus), v...))
+	})
+}
+
+// LastActiveEQ applies the EQ predicate on the "last_active" field.
+func LastActiveEQ(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldLastActive), v))
+	})
+}
+
+// LastActiveNEQ applies the NEQ predicate on the "last_active" field.
+func LastActiveNEQ(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldLastActive), v))
+	})
+}
+
+// LastActiveIn applies the In predicate on the "last_active" field.
+func LastActiveIn(vs ...string) predicate.Admin {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldLastActive), v...))
+	})
+}
+
+// LastActiveNotIn applies the NotIn predicate on the "last_active" field.
+func LastActiveNotIn(vs ...string) predicate.Admin {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldLastActive), v...))
+	})
+}
+
+// LastActiveGT applies the GT predicate on the "last_active" field.
+func LastActiveGT(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldLastActive), v))
+	})
+}
+
+// LastActiveGTE applies the GTE predicate on the "last_active" field.
+func LastActiveGTE(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldLastActive), v))
+	})
+}
+
+// LastActiveLT applies the LT predicate on the "last_active" field.
+func LastActiveLT(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldLastActive), v))
+	})
+}
+
+// LastActiveLTE applies the LTE predicate on the "last_active" field.
+func LastActiveLTE(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldLastActive), v))
+	})
+}
+
+// LastActiveContains applies the Contains predicate on the "last_active" field.
+func LastActiveContains(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldLastActive), v))
+	})
+}
+
+// LastActiveHasPrefix applies the HasPrefix predicate on the "last_active" field.
+func LastActiveHasPrefix(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldLastActive), v))
+	})
+}
+
+// LastActiveHasSuffix applies the HasSuffix predicate on the "last_active" field.
+func LastActiveHasSuffix(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldLastActive), v))
+	})
+}
+
+// LastActiveIsNil applies the IsNil predicate on the "last_active" field.
+func LastActiveIsNil() predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldLastActive)))
+	})
+}
+
+// LastActiveNotNil applies the NotNil predicate on the "last_active" field.
+func LastActiveNotNil() predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldLastActive)))
+	})
+}
+
+// LastActiveEqualFold applies the EqualFold predicate on the "last_active" field.
+func LastActiveEqualFold(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldLastActive), v))
+	})
+}
+
+// LastActiveContainsFold applies the ContainsFold predicate on the "last_active" field.
+func LastActiveContainsFold(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldLastActive), v))
+	})
+}
+
+// HasRoles applies the HasEdge predicate on the "roles" edge.
+func HasRoles() predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RolesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, RolesTable, RolesPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRolesWith applies the HasEdge predicate on the "roles" edge with a given conditions (other predicates).
+func HasRolesWith(preds ...predicate.Role) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RolesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, RolesTable, RolesPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

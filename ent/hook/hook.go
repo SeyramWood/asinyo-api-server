@@ -178,6 +178,19 @@ func (f OrderDetailFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return f(ctx, mv)
 }
 
+// The PermissionFunc type is an adapter to allow the use of ordinary
+// function as Permission mutator.
+type PermissionFunc func(context.Context, *ent.PermissionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PermissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.PermissionMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PermissionMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The PickupStationFunc type is an adapter to allow the use of ordinary
 // function as PickupStation mutator.
 type PickupStationFunc func(context.Context, *ent.PickupStationMutation) (ent.Value, error)
@@ -239,6 +252,19 @@ func (f RetailMerchantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	mv, ok := m.(*ent.RetailMerchantMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RetailMerchantMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The RoleFunc type is an adapter to allow the use of ordinary
+// function as Role mutator.
+type RoleFunc func(context.Context, *ent.RoleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RoleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.RoleMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RoleMutation", m)
 	}
 	return f(ctx, mv)
 }
@@ -351,7 +377,6 @@ func HasFields(field string, fields ...string) Condition {
 // If executes the given hook under condition.
 //
 //	hook.If(ComputeAverage, And(HasFields(...), HasAddedFields(...)))
-//
 func If(hk ent.Hook, cond Condition) ent.Hook {
 	return func(next ent.Mutator) ent.Mutator {
 		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
@@ -366,7 +391,6 @@ func If(hk ent.Hook, cond Condition) ent.Hook {
 // On executes the given hook only for the given operation.
 //
 //	hook.On(Log, ent.Delete|ent.Create)
-//
 func On(hk ent.Hook, op ent.Op) ent.Hook {
 	return If(hk, HasOp(op))
 }
@@ -374,7 +398,6 @@ func On(hk ent.Hook, op ent.Op) ent.Hook {
 // Unless skips the given hook only for the given operation.
 //
 //	hook.Unless(Log, ent.Update|ent.UpdateOne)
-//
 func Unless(hk ent.Hook, op ent.Op) ent.Hook {
 	return If(hk, Not(HasOp(op)))
 }
@@ -395,7 +418,6 @@ func FixedError(err error) ent.Hook {
 //			Reject(ent.Delete|ent.Update),
 //		}
 //	}
-//
 func Reject(op ent.Op) ent.Hook {
 	hk := FixedError(fmt.Errorf("%s operation is not allowed", op))
 	return On(hk, op)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/SeyramWood/app/adapters/gateways"
@@ -11,7 +12,9 @@ import (
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
+	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/individualcustomer"
 )
 
 type repository struct {
@@ -102,13 +105,63 @@ func (r *repository) ReadAll() ([]*ent.Customer, error) {
 	return results, nil
 }
 
-func (r *repository) Update(i *models.IndividualCustomer) (*ent.Customer, error) {
-	// book.UpdatedAt = time.Now()
-	// _, err := r.Collection.UpdateOne(context.Background(), bson.M{"_id": book.ID}, bson.M{"$set": book})
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+func (r *repository) Update(id int, c any) (*ent.Customer, error) {
+	ctx := context.Background()
+	if request, ok := c.(*models.IndividualCustomerUpdate); ok {
+		_, err := r.db.IndividualCustomer.Update().Where(
+			individualcustomer.HasCustomerWith(
+				func(bc *sql.Selector) {
+					bc.Where(sql.InInts(customer.IndividualColumn, id))
+				},
+			),
+		).
+			SetLastName(request.LastName).
+			SetOtherName(request.OtherName).
+			SetPhone(request.Phone).
+			SetOtherPhone(request.OtherPhone).
+			Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if request, ok := c.(*models.BusinessCustomerUpdate); ok {
+		_, err := r.db.BusinessCustomer.Update().Where(
+			businesscustomer.HasCustomerWith(
+				func(bc *sql.Selector) {
+					bc.Where(sql.InInts(customer.BusinessColumn, id))
+				},
+			),
+		).
+			SetName(request.BusinessName).
+			SetPhone(request.BusinessPhone).
+			SetOtherPhone(request.OtherPhone).
+			SetContact(
+				&models.BusinessCustomerContact{
+					Name:     request.ContactName,
+					Position: request.ContactPosition,
+					Phone:    request.ContactPhone,
+					Email:    request.ContactEmail,
+				},
+			).Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	result, err := r.db.Customer.Query().Where(customer.ID(id)).WithBusiness().WithIndividual().Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r *repository) UpdateLogo(c int, logo string) (string, error) {
+	ctx := context.Background()
+	_, err := r.db.BusinessCustomer.UpdateOneID(r.db.Customer.Query().Where(customer.ID(c)).QueryBusiness().OnlyIDX(ctx)).SetLogo(logo).Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	return logo, nil
 }
 
 func (r *repository) Delete(ID string) error {

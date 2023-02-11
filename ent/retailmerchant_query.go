@@ -298,7 +298,6 @@ func (rmq *RetailMerchantQuery) WithMerchant(opts ...func(*MerchantQuery)) *Reta
 //		GroupBy(retailmerchant.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (rmq *RetailMerchantQuery) GroupBy(field string, fields ...string) *RetailMerchantGroupBy {
 	grbuild := &RetailMerchantGroupBy{config: rmq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -325,7 +324,6 @@ func (rmq *RetailMerchantQuery) GroupBy(field string, fields ...string) *RetailM
 //	client.RetailMerchant.Query().
 //		Select(retailmerchant.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (rmq *RetailMerchantQuery) Select(fields ...string) *RetailMerchantSelect {
 	rmq.fields = append(rmq.fields, fields...)
 	selbuild := &RetailMerchantSelect{RetailMerchantQuery: rmq}

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/predicate"
+	"github.com/SeyramWood/ent/role"
 )
 
 // AdminUpdate is the builder for updating Admin entities.
@@ -46,9 +47,91 @@ func (au *AdminUpdate) SetPassword(b []byte) *AdminUpdate {
 	return au
 }
 
+// SetLastName sets the "last_name" field.
+func (au *AdminUpdate) SetLastName(s string) *AdminUpdate {
+	au.mutation.SetLastName(s)
+	return au
+}
+
+// SetOtherName sets the "other_name" field.
+func (au *AdminUpdate) SetOtherName(s string) *AdminUpdate {
+	au.mutation.SetOtherName(s)
+	return au
+}
+
+// SetStatus sets the "status" field.
+func (au *AdminUpdate) SetStatus(a admin.Status) *AdminUpdate {
+	au.mutation.SetStatus(a)
+	return au
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (au *AdminUpdate) SetNillableStatus(a *admin.Status) *AdminUpdate {
+	if a != nil {
+		au.SetStatus(*a)
+	}
+	return au
+}
+
+// SetLastActive sets the "last_active" field.
+func (au *AdminUpdate) SetLastActive(s string) *AdminUpdate {
+	au.mutation.SetLastActive(s)
+	return au
+}
+
+// SetNillableLastActive sets the "last_active" field if the given value is not nil.
+func (au *AdminUpdate) SetNillableLastActive(s *string) *AdminUpdate {
+	if s != nil {
+		au.SetLastActive(*s)
+	}
+	return au
+}
+
+// ClearLastActive clears the value of the "last_active" field.
+func (au *AdminUpdate) ClearLastActive() *AdminUpdate {
+	au.mutation.ClearLastActive()
+	return au
+}
+
+// AddRoleIDs adds the "roles" edge to the Role entity by IDs.
+func (au *AdminUpdate) AddRoleIDs(ids ...int) *AdminUpdate {
+	au.mutation.AddRoleIDs(ids...)
+	return au
+}
+
+// AddRoles adds the "roles" edges to the Role entity.
+func (au *AdminUpdate) AddRoles(r ...*Role) *AdminUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return au.AddRoleIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (au *AdminUpdate) Mutation() *AdminMutation {
 	return au.mutation
+}
+
+// ClearRoles clears all "roles" edges to the Role entity.
+func (au *AdminUpdate) ClearRoles() *AdminUpdate {
+	au.mutation.ClearRoles()
+	return au
+}
+
+// RemoveRoleIDs removes the "roles" edge to Role entities by IDs.
+func (au *AdminUpdate) RemoveRoleIDs(ids ...int) *AdminUpdate {
+	au.mutation.RemoveRoleIDs(ids...)
+	return au
+}
+
+// RemoveRoles removes "roles" edges to Role entities.
+func (au *AdminUpdate) RemoveRoles(r ...*Role) *AdminUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return au.RemoveRoleIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -132,6 +215,21 @@ func (au *AdminUpdate) check() error {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "Admin.password": %w`, err)}
 		}
 	}
+	if v, ok := au.mutation.LastName(); ok {
+		if err := admin.LastNameValidator(v); err != nil {
+			return &ValidationError{Name: "last_name", err: fmt.Errorf(`ent: validator failed for field "Admin.last_name": %w`, err)}
+		}
+	}
+	if v, ok := au.mutation.OtherName(); ok {
+		if err := admin.OtherNameValidator(v); err != nil {
+			return &ValidationError{Name: "other_name", err: fmt.Errorf(`ent: validator failed for field "Admin.other_name": %w`, err)}
+		}
+	}
+	if v, ok := au.mutation.Status(); ok {
+		if err := admin.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Admin.status": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -174,6 +272,94 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: admin.FieldPassword,
 		})
 	}
+	if value, ok := au.mutation.LastName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldLastName,
+		})
+	}
+	if value, ok := au.mutation.OtherName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldOtherName,
+		})
+	}
+	if value, ok := au.mutation.Status(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: admin.FieldStatus,
+		})
+	}
+	if value, ok := au.mutation.LastActive(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldLastActive,
+		})
+	}
+	if au.mutation.LastActiveCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: admin.FieldLastActive,
+		})
+	}
+	if au.mutation.RolesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RolesTable,
+			Columns: admin.RolesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: role.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedRolesIDs(); len(nodes) > 0 && !au.mutation.RolesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RolesTable,
+			Columns: admin.RolesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: role.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RolesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RolesTable,
+			Columns: admin.RolesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: role.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{admin.Label}
@@ -211,9 +397,91 @@ func (auo *AdminUpdateOne) SetPassword(b []byte) *AdminUpdateOne {
 	return auo
 }
 
+// SetLastName sets the "last_name" field.
+func (auo *AdminUpdateOne) SetLastName(s string) *AdminUpdateOne {
+	auo.mutation.SetLastName(s)
+	return auo
+}
+
+// SetOtherName sets the "other_name" field.
+func (auo *AdminUpdateOne) SetOtherName(s string) *AdminUpdateOne {
+	auo.mutation.SetOtherName(s)
+	return auo
+}
+
+// SetStatus sets the "status" field.
+func (auo *AdminUpdateOne) SetStatus(a admin.Status) *AdminUpdateOne {
+	auo.mutation.SetStatus(a)
+	return auo
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (auo *AdminUpdateOne) SetNillableStatus(a *admin.Status) *AdminUpdateOne {
+	if a != nil {
+		auo.SetStatus(*a)
+	}
+	return auo
+}
+
+// SetLastActive sets the "last_active" field.
+func (auo *AdminUpdateOne) SetLastActive(s string) *AdminUpdateOne {
+	auo.mutation.SetLastActive(s)
+	return auo
+}
+
+// SetNillableLastActive sets the "last_active" field if the given value is not nil.
+func (auo *AdminUpdateOne) SetNillableLastActive(s *string) *AdminUpdateOne {
+	if s != nil {
+		auo.SetLastActive(*s)
+	}
+	return auo
+}
+
+// ClearLastActive clears the value of the "last_active" field.
+func (auo *AdminUpdateOne) ClearLastActive() *AdminUpdateOne {
+	auo.mutation.ClearLastActive()
+	return auo
+}
+
+// AddRoleIDs adds the "roles" edge to the Role entity by IDs.
+func (auo *AdminUpdateOne) AddRoleIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.AddRoleIDs(ids...)
+	return auo
+}
+
+// AddRoles adds the "roles" edges to the Role entity.
+func (auo *AdminUpdateOne) AddRoles(r ...*Role) *AdminUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return auo.AddRoleIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (auo *AdminUpdateOne) Mutation() *AdminMutation {
 	return auo.mutation
+}
+
+// ClearRoles clears all "roles" edges to the Role entity.
+func (auo *AdminUpdateOne) ClearRoles() *AdminUpdateOne {
+	auo.mutation.ClearRoles()
+	return auo
+}
+
+// RemoveRoleIDs removes the "roles" edge to Role entities by IDs.
+func (auo *AdminUpdateOne) RemoveRoleIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.RemoveRoleIDs(ids...)
+	return auo
+}
+
+// RemoveRoles removes "roles" edges to Role entities.
+func (auo *AdminUpdateOne) RemoveRoles(r ...*Role) *AdminUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return auo.RemoveRoleIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -310,6 +578,21 @@ func (auo *AdminUpdateOne) check() error {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "Admin.password": %w`, err)}
 		}
 	}
+	if v, ok := auo.mutation.LastName(); ok {
+		if err := admin.LastNameValidator(v); err != nil {
+			return &ValidationError{Name: "last_name", err: fmt.Errorf(`ent: validator failed for field "Admin.last_name": %w`, err)}
+		}
+	}
+	if v, ok := auo.mutation.OtherName(); ok {
+		if err := admin.OtherNameValidator(v); err != nil {
+			return &ValidationError{Name: "other_name", err: fmt.Errorf(`ent: validator failed for field "Admin.other_name": %w`, err)}
+		}
+	}
+	if v, ok := auo.mutation.Status(); ok {
+		if err := admin.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Admin.status": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -368,6 +651,94 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 			Value:  value,
 			Column: admin.FieldPassword,
 		})
+	}
+	if value, ok := auo.mutation.LastName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldLastName,
+		})
+	}
+	if value, ok := auo.mutation.OtherName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldOtherName,
+		})
+	}
+	if value, ok := auo.mutation.Status(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: admin.FieldStatus,
+		})
+	}
+	if value, ok := auo.mutation.LastActive(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldLastActive,
+		})
+	}
+	if auo.mutation.LastActiveCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: admin.FieldLastActive,
+		})
+	}
+	if auo.mutation.RolesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RolesTable,
+			Columns: admin.RolesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: role.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedRolesIDs(); len(nodes) > 0 && !auo.mutation.RolesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RolesTable,
+			Columns: admin.RolesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: role.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RolesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RolesTable,
+			Columns: admin.RolesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: role.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Admin{config: auo.config}
 	_spec.Assign = _node.assignValues

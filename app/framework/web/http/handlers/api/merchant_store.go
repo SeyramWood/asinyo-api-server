@@ -18,15 +18,19 @@ import (
 )
 
 type MerchantStoreHandler struct {
-	service gateways.MerchantStoreService
-	maps    gateways.MapService
+	service    gateways.MerchantStoreService
+	maps       gateways.MapService
+	storageSrv gateways.StorageService
 }
 
-func NewMerchantStoreHandler(db *database.Adapter, maps gateways.MapService) *MerchantStoreHandler {
+func NewMerchantStoreHandler(
+	db *database.Adapter, maps gateways.MapService, storageSrv gateways.StorageService,
+) *MerchantStoreHandler {
 	repo := merchant_store.NewMerchantStoreRepo(db)
 	return &MerchantStoreHandler{
-		service: merchant_store.NewMerchantStoreService(repo),
-		maps:    maps.SetMerchantStoreRepo(repo),
+		service:    merchant_store.NewMerchantStoreService(repo),
+		maps:       maps.SetMerchantStoreRepo(repo),
+		storageSrv: storageSrv,
 	}
 }
 
@@ -111,19 +115,11 @@ func (h *MerchantStoreHandler) Create() fiber.Handler {
 		}
 		file, err := c.FormFile("banner")
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(
-				fiber.Map{
-					"msg": "Upload error",
-				},
-			)
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
 		form, err := c.MultipartForm()
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(
-				fiber.Map{
-					"msg": "Upload error",
-				},
-			)
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
 		logo, images, upErr := storage.NewUploadCare().Client().UploadMerchantStore(file, form)
 		if upErr != nil {
@@ -145,41 +141,39 @@ func (h *MerchantStoreHandler) Create() fiber.Handler {
 		return c.JSON(presenters.MerchantStoreSuccessResponse(result))
 	}
 }
-func (h *MerchantStoreHandler) SaveMomoAccount() fiber.Handler {
+
+func (h *MerchantStoreHandler) SaveAccount() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var request models.MerchantMomoAccountRequest
+		var momoRequest models.MerchantMomoAccountRequest
+		var bankRequest models.MerchantBankAccountRequest
+		storeId, _ := c.ParamsInt("id")
+		accountType := c.Params("accountType")
+		if accountType == "bank" {
+			err := c.BodyParser(&bankRequest)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+			}
+			result, err := h.service.SaveAccount(&bankRequest, storeId, accountType)
+			if err != nil {
 
-		storeId, _ := c.ParamsInt("storeId")
+				return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
+			}
+			return c.JSON(presenters.MerchantStorefrontSuccessResponse(result))
+		}
 
-		err := c.BodyParser(&request)
+		err := c.BodyParser(&momoRequest)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
-		result, err := h.service.SaveAccount(&request, storeId, "momo")
-
+		result, err := h.service.SaveAccount(&momoRequest, storeId, accountType)
 		if err != nil {
-
-			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(errors.New("error creating merchant")))
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
+
 		return c.JSON(presenters.MerchantStorefrontSuccessResponse(result))
-	}
-}
-func (h *MerchantStoreHandler) SaveBankAccount() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		var request models.MerchantBankAccountRequest
-		storeId, _ := c.ParamsInt("storeId")
-		err := c.BodyParser(&request)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
-		}
-		result, err := h.service.SaveAccount(&request, storeId, "bank")
 
-		if err != nil {
-
-			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(errors.New("error creating merchant")))
-		}
-		return c.JSON(presenters.MerchantStorefrontSuccessResponse(result))
 	}
+
 }
 
 func (h *MerchantStoreHandler) SaveDefaultAccount() fiber.Handler {
@@ -230,7 +224,7 @@ func (h *MerchantStoreHandler) FetchMerchantAgent() fiber.Handler {
 
 func (h *MerchantStoreHandler) Update() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var infoRequest models.MerchantStore
+		var infoRequest models.MerchantStoreUpdate
 		var addressRequest models.MerchantStoreAddress
 
 		formType := c.Get("formType")
@@ -241,11 +235,12 @@ func (h *MerchantStoreHandler) Update() fiber.Handler {
 			if err != nil {
 				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 			}
-			_, err = h.service.Update(&infoRequest, storeId)
+			result, err := h.service.Update(&infoRequest, storeId)
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 			}
 
+			return c.JSON(presenters.MerchantStorefrontSuccessResponse(result))
 		}
 		if formType == "address" {
 			err := c.BodyParser(&addressRequest)
@@ -259,10 +254,113 @@ func (h *MerchantStoreHandler) Update() fiber.Handler {
 			h.maps.ExecuteTask(result, "geocoding", "store")
 			return c.JSON(presenters.MerchantStorefrontSuccessResponse(result))
 		}
+
+		if formType == "images" {
+			form, err := c.MultipartForm()
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+			}
+			urls, errr := h.storageSrv.Disk("uploadcare").UploadFiles("merchant_store", form.File["images"])
+			if errr != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
+			}
+			result, err := h.service.AppendNewImages(storeId, urls)
+			if errr != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
+			}
+			return c.Status(fiber.StatusOK).JSON(
+				fiber.Map{
+					"status": true,
+					"data":   result,
+				},
+			)
+
+		}
+
 		return c.Status(fiber.StatusBadRequest).JSON(
 			fiber.Map{
 				"status": false,
 				"msg":    "Bad request",
+			},
+		)
+	}
+
+}
+func (h *MerchantStoreHandler) UpdateBusinessBanner() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		banner, err := c.FormFile("file")
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
+		}
+		bannerPath, err := h.storageSrv.Disk("uploadcare").UploadFile("merchant_logo", banner)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+
+		storeId, _ := strconv.Atoi(c.Query("id"))
+		prevUrl := c.Query("file", "")
+		result, err := h.service.UpdateBanner(storeId, bannerPath)
+		if err != nil {
+			if prevUrl != "" {
+				h.storageSrv.Disk("uploadcare").ExecuteTask(prevUrl, "delete_file")
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		if prevUrl != "" {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(prevUrl, "delete_file")
+		}
+		return c.Status(fiber.StatusOK).JSON(
+			fiber.Map{
+				"status": true,
+				"data":   result,
+			},
+		)
+	}
+
+}
+func (h *MerchantStoreHandler) UpdateBusinessImages() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		imageFile, err := c.FormFile("file")
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
+		}
+		newPath, err := h.storageSrv.Disk("uploadcare").UploadFile("merchant_store", imageFile)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+
+		storeId, _ := strconv.Atoi(c.Query("id"))
+		prevUrl := c.Query("file", "")
+		result, err := h.service.UpdateImages(storeId, newPath, prevUrl)
+		if err != nil {
+			if prevUrl != "" {
+				h.storageSrv.Disk("uploadcare").ExecuteTask(prevUrl, "delete_file")
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Upload error",
+				},
+			)
+		}
+		if prevUrl != "" {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(prevUrl, "delete_file")
+		}
+		return c.Status(fiber.StatusOK).JSON(
+			fiber.Map{
+				"status": true,
+				"data":   result,
 			},
 		)
 	}

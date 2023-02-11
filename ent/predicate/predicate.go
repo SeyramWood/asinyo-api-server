@@ -45,6 +45,9 @@ type Order func(*sql.Selector)
 // OrderDetail is the predicate function for orderdetail builders.
 type OrderDetail func(*sql.Selector)
 
+// Permission is the predicate function for permission builders.
+type Permission func(*sql.Selector)
+
 // PickupStation is the predicate function for pickupstation builders.
 type PickupStation func(*sql.Selector)
 
@@ -59,6 +62,9 @@ type ProductCategoryMinor func(*sql.Selector)
 
 // RetailMerchant is the predicate function for retailmerchant builders.
 type RetailMerchant func(*sql.Selector)
+
+// Role is the predicate function for role builders.
+type Role func(*sql.Selector)
 
 // SupplierMerchant is the predicate function for suppliermerchant builders.
 type SupplierMerchant func(*sql.Selector)

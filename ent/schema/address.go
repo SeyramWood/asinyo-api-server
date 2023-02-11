@@ -33,7 +33,6 @@ func (Address) Fields() []ent.Field {
 		field.String("district").Optional(),
 		field.String("Region").NotEmpty(),
 		field.String("Country").Default("Ghana"),
-		field.Text("address").NotEmpty(),
 		field.Bool("default").Default(false),
 		field.JSON("coordinate", &services.Coordinate{}).Optional(),
 	}

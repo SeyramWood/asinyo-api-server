@@ -107,7 +107,6 @@ func (h *OrderHandler) Fetch() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		result, err := h.service.FetchAll()
-
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.OrderErrorResponse(err))
 		}

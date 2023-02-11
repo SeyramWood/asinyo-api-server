@@ -1,8 +1,11 @@
 package gateways
 
 import (
+	"mime/multipart"
+
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent"
@@ -13,15 +16,22 @@ type (
 		Create(customer any, customerType string) (*ent.Customer, error)
 		FetchAll() ([]*ent.Customer, error)
 		Fetch(id int) (*ent.Customer, error)
-		Update(customer *models.IndividualCustomer) (*ent.Customer, error)
+		Update(id int, customer any) (*ent.Customer, error)
+		UpdateLogo(customer int, logo string) (string, error)
 		Remove(id string) error
 	}
 	AgentService interface {
 		Create(agent *models.AgentRequest) (*ent.Agent, error)
+		SaveAccount(account any, agentId int, accountType string) (*ent.Agent, error)
+		SaveDefaultAccount(agentId int, accountType string) (*ent.Agent, error)
 		FetchAll() ([]*ent.Agent, error)
 		FetchAllMerchant(agentId int) ([]*ent.MerchantStore, error)
 		Fetch(id int) (*ent.Agent, error)
-		Update(agent *models.Agent) (*models.Agent, error)
+		Update(id int, profile *models.AgentProfile) (*ent.Agent, error)
+		UpdateGuarantor(id int, request *models.AgentGuarantorUpdate) (*ent.Agent, error)
+		UpdateAgentComplianceCard(agentId int, newPath, oldPath string) ([]string, error)
+		UpdateAgentPoliceReport(agentId int, filePath string) (string, error)
+		UpdateGuarantorComplianceCard(agentId int, newPath, oldPath string) ([]string, error)
 		Remove(id string) error
 		CreateCompliance(
 			request *models.AgentComplianceRequest, id int, report string, personal []string, guarantor []string,
@@ -34,7 +44,7 @@ type (
 		)
 		FetchAll() ([]*ent.Merchant, error)
 		Fetch(id int) (*ent.Merchant, error)
-		Update(merchant *models.Merchant) (*models.Merchant, error)
+		Update(id int, request any) (*ent.Merchant, error)
 		Remove(id string) error
 	}
 	SupplierMerchantService interface {
@@ -55,18 +65,21 @@ type (
 		Create(store *models.MerchantStoreRequest, merchantId int, logo string, images []string) (
 			*ent.MerchantStore, error,
 		)
-		SaveAccount(store interface{}, storeId int, logo string) (*ent.MerchantStore, error)
+		SaveAccount(store any, storeId int, accountType string) (*ent.MerchantStore, error)
 		SaveDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
 		SaveAgentPermission(request bool, storeId int) (*ent.MerchantStore, error)
-		SaveLogo(c *fiber.Ctx, field, directory string) (interface{}, error)
-		SavePhotos(c *fiber.Ctx, field, directory string) (interface{}, error)
+		SaveLogo(c *fiber.Ctx, field, directory string) (any, error)
+		SavePhotos(c *fiber.Ctx, field, directory string) (any, error)
 		FetchAll() ([]*ent.MerchantStore, error)
 		FetchAllByMerchant(merchantType string, limit, offset int) ([]*ent.MerchantStore, error)
 		Fetch(id int) (*ent.MerchantStore, error)
 		FetchAgent(store int) (*ent.Agent, error)
 		FetchByMerchant(merchantId int) (*ent.MerchantStore, error)
-		Update(store *models.MerchantStore, storeId int) (*ent.MerchantStore, error)
+		Update(request *models.MerchantStoreUpdate, storeId int) (*ent.MerchantStore, error)
 		UpdateAddress(address *models.MerchantStoreAddress, storeId int) (*ent.MerchantStore, error)
+		UpdateBanner(storeId int, bannerPath string) (string, error)
+		UpdateImages(storeId int, newPath, oldPath string) ([]string, error)
+		AppendNewImages(storeId int, urls []string) ([]string, error)
 		Remove(id string) error
 	}
 
@@ -91,24 +104,27 @@ type (
 		FetchAllBySlugCategoryMinor(merchantType, slug string, limit, offset int) ([]*ent.Product, error)
 		FetchBestSellerByMerchant(id, limit, offset int) ([]*ent.Product, error)
 
-		Update(merchant *models.Product) (*models.Product, error)
-		Remove(id string) error
+		Update(id int, request *models.ProductUpdate) (*ent.Product, error)
+		UpdateImage(id int, imagePath string) (string, error)
+
+		Remove(id int) error
 		SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error)
 	}
 	ProductCatMajorService interface {
-		Create(merchant *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error)
+		Create(request *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error)
 		FetchAll() ([]*ent.ProductCategoryMajor, error)
 		Fetch(id int) (*ent.ProductCategoryMajor, error)
-		Update(merchant *models.ProductCategoryMajor) (*models.ProductCategoryMajor, error)
-		Remove(id string) error
+		Update(id int, request *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error)
+		Remove(id int) error
 	}
 	ProductCatMinorService interface {
 		Create(merchant *models.ProductCategoryMinor, image string) (*ent.ProductCategoryMinor, error)
 		SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error)
 		FetchAll(limit, offset int) ([]*ent.ProductCategoryMinor, error)
 		Fetch(id int) (*ent.ProductCategoryMinor, error)
-		Update(merchant *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error)
-		Remove(id string) error
+		Update(id int, request *models.ProductCategoryMinorUpdate) (*ent.ProductCategoryMinor, error)
+		UpdateImage(id int, imagePath string) (string, error)
+		Remove(id int) error
 	}
 	AddressService interface {
 		Create(address *models.Address, userId int, userType string) (*ent.Address, error)
@@ -142,11 +158,11 @@ type (
 		UpdateOrderDetailStatus(request []byte) (*ent.Order, error)
 	}
 	AdminService interface {
-		Create(user *models.Admin) (*ent.Admin, error)
-		FetchAll() ([]*ent.Admin, error)
+		Create(user *models.AdminUserRequest) (*ent.Admin, error)
+		FetchAll(limit, offset int) (*presenters.ResponseWithTotalRecords, error)
 		Fetch(id int) (*ent.Admin, error)
-		Update(user *models.Admin) (*models.Admin, error)
-		Remove(id string) error
+		Update(id int, user *models.AdminUserRequest) (*ent.Admin, error)
+		Remove(id int) error
 	}
 
 	AuthService interface {
@@ -157,6 +173,14 @@ type (
 		ResetPassword(request *models.ResetPassword, username, userType string) (bool, error)
 		SendUserVerificationCode(username string) (string, error)
 		SendPasswordResetCode(username, userType string) (string, error)
+	}
+	RoleAndPermissionService interface {
+		Create(role *models.RoleRequest) (*ent.Role, error)
+		FetchAll(limit, offset int) (*presenters.ResponseWithTotalRecords, error)
+		FetchAllPermission() ([]*ent.Permission, error)
+		Fetch(id int) (*ent.Role, error)
+		Update(id int, role *models.RoleRequest) (*ent.Role, error)
+		Remove(id int) error
 	}
 
 	PaymentService interface {
@@ -189,6 +213,15 @@ type (
 		SetMerchantRepo(repo MerchantRepo) MapService
 		SetMerchantStoreRepo(repo MerchantStoreRepo) MapService
 		ExecuteTask(data any, taskType, repoType string)
+		Listen()
+		Done()
+		CloseChannels()
+	}
+	StorageService interface {
+		UploadFile(dir string, f *multipart.FileHeader) (string, error)
+		UploadFiles(dir string, files []*multipart.FileHeader) ([]string, error)
+		Disk(disk string) StorageService
+		ExecuteTask(data any, taskType string)
 		Listen()
 		Done()
 		CloseChannels()

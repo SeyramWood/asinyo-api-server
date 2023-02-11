@@ -23,11 +23,13 @@ import (
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/SeyramWood/ent/permission"
 	"github.com/SeyramWood/ent/pickupstation"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
 	"github.com/SeyramWood/ent/retailmerchant"
+	"github.com/SeyramWood/ent/role"
 	"github.com/SeyramWood/ent/suppliermerchant"
 )
 
@@ -62,11 +64,13 @@ func columnChecker(table string) func(string) error {
 		merchantstore.Table:        merchantstore.ValidColumn,
 		order.Table:                order.ValidColumn,
 		orderdetail.Table:          orderdetail.ValidColumn,
+		permission.Table:           permission.ValidColumn,
 		pickupstation.Table:        pickupstation.ValidColumn,
 		product.Table:              product.ValidColumn,
 		productcategorymajor.Table: productcategorymajor.ValidColumn,
 		productcategoryminor.Table: productcategoryminor.ValidColumn,
 		retailmerchant.Table:       retailmerchant.ValidColumn,
+		role.Table:                 role.ValidColumn,
 		suppliermerchant.Table:     suppliermerchant.ValidColumn,
 	}
 	check, ok := checks[table]
@@ -117,7 +121,6 @@ type AggregateFunc func(*sql.Selector) string
 //	GroupBy(field1, field2).
 //	Aggregate(ent.As(ent.Sum(field1), "sum_field1"), (ent.As(ent.Sum(field2), "sum_field2")).
 //	Scan(ctx, &v)
-//
 func As(fn AggregateFunc, end string) AggregateFunc {
 	return func(s *sql.Selector) string {
 		return sql.As(fn(s), end)

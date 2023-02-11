@@ -39,8 +39,8 @@ type (
 		GhanaCard    string `json:"ghanaCard" validate:"required|id_card|unique:supplier_merchants"`
 		LastName     string `json:"lastName" validate:"required|string"`
 		OtherName    string `json:"otherName" validate:"required|string"`
-		Phone        string `json:"phone" validate:"required|string|unique:supplier_merchants"`
-		OtherPhone   string `json:"otherPhone" validate:"string|unique:supplier_merchants"`
+		Phone        string `json:"phone" validate:"required|phone|unique:supplier_merchants"`
+		OtherPhone   string `json:"otherPhone" validate:"phone|unique:supplier_merchants"`
 		Username     string `json:"username" validate:"required|email_phone|unique:merchants"`
 	}
 	RetailerStorePersonalInfo struct {
@@ -48,12 +48,11 @@ type (
 		GhanaCard    string `json:"ghanaCard" validate:"required|id_card|unique:retail_merchants"`
 		LastName     string `json:"lastName" validate:"required|string"`
 		OtherName    string `json:"otherName" validate:"required|string"`
-		Phone        string `json:"phone" validate:"required|string|unique:retail_merchants"`
-		OtherPhone   string `json:"otherPhone" validate:"string|unique:retail_merchants"`
+		Phone        string `json:"phone" validate:"required|phone|unique:retail_merchants"`
+		OtherPhone   string `json:"otherPhone" validate:"phone|unique:retail_merchants"`
 		Username     string `json:"username" validate:"required|email_phone|unique:merchants"`
 	}
 	MerchantStoreAddress struct {
-		Address        string `json:"postalAddress" validate:"required"`
 		Country        string `json:"country,omitempty" validate:"string"`
 		Region         string `json:"region" validate:"required|string"`
 		City           string `json:"city" validate:"required|string"`
@@ -83,15 +82,16 @@ type (
 		Info  RetailerStorePersonalInfo
 		Store MerchantStore
 	}
-	// StoreFinalRequest struct {
-	// 	GhanaCard      string `json:"ghanaCard" validate:"required|id_card|unique:supplier_merchants"`
-	// 	LastName       string `json:"lastName" validate:"required|string"`
-	// 	OtherName      string `json:"otherName" validate:"required|string"`
-	// 	Phone          string `json:"phone" validate:"required|string|unique:supplier_merchants"`
-	// 	OtherPhone     string `json:"otherPhone" validate:"string|unique:supplier_merchants"`
-	// 	Address        string `json:"address" validate:"required"`
-	// 	DigitalAddress string `json:"digitalAddress" validate:"required|string|digital_address"`
-	// 	Username       string `json:"username" validate:"required|email_phone|unique:merchants"`
-	// 	MerchantStoreRequest
-	// }
+	SupplierProfileUpdate struct {
+		LastName   string `json:"lastName" validate:"required|string"`
+		OtherName  string `json:"otherName" validate:"required|string"`
+		Phone      string `json:"phone" validate:"required|phone"`
+		OtherPhone string `json:"otherPhone" validate:"phone"`
+	}
+	RetailerProfileUpdate struct {
+		LastName   string `json:"lastName" validate:"required|string"`
+		OtherName  string `json:"otherName" validate:"required|string"`
+		Phone      string `json:"phone" validate:"required|phone"`
+		OtherPhone string `json:"otherPhone" validate:"phone"`
+	}
 )

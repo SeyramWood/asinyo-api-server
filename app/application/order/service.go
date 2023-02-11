@@ -120,8 +120,7 @@ func (s service) FetchByUser(userType string, id int) (*ent.Order, error) {
 	return s.repo.ReadByUser(userType, id)
 }
 func (s service) FetchAll() ([]*ent.Order, error) {
-	// TODO implement me
-	panic("implement me")
+	return s.repo.ReadAll()
 }
 
 func (s service) Fetch(id int) (*ent.Order, error) {

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/admin"
+	"github.com/SeyramWood/ent/role"
 )
 
 // AdminCreate is the builder for creating a Admin entity.
@@ -58,6 +59,61 @@ func (ac *AdminCreate) SetUsername(s string) *AdminCreate {
 func (ac *AdminCreate) SetPassword(b []byte) *AdminCreate {
 	ac.mutation.SetPassword(b)
 	return ac
+}
+
+// SetLastName sets the "last_name" field.
+func (ac *AdminCreate) SetLastName(s string) *AdminCreate {
+	ac.mutation.SetLastName(s)
+	return ac
+}
+
+// SetOtherName sets the "other_name" field.
+func (ac *AdminCreate) SetOtherName(s string) *AdminCreate {
+	ac.mutation.SetOtherName(s)
+	return ac
+}
+
+// SetStatus sets the "status" field.
+func (ac *AdminCreate) SetStatus(a admin.Status) *AdminCreate {
+	ac.mutation.SetStatus(a)
+	return ac
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (ac *AdminCreate) SetNillableStatus(a *admin.Status) *AdminCreate {
+	if a != nil {
+		ac.SetStatus(*a)
+	}
+	return ac
+}
+
+// SetLastActive sets the "last_active" field.
+func (ac *AdminCreate) SetLastActive(s string) *AdminCreate {
+	ac.mutation.SetLastActive(s)
+	return ac
+}
+
+// SetNillableLastActive sets the "last_active" field if the given value is not nil.
+func (ac *AdminCreate) SetNillableLastActive(s *string) *AdminCreate {
+	if s != nil {
+		ac.SetLastActive(*s)
+	}
+	return ac
+}
+
+// AddRoleIDs adds the "roles" edge to the Role entity by IDs.
+func (ac *AdminCreate) AddRoleIDs(ids ...int) *AdminCreate {
+	ac.mutation.AddRoleIDs(ids...)
+	return ac
+}
+
+// AddRoles adds the "roles" edges to the Role entity.
+func (ac *AdminCreate) AddRoles(r ...*Role) *AdminCreate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return ac.AddRoleIDs(ids...)
 }
 
 // Mutation returns the AdminMutation object of the builder.
@@ -145,6 +201,10 @@ func (ac *AdminCreate) defaults() {
 		v := admin.DefaultUpdatedAt()
 		ac.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := ac.mutation.Status(); !ok {
+		v := admin.DefaultStatus
+		ac.mutation.SetStatus(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -169,6 +229,30 @@ func (ac *AdminCreate) check() error {
 	if v, ok := ac.mutation.Password(); ok {
 		if err := admin.PasswordValidator(v); err != nil {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "Admin.password": %w`, err)}
+		}
+	}
+	if _, ok := ac.mutation.LastName(); !ok {
+		return &ValidationError{Name: "last_name", err: errors.New(`ent: missing required field "Admin.last_name"`)}
+	}
+	if v, ok := ac.mutation.LastName(); ok {
+		if err := admin.LastNameValidator(v); err != nil {
+			return &ValidationError{Name: "last_name", err: fmt.Errorf(`ent: validator failed for field "Admin.last_name": %w`, err)}
+		}
+	}
+	if _, ok := ac.mutation.OtherName(); !ok {
+		return &ValidationError{Name: "other_name", err: errors.New(`ent: missing required field "Admin.other_name"`)}
+	}
+	if v, ok := ac.mutation.OtherName(); ok {
+		if err := admin.OtherNameValidator(v); err != nil {
+			return &ValidationError{Name: "other_name", err: fmt.Errorf(`ent: validator failed for field "Admin.other_name": %w`, err)}
+		}
+	}
+	if _, ok := ac.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Admin.status"`)}
+	}
+	if v, ok := ac.mutation.Status(); ok {
+		if err := admin.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Admin.status": %w`, err)}
 		}
 	}
 	return nil
@@ -229,6 +313,57 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 			Column: admin.FieldPassword,
 		})
 		_node.Password = value
+	}
+	if value, ok := ac.mutation.LastName(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldLastName,
+		})
+		_node.LastName = value
+	}
+	if value, ok := ac.mutation.OtherName(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldOtherName,
+		})
+		_node.OtherName = value
+	}
+	if value, ok := ac.mutation.Status(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: admin.FieldStatus,
+		})
+		_node.Status = value
+	}
+	if value, ok := ac.mutation.LastActive(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldLastActive,
+		})
+		_node.LastActive = value
+	}
+	if nodes := ac.mutation.RolesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RolesTable,
+			Columns: admin.RolesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: role.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

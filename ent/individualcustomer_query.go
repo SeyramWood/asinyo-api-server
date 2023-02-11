@@ -298,7 +298,6 @@ func (icq *IndividualCustomerQuery) WithCustomer(opts ...func(*CustomerQuery)) *
 //		GroupBy(individualcustomer.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (icq *IndividualCustomerQuery) GroupBy(field string, fields ...string) *IndividualCustomerGroupBy {
 	grbuild := &IndividualCustomerGroupBy{config: icq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -325,7 +324,6 @@ func (icq *IndividualCustomerQuery) GroupBy(field string, fields ...string) *Ind
 //	client.IndividualCustomer.Query().
 //		Select(individualcustomer.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (icq *IndividualCustomerQuery) Select(fields ...string) *IndividualCustomerSelect {
 	icq.fields = append(icq.fields, fields...)
 	selbuild := &IndividualCustomerSelect{IndividualCustomerQuery: icq}

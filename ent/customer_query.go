@@ -442,7 +442,6 @@ func (cq *CustomerQuery) WithFavourites(opts ...func(*FavouriteQuery)) *Customer
 //		GroupBy(customer.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (cq *CustomerQuery) GroupBy(field string, fields ...string) *CustomerGroupBy {
 	grbuild := &CustomerGroupBy{config: cq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -469,7 +468,6 @@ func (cq *CustomerQuery) GroupBy(field string, fields ...string) *CustomerGroupB
 //	client.Customer.Query().
 //		Select(customer.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (cq *CustomerQuery) Select(fields ...string) *CustomerSelect {
 	cq.fields = append(cq.fields, fields...)
 	selbuild := &CustomerSelect{CustomerQuery: cq}

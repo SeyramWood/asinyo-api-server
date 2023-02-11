@@ -407,7 +407,6 @@ func (aq *AddressQuery) WithOrders(opts ...func(*OrderQuery)) *AddressQuery {
 //		GroupBy(address.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (aq *AddressQuery) GroupBy(field string, fields ...string) *AddressGroupBy {
 	grbuild := &AddressGroupBy{config: aq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -434,7 +433,6 @@ func (aq *AddressQuery) GroupBy(field string, fields ...string) *AddressGroupBy 
 //	client.Address.Query().
 //		Select(address.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (aq *AddressQuery) Select(fields ...string) *AddressSelect {
 	aq.fields = append(aq.fields, fields...)
 	selbuild := &AddressSelect{AddressQuery: aq}

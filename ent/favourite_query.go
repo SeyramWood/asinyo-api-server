@@ -406,7 +406,6 @@ func (fq *FavouriteQuery) WithProduct(opts ...func(*ProductQuery)) *FavouriteQue
 //		GroupBy(favourite.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (fq *FavouriteQuery) GroupBy(field string, fields ...string) *FavouriteGroupBy {
 	grbuild := &FavouriteGroupBy{config: fq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -433,7 +432,6 @@ func (fq *FavouriteQuery) GroupBy(field string, fields ...string) *FavouriteGrou
 //	client.Favourite.Query().
 //		Select(favourite.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (fq *FavouriteQuery) Select(fields ...string) *FavouriteSelect {
 	fq.fields = append(fq.fields, fields...)
 	selbuild := &FavouriteSelect{FavouriteQuery: fq}

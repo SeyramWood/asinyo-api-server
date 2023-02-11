@@ -2,13 +2,14 @@ package storage
 
 import (
 	"fmt"
-	"github.com/gabriel-vasile/mimetype"
-	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type local struct {
@@ -23,12 +24,14 @@ var disks = map[string]string{
 func NewStorage() *local {
 	return &local{}
 }
+
 func (s *local) Disk(disk string) *local {
 	if _, ok := disks[strings.ToLower(disk)]; !ok {
 		log.Fatalln(fmt.Sprintf("the [%s] disk is not available.", disk))
 	}
 	return &local{disk}
 }
+
 func (s *local) Exist(path string) bool {
 	if _, err := os.Stat(filepath.Join(disks[s.disk], path)); err != nil {
 		return false
@@ -88,14 +91,18 @@ func (s *local) SaveFile(c *fiber.Ctx, field, directory string) (interface{}, er
 	dir := fmt.Sprintf("public/%s", directory)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"msg": "Something went wrong",
-		})
+		return nil, c.Status(fiber.StatusInternalServerError).JSON(
+			fiber.Map{
+				"msg": "Something went wrong",
+			},
+		)
 	}
 	if err := c.SaveFile(file, fmt.Sprintf("./%s/%s", dir, filename)); err != nil {
-		return nil, c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"msg": "Something went wrong",
-		})
+		return nil, c.Status(fiber.StatusInternalServerError).JSON(
+			fiber.Map{
+				"msg": "Something went wrong",
+			},
+		)
 	}
 
 	return fmt.Sprintf("%s/%s/%s", c.BaseURL(), directory, filename), nil
@@ -113,9 +120,11 @@ func (s *local) SaveFiles(c *fiber.Ctx, field, directory string) (interface{}, e
 	dir := fmt.Sprintf("public/%s", directory)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"msg": "Something went wrong",
-		})
+		return nil, c.Status(fiber.StatusInternalServerError).JSON(
+			fiber.Map{
+				"msg": "Something went wrong",
+			},
+		)
 	}
 
 	urls := []string{}
@@ -134,9 +143,11 @@ func (s *local) SaveFiles(c *fiber.Ctx, field, directory string) (interface{}, e
 		filename := fmt.Sprintf("asinyo_%s%s", uuid.New(), mtype.Extension())
 
 		if err := c.SaveFile(file, fmt.Sprintf("./%s/%s", dir, filename)); err != nil {
-			return nil, c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"msg": "Something went wrong",
-			})
+			return nil, c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": "Something went wrong",
+				},
+			)
 		}
 
 		urls = append(urls, fmt.Sprintf("%s/%s/%s", c.BaseURL(), directory, filename))

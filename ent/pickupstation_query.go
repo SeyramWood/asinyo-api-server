@@ -298,7 +298,6 @@ func (psq *PickupStationQuery) WithOrders(opts ...func(*OrderQuery)) *PickupStat
 //		GroupBy(pickupstation.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (psq *PickupStationQuery) GroupBy(field string, fields ...string) *PickupStationGroupBy {
 	grbuild := &PickupStationGroupBy{config: psq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -325,7 +324,6 @@ func (psq *PickupStationQuery) GroupBy(field string, fields ...string) *PickupSt
 //	client.PickupStation.Query().
 //		Select(pickupstation.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (psq *PickupStationQuery) Select(fields ...string) *PickupStationSelect {
 	psq.fields = append(psq.fields, fields...)
 	selbuild := &PickupStationSelect{PickupStationQuery: psq}

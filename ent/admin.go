@@ -24,6 +24,35 @@ type Admin struct {
 	Username string `json:"username,omitempty"`
 	// Password holds the value of the "password" field.
 	Password []byte `json:"-"`
+	// LastName holds the value of the "last_name" field.
+	LastName string `json:"last_name,omitempty"`
+	// OtherName holds the value of the "other_name" field.
+	OtherName string `json:"other_name,omitempty"`
+	// Status holds the value of the "status" field.
+	Status admin.Status `json:"status,omitempty"`
+	// LastActive holds the value of the "last_active" field.
+	LastActive string `json:"last_active,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the AdminQuery when eager-loading is set.
+	Edges AdminEdges `json:"edges"`
+}
+
+// AdminEdges holds the relations/edges for other nodes in the graph.
+type AdminEdges struct {
+	// Roles holds the value of the roles edge.
+	Roles []*Role `json:"roles,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// RolesOrErr returns the Roles value or an error if the edge
+// was not loaded in eager-loading.
+func (e AdminEdges) RolesOrErr() ([]*Role, error) {
+	if e.loadedTypes[0] {
+		return e.Roles, nil
+	}
+	return nil, &NotLoadedError{edge: "roles"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -35,7 +64,7 @@ func (*Admin) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case admin.FieldID:
 			values[i] = new(sql.NullInt64)
-		case admin.FieldUsername:
+		case admin.FieldUsername, admin.FieldLastName, admin.FieldOtherName, admin.FieldStatus, admin.FieldLastActive:
 			values[i] = new(sql.NullString)
 		case admin.FieldCreatedAt, admin.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -84,9 +113,38 @@ func (a *Admin) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				a.Password = *value
 			}
+		case admin.FieldLastName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field last_name", values[i])
+			} else if value.Valid {
+				a.LastName = value.String
+			}
+		case admin.FieldOtherName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field other_name", values[i])
+			} else if value.Valid {
+				a.OtherName = value.String
+			}
+		case admin.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				a.Status = admin.Status(value.String)
+			}
+		case admin.FieldLastActive:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field last_active", values[i])
+			} else if value.Valid {
+				a.LastActive = value.String
+			}
 		}
 	}
 	return nil
+}
+
+// QueryRoles queries the "roles" edge of the Admin entity.
+func (a *Admin) QueryRoles() *RoleQuery {
+	return (&AdminClient{config: a.config}).QueryRoles(a)
 }
 
 // Update returns a builder for updating this Admin.
@@ -122,6 +180,18 @@ func (a *Admin) String() string {
 	builder.WriteString(a.Username)
 	builder.WriteString(", ")
 	builder.WriteString("password=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("last_name=")
+	builder.WriteString(a.LastName)
+	builder.WriteString(", ")
+	builder.WriteString("other_name=")
+	builder.WriteString(a.OtherName)
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", a.Status))
+	builder.WriteString(", ")
+	builder.WriteString("last_active=")
+	builder.WriteString(a.LastActive)
 	builder.WriteByte(')')
 	return builder.String()
 }

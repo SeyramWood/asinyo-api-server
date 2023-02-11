@@ -38,7 +38,7 @@ func (h *MerchantHandler) FetchByID() fiber.Handler {
 
 		if err != nil {
 
-			return c.Status(fiber.StatusInternalServerError).JSON(presenters.RetailMerchantErrorResponse(err))
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
 		return c.JSON(presenters.MerchantSuccessResponse(result))
 	}
@@ -158,12 +158,35 @@ func (h *MerchantHandler) OnboardMerchant() fiber.Handler {
 func (h *MerchantHandler) Update() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
-		result, err := h.service.FetchAll()
+		merchantId, _ := c.ParamsInt("id")
+		if c.Get("userType") == "retailer" {
+			var request models.RetailerProfileUpdate
+			err := c.BodyParser(&request)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+			}
 
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
+			result, err := h.service.Update(merchantId, &request)
+			if err != nil {
+				c.Status(fiber.StatusInternalServerError)
+				return c.JSON(presenters.MerchantErrorResponse(err))
+			}
+			return c.JSON(presenters.MerchantSuccessResponse(result))
 		}
-		return c.JSON(presenters.MerchantsSuccessResponse(result))
+
+		var request models.SupplierProfileUpdate
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
+		}
+
+		result, err := h.service.Update(merchantId, &request)
+		if err != nil {
+			c.Status(fiber.StatusInternalServerError)
+			return c.JSON(presenters.MerchantErrorResponse(err))
+		}
+		return c.JSON(presenters.MerchantSuccessResponse(result))
+
 	}
 
 }

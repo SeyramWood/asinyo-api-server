@@ -37,11 +37,13 @@ type hooks struct {
 	MerchantStore        []ent.Hook
 	Order                []ent.Hook
 	OrderDetail          []ent.Hook
+	Permission           []ent.Hook
 	PickupStation        []ent.Hook
 	Product              []ent.Hook
 	ProductCategoryMajor []ent.Hook
 	ProductCategoryMinor []ent.Hook
 	RetailMerchant       []ent.Hook
+	Role                 []ent.Hook
 	SupplierMerchant     []ent.Hook
 }
 

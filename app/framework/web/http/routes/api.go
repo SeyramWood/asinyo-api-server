@@ -11,16 +11,18 @@ import (
 )
 
 type ApiRouter struct {
-	db    *database.Adapter
-	mail  gateways.EmailService
-	logis gateways.LogisticService
-	maps  gateways.MapService
+	db         *database.Adapter
+	mail       gateways.EmailService
+	logis      gateways.LogisticService
+	maps       gateways.MapService
+	storageSrv gateways.StorageService
 }
 
 func NewApiRouter(
 	db *database.Adapter, mail gateways.EmailService, logis gateways.LogisticService, maps gateways.MapService,
+	storageSrv gateways.StorageService,
 ) *ApiRouter {
-	return &ApiRouter{db, mail, logis, maps}
+	return &ApiRouter{db, mail, logis, maps, storageSrv}
 }
 
 func (h *ApiRouter) Router(app *fiber.App) {
@@ -29,17 +31,17 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 	authRouter(r, h.db, h.mail)
 
-	agentRouter(r, h.db)
+	agentRouter(r, h.db, h.storageSrv)
 
-	merchantRouter(r, h.db, h.maps)
+	merchantRouter(r, h.db, h.mail, h.maps, h.storageSrv)
 
 	retailMerchantRouter(r, h.db, h.mail, h.maps)
 
 	supplierMerchantRouter(r, h.db, h.mail, h.maps)
 
-	customerRouter(r, h.db)
+	customerRouter(r, h.db, h.storageSrv)
 
-	productRouter(r, h.db)
+	productRouter(r, h.db, h.storageSrv)
 
 	paymentRouter(r, h.db, h.logis, h.mail)
 
@@ -51,9 +53,9 @@ func (h *ApiRouter) Router(app *fiber.App) {
 
 }
 
-func customerRouter(r fiber.Router, db *database.Adapter) {
+func customerRouter(r fiber.Router, db *database.Adapter, storageSrv gateways.StorageService) {
 
-	h := handler.NewCustomerHandler(db)
+	h := handler.NewCustomerHandler(db, storageSrv)
 
 	router := r.Group("/auth/customers")
 
@@ -72,15 +74,17 @@ func customerRouter(r fiber.Router, db *database.Adapter) {
 
 			r.Get("/", h.Fetch())
 			r.Get("/:id", h.FetchByID())
-			r.Delete("/:id", h.Delete()).Name("delete")
+			r.Post("/upload-logo", h.UpdateBusinessLogo())
+			r.Put("/update/:id", request.ValidateCustomerUpdate(), h.Update())
+			r.Delete("/:id", h.Delete())
 
 		}, "customers.",
 	)
 
 }
-func agentRouter(r fiber.Router, db *database.Adapter) {
+func agentRouter(r fiber.Router, db *database.Adapter, storageSrv gateways.StorageService) {
 
-	h := handler.NewAgentHandler(db)
+	h := handler.NewAgentHandler(db, storageSrv)
 
 	router := r.Group("/auth/agents")
 
@@ -97,9 +101,17 @@ func agentRouter(r fiber.Router, db *database.Adapter) {
 	authRouter.Route(
 		"/", func(r fiber.Router) {
 			r.Get("/", h.Fetch())
+			r.Get("/:id", h.FetchByID())
 			r.Get("/my-merchants/:agent", h.FetchAllMerchant())
 			r.Get("/compliance/:agent/get", h.FetchComplianceByID())
 			r.Post("/add-compliance/:agent", request.ValidateAgentCompliance(), h.CreateCompliance())
+			r.Post("/update/agent/compliance/card", h.UpdateAgentComplianceCard())
+			r.Post("/update/agent/compliance/police-report", h.UpdateAgentPoliceReport())
+			r.Post("/update/guarantor/compliance/card", h.UpdateGuarantorComplianceCard())
+			r.Put("/update/:id/profile", request.ValidateAgentUpdate(), h.Update())
+			r.Put("/update-compliance-guarantor/:id", request.ValidateAgentGuarantor(), h.UpdateGuarantor())
+			r.Put("/update-account/:id/:accountType", request.ValidateAgentAccount(), h.SaveAccount())
+			r.Put("/update-account/:id/default-account/:accountType", h.SaveDefaultAccount())
 			r.Delete("/:id", h.Delete()).Name("delete")
 
 		}, "agents.",
@@ -180,10 +192,13 @@ func supplierMerchantRouter(
 
 }
 
-func merchantRouter(r fiber.Router, db *database.Adapter, maps gateways.MapService) {
+func merchantRouter(
+	r fiber.Router, db *database.Adapter, mail gateways.EmailService, maps gateways.MapService,
+	storageSrv gateways.StorageService,
+) {
 
-	// m := handlers.NewMerchantHandler(db)
-	msHandler := handler.NewMerchantStoreHandler(db, maps)
+	mHandler := handler.NewMerchantHandler(db, mail, maps)
+	msHandler := handler.NewMerchantStoreHandler(db, maps, storageSrv)
 
 	mRouter := r.Group("/merchants")
 	msRouter := mRouter.Group("/storefront")
@@ -191,7 +206,8 @@ func merchantRouter(r fiber.Router, db *database.Adapter, maps gateways.MapServi
 	mRouter.Route(
 		"/", func(r fiber.Router) {
 
-			// r.Post("/store", request.ValidateMerchant(), m.Create()).Name("register")
+			r.Get("/:id", mHandler.FetchByID())
+			r.Put("/update/:id/profile", request.ValidateMerchantProfileUpdate(), mHandler.Update())
 
 		}, "merchants.",
 	)
@@ -208,12 +224,12 @@ func merchantRouter(r fiber.Router, db *database.Adapter, maps gateways.MapServi
 			r.Get("/:merchantId/:merchant", msHandler.FetchByMerchantID())
 
 			r.Post("/:merchantId/profile", request.ValidateMerchantStore(), msHandler.Create())
+			r.Post("/update/business/banner", msHandler.UpdateBusinessBanner())
+			r.Post("/update/business/image", msHandler.UpdateBusinessImages())
 
 			r.Put("/:storeId/profile", request.ValidateMerchantStoreUpdate(), msHandler.Update())
 
-			r.Put("/:storeId/account/momo", request.ValidateMerchantMomoAccount(), msHandler.SaveMomoAccount())
-
-			r.Put("/:storeId/account/bank", request.ValidateMerchantBankAccount(), msHandler.SaveBankAccount())
+			r.Put("/update-account/:id/:accountType", request.ValidateMerchantAccount(), msHandler.SaveAccount())
 
 			r.Put("/:storeId/update-agent-permission/:permission", msHandler.SaveAgentPermission())
 
@@ -224,39 +240,11 @@ func merchantRouter(r fiber.Router, db *database.Adapter, maps gateways.MapServi
 
 }
 
-func adminRouter(r fiber.Router, db *database.Adapter) {
+func productRouter(r fiber.Router, db *database.Adapter, storageSrv gateways.StorageService) {
 
-	h := handler.NewAdminHandler(db)
-
-	router := r.Group("/auth/admins")
-
-	authRouter := r.Group("/admins") // middleware.Auth()
-
-	router.Route(
-		"/", func(r fiber.Router) {
-
-			r.Post("/create", request.ValidateAdmin(), h.Create()).Name("register")
-
-		}, "auth.admins.",
-	)
-
-	authRouter.Route(
-		"/", func(r fiber.Router) {
-			r.Post("/create", request.ValidateAdmin(), h.Create()).Name("register")
-			r.Get("/", h.Fetch()).Name("fetch")
-			r.Get("/:id", h.FetchByID()).Name("fetch.id")
-			r.Delete("/:id", h.Delete()).Name("delete")
-
-		}, "admins.",
-	)
-
-}
-
-func productRouter(r fiber.Router, db *database.Adapter) {
-
-	h := handler.NewProductHandler(db)
-	majorH := handler.NewProductCatMajorHandler(db)
-	minorH := handler.NewProductCatMinorHandler(db)
+	h := handler.NewProductHandler(db, storageSrv)
+	majorH := handler.NewProductCatMajorHandler(db, storageSrv)
+	minorH := handler.NewProductCatMinorHandler(db, storageSrv)
 
 	router := r.Group("/products")
 
@@ -286,6 +274,9 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 			r.Get("/:merchant/:id/:slug", h.FetchByIDMerchantProduct())
 
 			r.Post("/create/:merchant", request.ValidateProduct(), h.Create())
+			r.Post("/update/product-image", h.UpdateImage())
+			r.Put("/update/:id", request.ValidateProductUpdate(), h.Update())
+			r.Delete("/delete/:id", h.Delete())
 
 		}, "products.",
 	)
@@ -296,8 +287,8 @@ func productRouter(r fiber.Router, db *database.Adapter) {
 			r.Post("/majors", request.ValidateProductCatMajor(), majorH.Create())
 			r.Post("/minors", request.ValidateProductCatMinor(), minorH.Create())
 			r.Put("/majors/:id", request.ValidateProductCatMajor(), majorH.Update())
-			r.Put("/minors/:id", request.ValidateProductCatMajor(), minorH.Update())
-			r.Post("/minors/update/category-image", request.ValidateProductCatMajor(), minorH.Update())
+			r.Put("/minors/:id", request.ValidateProductCatMinorUpdate(), minorH.Update())
+			r.Post("/minors/update/category-image", minorH.UpdateImage())
 			r.Delete("/majors/:id", majorH.Delete())
 			r.Delete("/minors/:id", minorH.Delete())
 
@@ -336,6 +327,7 @@ func orderRouter(
 	router.Route(
 		"/orders", func(r fiber.Router) {
 
+			r.Get("/", h.Fetch())
 			r.Get("/:id", h.FetchById())
 
 			r.Get("/:merchant/store", h.FetchAllByStore())
@@ -387,10 +379,10 @@ func authRouter(router fiber.Router, db *database.Adapter, mail gateways.EmailSe
 	router.Route(
 		"/auth", func(r fiber.Router) {
 
-			r.Get("/signout", middleware.Auth(), h.Logout()).Name("signout")
-			r.Get("/user", middleware.Auth(), h.FetchAuthUser()).Name("user")
+			r.Get("/signout", middleware.Auth(), h.Logout())
+			r.Get("/user", middleware.Auth(), h.FetchAuthUser())
 
-			r.Post("/signin", request.ValidateUser(), h.Login()).Name("signin")
+			r.Post("/signin", request.ValidateUser(), h.Login())
 			r.Post("/send-user-verification-code", request.ValidateUserName(true), h.SendVerificationCode())
 			r.Post("/send-password-reset-code", request.ValidateUserName(false), h.SendPasswordResetCode())
 
@@ -398,7 +390,35 @@ func authRouter(router fiber.Router, db *database.Adapter, mail gateways.EmailSe
 
 			r.Put("/reset-password/:user/:userType", request.ValidateChangePassword("reset"), h.ResetPassword())
 
-		}, "auth.",
+		},
+	)
+
+}
+
+func adminRouter(r fiber.Router, db *database.Adapter) {
+
+	rph := handler.NewRoleAndPermissionHandler(db)
+	router := r.Group("/admins") // middleware.Auth()
+
+	router.Route(
+		"/roles", func(r fiber.Router) {
+			r.Get("/", rph.Fetch())
+			r.Get("/permissions", rph.FetchPermissions())
+			r.Post("/", request.ValidateRole(), rph.CreateRole())
+			r.Put("/:id", request.ValidateRole(), rph.UpdateRole())
+			r.Delete("/:id", rph.DeleteRole())
+		},
+	)
+
+	h := handler.NewAdminHandler(db)
+	router.Route(
+		"/", func(r fiber.Router) {
+			r.Get("/", h.Fetch())
+			r.Get("/:id", h.FetchByID())
+			r.Post("/", request.ValidateAdmin(), h.Create())
+			r.Put("/:id", request.ValidateAdmin(), h.Update())
+			r.Delete("/:id", h.Delete())
+		},
 	)
 
 }

@@ -47,8 +47,6 @@ type Address struct {
 	Region string `json:"Region,omitempty"`
 	// Country holds the value of the "Country" field.
 	Country string `json:"Country,omitempty"`
-	// Address holds the value of the "address" field.
-	Address string `json:"address,omitempty"`
 	// Default holds the value of the "default" field.
 	Default bool `json:"default,omitempty"`
 	// Coordinate holds the value of the "coordinate" field.
@@ -135,7 +133,7 @@ func (*Address) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case address.FieldID:
 			values[i] = new(sql.NullInt64)
-		case address.FieldLastName, address.FieldOtherName, address.FieldPhone, address.FieldOtherPhone, address.FieldDigitalAddress, address.FieldStreetName, address.FieldStreetNumber, address.FieldCity, address.FieldDistrict, address.FieldRegion, address.FieldCountry, address.FieldAddress:
+		case address.FieldLastName, address.FieldOtherName, address.FieldPhone, address.FieldOtherPhone, address.FieldDigitalAddress, address.FieldStreetName, address.FieldStreetNumber, address.FieldCity, address.FieldDistrict, address.FieldRegion, address.FieldCountry:
 			values[i] = new(sql.NullString)
 		case address.FieldCreatedAt, address.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -243,12 +241,6 @@ func (a *Address) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field Country", values[i])
 			} else if value.Valid {
 				a.Country = value.String
-			}
-		case address.FieldAddress:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field address", values[i])
-			} else if value.Valid {
-				a.Address = value.String
 			}
 		case address.FieldDefault:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -371,9 +363,6 @@ func (a *Address) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("Country=")
 	builder.WriteString(a.Country)
-	builder.WriteString(", ")
-	builder.WriteString("address=")
-	builder.WriteString(a.Address)
 	builder.WriteString(", ")
 	builder.WriteString("default=")
 	builder.WriteString(fmt.Sprintf("%v", a.Default))

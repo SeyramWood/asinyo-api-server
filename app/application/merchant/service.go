@@ -34,7 +34,7 @@ func (s *service) Create(merchant *models.MerchantRequest) (*ent.Merchant, error
 func (s *service) Onboard(merchant *models.OnboardMerchantFullRequest, agentId int, logo string, images []string) (
 	*ent.Merchant, error,
 ) {
-	password, _ := application.GenerateOTP(12)
+	password, _ := application.GeneratePassword(12)
 	merc, err := s.repo.Onboard(merchant, agentId, logo, images, password)
 	if err != nil {
 		return nil, err
@@ -75,8 +75,8 @@ func (s *service) FetchAll() ([]*ent.Merchant, error) {
 	return s.repo.ReadAll()
 }
 
-func (s *service) Update(user *models.Merchant) (*models.Merchant, error) {
-	return s.repo.Update(user)
+func (s *service) Update(id int, request any) (*ent.Merchant, error) {
+	return s.repo.Update(id, request)
 }
 
 func (s *service) Remove(ID string) error {

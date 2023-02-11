@@ -39,12 +39,16 @@ func (s *service) FetchAll(limit, offset int) ([]*ent.ProductCategoryMinor, erro
 	return s.repo.ReadAll(limit, offset)
 }
 
-func (s *service) Update(user *models.ProductCategoryMinor) (*models.ProductCategoryMinor, error) {
-	return s.repo.Update(user)
+func (s *service) Update(id int, request *models.ProductCategoryMinorUpdate) (*ent.ProductCategoryMinor, error) {
+	return s.repo.Update(id, request)
 }
 
-func (s *service) Remove(ID string) error {
-	return s.repo.Delete(ID)
+func (s *service) UpdateImage(id int, imagePath string) (string, error) {
+	return s.repo.UpdateImage(id, imagePath)
+}
+
+func (s *service) Remove(id int) error {
+	return s.repo.Delete(id)
 }
 
 func (s service) SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error) {

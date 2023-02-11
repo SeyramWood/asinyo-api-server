@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -43,13 +44,14 @@ func (r repository) ReadAllByUser(userType string, id int) ([]*ent.Order, error)
 	switch userType {
 	case "retailer", "supplier":
 		return r.readMerchantOrders(id)
-	case "individual", "business":
+	case "business", "individual":
 		return r.readCustomerOrders(id)
 	case "agent":
 		return r.readAgentOrders(id)
 	default:
 		return nil, nil
 	}
+
 }
 func (r repository) ReadAllByStore(merchantId int) ([]*ent.Order, error) {
 	ctx := context.Background()
@@ -136,7 +138,7 @@ func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
 		WithAddress(
 			func(aq *ent.AddressQuery) {
 				aq.Select(
-					address.FieldID, address.FieldLastName, address.FieldOtherName, address.FieldAddress,
+					address.FieldID, address.FieldLastName,
 					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
 					address.FieldRegion, address.FieldCountry,
 					address.FieldPhone, address.FieldOtherPhone,
@@ -213,7 +215,7 @@ func (r repository) ReadByAgentStore(id, agentId int) (*ent.Order, error) {
 		WithAddress(
 			func(aq *ent.AddressQuery) {
 				aq.Select(
-					address.FieldID, address.FieldLastName, address.FieldOtherName, address.FieldAddress,
+					address.FieldID, address.FieldLastName,
 					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
 					address.FieldRegion, address.FieldCountry,
 					address.FieldPhone, address.FieldOtherPhone,
@@ -280,7 +282,7 @@ func (r repository) Insert(res *models.OrderPayload) (*ent.Order, error) {
 	switch res.Metadata.UserType {
 	case "retailer", "supplier":
 		return r.insertMerchantOrder(res)
-	case "individual", "business":
+	case "business", "individual":
 		return r.insertCustomerOrder(res)
 	case "agent":
 		return r.insertAgentOrder(res)
@@ -313,7 +315,7 @@ func (r repository) Read(id int) (*ent.Order, error) {
 		WithAddress(
 			func(aq *ent.AddressQuery) {
 				aq.Select(
-					address.FieldID, address.FieldLastName, address.FieldOtherName, address.FieldAddress,
+					address.FieldID, address.FieldLastName, address.FieldOtherName,
 					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
 					address.FieldRegion, address.FieldCountry,
 					address.FieldPhone, address.FieldOtherPhone,
@@ -349,8 +351,20 @@ func (r repository) Read(id int) (*ent.Order, error) {
 }
 
 func (r repository) ReadAll() ([]*ent.Order, error) {
-	// TODO implement me
-	panic("implement me")
+	ctx := context.Background()
+	results, err := r.db.Order.Query().
+		Order(ent.Desc(order.FieldCreatedAt)).
+		WithDetails(
+			func(odq *ent.OrderDetailQuery) {
+				odq.Select(orderdetail.FieldAmount, orderdetail.FieldStatus)
+			},
+		).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(results)
+	return results, nil
 }
 
 func (r repository) Update(order *services.PaystackResponse) (*ent.Order, error) {
@@ -566,6 +580,7 @@ func (r repository) insertCustomerOrder(res *models.OrderPayload) (*ent.Order, e
 	}
 
 	return nil, nil
+
 }
 func (r repository) insertAgentOrder(res *models.OrderPayload) (*ent.Order, error) {
 	ctx := context.Background()
