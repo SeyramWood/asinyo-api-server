@@ -119,13 +119,14 @@ func (auth *authHandler) SendVerificationCode() fiber.Handler {
 				},
 			)
 		}
-		if err := cache.Save(request.Username, code, 6*time.Hour); err != nil {
+		if err := cache.Save(request.Username, code, 30*time.Second); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
 					"status": false,
 					"msg":    "Could not saved OTP in cache",
 				},
 			)
+
 		}
 		return c.Status(fiber.StatusOK).JSON(
 			fiber.Map{
@@ -169,7 +170,7 @@ func (auth *authHandler) SendPasswordResetCode() fiber.Handler {
 			)
 		}
 		if code != "" {
-			if err := cache.Save(request.Username, code, 1*time.Hour); err != nil {
+			if err := cache.Save(request.Username, code, time.Hour); err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(
 					fiber.Map{
 						"status": false,
