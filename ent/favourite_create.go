@@ -135,50 +135,8 @@ func (fc *FavouriteCreate) Mutation() *FavouriteMutation {
 
 // Save creates the Favourite in the database.
 func (fc *FavouriteCreate) Save(ctx context.Context) (*Favourite, error) {
-	var (
-		err  error
-		node *Favourite
-	)
 	fc.defaults()
-	if len(fc.hooks) == 0 {
-		if err = fc.check(); err != nil {
-			return nil, err
-		}
-		node, err = fc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*FavouriteMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = fc.check(); err != nil {
-				return nil, err
-			}
-			fc.mutation = mutation
-			if node, err = fc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(fc.hooks) - 1; i >= 0; i-- {
-			if fc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = fc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, fc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Favourite)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from FavouriteMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, fc.sqlSave, fc.mutation, fc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -227,6 +185,9 @@ func (fc *FavouriteCreate) check() error {
 }
 
 func (fc *FavouriteCreate) sqlSave(ctx context.Context) (*Favourite, error) {
+	if err := fc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := fc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, fc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -236,34 +197,22 @@ func (fc *FavouriteCreate) sqlSave(ctx context.Context) (*Favourite, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	fc.mutation.id = &_node.ID
+	fc.mutation.done = true
 	return _node, nil
 }
 
 func (fc *FavouriteCreate) createSpec() (*Favourite, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Favourite{config: fc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: favourite.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: favourite.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(favourite.Table, sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt))
 	)
 	if value, ok := fc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: favourite.FieldCreatedAt,
-		})
+		_spec.SetField(favourite.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := fc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: favourite.FieldUpdatedAt,
-		})
+		_spec.SetField(favourite.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if nodes := fc.mutation.MerchantIDs(); len(nodes) > 0 {
@@ -274,10 +223,7 @@ func (fc *FavouriteCreate) createSpec() (*Favourite, *sqlgraph.CreateSpec) {
 			Columns: []string{favourite.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -294,10 +240,7 @@ func (fc *FavouriteCreate) createSpec() (*Favourite, *sqlgraph.CreateSpec) {
 			Columns: []string{favourite.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -314,10 +257,7 @@ func (fc *FavouriteCreate) createSpec() (*Favourite, *sqlgraph.CreateSpec) {
 			Columns: []string{favourite.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -334,10 +274,7 @@ func (fc *FavouriteCreate) createSpec() (*Favourite, *sqlgraph.CreateSpec) {
 			Columns: []string{favourite.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -373,8 +310,8 @@ func (fcb *FavouriteCreateBulk) Save(ctx context.Context) ([]*Favourite, error) 
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, fcb.builders[i+1].mutation)
 				} else {

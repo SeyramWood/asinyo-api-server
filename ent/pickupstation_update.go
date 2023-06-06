@@ -102,41 +102,8 @@ func (psu *PickupStationUpdate) RemoveOrders(o ...*Order) *PickupStationUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (psu *PickupStationUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	psu.defaults()
-	if len(psu.hooks) == 0 {
-		if err = psu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = psu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*PickupStationMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = psu.check(); err != nil {
-				return 0, err
-			}
-			psu.mutation = mutation
-			affected, err = psu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(psu.hooks) - 1; i >= 0; i-- {
-			if psu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = psu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, psu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, psu.sqlSave, psu.mutation, psu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -195,16 +162,10 @@ func (psu *PickupStationUpdate) check() error {
 }
 
 func (psu *PickupStationUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   pickupstation.Table,
-			Columns: pickupstation.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: pickupstation.FieldID,
-			},
-		},
+	if err := psu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(pickupstation.Table, pickupstation.Columns, sqlgraph.NewFieldSpec(pickupstation.FieldID, field.TypeInt))
 	if ps := psu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -213,39 +174,19 @@ func (psu *PickupStationUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 	}
 	if value, ok := psu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: pickupstation.FieldUpdatedAt,
-		})
+		_spec.SetField(pickupstation.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := psu.mutation.Region(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldRegion,
-		})
+		_spec.SetField(pickupstation.FieldRegion, field.TypeString, value)
 	}
 	if value, ok := psu.mutation.City(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldCity,
-		})
+		_spec.SetField(pickupstation.FieldCity, field.TypeString, value)
 	}
 	if value, ok := psu.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldName,
-		})
+		_spec.SetField(pickupstation.FieldName, field.TypeString, value)
 	}
 	if value, ok := psu.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldAddress,
-		})
+		_spec.SetField(pickupstation.FieldAddress, field.TypeString, value)
 	}
 	if psu.mutation.OrdersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -255,10 +196,7 @@ func (psu *PickupStationUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{pickupstation.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -271,10 +209,7 @@ func (psu *PickupStationUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{pickupstation.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -290,10 +225,7 @@ func (psu *PickupStationUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{pickupstation.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -309,6 +241,7 @@ func (psu *PickupStationUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		return 0, err
 	}
+	psu.mutation.done = true
 	return n, nil
 }
 
@@ -391,6 +324,12 @@ func (psuo *PickupStationUpdateOne) RemoveOrders(o ...*Order) *PickupStationUpda
 	return psuo.RemoveOrderIDs(ids...)
 }
 
+// Where appends a list predicates to the PickupStationUpdate builder.
+func (psuo *PickupStationUpdateOne) Where(ps ...predicate.PickupStation) *PickupStationUpdateOne {
+	psuo.mutation.Where(ps...)
+	return psuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (psuo *PickupStationUpdateOne) Select(field string, fields ...string) *PickupStationUpdateOne {
@@ -400,47 +339,8 @@ func (psuo *PickupStationUpdateOne) Select(field string, fields ...string) *Pick
 
 // Save executes the query and returns the updated PickupStation entity.
 func (psuo *PickupStationUpdateOne) Save(ctx context.Context) (*PickupStation, error) {
-	var (
-		err  error
-		node *PickupStation
-	)
 	psuo.defaults()
-	if len(psuo.hooks) == 0 {
-		if err = psuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = psuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*PickupStationMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = psuo.check(); err != nil {
-				return nil, err
-			}
-			psuo.mutation = mutation
-			node, err = psuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(psuo.hooks) - 1; i >= 0; i-- {
-			if psuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = psuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, psuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*PickupStation)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from PickupStationMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, psuo.sqlSave, psuo.mutation, psuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -499,16 +399,10 @@ func (psuo *PickupStationUpdateOne) check() error {
 }
 
 func (psuo *PickupStationUpdateOne) sqlSave(ctx context.Context) (_node *PickupStation, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   pickupstation.Table,
-			Columns: pickupstation.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: pickupstation.FieldID,
-			},
-		},
+	if err := psuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(pickupstation.Table, pickupstation.Columns, sqlgraph.NewFieldSpec(pickupstation.FieldID, field.TypeInt))
 	id, ok := psuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "PickupStation.id" for update`)}
@@ -534,39 +428,19 @@ func (psuo *PickupStationUpdateOne) sqlSave(ctx context.Context) (_node *PickupS
 		}
 	}
 	if value, ok := psuo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: pickupstation.FieldUpdatedAt,
-		})
+		_spec.SetField(pickupstation.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := psuo.mutation.Region(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldRegion,
-		})
+		_spec.SetField(pickupstation.FieldRegion, field.TypeString, value)
 	}
 	if value, ok := psuo.mutation.City(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldCity,
-		})
+		_spec.SetField(pickupstation.FieldCity, field.TypeString, value)
 	}
 	if value, ok := psuo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldName,
-		})
+		_spec.SetField(pickupstation.FieldName, field.TypeString, value)
 	}
 	if value, ok := psuo.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldAddress,
-		})
+		_spec.SetField(pickupstation.FieldAddress, field.TypeString, value)
 	}
 	if psuo.mutation.OrdersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -576,10 +450,7 @@ func (psuo *PickupStationUpdateOne) sqlSave(ctx context.Context) (_node *PickupS
 			Columns: []string{pickupstation.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -592,10 +463,7 @@ func (psuo *PickupStationUpdateOne) sqlSave(ctx context.Context) (_node *PickupS
 			Columns: []string{pickupstation.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -611,10 +479,7 @@ func (psuo *PickupStationUpdateOne) sqlSave(ctx context.Context) (_node *PickupS
 			Columns: []string{pickupstation.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -633,5 +498,6 @@ func (psuo *PickupStationUpdateOne) sqlSave(ctx context.Context) (_node *PickupS
 		}
 		return nil, err
 	}
+	psuo.mutation.done = true
 	return _node, nil
 }

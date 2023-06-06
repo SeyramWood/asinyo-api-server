@@ -12,653 +12,427 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id int) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id int) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id int) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.IndividualCustomer(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...int) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...int) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id int) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.IndividualCustomer(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id int) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.IndividualCustomer(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id int) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.IndividualCustomer(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id int) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.IndividualCustomer(sql.FieldLTE(FieldID, id))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // LastName applies equality check predicate on the "last_name" field. It's identical to LastNameEQ.
 func LastName(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldLastName, v))
 }
 
 // OtherName applies equality check predicate on the "other_name" field. It's identical to OtherNameEQ.
 func OtherName(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldOtherName, v))
 }
 
 // Phone applies equality check predicate on the "phone" field. It's identical to PhoneEQ.
 func Phone(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldPhone, v))
 }
 
 // OtherPhone applies equality check predicate on the "other_phone" field. It's identical to OtherPhoneEQ.
 func OtherPhone(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldOtherPhone, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
 func CreatedAtNEQ(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldNEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtIn applies the In predicate on the "created_at" field.
 func CreatedAtIn(vs ...time.Time) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
 func CreatedAtNotIn(vs ...time.Time) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldNotIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtGT applies the GT predicate on the "created_at" field.
 func CreatedAtGT(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGT(FieldCreatedAt, v))
 }
 
 // CreatedAtGTE applies the GTE predicate on the "created_at" field.
 func CreatedAtGTE(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGTE(FieldCreatedAt, v))
 }
 
 // CreatedAtLT applies the LT predicate on the "created_at" field.
 func CreatedAtLT(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLT(FieldCreatedAt, v))
 }
 
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLTE(FieldCreatedAt, v))
 }
 
 // UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
 func UpdatedAtEQ(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
 func UpdatedAtNEQ(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldNEQ(FieldUpdatedAt, v))
 }
 
 // UpdatedAtIn applies the In predicate on the "updated_at" field.
 func UpdatedAtIn(vs ...time.Time) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldUpdatedAt), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldIn(FieldUpdatedAt, vs...))
 }
 
 // UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
 func UpdatedAtNotIn(vs ...time.Time) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldUpdatedAt), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldNotIn(FieldUpdatedAt, vs...))
 }
 
 // UpdatedAtGT applies the GT predicate on the "updated_at" field.
 func UpdatedAtGT(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGT(FieldUpdatedAt, v))
 }
 
 // UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
 func UpdatedAtGTE(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGTE(FieldUpdatedAt, v))
 }
 
 // UpdatedAtLT applies the LT predicate on the "updated_at" field.
 func UpdatedAtLT(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLT(FieldUpdatedAt, v))
 }
 
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
 // LastNameEQ applies the EQ predicate on the "last_name" field.
 func LastNameEQ(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldLastName, v))
 }
 
 // LastNameNEQ applies the NEQ predicate on the "last_name" field.
 func LastNameNEQ(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldNEQ(FieldLastName, v))
 }
 
 // LastNameIn applies the In predicate on the "last_name" field.
 func LastNameIn(vs ...string) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldLastName), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldIn(FieldLastName, vs...))
 }
 
 // LastNameNotIn applies the NotIn predicate on the "last_name" field.
 func LastNameNotIn(vs ...string) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldLastName), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldNotIn(FieldLastName, vs...))
 }
 
 // LastNameGT applies the GT predicate on the "last_name" field.
 func LastNameGT(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGT(FieldLastName, v))
 }
 
 // LastNameGTE applies the GTE predicate on the "last_name" field.
 func LastNameGTE(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGTE(FieldLastName, v))
 }
 
 // LastNameLT applies the LT predicate on the "last_name" field.
 func LastNameLT(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLT(FieldLastName, v))
 }
 
 // LastNameLTE applies the LTE predicate on the "last_name" field.
 func LastNameLTE(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLTE(FieldLastName, v))
 }
 
 // LastNameContains applies the Contains predicate on the "last_name" field.
 func LastNameContains(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldContains(FieldLastName, v))
 }
 
 // LastNameHasPrefix applies the HasPrefix predicate on the "last_name" field.
 func LastNameHasPrefix(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldHasPrefix(FieldLastName, v))
 }
 
 // LastNameHasSuffix applies the HasSuffix predicate on the "last_name" field.
 func LastNameHasSuffix(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldHasSuffix(FieldLastName, v))
 }
 
 // LastNameEqualFold applies the EqualFold predicate on the "last_name" field.
 func LastNameEqualFold(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEqualFold(FieldLastName, v))
 }
 
 // LastNameContainsFold applies the ContainsFold predicate on the "last_name" field.
 func LastNameContainsFold(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldLastName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldContainsFold(FieldLastName, v))
 }
 
 // OtherNameEQ applies the EQ predicate on the "other_name" field.
 func OtherNameEQ(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldOtherName, v))
 }
 
 // OtherNameNEQ applies the NEQ predicate on the "other_name" field.
 func OtherNameNEQ(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldNEQ(FieldOtherName, v))
 }
 
 // OtherNameIn applies the In predicate on the "other_name" field.
 func OtherNameIn(vs ...string) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldOtherName), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldIn(FieldOtherName, vs...))
 }
 
 // OtherNameNotIn applies the NotIn predicate on the "other_name" field.
 func OtherNameNotIn(vs ...string) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldOtherName), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldNotIn(FieldOtherName, vs...))
 }
 
 // OtherNameGT applies the GT predicate on the "other_name" field.
 func OtherNameGT(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGT(FieldOtherName, v))
 }
 
 // OtherNameGTE applies the GTE predicate on the "other_name" field.
 func OtherNameGTE(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGTE(FieldOtherName, v))
 }
 
 // OtherNameLT applies the LT predicate on the "other_name" field.
 func OtherNameLT(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLT(FieldOtherName, v))
 }
 
 // OtherNameLTE applies the LTE predicate on the "other_name" field.
 func OtherNameLTE(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLTE(FieldOtherName, v))
 }
 
 // OtherNameContains applies the Contains predicate on the "other_name" field.
 func OtherNameContains(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldContains(FieldOtherName, v))
 }
 
 // OtherNameHasPrefix applies the HasPrefix predicate on the "other_name" field.
 func OtherNameHasPrefix(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldHasPrefix(FieldOtherName, v))
 }
 
 // OtherNameHasSuffix applies the HasSuffix predicate on the "other_name" field.
 func OtherNameHasSuffix(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldHasSuffix(FieldOtherName, v))
 }
 
 // OtherNameEqualFold applies the EqualFold predicate on the "other_name" field.
 func OtherNameEqualFold(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEqualFold(FieldOtherName, v))
 }
 
 // OtherNameContainsFold applies the ContainsFold predicate on the "other_name" field.
 func OtherNameContainsFold(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldOtherName), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldContainsFold(FieldOtherName, v))
 }
 
 // PhoneEQ applies the EQ predicate on the "phone" field.
 func PhoneEQ(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldPhone, v))
 }
 
 // PhoneNEQ applies the NEQ predicate on the "phone" field.
 func PhoneNEQ(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldNEQ(FieldPhone, v))
 }
 
 // PhoneIn applies the In predicate on the "phone" field.
 func PhoneIn(vs ...string) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldPhone), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldIn(FieldPhone, vs...))
 }
 
 // PhoneNotIn applies the NotIn predicate on the "phone" field.
 func PhoneNotIn(vs ...string) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldPhone), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldNotIn(FieldPhone, vs...))
 }
 
 // PhoneGT applies the GT predicate on the "phone" field.
 func PhoneGT(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGT(FieldPhone, v))
 }
 
 // PhoneGTE applies the GTE predicate on the "phone" field.
 func PhoneGTE(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGTE(FieldPhone, v))
 }
 
 // PhoneLT applies the LT predicate on the "phone" field.
 func PhoneLT(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLT(FieldPhone, v))
 }
 
 // PhoneLTE applies the LTE predicate on the "phone" field.
 func PhoneLTE(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLTE(FieldPhone, v))
 }
 
 // PhoneContains applies the Contains predicate on the "phone" field.
 func PhoneContains(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldContains(FieldPhone, v))
 }
 
 // PhoneHasPrefix applies the HasPrefix predicate on the "phone" field.
 func PhoneHasPrefix(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldHasPrefix(FieldPhone, v))
 }
 
 // PhoneHasSuffix applies the HasSuffix predicate on the "phone" field.
 func PhoneHasSuffix(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldHasSuffix(FieldPhone, v))
 }
 
 // PhoneEqualFold applies the EqualFold predicate on the "phone" field.
 func PhoneEqualFold(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEqualFold(FieldPhone, v))
 }
 
 // PhoneContainsFold applies the ContainsFold predicate on the "phone" field.
 func PhoneContainsFold(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldContainsFold(FieldPhone, v))
 }
 
 // OtherPhoneEQ applies the EQ predicate on the "other_phone" field.
 func OtherPhoneEQ(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEQ(FieldOtherPhone, v))
 }
 
 // OtherPhoneNEQ applies the NEQ predicate on the "other_phone" field.
 func OtherPhoneNEQ(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldNEQ(FieldOtherPhone, v))
 }
 
 // OtherPhoneIn applies the In predicate on the "other_phone" field.
 func OtherPhoneIn(vs ...string) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldOtherPhone), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldIn(FieldOtherPhone, vs...))
 }
 
 // OtherPhoneNotIn applies the NotIn predicate on the "other_phone" field.
 func OtherPhoneNotIn(vs ...string) predicate.IndividualCustomer {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldOtherPhone), v...))
-	})
+	return predicate.IndividualCustomer(sql.FieldNotIn(FieldOtherPhone, vs...))
 }
 
 // OtherPhoneGT applies the GT predicate on the "other_phone" field.
 func OtherPhoneGT(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGT(FieldOtherPhone, v))
 }
 
 // OtherPhoneGTE applies the GTE predicate on the "other_phone" field.
 func OtherPhoneGTE(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldGTE(FieldOtherPhone, v))
 }
 
 // OtherPhoneLT applies the LT predicate on the "other_phone" field.
 func OtherPhoneLT(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLT(FieldOtherPhone, v))
 }
 
 // OtherPhoneLTE applies the LTE predicate on the "other_phone" field.
 func OtherPhoneLTE(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldLTE(FieldOtherPhone, v))
 }
 
 // OtherPhoneContains applies the Contains predicate on the "other_phone" field.
 func OtherPhoneContains(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldContains(FieldOtherPhone, v))
 }
 
 // OtherPhoneHasPrefix applies the HasPrefix predicate on the "other_phone" field.
 func OtherPhoneHasPrefix(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldHasPrefix(FieldOtherPhone, v))
 }
 
 // OtherPhoneHasSuffix applies the HasSuffix predicate on the "other_phone" field.
 func OtherPhoneHasSuffix(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldHasSuffix(FieldOtherPhone, v))
 }
 
 // OtherPhoneIsNil applies the IsNil predicate on the "other_phone" field.
 func OtherPhoneIsNil() predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldOtherPhone)))
-	})
+	return predicate.IndividualCustomer(sql.FieldIsNull(FieldOtherPhone))
 }
 
 // OtherPhoneNotNil applies the NotNil predicate on the "other_phone" field.
 func OtherPhoneNotNil() predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldOtherPhone)))
-	})
+	return predicate.IndividualCustomer(sql.FieldNotNull(FieldOtherPhone))
 }
 
 // OtherPhoneEqualFold applies the EqualFold predicate on the "other_phone" field.
 func OtherPhoneEqualFold(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldEqualFold(FieldOtherPhone, v))
 }
 
 // OtherPhoneContainsFold applies the ContainsFold predicate on the "other_phone" field.
 func OtherPhoneContainsFold(v string) predicate.IndividualCustomer {
-	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldOtherPhone), v))
-	})
+	return predicate.IndividualCustomer(sql.FieldContainsFold(FieldOtherPhone, v))
 }
 
 // HasCustomer applies the HasEdge predicate on the "customer" edge.
@@ -666,7 +440,6 @@ func HasCustomer() predicate.IndividualCustomer {
 	return predicate.IndividualCustomer(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CustomerTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, CustomerTable, CustomerColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -676,11 +449,7 @@ func HasCustomer() predicate.IndividualCustomer {
 // HasCustomerWith applies the HasEdge predicate on the "customer" edge with a given conditions (other predicates).
 func HasCustomerWith(preds ...predicate.Customer) predicate.IndividualCustomer {
 	return predicate.IndividualCustomer(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(CustomerInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, CustomerTable, CustomerColumn),
-		)
+		step := newCustomerStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

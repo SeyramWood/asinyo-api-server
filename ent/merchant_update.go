@@ -15,6 +15,7 @@ import (
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/notification"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 	"github.com/SeyramWood/ent/product"
@@ -196,6 +197,21 @@ func (mu *MerchantUpdate) AddFavourites(f ...*Favourite) *MerchantUpdate {
 	return mu.AddFavouriteIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (mu *MerchantUpdate) AddNotificationIDs(ids ...int) *MerchantUpdate {
+	mu.mutation.AddNotificationIDs(ids...)
+	return mu
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (mu *MerchantUpdate) AddNotifications(n ...*Notification) *MerchantUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return mu.AddNotificationIDs(ids...)
+}
+
 // Mutation returns the MerchantMutation object of the builder.
 func (mu *MerchantUpdate) Mutation() *MerchantMutation {
 	return mu.mutation
@@ -303,43 +319,31 @@ func (mu *MerchantUpdate) RemoveFavourites(f ...*Favourite) *MerchantUpdate {
 	return mu.RemoveFavouriteIDs(ids...)
 }
 
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (mu *MerchantUpdate) ClearNotifications() *MerchantUpdate {
+	mu.mutation.ClearNotifications()
+	return mu
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (mu *MerchantUpdate) RemoveNotificationIDs(ids ...int) *MerchantUpdate {
+	mu.mutation.RemoveNotificationIDs(ids...)
+	return mu
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (mu *MerchantUpdate) RemoveNotifications(n ...*Notification) *MerchantUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return mu.RemoveNotificationIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (mu *MerchantUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	mu.defaults()
-	if len(mu.hooks) == 0 {
-		if err = mu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = mu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MerchantMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = mu.check(); err != nil {
-				return 0, err
-			}
-			mu.mutation = mutation
-			affected, err = mu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(mu.hooks) - 1; i >= 0; i-- {
-			if mu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = mu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, mu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, mu.sqlSave, mu.mutation, mu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -393,16 +397,10 @@ func (mu *MerchantUpdate) check() error {
 }
 
 func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   merchant.Table,
-			Columns: merchant.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: merchant.FieldID,
-			},
-		},
+	if err := mu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(merchant.Table, merchant.Columns, sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt))
 	if ps := mu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -411,45 +409,22 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := mu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: merchant.FieldUpdatedAt,
-		})
+		_spec.SetField(merchant.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := mu.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchant.FieldUsername,
-		})
+		_spec.SetField(merchant.FieldUsername, field.TypeString, value)
 	}
 	if value, ok := mu.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: merchant.FieldPassword,
-		})
+		_spec.SetField(merchant.FieldPassword, field.TypeBytes, value)
 	}
 	if value, ok := mu.mutation.GetType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchant.FieldType,
-		})
+		_spec.SetField(merchant.FieldType, field.TypeString, value)
 	}
 	if value, ok := mu.mutation.Otp(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: merchant.FieldOtp,
-		})
+		_spec.SetField(merchant.FieldOtp, field.TypeBool, value)
 	}
 	if mu.mutation.OtpCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Column: merchant.FieldOtp,
-		})
+		_spec.ClearField(merchant.FieldOtp, field.TypeBool)
 	}
 	if mu.mutation.SupplierCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -459,10 +434,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.SupplierColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(suppliermerchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -475,10 +447,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.SupplierColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(suppliermerchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -494,10 +463,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.RetailerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(retailmerchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -510,10 +476,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.RetailerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(retailmerchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -529,10 +492,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -545,10 +505,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -564,10 +521,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -580,10 +534,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -599,10 +550,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -618,10 +566,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -634,10 +579,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -653,10 +595,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -672,10 +611,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -688,10 +624,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -707,10 +640,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -726,10 +656,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -742,10 +669,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -761,10 +685,52 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{merchant.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if mu.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   merchant.NotificationsTable,
+			Columns: merchant.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := mu.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !mu.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   merchant.NotificationsTable,
+			Columns: merchant.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := mu.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   merchant.NotificationsTable,
+			Columns: merchant.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -780,6 +746,7 @@ func (mu *MerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	mu.mutation.done = true
 	return n, nil
 }
 
@@ -952,6 +919,21 @@ func (muo *MerchantUpdateOne) AddFavourites(f ...*Favourite) *MerchantUpdateOne 
 	return muo.AddFavouriteIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (muo *MerchantUpdateOne) AddNotificationIDs(ids ...int) *MerchantUpdateOne {
+	muo.mutation.AddNotificationIDs(ids...)
+	return muo
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (muo *MerchantUpdateOne) AddNotifications(n ...*Notification) *MerchantUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return muo.AddNotificationIDs(ids...)
+}
+
 // Mutation returns the MerchantMutation object of the builder.
 func (muo *MerchantUpdateOne) Mutation() *MerchantMutation {
 	return muo.mutation
@@ -1059,6 +1041,33 @@ func (muo *MerchantUpdateOne) RemoveFavourites(f ...*Favourite) *MerchantUpdateO
 	return muo.RemoveFavouriteIDs(ids...)
 }
 
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (muo *MerchantUpdateOne) ClearNotifications() *MerchantUpdateOne {
+	muo.mutation.ClearNotifications()
+	return muo
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (muo *MerchantUpdateOne) RemoveNotificationIDs(ids ...int) *MerchantUpdateOne {
+	muo.mutation.RemoveNotificationIDs(ids...)
+	return muo
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (muo *MerchantUpdateOne) RemoveNotifications(n ...*Notification) *MerchantUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return muo.RemoveNotificationIDs(ids...)
+}
+
+// Where appends a list predicates to the MerchantUpdate builder.
+func (muo *MerchantUpdateOne) Where(ps ...predicate.Merchant) *MerchantUpdateOne {
+	muo.mutation.Where(ps...)
+	return muo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (muo *MerchantUpdateOne) Select(field string, fields ...string) *MerchantUpdateOne {
@@ -1068,47 +1077,8 @@ func (muo *MerchantUpdateOne) Select(field string, fields ...string) *MerchantUp
 
 // Save executes the query and returns the updated Merchant entity.
 func (muo *MerchantUpdateOne) Save(ctx context.Context) (*Merchant, error) {
-	var (
-		err  error
-		node *Merchant
-	)
 	muo.defaults()
-	if len(muo.hooks) == 0 {
-		if err = muo.check(); err != nil {
-			return nil, err
-		}
-		node, err = muo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MerchantMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = muo.check(); err != nil {
-				return nil, err
-			}
-			muo.mutation = mutation
-			node, err = muo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(muo.hooks) - 1; i >= 0; i-- {
-			if muo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = muo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, muo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Merchant)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from MerchantMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, muo.sqlSave, muo.mutation, muo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -1162,16 +1132,10 @@ func (muo *MerchantUpdateOne) check() error {
 }
 
 func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   merchant.Table,
-			Columns: merchant.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: merchant.FieldID,
-			},
-		},
+	if err := muo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(merchant.Table, merchant.Columns, sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt))
 	id, ok := muo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Merchant.id" for update`)}
@@ -1197,45 +1161,22 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 		}
 	}
 	if value, ok := muo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: merchant.FieldUpdatedAt,
-		})
+		_spec.SetField(merchant.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := muo.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchant.FieldUsername,
-		})
+		_spec.SetField(merchant.FieldUsername, field.TypeString, value)
 	}
 	if value, ok := muo.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: merchant.FieldPassword,
-		})
+		_spec.SetField(merchant.FieldPassword, field.TypeBytes, value)
 	}
 	if value, ok := muo.mutation.GetType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchant.FieldType,
-		})
+		_spec.SetField(merchant.FieldType, field.TypeString, value)
 	}
 	if value, ok := muo.mutation.Otp(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: merchant.FieldOtp,
-		})
+		_spec.SetField(merchant.FieldOtp, field.TypeBool, value)
 	}
 	if muo.mutation.OtpCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Column: merchant.FieldOtp,
-		})
+		_spec.ClearField(merchant.FieldOtp, field.TypeBool)
 	}
 	if muo.mutation.SupplierCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1245,10 +1186,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.SupplierColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(suppliermerchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1261,10 +1199,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.SupplierColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(suppliermerchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1280,10 +1215,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.RetailerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(retailmerchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1296,10 +1228,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.RetailerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(retailmerchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1315,10 +1244,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1331,10 +1257,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1350,10 +1273,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1366,10 +1286,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1385,10 +1302,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1404,10 +1318,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1420,10 +1331,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1439,10 +1347,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1458,10 +1363,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1474,10 +1376,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1493,10 +1392,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1512,10 +1408,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1528,10 +1421,7 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1547,10 +1437,52 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 			Columns: []string{merchant.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if muo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   merchant.NotificationsTable,
+			Columns: merchant.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := muo.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !muo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   merchant.NotificationsTable,
+			Columns: merchant.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := muo.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   merchant.NotificationsTable,
+			Columns: merchant.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1569,5 +1501,6 @@ func (muo *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err
 		}
 		return nil, err
 	}
+	muo.mutation.done = true
 	return _node, nil
 }

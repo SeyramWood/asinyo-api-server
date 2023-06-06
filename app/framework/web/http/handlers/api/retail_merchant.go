@@ -8,6 +8,7 @@ import (
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/merchant"
+	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/application/retail_merchant"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
@@ -18,11 +19,11 @@ type RetailMerchantHandler struct {
 	merchant gateways.MerchantService
 }
 
-func NewRetailMerchantHandler(db *database.Adapter, mail gateways.EmailService) *RetailMerchantHandler {
+func NewRetailMerchantHandler(db *database.Adapter, noti notification.NotificationService) *RetailMerchantHandler {
 	repo := retail_merchant.NewRetailMerchantRepo(db)
 	mrepo := merchant.NewMerchantRepo(db)
 	service := retail_merchant.NewRetailMerchantService(repo)
-	merch := merchant.NewMerchantService(mrepo, mail)
+	merch := merchant.NewMerchantService(mrepo, noti)
 
 	return &RetailMerchantHandler{
 		service:  service,

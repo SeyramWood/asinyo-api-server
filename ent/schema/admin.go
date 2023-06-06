@@ -25,6 +25,8 @@ func (Admin) Fields() []ent.Field {
 		field.Bytes("password").NotEmpty().Sensitive(),
 		field.String("last_name").NotEmpty(),
 		field.String("other_name").NotEmpty(),
+		field.String("phone").Optional(),
+		field.String("other_phone").Optional(),
 		field.Enum("status").Values("offline", "online").Default("offline"),
 		field.String("last_active").Optional(),
 	}
@@ -34,5 +36,7 @@ func (Admin) Fields() []ent.Field {
 func (Admin) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("roles", Role.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("notifications", Notification.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("customers", Customer.Type),
 	}
 }

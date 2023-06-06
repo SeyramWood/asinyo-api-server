@@ -1,34 +1,57 @@
 package auth
 
 import (
-	"context"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/samber/lo"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application"
-	"github.com/SeyramWood/app/application/sms"
+	"github.com/SeyramWood/app/application/app_cache"
+	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/domain/services"
+	"github.com/SeyramWood/config"
+	"github.com/SeyramWood/ent"
+	jwtUtil "github.com/SeyramWood/pkg/jwt"
+)
+
+const (
+	RefreshTokenExpiry = time.Minute * 120
+	AccessTokenExpiry  = time.Minute * 60
 )
 
 type service struct {
-	repo gateways.AuthRepo
-	sms  gateways.SMSService
-	mail gateways.EmailService
+	repo     gateways.AuthRepo
+	noti     notification.NotificationService
+	JWT      *jwtUtil.JWT
+	cache    *app_cache.AppCache
+	userType map[string]string
 }
 
-func NewAuthService(repo gateways.AuthRepo, mail gateways.EmailService) gateways.AuthService {
-	smsService := sms.NewSMSService()
+func NewAuthService(
+	repo gateways.AuthRepo, noti notification.NotificationService, JWT *jwtUtil.JWT, appCache *app_cache.AppCache,
+) gateways.AuthService {
+
 	return &service{
-		repo: repo,
-		sms:  smsService,
-		mail: mail,
+		repo:  repo,
+		noti:  noti,
+		JWT:   JWT,
+		cache: appCache,
+		userType: map[string]string{
+			"business":   "customer",
+			"individual": "customer",
+			"retailer":   "merchant",
+			"supplier":   "merchant",
+			"agent":      "agent",
+			"asinyo":     "asinyo",
+		},
 	}
 }
 
@@ -55,13 +78,28 @@ func (s *service) Login(c *fiber.Ctx) error {
 }
 
 func (s *service) Logout(c *fiber.Ctx) error {
+	token := c.Cookies("__token")
+	if ok := s.cache.Exist(token); !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(
+			fiber.Map{
+				"status": false,
+				"msg":    "Unauthorized",
+			},
+		)
+	}
+	_ = s.cache.Delete(token)
 	c.Cookie(
 		&fiber.Cookie{
-			Name:     "remember",
-			Value:    "",
-			Expires:  time.Now().Add(-time.Hour),
-			HTTPOnly: true,
-			SameSite: "none",
+			Name:    "__token",
+			Value:   "",
+			Expires: time.Now().Add(-AccessTokenExpiry),
+		},
+	)
+	c.Cookie(
+		&fiber.Cookie{
+			Name:    "__refresh",
+			Value:   "",
+			Expires: time.Now().Add(-AccessTokenExpiry),
 		},
 	)
 	return c.Status(fiber.StatusOK).JSON(
@@ -71,152 +109,153 @@ func (s *service) Logout(c *fiber.Ctx) error {
 	)
 }
 
-func (s *service) FetchAuthUser(c *fiber.Ctx) error {
-
-	user := c.Locals("user").(*jwt.Token)
-
-	claims := user.Claims.(jwt.MapClaims)
-
-	userType := claims["UserType"].(string)
-
-	id := claims["Issuer"].(string)
-
-	switch userType {
-	case "customer":
-		if user, err := s.repo.ReadCustomer(id, "id"); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(
-				fiber.Map{
-					"status": false,
-				},
-			)
-		} else {
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthCustomerResponse(user))
-		}
-	case "agent":
-		if user, err := s.repo.ReadAgent(id, "id"); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(
-				fiber.Map{
-					"status": false,
-				},
-			)
-		} else {
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthAgentResponse(user))
-		}
-	case "supplier":
-		if merchant, err := s.repo.ReadMerchant(id, "id"); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(
-				fiber.Map{
-					"status": false,
-				},
-			)
-		} else {
-			_, err := merchant.QuerySupplier().WithMerchant().Only(context.Background())
-			if err != nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(
-					fiber.Map{
-						"status": false,
-					},
-				)
-			}
-			// return c.Status(fiber.StatusOK).JSON(
-			// 	presenters.AuthSupplierMerchantResponse(
-			// 		&presenters.AuthMerchant{
-			// 			ID:        user.Edges.Merchant.ID,
-			// 			Username:  user.Edges.Merchant.Username,
-			// 			LastName:  user.LastName,
-			// 			OtherName: user.OtherName,
-			// 		},
-			// 	),
-			// )
-
-		}
-	case "retailer":
-		if merchant, err := s.repo.ReadMerchant(id, "id"); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(
-				fiber.Map{
-					"status": false,
-				},
-			)
-		} else {
-			_, err := merchant.QueryRetailer().WithMerchant().Only(context.Background())
-			if err != nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(
-					fiber.Map{
-						"status": false,
-					},
-				)
-			}
-			// return c.Status(fiber.StatusOK).JSON(
-			// 	presenters.AuthRetailMerchantResponse(
-			// 		&presenters.AuthMerchant{
-			// 			ID:        user.Edges.Merchant.ID,
-			// 			Username:  user.Edges.Merchant.Username,
-			// 			LastName:  user.LastName,
-			// 			OtherName: user.OtherName,
-			// 		},
-			// 	),
-			// )
-		}
-	case "asinyo":
-		if user, err := s.repo.ReadAdmin(id, "id"); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(
-				fiber.Map{
-					"status": false,
-				},
-			)
-		} else {
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthAdminResponse(user))
-		}
-	default:
-		return c.Status(fiber.StatusBadRequest).JSON(
+func (s *service) RefreshToken(c *fiber.Ctx) error {
+	__refresh := c.Cookies("__refresh")
+	if ok := s.cache.Exist(__refresh); !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(
 			fiber.Map{
 				"status": false,
+				"msg":    "Unauthorized",
 			},
 		)
-
 	}
-	return nil
+	newTokens, err := s.GenerateNewTokens(__refresh)
+	if err != nil {
+		log.Println(err)
+		return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Unauthorized"))
+	}
+	userSession, ok := newTokens["session"].(*presenters.AuthSession)
+	if !ok {
+		log.Println(err)
+		return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Unauthorized"))
+	}
+	err = s.cache.Set(newTokens["token"].(string), &userSession, AccessTokenExpiry)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse(err))
+	}
+	err = s.cache.Set(newTokens["refresh"].(string), &userSession, RefreshTokenExpiry)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse(err))
+	}
+	c.Cookie(
+		&fiber.Cookie{
+			Name:     "userType",
+			Value:    s.userType[userSession.UserType],
+			Expires:  time.Now().Add(RefreshTokenExpiry),
+			Secure:   true,
+			HTTPOnly: false,
+		},
+	)
+	c.Cookie(
+		&fiber.Cookie{
+			Name:     "__token",
+			Value:    newTokens["token"].(string),
+			Expires:  time.Now().Add(AccessTokenExpiry),
+			Secure:   true,
+			HTTPOnly: false,
+		},
+	)
+	c.Cookie(
+		&fiber.Cookie{
+			Name:     "__refresh",
+			Value:    newTokens["refresh"].(string),
+			Expires:  time.Now().Add(RefreshTokenExpiry),
+			Secure:   true,
+			HTTPOnly: false,
+		},
+	)
+	// _ = s.cache.Delete(__refresh)
+	return c.Status(fiber.StatusOK).JSON(
+		fiber.Map{
+			"status":   true,
+			"userType": s.userType[userSession.UserType],
+			"token":    newTokens["token"].(string),
+			"refresh":  newTokens["refresh"].(string),
+		},
+	)
+}
+
+func (s *service) FetchAuthUser(c *fiber.Ctx) error {
+	token := c.Cookies("__token")
+	if token == "" {
+		log.Println("access token not found FetchAuthUser")
+		return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Unauthorized"))
+	}
+	data, err := s.cache.Get(token, &presenters.AuthSession{})
+	if err != nil {
+		refresh := c.Cookies("__refresh")
+		if refresh == "" {
+			log.Println("refresh token not found")
+			return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Unauthorized"))
+		}
+		newTokens, err := s.GenerateNewTokens(refresh)
+		if err != nil {
+			log.Println(err)
+			return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Unauthorized"))
+		}
+		userSession, ok := newTokens["session"].(presenters.AuthSession)
+		if !ok {
+			log.Println(err)
+			return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Unauthorized"))
+		}
+		return c.Status(fiber.StatusOK).JSON(
+			fiber.Map{
+				"status":  true,
+				"data":    userSession,
+				"token":   newTokens["token"].(string),
+				"refresh": newTokens["refresh"].(string),
+			},
+		)
+	}
+	sessionUser := data.(*presenters.AuthSession)
+	return c.Status(fiber.StatusOK).JSON(
+		fiber.Map{
+			"status": true,
+			"data":   sessionUser,
+		},
+	)
 }
 
 func (s *service) UpdatePassword(id string, request any, userType string, isOTP bool) (bool, error) {
 	data := request.(*models.ChangePassword)
-	switch userType {
-	case "business", "individual":
-		if user, err := s.repo.ReadCustomer(id, "id"); err != nil {
+	switch s.userType[userType] {
+	case "customer":
+		user, err := s.repo.ReadCustomer(id, "id")
+		if err != nil {
 			return false, fmt.Errorf("no record found for %d", user.ID)
-		} else {
-			if s.hashCheck(user.Password, data.CurrentPassword) {
-				return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
-			}
 		}
-		return false, fmt.Errorf("current password do not match our records")
+		if !s.hashCheck(user.Password, data.CurrentPassword) {
+			return false, fmt.Errorf("current password do not match our records")
+		}
+		return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
 	case "agent":
-		if user, err := s.repo.ReadAgent(id, "id"); err != nil {
+		user, err := s.repo.ReadAgent(id, "id")
+		if err != nil {
 			return false, fmt.Errorf("no record found for %d", user.ID)
-		} else {
-			if s.hashCheck(user.Password, data.CurrentPassword) {
-				return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
-			}
 		}
-		return false, fmt.Errorf("current password do not match our records")
-	case "supplier", "retailer":
-		if user, err := s.repo.ReadMerchant(id, "id"); err != nil {
+		if !s.hashCheck(user.Password, data.CurrentPassword) {
+			return false, fmt.Errorf("current password do not match our records")
+		}
+		return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
+	case "merchant":
+		user, err := s.repo.ReadMerchant(id, "id")
+		if err != nil {
 			return false, fmt.Errorf("no record found for %d", user.ID)
-		} else {
-			if s.hashCheck(user.Password, data.CurrentPassword) {
-				return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
-			}
 		}
-		return false, fmt.Errorf("current password do not match our records")
+		if !s.hashCheck(user.Password, data.CurrentPassword) {
+			return false, fmt.Errorf("current password do not match our records")
+		}
+		return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
+
 	case "asinyo":
-		if user, err := s.repo.ReadAdmin(id, "id"); err != nil {
+		user, err := s.repo.ReadAdmin(id, "id")
+		if err != nil {
 			return false, fmt.Errorf("no record found for %d", user.ID)
-		} else {
-			if s.hashCheck(user.Password, data.CurrentPassword) {
-				return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
-			}
 		}
-		return false, fmt.Errorf("current password do not match our records")
+		if !s.hashCheck(user.Password, data.CurrentPassword) {
+			return false, fmt.Errorf("current password do not match our records")
+		}
+		return s.repo.UpdatePassword(user.ID, data.Password, userType, isOTP)
 	default:
 		return false, fmt.Errorf("current password do not match our records")
 	}
@@ -253,31 +292,36 @@ func (s *service) ResetPassword(request *models.ResetPassword, username, userTyp
 		return false, fmt.Errorf("no record found")
 	}
 }
-
 func (s *service) SendUserVerificationCode(username string) (string, error) {
 	code, _ := application.GenerateOTP(6)
-	msg := fmt.Sprintf(
-		"We appreciate your effort to join Asinyo! Your OTP code to proceed with your sign up is %s.\nCongratulations! And welcome to Asinyo\n\nTeam Asinyo,\nConnecting farmers, impacting lives.\nTel: 0247770819",
-		code,
-	)
 	if application.UsernameType(username, "phone") {
-		_, err := s.sms.Send(
-			&services.SMSPayload{
-				Recipients: []string{username},
-				Message:    msg,
+		s.noti.Broadcast(
+			&notification.Message{
+				Data: services.SMSPayload{
+					Recipients: []string{username},
+					Message: fmt.Sprintf(
+						"\nOTP: %s\nWe appreciate your effort to join Asinyo! Enter the OTP code to proceed with your sign up.\n\nTeam Asinyo, Connecting farmers and impacting lives.\nTel: +233247770819.",
+						code,
+					),
+				},
 			},
 		)
-		if err != nil {
-			return "", err
-		}
 	}
 	if application.UsernameType(username, "email") {
-
-		s.mail.Send(
-			&services.Message{
-				To:      username,
-				Subject: "ASINYO SIGN UP VERIFICATION",
-				Data:    msg,
+		s.noti.Broadcast(
+			&notification.Message{
+				Data: services.MailerMessage{
+					To:       username,
+					Subject:  "ASINYO SIGN UP VERIFICATION",
+					Template: "verification",
+					Data: struct {
+						Code string
+						Tel  string
+					}{
+						code,
+						config.App().AsinyoPhone,
+					},
+				},
 			},
 		)
 	}
@@ -310,36 +354,34 @@ func (s *service) SendPasswordResetCode(username, userType string) (string, erro
 	}
 
 	code, _ := application.GenerateOTP(6)
-	msg := fmt.Sprintf(
-		"You are a step away to complete your password reset! Please enter the RESET code to proceed. %s",
-		code,
-	)
 	if application.UsernameType(username, "phone") {
-		_, err := s.sms.Send(
-			&services.SMSPayload{
-				Recipients: []string{username},
-				Message:    msg,
+		s.noti.Broadcast(
+			&notification.Message{
+				Data: services.SMSPayload{
+					Recipients: []string{username},
+					Message: fmt.Sprintf(
+						"You are a step away to complete your password reset! Enter the reset code to proceed. %s",
+						code,
+					),
+				},
 			},
 		)
-		if err != nil {
-			return "", err
-		}
 	}
 	if application.UsernameType(username, "email") {
-
-		s.mail.Send(
-			&services.Message{
-				To:      username,
-				Subject: "ASINYO PASSWORD RESET",
-				Data:    msg,
+		s.noti.Broadcast(
+			&notification.Message{
+				Data: services.MailerMessage{
+					To:       username,
+					Subject:  "ASINYO PASSWORD RESET",
+					Template: "resetpassword",
+					Data:     code,
+				},
 			},
 		)
 	}
-
 	return code, nil
 
 }
-
 func (s *service) hashCheck(hash []byte, plain string) bool {
 	if err := bcrypt.CompareHashAndPassword(hash, []byte(plain)); err != nil {
 		return false
@@ -347,67 +389,156 @@ func (s *service) hashCheck(hash []byte, plain string) bool {
 	return true
 }
 
-// func (s *service) generateToken(id int, userType string) (interface{}, error) {
-
-// 	claims := jwt.MapClaims{
-// 		"Issuer":    strconv.Itoa(id),
-// 		"IssuedAt":  jwt.NewNumericDate(time.Now()),
-// 		"ExpiresAt": jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
-// 		"UserType":  userType,
-// 	}
-
-// 	claim := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-// 	token, err := claim.SignedString([]byte(config.App().Key))
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return token, nil
-// }
-
 func (s *service) signinCustomer(c *fiber.Ctx, request models.User) error {
-
-	if user, err := s.repo.ReadCustomer(request.Username, "username"); err != nil {
+	user, err := s.repo.ReadCustomer(request.Username, "username")
+	if err != nil || !s.hashCheck(user.Password, request.Password) {
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
-	} else {
-		if s.hashCheck(user.Password, request.Password) {
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthCustomerResponse(user))
-		}
 	}
-	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))
+	return c.Status(fiber.StatusOK).JSON(presenters.AuthCustomerResponse(user))
 }
 func (s *service) signinAgent(c *fiber.Ctx, request models.User) error {
-
-	if user, err := s.repo.ReadAgent(request.Username, "username"); err != nil {
+	user, err := s.repo.ReadAgent(request.Username, "username")
+	if err != nil || !s.hashCheck(user.Password, request.Password) {
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
-	} else {
-		if s.hashCheck(user.Password, request.Password) {
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthAgentResponse(user))
-		}
 	}
-	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))
+	return c.Status(fiber.StatusOK).JSON(presenters.AuthAgentResponse(user))
 }
 func (s *service) signinMerchant(c *fiber.Ctx, request models.User) error {
-
-	if user, err := s.repo.ReadMerchant(request.Username, "username"); err != nil {
+	user, err := s.repo.ReadMerchant(request.Username, "username")
+	if err != nil || !s.hashCheck(user.Password, request.Password) {
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
-	} else {
-		if s.hashCheck(user.Password, request.Password) {
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthMerchantResponse(user))
-		}
 	}
-	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))
+	return c.Status(fiber.StatusOK).JSON(presenters.AuthMerchantResponse(user))
 }
 func (s *service) signinAdmin(c *fiber.Ctx, request models.User) error {
-
-	if user, err := s.repo.ReadAdmin(request.Username, "username"); err != nil {
+	user, err := s.repo.ReadAdmin(request.Username, "username")
+	if err != nil || !s.hashCheck(user.Password, request.Password) {
 		return c.Status(fiber.StatusNotFound).JSON(presenters.AuthErrorResponse("Bad credentials!"))
-	} else {
-		if s.hashCheck(user.Password, request.Password) {
-			return c.Status(fiber.StatusOK).JSON(presenters.AuthAdminResponse(user))
+	}
+	return c.Status(fiber.StatusOK).JSON(presenters.AuthAdminResponse(user))
+}
+
+func (s *service) GenerateNewTokens(__token string) (map[string]any, error) {
+	if ok := s.cache.Exist(__token); !ok {
+		return nil, fmt.Errorf("refresh token not found")
+	}
+	oldSession, err := s.cache.Get(__token, &presenters.AuthSession{})
+	if err != nil {
+		return nil, err
+	}
+	newSession, err := s.newUserSession(oldSession.(*presenters.AuthSession))
+	if err != nil {
+		return nil, err
+	}
+	token := application.RandomString(64)
+	refresh := application.RandomString(64)
+	err = s.cache.Set(token, &newSession, AccessTokenExpiry)
+	if err != nil {
+		return nil, err
+	}
+	err = s.cache.Set(refresh, &newSession, RefreshTokenExpiry)
+	if err != nil {
+		return nil, err
+	}
+	// _ = s.cache.Delete(__token)
+	return map[string]any{
+		"token":   token,
+		"refresh": refresh,
+		"session": newSession,
+	}, nil
+}
+func (s *service) newUserSession(oldSession *presenters.AuthSession) (*presenters.AuthSession, error) {
+
+	if oldSession.UserType == "business" || oldSession.UserType == "individual" {
+		user, err := s.repo.ReadCustomer(oldSession.Username, "username")
+		if err != nil {
+			return nil, err
+		}
+		return s.authCustomerResponse(user), nil
+	}
+
+	return nil, nil
+}
+func (s *service) authAdminResponse(data *ent.Admin) *presenters.AuthSession {
+	return &presenters.AuthSession{
+		ID:          data.ID,
+		Username:    data.Username,
+		SessionName: strings.Split(data.OtherName, " ")[0],
+		Permissions: func() []string {
+			roles, err := data.Edges.RolesOrErr()
+			if err != nil {
+				return nil
+			}
+			var permissions []string
+			for _, role := range roles {
+				perms, err := role.Edges.PermissionsOrErr()
+				if err != nil {
+					return nil
+				}
+				for _, perm := range perms {
+					if lo.Contains(permissions, perm.Slug) {
+						continue
+					}
+					permissions = append(permissions, perm.Slug)
+				}
+			}
+			return permissions
+		}(),
+	}
+}
+func (s *service) authCustomerResponse(data *ent.Customer) *presenters.AuthSession {
+	if c, err := data.Edges.IndividualOrErr(); err == nil {
+		return &presenters.AuthSession{
+			ID:          data.ID,
+			Username:    data.Username,
+			SessionName: strings.Split(c.OtherName, " ")[0],
+			DisplayName: fmt.Sprintf("%s %s", c.OtherName, c.LastName),
+			UserType:    data.Type,
 		}
 	}
-	return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Bad credentials"))
+	if c, err := data.Edges.BusinessOrErr(); err == nil {
+		return &presenters.AuthSession{
+			ID:          data.ID,
+			Username:    data.Username,
+			SessionName: c.Name,
+			DisplayName: c.Name,
+			UserType:    data.Type,
+		}
+	}
+
+	return nil
+}
+func (s *service) authAgentResponse(data *ent.Agent) *presenters.AuthSession {
+	return &presenters.AuthSession{
+		ID:          data.ID,
+		Username:    data.Username,
+		SessionName: strings.Split(data.OtherName, " ")[0],
+		DisplayName: fmt.Sprintf("%s %s", data.OtherName, data.LastName),
+		UserType:    "agent",
+	}
+}
+func (s *service) authMerchantResponse(data *ent.Merchant) *presenters.AuthSession {
+	if s, err := data.Edges.SupplierOrErr(); err == nil {
+		return &presenters.AuthSession{
+			ID:          data.ID,
+			Username:    data.Username,
+			SessionName: strings.Split(s.OtherName, " ")[0],
+			DisplayName: fmt.Sprintf("%s %s", s.OtherName, s.LastName),
+			UserType:    data.Type,
+			OTP:         data.Otp,
+			Storefront:  data.Edges.Store.ID,
+		}
+	}
+	if r, err := data.Edges.RetailerOrErr(); err == nil {
+		return &presenters.AuthSession{
+			ID:          data.ID,
+			Username:    data.Username,
+			SessionName: strings.Split(r.OtherName, " ")[0],
+			DisplayName: fmt.Sprintf("%s %s", r.OtherName, r.LastName),
+			UserType:    data.Type,
+			OTP:         data.Otp,
+			Storefront:  data.Edges.Store.ID,
+		}
+	}
+	return nil
 }

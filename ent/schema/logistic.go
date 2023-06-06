@@ -2,11 +2,8 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-
-	"github.com/SeyramWood/app/domain/models"
 )
 
 // Logistic holds the schema definition for the Logistic entity.
@@ -23,16 +20,18 @@ func (Logistic) Mixin() []ent.Mixin {
 // Fields of the Logistic.
 func (Logistic) Fields() []ent.Field {
 	return []ent.Field{
-		field.JSON("task", &models.TookanPickupAndDeliveryTaskResponse{}).Optional(),
+		field.String("type").Default("Asinyo").NotEmpty(),
+		field.JSON("task", &struct {
+			Data any `json:"data"`
+		}{}).Optional(),
 	}
 }
 
 // Edges of the Logistic.
 func (Logistic) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("order", Order.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
-		edge.From("store", MerchantStore.Type).
-			Ref("logistics").
+		edge.From("order", Order.Type).
+			Ref("logistic").
 			Unique(),
 	}
 }

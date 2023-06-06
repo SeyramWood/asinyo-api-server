@@ -12,9 +12,13 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 
+	"github.com/SeyramWood/app/application/app_cache"
+	"github.com/SeyramWood/app/application/db_notification"
 	"github.com/SeyramWood/app/application/logistic"
 	"github.com/SeyramWood/app/application/mailer"
 	"github.com/SeyramWood/app/application/maps"
+	"github.com/SeyramWood/app/application/notification"
+	"github.com/SeyramWood/app/application/sms"
 	"github.com/SeyramWood/app/application/storage"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent/migrate"
@@ -30,23 +34,19 @@ func init() {
 func App() {
 
 	db := database.NewDB()
-	// defer func(DB *ent.Client) {
-	// 	_ = DB.Close()
-	// }(db.DB)
 
 	ctx := context.Background()
 	// Run migration.
 	if err := db.DB.Schema.Create(ctx, migrate.WithGlobalUniqueID(true)); err != nil {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
-
+	appcache := app_cache.New()
 	newApp := app.New()
-
 	newApp.HTTP.Use(
 		cors.New(
 			cors.Config{
 				AllowCredentials: true,
-				AllowOrigins:     "*",
+				AllowOrigins:     "http://localhost:3000, http://localhost:3001",
 			},
 		),
 	)
@@ -56,6 +56,11 @@ func App() {
 	newApp.HTTP.Use(logger.New())
 
 	mail := mailer.NewEmail(newApp.Mailer)
+	smsServ := sms.NewSMSService(newApp.WG)
+	dbNoti := db_notification.NewDBNotificationService(newApp.WG, db)
+
+	noti := notification.NewNotification(dbNoti, smsServ, mail)
+	noti.Subscribe(noti)
 
 	logis := logistic.NewLogistic(newApp.WG, db)
 
@@ -63,9 +68,17 @@ func App() {
 
 	storageSrv := storage.NewStorageService(newApp.WG)
 
-	router.NewRouter(newApp.HTTP, db, mail, logis, ms, storageSrv)
+	router.NewRouter(
+		newApp, db, noti, dbNoti, storageSrv, logis, ms, appcache,
+	)
+
+	// go appcache.CleanUp()
 
 	go mail.Listen()
+
+	go smsServ.Listen()
+
+	go dbNoti.Listen()
 
 	go logis.Listen()
 
@@ -77,7 +90,7 @@ func App() {
 
 	c := make(chan os.Signal, 1) // Create channel to signify a signal being sent
 	signal.Notify(
-		c, os.Interrupt, syscall.SIGTERM,
+		c, syscall.SIGINT, syscall.SIGTERM,
 	) // When an interrupt or termination signal is sent, notify the channel
 
 	_ = <-c // This blocks the main thread until an interrupt is received
@@ -94,6 +107,10 @@ func App() {
 
 	mail.Done()
 	mail.CloseChannels()
+	smsServ.Done()
+	smsServ.CloseChannels()
+	dbNoti.Done()
+	dbNoti.CloseChannels()
 
 	logis.Done()
 	logis.CloseChannels()
@@ -104,5 +121,5 @@ func App() {
 	storageSrv.Done()
 	storageSrv.CloseChannels()
 
-	fmt.Println("Fiber was successful shutdown.")
+	fmt.Println("API Server was successful shutdown.")
 }

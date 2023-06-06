@@ -55,14 +55,25 @@ func (h *AgentHandler) FetchComplianceByID() fiber.Handler {
 }
 func (h *AgentHandler) Fetch() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
-		results, err := h.service.FetchAll()
-
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+		results, err := h.service.FetchAll(limit, offset)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.CustomerErrorResponse(err))
+		}
+		return c.JSON(presenters.AgentsSuccessResponse(results))
+	}
+}
+func (h *AgentHandler) FetchWithPaginate() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+		results, err := h.service.FetchAll(limit, offset)
 		if err != nil {
 
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.CustomerErrorResponse(err))
 		}
-		return c.JSON(presenters.AgentsSuccessResponse(results))
+		return c.JSON(presenters.AgentsPaginationResponse(results))
 	}
 }
 
@@ -301,6 +312,24 @@ func (h *AgentHandler) UpdateGuarantorComplianceCard() fiber.Handler {
 	}
 
 }
+func (h *AgentHandler) ApproveAgent() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		agentId, _ := c.ParamsInt("agent")
+		complianceStatus, _ := strconv.ParseBool(c.Params("status"))
+		_, err := h.service.ApproveAgent(agentId, complianceStatus)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.AgentErrorResponse(err))
+		}
+		return c.JSON(
+			fiber.Map{
+				"status":  true,
+				"message": "Updated",
+			},
+		)
+
+	}
+
+}
 
 func (h *AgentHandler) SaveAccount() fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -352,6 +381,7 @@ func (h *AgentHandler) SaveDefaultAccount() fiber.Handler {
 	}
 
 }
+
 
 func (h *AgentHandler) Delete() fiber.Handler {
 	return func(c *fiber.Ctx) error {

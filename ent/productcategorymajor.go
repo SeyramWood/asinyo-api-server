@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/productcategorymajor"
 )
@@ -26,7 +27,8 @@ type ProductCategoryMajor struct {
 	Slug string `json:"slug,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProductCategoryMajorQuery when eager-loading is set.
-	Edges ProductCategoryMajorEdges `json:"edges"`
+	Edges        ProductCategoryMajorEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // ProductCategoryMajorEdges holds the relations/edges for other nodes in the graph.
@@ -70,7 +72,7 @@ func (*ProductCategoryMajor) scanValues(columns []string) ([]any, error) {
 		case productcategorymajor.FieldCreatedAt, productcategorymajor.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type ProductCategoryMajor", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -114,26 +116,34 @@ func (pcm *ProductCategoryMajor) assignValues(columns []string, values []any) er
 			} else if value.Valid {
 				pcm.Slug = value.String
 			}
+		default:
+			pcm.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the ProductCategoryMajor.
+// This includes values selected through modifiers, order, etc.
+func (pcm *ProductCategoryMajor) Value(name string) (ent.Value, error) {
+	return pcm.selectValues.Get(name)
+}
+
 // QueryMinors queries the "minors" edge of the ProductCategoryMajor entity.
 func (pcm *ProductCategoryMajor) QueryMinors() *ProductCategoryMinorQuery {
-	return (&ProductCategoryMajorClient{config: pcm.config}).QueryMinors(pcm)
+	return NewProductCategoryMajorClient(pcm.config).QueryMinors(pcm)
 }
 
 // QueryProducts queries the "products" edge of the ProductCategoryMajor entity.
 func (pcm *ProductCategoryMajor) QueryProducts() *ProductQuery {
-	return (&ProductCategoryMajorClient{config: pcm.config}).QueryProducts(pcm)
+	return NewProductCategoryMajorClient(pcm.config).QueryProducts(pcm)
 }
 
 // Update returns a builder for updating this ProductCategoryMajor.
 // Note that you need to call ProductCategoryMajor.Unwrap() before calling this method if this ProductCategoryMajor
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (pcm *ProductCategoryMajor) Update() *ProductCategoryMajorUpdateOne {
-	return (&ProductCategoryMajorClient{config: pcm.config}).UpdateOne(pcm)
+	return NewProductCategoryMajorClient(pcm.config).UpdateOne(pcm)
 }
 
 // Unwrap unwraps the ProductCategoryMajor entity that was returned from a transaction after it was closed,
@@ -169,9 +179,3 @@ func (pcm *ProductCategoryMajor) String() string {
 
 // ProductCategoryMajors is a parsable slice of ProductCategoryMajor.
 type ProductCategoryMajors []*ProductCategoryMajor
-
-func (pcm ProductCategoryMajors) config(cfg config) {
-	for _i := range pcm {
-		pcm[_i].config = cfg
-	}
-}

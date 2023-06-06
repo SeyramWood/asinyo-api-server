@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (odd *OrderDetailDelete) Where(ps ...predicate.OrderDetail) *OrderDetailDel
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (odd *OrderDetailDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(odd.hooks) == 0 {
-		affected, err = odd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*OrderDetailMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			odd.mutation = mutation
-			affected, err = odd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(odd.hooks) - 1; i >= 0; i-- {
-			if odd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = odd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, odd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, odd.sqlExec, odd.mutation, odd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (odd *OrderDetailDelete) ExecX(ctx context.Context) int {
 }
 
 func (odd *OrderDetailDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: orderdetail.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: orderdetail.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(orderdetail.Table, sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt))
 	if ps := odd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (odd *OrderDetailDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	odd.mutation.done = true
 	return affected, err
 }
 
 // OrderDetailDeleteOne is the builder for deleting a single OrderDetail entity.
 type OrderDetailDeleteOne struct {
 	odd *OrderDetailDelete
+}
+
+// Where appends a list predicates to the OrderDetailDelete builder.
+func (oddo *OrderDetailDeleteOne) Where(ps ...predicate.OrderDetail) *OrderDetailDeleteOne {
+	oddo.odd.mutation.Where(ps...)
+	return oddo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (oddo *OrderDetailDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (oddo *OrderDetailDeleteOne) ExecX(ctx context.Context) {
-	oddo.odd.ExecX(ctx)
+	if err := oddo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

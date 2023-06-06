@@ -19,11 +19,9 @@ import (
 // PickupStationQuery is the builder for querying PickupStation entities.
 type PickupStationQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
+	ctx        *QueryContext
+	order      []pickupstation.OrderOption
+	inters     []Interceptor
 	predicates []predicate.PickupStation
 	withOrders *OrderQuery
 	// intermediate query (i.e. traversal path).
@@ -37,34 +35,34 @@ func (psq *PickupStationQuery) Where(ps ...predicate.PickupStation) *PickupStati
 	return psq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (psq *PickupStationQuery) Limit(limit int) *PickupStationQuery {
-	psq.limit = &limit
+	psq.ctx.Limit = &limit
 	return psq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (psq *PickupStationQuery) Offset(offset int) *PickupStationQuery {
-	psq.offset = &offset
+	psq.ctx.Offset = &offset
 	return psq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (psq *PickupStationQuery) Unique(unique bool) *PickupStationQuery {
-	psq.unique = &unique
+	psq.ctx.Unique = &unique
 	return psq
 }
 
-// Order adds an order step to the query.
-func (psq *PickupStationQuery) Order(o ...OrderFunc) *PickupStationQuery {
+// Order specifies how the records should be ordered.
+func (psq *PickupStationQuery) Order(o ...pickupstation.OrderOption) *PickupStationQuery {
 	psq.order = append(psq.order, o...)
 	return psq
 }
 
 // QueryOrders chains the current query on the "orders" edge.
 func (psq *PickupStationQuery) QueryOrders() *OrderQuery {
-	query := &OrderQuery{config: psq.config}
+	query := (&OrderClient{config: psq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := psq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -87,7 +85,7 @@ func (psq *PickupStationQuery) QueryOrders() *OrderQuery {
 // First returns the first PickupStation entity from the query.
 // Returns a *NotFoundError when no PickupStation was found.
 func (psq *PickupStationQuery) First(ctx context.Context) (*PickupStation, error) {
-	nodes, err := psq.Limit(1).All(ctx)
+	nodes, err := psq.Limit(1).All(setContextOp(ctx, psq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +108,7 @@ func (psq *PickupStationQuery) FirstX(ctx context.Context) *PickupStation {
 // Returns a *NotFoundError when no PickupStation ID was found.
 func (psq *PickupStationQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = psq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = psq.Limit(1).IDs(setContextOp(ctx, psq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -133,7 +131,7 @@ func (psq *PickupStationQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one PickupStation entity is found.
 // Returns a *NotFoundError when no PickupStation entities are found.
 func (psq *PickupStationQuery) Only(ctx context.Context) (*PickupStation, error) {
-	nodes, err := psq.Limit(2).All(ctx)
+	nodes, err := psq.Limit(2).All(setContextOp(ctx, psq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +159,7 @@ func (psq *PickupStationQuery) OnlyX(ctx context.Context) *PickupStation {
 // Returns a *NotFoundError when no entities are found.
 func (psq *PickupStationQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = psq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = psq.Limit(2).IDs(setContextOp(ctx, psq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -186,10 +184,12 @@ func (psq *PickupStationQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of PickupStations.
 func (psq *PickupStationQuery) All(ctx context.Context) ([]*PickupStation, error) {
+	ctx = setContextOp(ctx, psq.ctx, "All")
 	if err := psq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return psq.sqlAll(ctx)
+	qr := querierAll[[]*PickupStation, *PickupStationQuery]()
+	return withInterceptors[[]*PickupStation](ctx, psq, qr, psq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -202,9 +202,12 @@ func (psq *PickupStationQuery) AllX(ctx context.Context) []*PickupStation {
 }
 
 // IDs executes the query and returns a list of PickupStation IDs.
-func (psq *PickupStationQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := psq.Select(pickupstation.FieldID).Scan(ctx, &ids); err != nil {
+func (psq *PickupStationQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if psq.ctx.Unique == nil && psq.path != nil {
+		psq.Unique(true)
+	}
+	ctx = setContextOp(ctx, psq.ctx, "IDs")
+	if err = psq.Select(pickupstation.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -221,10 +224,11 @@ func (psq *PickupStationQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (psq *PickupStationQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, psq.ctx, "Count")
 	if err := psq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return psq.sqlCount(ctx)
+	return withInterceptors[int](ctx, psq, querierCount[*PickupStationQuery](), psq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -238,10 +242,15 @@ func (psq *PickupStationQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (psq *PickupStationQuery) Exist(ctx context.Context) (bool, error) {
-	if err := psq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, psq.ctx, "Exist")
+	switch _, err := psq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return psq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -261,22 +270,21 @@ func (psq *PickupStationQuery) Clone() *PickupStationQuery {
 	}
 	return &PickupStationQuery{
 		config:     psq.config,
-		limit:      psq.limit,
-		offset:     psq.offset,
-		order:      append([]OrderFunc{}, psq.order...),
+		ctx:        psq.ctx.Clone(),
+		order:      append([]pickupstation.OrderOption{}, psq.order...),
+		inters:     append([]Interceptor{}, psq.inters...),
 		predicates: append([]predicate.PickupStation{}, psq.predicates...),
 		withOrders: psq.withOrders.Clone(),
 		// clone intermediate query.
-		sql:    psq.sql.Clone(),
-		path:   psq.path,
-		unique: psq.unique,
+		sql:  psq.sql.Clone(),
+		path: psq.path,
 	}
 }
 
 // WithOrders tells the query-builder to eager-load the nodes that are connected to
 // the "orders" edge. The optional arguments are used to configure the query builder of the edge.
 func (psq *PickupStationQuery) WithOrders(opts ...func(*OrderQuery)) *PickupStationQuery {
-	query := &OrderQuery{config: psq.config}
+	query := (&OrderClient{config: psq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -299,16 +307,11 @@ func (psq *PickupStationQuery) WithOrders(opts ...func(*OrderQuery)) *PickupStat
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (psq *PickupStationQuery) GroupBy(field string, fields ...string) *PickupStationGroupBy {
-	grbuild := &PickupStationGroupBy{config: psq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := psq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return psq.sqlQuery(ctx), nil
-	}
+	psq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &PickupStationGroupBy{build: psq}
+	grbuild.flds = &psq.ctx.Fields
 	grbuild.label = pickupstation.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -325,15 +328,30 @@ func (psq *PickupStationQuery) GroupBy(field string, fields ...string) *PickupSt
 //		Select(pickupstation.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (psq *PickupStationQuery) Select(fields ...string) *PickupStationSelect {
-	psq.fields = append(psq.fields, fields...)
-	selbuild := &PickupStationSelect{PickupStationQuery: psq}
-	selbuild.label = pickupstation.Label
-	selbuild.flds, selbuild.scan = &psq.fields, selbuild.Scan
-	return selbuild
+	psq.ctx.Fields = append(psq.ctx.Fields, fields...)
+	sbuild := &PickupStationSelect{PickupStationQuery: psq}
+	sbuild.label = pickupstation.Label
+	sbuild.flds, sbuild.scan = &psq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a PickupStationSelect configured with the given aggregations.
+func (psq *PickupStationQuery) Aggregate(fns ...AggregateFunc) *PickupStationSelect {
+	return psq.Select().Aggregate(fns...)
 }
 
 func (psq *PickupStationQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range psq.fields {
+	for _, inter := range psq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, psq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range psq.ctx.Fields {
 		if !pickupstation.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -396,7 +414,7 @@ func (psq *PickupStationQuery) loadOrders(ctx context.Context, query *OrderQuery
 	}
 	query.withFKs = true
 	query.Where(predicate.Order(func(s *sql.Selector) {
-		s.Where(sql.InValues(pickupstation.OrdersColumn, fks...))
+		s.Where(sql.InValues(s.C(pickupstation.OrdersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -409,7 +427,7 @@ func (psq *PickupStationQuery) loadOrders(ctx context.Context, query *OrderQuery
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "pickup_station_orders" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "pickup_station_orders" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -418,41 +436,22 @@ func (psq *PickupStationQuery) loadOrders(ctx context.Context, query *OrderQuery
 
 func (psq *PickupStationQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := psq.querySpec()
-	_spec.Node.Columns = psq.fields
-	if len(psq.fields) > 0 {
-		_spec.Unique = psq.unique != nil && *psq.unique
+	_spec.Node.Columns = psq.ctx.Fields
+	if len(psq.ctx.Fields) > 0 {
+		_spec.Unique = psq.ctx.Unique != nil && *psq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, psq.driver, _spec)
 }
 
-func (psq *PickupStationQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := psq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (psq *PickupStationQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   pickupstation.Table,
-			Columns: pickupstation.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: pickupstation.FieldID,
-			},
-		},
-		From:   psq.sql,
-		Unique: true,
-	}
-	if unique := psq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(pickupstation.Table, pickupstation.Columns, sqlgraph.NewFieldSpec(pickupstation.FieldID, field.TypeInt))
+	_spec.From = psq.sql
+	if unique := psq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if psq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := psq.fields; len(fields) > 0 {
+	if fields := psq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, pickupstation.FieldID)
 		for i := range fields {
@@ -468,10 +467,10 @@ func (psq *PickupStationQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := psq.limit; limit != nil {
+	if limit := psq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := psq.offset; offset != nil {
+	if offset := psq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := psq.order; len(ps) > 0 {
@@ -487,7 +486,7 @@ func (psq *PickupStationQuery) querySpec() *sqlgraph.QuerySpec {
 func (psq *PickupStationQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(psq.driver.Dialect())
 	t1 := builder.Table(pickupstation.Table)
-	columns := psq.fields
+	columns := psq.ctx.Fields
 	if len(columns) == 0 {
 		columns = pickupstation.Columns
 	}
@@ -496,7 +495,7 @@ func (psq *PickupStationQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = psq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if psq.unique != nil && *psq.unique {
+	if psq.ctx.Unique != nil && *psq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range psq.predicates {
@@ -505,12 +504,12 @@ func (psq *PickupStationQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range psq.order {
 		p(selector)
 	}
-	if offset := psq.offset; offset != nil {
+	if offset := psq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := psq.limit; limit != nil {
+	if limit := psq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -518,13 +517,8 @@ func (psq *PickupStationQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // PickupStationGroupBy is the group-by builder for PickupStation entities.
 type PickupStationGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *PickupStationQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -533,74 +527,77 @@ func (psgb *PickupStationGroupBy) Aggregate(fns ...AggregateFunc) *PickupStation
 	return psgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (psgb *PickupStationGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := psgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, psgb.build.ctx, "GroupBy")
+	if err := psgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	psgb.sql = query
-	return psgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*PickupStationQuery, *PickupStationGroupBy](ctx, psgb.build, psgb, psgb.build.inters, v)
 }
 
-func (psgb *PickupStationGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range psgb.fields {
-		if !pickupstation.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (psgb *PickupStationGroupBy) sqlScan(ctx context.Context, root *PickupStationQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(psgb.fns))
+	for _, fn := range psgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := psgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*psgb.flds)+len(psgb.fns))
+		for _, f := range *psgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*psgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := psgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := psgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (psgb *PickupStationGroupBy) sqlQuery() *sql.Selector {
-	selector := psgb.sql.Select()
-	aggregation := make([]string, 0, len(psgb.fns))
-	for _, fn := range psgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(psgb.fields)+len(psgb.fns))
-		for _, f := range psgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(psgb.fields...)...)
-}
-
 // PickupStationSelect is the builder for selecting fields of PickupStation entities.
 type PickupStationSelect struct {
 	*PickupStationQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (pss *PickupStationSelect) Aggregate(fns ...AggregateFunc) *PickupStationSelect {
+	pss.fns = append(pss.fns, fns...)
+	return pss
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (pss *PickupStationSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, pss.ctx, "Select")
 	if err := pss.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pss.sql = pss.PickupStationQuery.sqlQuery(ctx)
-	return pss.sqlScan(ctx, v)
+	return scanWithInterceptors[*PickupStationQuery, *PickupStationSelect](ctx, pss.PickupStationQuery, pss, pss.inters, v)
 }
 
-func (pss *PickupStationSelect) sqlScan(ctx context.Context, v any) error {
+func (pss *PickupStationSelect) sqlScan(ctx context.Context, root *PickupStationQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(pss.fns))
+	for _, fn := range pss.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*pss.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := pss.sql.Query()
+	query, args := selector.Query()
 	if err := pss.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

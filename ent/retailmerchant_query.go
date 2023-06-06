@@ -18,11 +18,9 @@ import (
 // RetailMerchantQuery is the builder for querying RetailMerchant entities.
 type RetailMerchantQuery struct {
 	config
-	limit        *int
-	offset       *int
-	unique       *bool
-	order        []OrderFunc
-	fields       []string
+	ctx          *QueryContext
+	order        []retailmerchant.OrderOption
+	inters       []Interceptor
 	predicates   []predicate.RetailMerchant
 	withMerchant *MerchantQuery
 	withFKs      bool
@@ -37,34 +35,34 @@ func (rmq *RetailMerchantQuery) Where(ps ...predicate.RetailMerchant) *RetailMer
 	return rmq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (rmq *RetailMerchantQuery) Limit(limit int) *RetailMerchantQuery {
-	rmq.limit = &limit
+	rmq.ctx.Limit = &limit
 	return rmq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (rmq *RetailMerchantQuery) Offset(offset int) *RetailMerchantQuery {
-	rmq.offset = &offset
+	rmq.ctx.Offset = &offset
 	return rmq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (rmq *RetailMerchantQuery) Unique(unique bool) *RetailMerchantQuery {
-	rmq.unique = &unique
+	rmq.ctx.Unique = &unique
 	return rmq
 }
 
-// Order adds an order step to the query.
-func (rmq *RetailMerchantQuery) Order(o ...OrderFunc) *RetailMerchantQuery {
+// Order specifies how the records should be ordered.
+func (rmq *RetailMerchantQuery) Order(o ...retailmerchant.OrderOption) *RetailMerchantQuery {
 	rmq.order = append(rmq.order, o...)
 	return rmq
 }
 
 // QueryMerchant chains the current query on the "merchant" edge.
 func (rmq *RetailMerchantQuery) QueryMerchant() *MerchantQuery {
-	query := &MerchantQuery{config: rmq.config}
+	query := (&MerchantClient{config: rmq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := rmq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -87,7 +85,7 @@ func (rmq *RetailMerchantQuery) QueryMerchant() *MerchantQuery {
 // First returns the first RetailMerchant entity from the query.
 // Returns a *NotFoundError when no RetailMerchant was found.
 func (rmq *RetailMerchantQuery) First(ctx context.Context) (*RetailMerchant, error) {
-	nodes, err := rmq.Limit(1).All(ctx)
+	nodes, err := rmq.Limit(1).All(setContextOp(ctx, rmq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +108,7 @@ func (rmq *RetailMerchantQuery) FirstX(ctx context.Context) *RetailMerchant {
 // Returns a *NotFoundError when no RetailMerchant ID was found.
 func (rmq *RetailMerchantQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = rmq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = rmq.Limit(1).IDs(setContextOp(ctx, rmq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -133,7 +131,7 @@ func (rmq *RetailMerchantQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one RetailMerchant entity is found.
 // Returns a *NotFoundError when no RetailMerchant entities are found.
 func (rmq *RetailMerchantQuery) Only(ctx context.Context) (*RetailMerchant, error) {
-	nodes, err := rmq.Limit(2).All(ctx)
+	nodes, err := rmq.Limit(2).All(setContextOp(ctx, rmq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +159,7 @@ func (rmq *RetailMerchantQuery) OnlyX(ctx context.Context) *RetailMerchant {
 // Returns a *NotFoundError when no entities are found.
 func (rmq *RetailMerchantQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = rmq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = rmq.Limit(2).IDs(setContextOp(ctx, rmq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -186,10 +184,12 @@ func (rmq *RetailMerchantQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of RetailMerchants.
 func (rmq *RetailMerchantQuery) All(ctx context.Context) ([]*RetailMerchant, error) {
+	ctx = setContextOp(ctx, rmq.ctx, "All")
 	if err := rmq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return rmq.sqlAll(ctx)
+	qr := querierAll[[]*RetailMerchant, *RetailMerchantQuery]()
+	return withInterceptors[[]*RetailMerchant](ctx, rmq, qr, rmq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -202,9 +202,12 @@ func (rmq *RetailMerchantQuery) AllX(ctx context.Context) []*RetailMerchant {
 }
 
 // IDs executes the query and returns a list of RetailMerchant IDs.
-func (rmq *RetailMerchantQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := rmq.Select(retailmerchant.FieldID).Scan(ctx, &ids); err != nil {
+func (rmq *RetailMerchantQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if rmq.ctx.Unique == nil && rmq.path != nil {
+		rmq.Unique(true)
+	}
+	ctx = setContextOp(ctx, rmq.ctx, "IDs")
+	if err = rmq.Select(retailmerchant.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -221,10 +224,11 @@ func (rmq *RetailMerchantQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (rmq *RetailMerchantQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, rmq.ctx, "Count")
 	if err := rmq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return rmq.sqlCount(ctx)
+	return withInterceptors[int](ctx, rmq, querierCount[*RetailMerchantQuery](), rmq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -238,10 +242,15 @@ func (rmq *RetailMerchantQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (rmq *RetailMerchantQuery) Exist(ctx context.Context) (bool, error) {
-	if err := rmq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, rmq.ctx, "Exist")
+	switch _, err := rmq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return rmq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -261,22 +270,21 @@ func (rmq *RetailMerchantQuery) Clone() *RetailMerchantQuery {
 	}
 	return &RetailMerchantQuery{
 		config:       rmq.config,
-		limit:        rmq.limit,
-		offset:       rmq.offset,
-		order:        append([]OrderFunc{}, rmq.order...),
+		ctx:          rmq.ctx.Clone(),
+		order:        append([]retailmerchant.OrderOption{}, rmq.order...),
+		inters:       append([]Interceptor{}, rmq.inters...),
 		predicates:   append([]predicate.RetailMerchant{}, rmq.predicates...),
 		withMerchant: rmq.withMerchant.Clone(),
 		// clone intermediate query.
-		sql:    rmq.sql.Clone(),
-		path:   rmq.path,
-		unique: rmq.unique,
+		sql:  rmq.sql.Clone(),
+		path: rmq.path,
 	}
 }
 
 // WithMerchant tells the query-builder to eager-load the nodes that are connected to
 // the "merchant" edge. The optional arguments are used to configure the query builder of the edge.
 func (rmq *RetailMerchantQuery) WithMerchant(opts ...func(*MerchantQuery)) *RetailMerchantQuery {
-	query := &MerchantQuery{config: rmq.config}
+	query := (&MerchantClient{config: rmq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -299,16 +307,11 @@ func (rmq *RetailMerchantQuery) WithMerchant(opts ...func(*MerchantQuery)) *Reta
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (rmq *RetailMerchantQuery) GroupBy(field string, fields ...string) *RetailMerchantGroupBy {
-	grbuild := &RetailMerchantGroupBy{config: rmq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := rmq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return rmq.sqlQuery(ctx), nil
-	}
+	rmq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &RetailMerchantGroupBy{build: rmq}
+	grbuild.flds = &rmq.ctx.Fields
 	grbuild.label = retailmerchant.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -325,15 +328,30 @@ func (rmq *RetailMerchantQuery) GroupBy(field string, fields ...string) *RetailM
 //		Select(retailmerchant.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (rmq *RetailMerchantQuery) Select(fields ...string) *RetailMerchantSelect {
-	rmq.fields = append(rmq.fields, fields...)
-	selbuild := &RetailMerchantSelect{RetailMerchantQuery: rmq}
-	selbuild.label = retailmerchant.Label
-	selbuild.flds, selbuild.scan = &rmq.fields, selbuild.Scan
-	return selbuild
+	rmq.ctx.Fields = append(rmq.ctx.Fields, fields...)
+	sbuild := &RetailMerchantSelect{RetailMerchantQuery: rmq}
+	sbuild.label = retailmerchant.Label
+	sbuild.flds, sbuild.scan = &rmq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a RetailMerchantSelect configured with the given aggregations.
+func (rmq *RetailMerchantQuery) Aggregate(fns ...AggregateFunc) *RetailMerchantSelect {
+	return rmq.Select().Aggregate(fns...)
 }
 
 func (rmq *RetailMerchantQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range rmq.fields {
+	for _, inter := range rmq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, rmq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range rmq.ctx.Fields {
 		if !retailmerchant.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -403,6 +421,9 @@ func (rmq *RetailMerchantQuery) loadMerchant(ctx context.Context, query *Merchan
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(merchant.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -422,41 +443,22 @@ func (rmq *RetailMerchantQuery) loadMerchant(ctx context.Context, query *Merchan
 
 func (rmq *RetailMerchantQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := rmq.querySpec()
-	_spec.Node.Columns = rmq.fields
-	if len(rmq.fields) > 0 {
-		_spec.Unique = rmq.unique != nil && *rmq.unique
+	_spec.Node.Columns = rmq.ctx.Fields
+	if len(rmq.ctx.Fields) > 0 {
+		_spec.Unique = rmq.ctx.Unique != nil && *rmq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, rmq.driver, _spec)
 }
 
-func (rmq *RetailMerchantQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := rmq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (rmq *RetailMerchantQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   retailmerchant.Table,
-			Columns: retailmerchant.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: retailmerchant.FieldID,
-			},
-		},
-		From:   rmq.sql,
-		Unique: true,
-	}
-	if unique := rmq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(retailmerchant.Table, retailmerchant.Columns, sqlgraph.NewFieldSpec(retailmerchant.FieldID, field.TypeInt))
+	_spec.From = rmq.sql
+	if unique := rmq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if rmq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := rmq.fields; len(fields) > 0 {
+	if fields := rmq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, retailmerchant.FieldID)
 		for i := range fields {
@@ -472,10 +474,10 @@ func (rmq *RetailMerchantQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := rmq.limit; limit != nil {
+	if limit := rmq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := rmq.offset; offset != nil {
+	if offset := rmq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := rmq.order; len(ps) > 0 {
@@ -491,7 +493,7 @@ func (rmq *RetailMerchantQuery) querySpec() *sqlgraph.QuerySpec {
 func (rmq *RetailMerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(rmq.driver.Dialect())
 	t1 := builder.Table(retailmerchant.Table)
-	columns := rmq.fields
+	columns := rmq.ctx.Fields
 	if len(columns) == 0 {
 		columns = retailmerchant.Columns
 	}
@@ -500,7 +502,7 @@ func (rmq *RetailMerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = rmq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if rmq.unique != nil && *rmq.unique {
+	if rmq.ctx.Unique != nil && *rmq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range rmq.predicates {
@@ -509,12 +511,12 @@ func (rmq *RetailMerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range rmq.order {
 		p(selector)
 	}
-	if offset := rmq.offset; offset != nil {
+	if offset := rmq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := rmq.limit; limit != nil {
+	if limit := rmq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -522,13 +524,8 @@ func (rmq *RetailMerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // RetailMerchantGroupBy is the group-by builder for RetailMerchant entities.
 type RetailMerchantGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *RetailMerchantQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -537,74 +534,77 @@ func (rmgb *RetailMerchantGroupBy) Aggregate(fns ...AggregateFunc) *RetailMercha
 	return rmgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (rmgb *RetailMerchantGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := rmgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, rmgb.build.ctx, "GroupBy")
+	if err := rmgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	rmgb.sql = query
-	return rmgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*RetailMerchantQuery, *RetailMerchantGroupBy](ctx, rmgb.build, rmgb, rmgb.build.inters, v)
 }
 
-func (rmgb *RetailMerchantGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range rmgb.fields {
-		if !retailmerchant.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (rmgb *RetailMerchantGroupBy) sqlScan(ctx context.Context, root *RetailMerchantQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(rmgb.fns))
+	for _, fn := range rmgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := rmgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*rmgb.flds)+len(rmgb.fns))
+		for _, f := range *rmgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*rmgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := rmgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := rmgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (rmgb *RetailMerchantGroupBy) sqlQuery() *sql.Selector {
-	selector := rmgb.sql.Select()
-	aggregation := make([]string, 0, len(rmgb.fns))
-	for _, fn := range rmgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(rmgb.fields)+len(rmgb.fns))
-		for _, f := range rmgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(rmgb.fields...)...)
-}
-
 // RetailMerchantSelect is the builder for selecting fields of RetailMerchant entities.
 type RetailMerchantSelect struct {
 	*RetailMerchantQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (rms *RetailMerchantSelect) Aggregate(fns ...AggregateFunc) *RetailMerchantSelect {
+	rms.fns = append(rms.fns, fns...)
+	return rms
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (rms *RetailMerchantSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, rms.ctx, "Select")
 	if err := rms.prepareQuery(ctx); err != nil {
 		return err
 	}
-	rms.sql = rms.RetailMerchantQuery.sqlQuery(ctx)
-	return rms.sqlScan(ctx, v)
+	return scanWithInterceptors[*RetailMerchantQuery, *RetailMerchantSelect](ctx, rms.RetailMerchantQuery, rms, rms.inters, v)
 }
 
-func (rms *RetailMerchantSelect) sqlScan(ctx context.Context, v any) error {
+func (rms *RetailMerchantSelect) sqlScan(ctx context.Context, root *RetailMerchantQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(rms.fns))
+	for _, fn := range rms.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*rms.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := rms.sql.Query()
+	query, args := selector.Query()
 	if err := rms.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

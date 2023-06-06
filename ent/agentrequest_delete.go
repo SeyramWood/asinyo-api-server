@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (ard *AgentRequestDelete) Where(ps ...predicate.AgentRequest) *AgentRequest
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (ard *AgentRequestDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(ard.hooks) == 0 {
-		affected, err = ard.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AgentRequestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			ard.mutation = mutation
-			affected, err = ard.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(ard.hooks) - 1; i >= 0; i-- {
-			if ard.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = ard.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, ard.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, ard.sqlExec, ard.mutation, ard.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (ard *AgentRequestDelete) ExecX(ctx context.Context) int {
 }
 
 func (ard *AgentRequestDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: agentrequest.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: agentrequest.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(agentrequest.Table, sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt))
 	if ps := ard.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (ard *AgentRequestDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	ard.mutation.done = true
 	return affected, err
 }
 
 // AgentRequestDeleteOne is the builder for deleting a single AgentRequest entity.
 type AgentRequestDeleteOne struct {
 	ard *AgentRequestDelete
+}
+
+// Where appends a list predicates to the AgentRequestDelete builder.
+func (ardo *AgentRequestDeleteOne) Where(ps ...predicate.AgentRequest) *AgentRequestDeleteOne {
+	ardo.ard.mutation.Where(ps...)
+	return ardo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (ardo *AgentRequestDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (ardo *AgentRequestDeleteOne) ExecX(ctx context.Context) {
-	ardo.ard.ExecX(ctx)
+	if err := ardo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

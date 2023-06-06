@@ -1,7 +1,7 @@
 package services
 
 type (
-	Message struct {
+	MailerMessage struct {
 		From        string
 		FromName    string
 		To          string

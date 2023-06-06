@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/SeyramWood/app/adapters/gateways"
+	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
@@ -87,15 +88,25 @@ func (r *repository) Read(id int) (*ent.Agent, error) {
 	return result, nil
 }
 
-func (r *repository) ReadAll() ([]*ent.Agent, error) {
+func (r *repository) ReadAll(limit, offset int) (*presenters.PaginationResponse, error) {
 
-	results, err := r.db.Agent.Query().
-		Order(ent.Desc(agent.FieldCreatedAt)).
-		All(context.Background())
+	ctx := context.Background()
+	query := r.db.Agent.Query()
+	count, err := query.Count(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return results, nil
+	results, err := query.
+		Limit(limit).Offset(offset).
+		Order(ent.Desc(agent.FieldCreatedAt)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &presenters.PaginationResponse{
+		Count: count,
+		Data:  results,
+	}, nil
 }
 
 func (r *repository) ReadAllMerchant(agentId int) ([]*ent.MerchantStore, error) {
@@ -231,6 +242,15 @@ func (r *repository) UpdateGuarantorComplianceCard(agentId int, newPath, oldPath
 		return nil, err
 	}
 	return newCard, nil
+}
+func (r *repository) ApproveAgent(agentId int, complianceStatus bool) (*ent.Agent, error) {
+	result, err := r.db.Agent.UpdateOneID(agentId).
+		SetVerified(complianceStatus).
+		Save(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (r *repository) UpdateAccount(account any, agentId int, accountType string) (*ent.Agent, error) {

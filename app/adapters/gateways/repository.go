@@ -12,11 +12,16 @@ import (
 type (
 	CustomerRepo interface {
 		Insert(customer any, customerType string) (*ent.Customer, error)
+		InsertPurchaseRequest(customerId int, request *models.PurchaseOrderRequest) (*ent.PurchaseRequest, error)
 		Read(id int) (*ent.Customer, error)
-		ReadAll() ([]*ent.Customer, error)
+		ReadPurchaseRequest(id int) (*ent.PurchaseRequest, error)
+		ReadAll(limit, offset int) (*presenters.PaginationResponse, error)
+		ReadAllPurchaseRequestByCustomer(customerId, limit, offset int) (*presenters.PaginationResponse, error)
 		Update(id int, customer any) (*ent.Customer, error)
 		UpdateLogo(customer int, logo string) (string, error)
-		Delete(id string) error
+		UpdatePurchaseRequest(id int, request *models.PurchaseOrderRequest) (*ent.PurchaseRequest, error)
+		Delete(id int) error
+		DeletePurchaseRequest(id int) error
 	}
 	AgentRepo interface {
 		Insert(agent *models.AgentRequest) (*ent.Agent, error)
@@ -26,13 +31,14 @@ type (
 		UpdateAccount(account any, agentId int, accountType string) (*ent.Agent, error)
 		UpdateDefaultAccount(agentId int, accountType string) (*ent.Agent, error)
 		Read(id int) (*ent.Agent, error)
-		ReadAll() ([]*ent.Agent, error)
+		ReadAll(limit, offset int) (*presenters.PaginationResponse, error)
 		ReadAllMerchant(agentId int) ([]*ent.MerchantStore, error)
 		Update(id int, profile *models.AgentProfile) (*ent.Agent, error)
 		UpdateGuarantor(id int, request *models.AgentGuarantorUpdate) (*ent.Agent, error)
 		UpdateAgentComplianceCard(agentId int, newPath, oldPath string) ([]string, error)
 		UpdateAgentPoliceReport(agentId int, filePath string) (string, error)
 		UpdateGuarantorComplianceCard(agentId int, newPath, oldPath string) ([]string, error)
+		ApproveAgent(agentId int, complianceStatus bool) (*ent.Agent, error)
 		Delete(id string) error
 	}
 	MerchantRepo interface {
@@ -42,7 +48,8 @@ type (
 		) (*ent.Merchant, error)
 		SaveCoordinate(coordinate *services.Coordinate, id int) error
 		Read(id int) (*ent.Merchant, error)
-		ReadAll() ([]*ent.Merchant, error)
+		ReadStorefront(id int) (*ent.MerchantStore, error)
+		ReadAll(limit, offset int) (*presenters.PaginationResponse, error)
 		Update(id int, request any) (*ent.Merchant, error)
 		Delete(id string) error
 	}
@@ -123,14 +130,30 @@ type (
 	}
 	AdminRepo interface {
 		Insert(user *models.AdminUserRequest, password string) (*ent.Admin, error)
+		OnboardNewCustomer(
+			manager int, password string, business *models.BusinessCustomerOnboardRequest,
+		) (*ent.Customer, error)
 		Read(id int) (*ent.Admin, error)
-		ReadAll(limit, offset int) (*presenters.ResponseWithTotalRecords, error)
+		ReadAll(limit, offset int) (*presenters.PaginationResponse, error)
+		ReadAllOrders(limit, offset int) (*presenters.PaginationResponse, error)
+		ReadMyClients(manager, limit, offset int) (*presenters.PaginationResponse, error)
+		ReadMyClientsPurchaseRequest(manager int) ([]*ent.Customer, error)
+		ReadMyClientOrders(manager, limit, offset int) (*presenters.PaginationResponse, error)
+		ReadProducts(major, minor string, limit, offset int) (*presenters.PaginationResponse, error)
+		ReadAdminProducts(limit, offset int) (*presenters.PaginationResponse, error)
+		ReadCounts(span string) (*presenters.DashboardRecordCount, error)
+		ReadAllByPermissions(permissions []string) ([]*ent.Admin, error)
+		ReadConfigurations() ([]*ent.Configuration, error)
+		ReadConfigurationByIdOrName(slug any) (*ent.Configuration, error)
 		Update(id int, user *models.AdminUserRequest) (*ent.Admin, error)
+		AssignAccountManager(manager, customer int) (*ent.Customer, error)
+		UpdateCurrentConfiguration(id int, configType, configValue string) (*ent.Configuration, error)
 		Delete(id int) error
+		DeleteOrder(id int) error
 	}
 	RoleAndPermissionRepo interface {
 		Insert(role *models.RoleRequest) (*ent.Role, error)
-		ReadAll(limit, offset int) (*presenters.ResponseWithTotalRecords, error)
+		ReadAll(limit, offset int) (*presenters.PaginationResponse, error)
 		ReadAllPermission() ([]*ent.Permission, error)
 		Read(id int) (*ent.Role, error)
 		Update(id int, role *models.RoleRequest) (*ent.Role, error)
@@ -155,10 +178,11 @@ type (
 		Delete(id string) error
 	}
 	LogisticRepo interface {
+		ReadLogistic() (*ent.Configuration, error)
 		InsertResponse(
-			orderNum string, storeId int, response *models.TookanPickupAndDeliveryTaskResponse,
+			logisticType, orderNum string, response any,
 		) (*ent.Logistic, error)
-		UpdateResponse(response *models.TookanPickupAndDeliveryTaskResponse) (*ent.Logistic, error)
+		UpdateResponse(id int, request any) (*ent.Logistic, error)
 		UpdateOrderStatus(token, status string) error
 		UpdateOrderDeliveryTask(orderNum string, storeId int) error
 		Delete(id string) error
@@ -169,7 +193,8 @@ type (
 	}
 
 	OrderRepo interface {
-		Insert(order *models.OrderPayload) (*ent.Order, error)
+		Insert(order *models.OrderPayload, params ...int) (*ent.Order, error)
+		SaveOrderUpdate(id int, order *models.OrderPayload) (*ent.Order, error)
 		Read(id int) (*ent.Order, error)
 		ReadByUser(userType string, id int) (*ent.Order, error)
 		ReadAll() ([]*ent.Order, error)
@@ -182,6 +207,7 @@ type (
 		Update(order *services.PaystackResponse) (*ent.Order, error)
 		Delete(id string) error
 		UpdateOrderDetailStatus(requests map[string]*gabs.Container) (*ent.Order, error)
+		UpdateOrderApprovalStatus(orderId int, status string) (*ent.Order, error)
 		ReadByStoreOrderDetail(orderId int) ([]*ent.OrderDetail, error)
 	}
 
@@ -196,5 +222,28 @@ type (
 
 	PaymentRepo interface {
 		Insert(transaction *services.Transaction) (*ent.Order, error)
+	}
+	DBNotificationRepo interface {
+		Insert(msg *services.DBNotificationMessage) (*ent.Notification, error)
+		ReadNotification() (*ent.Notification, error)
+		ReadNotifications(limit, offset int) ([]*ent.Notification, error)
+		ReadNewNotifications() ([]*ent.Notification, error)
+		ReadUserNotifications(params *services.NotificationFilters) ([]*ent.Notification, error)
+		ReadAdminNotifications(params *services.NotificationFilters) ([]*ent.Notification, error)
+		MarkAsRead(userId, notificationId int, userType, timestamp string) (*ent.Notification, error)
+		MarkSelectedAsRead(userId int, notificationIds []int, userType, timestamp string) error
+		RemoveSelected(id []int) error
+		Delete(id int) error
+	}
+
+	PriceModelRepo interface {
+		Insert(model *models.PriceModelRequest) (*ent.PriceModel, error)
+		Read(id int) (*ent.PriceModel, error)
+		ReadAll(limit, offset int) (*presenters.PaginationResponse, error)
+		ReadAllPercentage(limit, offset int) (*presenters.PaginationResponse, error)
+		Update(id int, model *models.PriceModelRequest) (*ent.PriceModel, error)
+		UpdatePercentage(category, percentage int) (*ent.ProductCategoryMinor, error)
+		Delete(id int) error
+		DeletePercentage(id int) error
 	}
 )

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/permission"
 )
@@ -22,9 +23,12 @@ type Permission struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Permission holds the value of the "permission" field.
 	Permission string `json:"permission,omitempty"`
+	// Slug holds the value of the "slug" field.
+	Slug string `json:"slug,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PermissionQuery when eager-loading is set.
-	Edges PermissionEdges `json:"edges"`
+	Edges        PermissionEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // PermissionEdges holds the relations/edges for other nodes in the graph.
@@ -52,12 +56,12 @@ func (*Permission) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case permission.FieldID:
 			values[i] = new(sql.NullInt64)
-		case permission.FieldPermission:
+		case permission.FieldPermission, permission.FieldSlug:
 			values[i] = new(sql.NullString)
 		case permission.FieldCreatedAt, permission.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Permission", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -95,21 +99,35 @@ func (pe *Permission) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				pe.Permission = value.String
 			}
+		case permission.FieldSlug:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field slug", values[i])
+			} else if value.Valid {
+				pe.Slug = value.String
+			}
+		default:
+			pe.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Permission.
+// This includes values selected through modifiers, order, etc.
+func (pe *Permission) Value(name string) (ent.Value, error) {
+	return pe.selectValues.Get(name)
+}
+
 // QueryRole queries the "role" edge of the Permission entity.
 func (pe *Permission) QueryRole() *RoleQuery {
-	return (&PermissionClient{config: pe.config}).QueryRole(pe)
+	return NewPermissionClient(pe.config).QueryRole(pe)
 }
 
 // Update returns a builder for updating this Permission.
 // Note that you need to call Permission.Unwrap() before calling this method if this Permission
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (pe *Permission) Update() *PermissionUpdateOne {
-	return (&PermissionClient{config: pe.config}).UpdateOne(pe)
+	return NewPermissionClient(pe.config).UpdateOne(pe)
 }
 
 // Unwrap unwraps the Permission entity that was returned from a transaction after it was closed,
@@ -136,15 +154,12 @@ func (pe *Permission) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("permission=")
 	builder.WriteString(pe.Permission)
+	builder.WriteString(", ")
+	builder.WriteString("slug=")
+	builder.WriteString(pe.Slug)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // Permissions is a parsable slice of Permission.
 type Permissions []*Permission
-
-func (pe Permissions) config(cfg config) {
-	for _i := range pe {
-		pe[_i].config = cfg
-	}
-}

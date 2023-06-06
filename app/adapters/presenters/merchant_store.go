@@ -26,7 +26,7 @@ type (
 		Agent          *agentMerchantTypeDetails    `json:"agent"`
 		CreatedAt      time.Time                    `json:"created_at"`
 		UpdatedAt      time.Time                    `json:"updated_at"`
-		MerchantInfo   *MerchantInfo                `json:"merchant"`
+		MerchantInfo   *MerchantInfo                `json:"merchant,omitempty"`
 	}
 	agentMerchantTypeDetails struct {
 		ID             int    `json:"id"`
@@ -90,9 +90,14 @@ func MerchantStoreSuccessResponse(data *ent.MerchantStore) *fiber.Map {
 			PermitAgent:    data.PermitAgent,
 			CreatedAt:      data.CreatedAt,
 			UpdatedAt:      data.UpdatedAt,
-			MerchantInfo: &MerchantInfo{
-				ID: data.Edges.Merchant.ID,
-			},
+			MerchantInfo: func() *MerchantInfo {
+				if m, err := data.Edges.MerchantOrErr(); err == nil {
+					return &MerchantInfo{
+						ID: m.ID,
+					}
+				}
+				return nil
+			}(),
 			Agent: func() *agentMerchantTypeDetails {
 				if a, err := data.Edges.AgentOrErr(); err == nil {
 					return &agentMerchantTypeDetails{
@@ -100,7 +105,7 @@ func MerchantStoreSuccessResponse(data *ent.MerchantStore) *fiber.Map {
 						LastName:       a.LastName,
 						OtherName:      a.OtherName,
 						Phone:          a.Phone,
-						OtherPhone:     *a.OtherPhone,
+						OtherPhone:     a.OtherPhone,
 						Address:        a.Address,
 						DigitalAddress: a.DigitalAddress,
 					}
@@ -139,7 +144,7 @@ func MerchantStoreAgentSuccessResponse(data *ent.Agent) *fiber.Map {
 			LastName:       data.LastName,
 			OtherName:      data.OtherName,
 			Phone:          data.Phone,
-			OtherPhone:     *data.OtherPhone,
+			OtherPhone:     data.OtherPhone,
 			Address:        data.Address,
 			DigitalAddress: data.DigitalAddress,
 		},

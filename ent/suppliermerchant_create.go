@@ -105,50 +105,8 @@ func (smc *SupplierMerchantCreate) Mutation() *SupplierMerchantMutation {
 
 // Save creates the SupplierMerchant in the database.
 func (smc *SupplierMerchantCreate) Save(ctx context.Context) (*SupplierMerchant, error) {
-	var (
-		err  error
-		node *SupplierMerchant
-	)
 	smc.defaults()
-	if len(smc.hooks) == 0 {
-		if err = smc.check(); err != nil {
-			return nil, err
-		}
-		node, err = smc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SupplierMerchantMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = smc.check(); err != nil {
-				return nil, err
-			}
-			smc.mutation = mutation
-			if node, err = smc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(smc.hooks) - 1; i >= 0; i-- {
-			if smc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = smc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, smc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*SupplierMerchant)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SupplierMerchantMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, smc.sqlSave, smc.mutation, smc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -232,6 +190,9 @@ func (smc *SupplierMerchantCreate) check() error {
 }
 
 func (smc *SupplierMerchantCreate) sqlSave(ctx context.Context) (*SupplierMerchant, error) {
+	if err := smc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := smc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, smc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -241,74 +202,42 @@ func (smc *SupplierMerchantCreate) sqlSave(ctx context.Context) (*SupplierMercha
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	smc.mutation.id = &_node.ID
+	smc.mutation.done = true
 	return _node, nil
 }
 
 func (smc *SupplierMerchantCreate) createSpec() (*SupplierMerchant, *sqlgraph.CreateSpec) {
 	var (
 		_node = &SupplierMerchant{config: smc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: suppliermerchant.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: suppliermerchant.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(suppliermerchant.Table, sqlgraph.NewFieldSpec(suppliermerchant.FieldID, field.TypeInt))
 	)
 	if value, ok := smc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: suppliermerchant.FieldCreatedAt,
-		})
+		_spec.SetField(suppliermerchant.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := smc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: suppliermerchant.FieldUpdatedAt,
-		})
+		_spec.SetField(suppliermerchant.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := smc.mutation.GhanaCard(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldGhanaCard,
-		})
+		_spec.SetField(suppliermerchant.FieldGhanaCard, field.TypeString, value)
 		_node.GhanaCard = value
 	}
 	if value, ok := smc.mutation.LastName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldLastName,
-		})
+		_spec.SetField(suppliermerchant.FieldLastName, field.TypeString, value)
 		_node.LastName = value
 	}
 	if value, ok := smc.mutation.OtherName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldOtherName,
-		})
+		_spec.SetField(suppliermerchant.FieldOtherName, field.TypeString, value)
 		_node.OtherName = value
 	}
 	if value, ok := smc.mutation.Phone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldPhone,
-		})
+		_spec.SetField(suppliermerchant.FieldPhone, field.TypeString, value)
 		_node.Phone = value
 	}
 	if value, ok := smc.mutation.OtherPhone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldOtherPhone,
-		})
+		_spec.SetField(suppliermerchant.FieldOtherPhone, field.TypeString, value)
 		_node.OtherPhone = &value
 	}
 	if nodes := smc.mutation.MerchantIDs(); len(nodes) > 0 {
@@ -319,10 +248,7 @@ func (smc *SupplierMerchantCreate) createSpec() (*SupplierMerchant, *sqlgraph.Cr
 			Columns: []string{suppliermerchant.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -358,8 +284,8 @@ func (smcb *SupplierMerchantCreateBulk) Save(ctx context.Context) ([]*SupplierMe
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, smcb.builders[i+1].mutation)
 				} else {

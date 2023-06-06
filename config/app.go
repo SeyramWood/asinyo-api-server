@@ -13,6 +13,9 @@ type app struct {
 	Name             string
 	Version          string
 	AppURL           string
+	AsinyoURL        string
+	AsinyoAdminURL   string
+	AsinyoPhone      string
 	Key              string
 	TokenName        string
 	PORT             string
@@ -77,6 +80,9 @@ func App() *app {
 			Name:             os.Getenv("APP_NAME"),
 			Version:          os.Getenv("APP_VERSION"),
 			AppURL:           os.Getenv("APP_URL"),
+			AsinyoURL:        os.Getenv("ASINYO_URL"),
+			AsinyoAdminURL:   os.Getenv("ASINYO_ADMIN_URL"),
+			AsinyoPhone:      os.Getenv("ASINYO_PHONE"),
 			Key:              os.Getenv("APP_KEY"),
 			TokenName:        os.Getenv("API_TOKEN_NAME"),
 			PORT:             os.Getenv("SERVER_PORT"),
@@ -87,6 +93,9 @@ func App() *app {
 		Name:             env.Get("APP_NAME", "My First API"),
 		Version:          env.Get("APP_VERSION", "0.0.1"),
 		AppURL:           env.Get("APP_URL", "http://127.0.0.1:9000"),
+		AsinyoURL:        env.Get("ASINYO_URL", "http://localhost:3000"),
+		AsinyoAdminURL:   env.Get("ASINYO_ADMIN_URL", "http://localhost:3001"),
+		AsinyoPhone:      env.Get("ASINYO_PHONE", "+233247770819"),
 		Key:              env.Get("APP_KEY", "secretKEY5465"),
 		TokenName:        env.Get("API_TOKEN_NAME", "asinyo_remember"),
 		PORT:             env.Get("SERVER_PORT", "9000"),

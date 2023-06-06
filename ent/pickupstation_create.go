@@ -95,50 +95,8 @@ func (psc *PickupStationCreate) Mutation() *PickupStationMutation {
 
 // Save creates the PickupStation in the database.
 func (psc *PickupStationCreate) Save(ctx context.Context) (*PickupStation, error) {
-	var (
-		err  error
-		node *PickupStation
-	)
 	psc.defaults()
-	if len(psc.hooks) == 0 {
-		if err = psc.check(); err != nil {
-			return nil, err
-		}
-		node, err = psc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*PickupStationMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = psc.check(); err != nil {
-				return nil, err
-			}
-			psc.mutation = mutation
-			if node, err = psc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(psc.hooks) - 1; i >= 0; i-- {
-			if psc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = psc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, psc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*PickupStation)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from PickupStationMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, psc.sqlSave, psc.mutation, psc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -219,6 +177,9 @@ func (psc *PickupStationCreate) check() error {
 }
 
 func (psc *PickupStationCreate) sqlSave(ctx context.Context) (*PickupStation, error) {
+	if err := psc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := psc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, psc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -228,66 +189,38 @@ func (psc *PickupStationCreate) sqlSave(ctx context.Context) (*PickupStation, er
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	psc.mutation.id = &_node.ID
+	psc.mutation.done = true
 	return _node, nil
 }
 
 func (psc *PickupStationCreate) createSpec() (*PickupStation, *sqlgraph.CreateSpec) {
 	var (
 		_node = &PickupStation{config: psc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: pickupstation.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: pickupstation.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(pickupstation.Table, sqlgraph.NewFieldSpec(pickupstation.FieldID, field.TypeInt))
 	)
 	if value, ok := psc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: pickupstation.FieldCreatedAt,
-		})
+		_spec.SetField(pickupstation.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := psc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: pickupstation.FieldUpdatedAt,
-		})
+		_spec.SetField(pickupstation.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := psc.mutation.Region(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldRegion,
-		})
+		_spec.SetField(pickupstation.FieldRegion, field.TypeString, value)
 		_node.Region = value
 	}
 	if value, ok := psc.mutation.City(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldCity,
-		})
+		_spec.SetField(pickupstation.FieldCity, field.TypeString, value)
 		_node.City = value
 	}
 	if value, ok := psc.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldName,
-		})
+		_spec.SetField(pickupstation.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if value, ok := psc.mutation.Address(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: pickupstation.FieldAddress,
-		})
+		_spec.SetField(pickupstation.FieldAddress, field.TypeString, value)
 		_node.Address = value
 	}
 	if nodes := psc.mutation.OrdersIDs(); len(nodes) > 0 {
@@ -298,10 +231,7 @@ func (psc *PickupStationCreate) createSpec() (*PickupStation, *sqlgraph.CreateSp
 			Columns: []string{pickupstation.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -336,8 +266,8 @@ func (pscb *PickupStationCreateBulk) Save(ctx context.Context) ([]*PickupStation
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, pscb.builders[i+1].mutation)
 				} else {

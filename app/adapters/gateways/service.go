@@ -14,17 +14,22 @@ import (
 type (
 	CustomerService interface {
 		Create(customer any, customerType string) (*ent.Customer, error)
-		FetchAll() ([]*ent.Customer, error)
+		CreatePurchaseRequest(customerId int, request *models.PurchaseOrderRequest) (*ent.PurchaseRequest, error)
+		FetchAll(limit, offset int) (*presenters.PaginationResponse, error)
+		FetchAllPurchaseRequestByCustomer(customerId, limit, offset int) (*presenters.PaginationResponse, error)
 		Fetch(id int) (*ent.Customer, error)
+		FetchPurchaseRequest(id int) (*ent.PurchaseRequest, error)
 		Update(id int, customer any) (*ent.Customer, error)
 		UpdateLogo(customer int, logo string) (string, error)
-		Remove(id string) error
+		UpdatePurchaseRequest(id int, request *models.PurchaseOrderRequest) (*ent.PurchaseRequest, error)
+		Remove(id int) error
+		RemovePurchaseRequest(id int) error
 	}
 	AgentService interface {
 		Create(agent *models.AgentRequest) (*ent.Agent, error)
 		SaveAccount(account any, agentId int, accountType string) (*ent.Agent, error)
 		SaveDefaultAccount(agentId int, accountType string) (*ent.Agent, error)
-		FetchAll() ([]*ent.Agent, error)
+		FetchAll(limit, offset int) (*presenters.PaginationResponse, error)
 		FetchAllMerchant(agentId int) ([]*ent.MerchantStore, error)
 		Fetch(id int) (*ent.Agent, error)
 		Update(id int, profile *models.AgentProfile) (*ent.Agent, error)
@@ -32,6 +37,7 @@ type (
 		UpdateAgentComplianceCard(agentId int, newPath, oldPath string) ([]string, error)
 		UpdateAgentPoliceReport(agentId int, filePath string) (string, error)
 		UpdateGuarantorComplianceCard(agentId int, newPath, oldPath string) ([]string, error)
+		ApproveAgent(agentId int, complianceStatus bool) (*ent.Agent, error)
 		Remove(id string) error
 		CreateCompliance(
 			request *models.AgentComplianceRequest, id int, report string, personal []string, guarantor []string,
@@ -42,8 +48,9 @@ type (
 		Onboard(merchant *models.OnboardMerchantFullRequest, agentId int, logo string, images []string) (
 			*ent.Merchant, error,
 		)
-		FetchAll() ([]*ent.Merchant, error)
+		FetchAll(limit, offset int) (*presenters.PaginationResponse, error)
 		Fetch(id int) (*ent.Merchant, error)
+		FetchStorefront(id int) (*ent.MerchantStore, error)
 		Update(id int, request any) (*ent.Merchant, error)
 		Remove(id string) error
 	}
@@ -144,7 +151,8 @@ type (
 		Remove(id string) error
 	}
 	OrderService interface {
-		Create(order *models.OrderPayload) (*ent.Order, error)
+		Create(order *models.OrderPayload, params ...int) (*ent.Order, error)
+		SaveOrderUpdate(id int, order *models.OrderPayload) (*ent.Order, error)
 		TestCreate(orderId int) (*ent.Order, error)
 		FetchAll() ([]*ent.Order, error)
 		FetchAllByUser(userType string, id int) ([]*ent.Order, error)
@@ -155,28 +163,45 @@ type (
 		FetchByUser(userType string, id int) (*ent.Order, error)
 		Update(order *services.PaystackResponse) (*ent.Order, error)
 		Remove(id string) error
-		UpdateOrderDetailStatus(request []byte) (*ent.Order, error)
+		UpdateOrderDetailStatus(request []byte, logisticType string) (*ent.Order, error)
+		UpdateOrderApprovalStatus(orderId int, status string) (*ent.Order, error)
 	}
 	AdminService interface {
 		Create(user *models.AdminUserRequest) (*ent.Admin, error)
-		FetchAll(limit, offset int) (*presenters.ResponseWithTotalRecords, error)
+		OnboardNewCustomer(manager int, business *models.BusinessCustomerOnboardRequest) (*ent.Customer, error)
+		FetchAll(limit, offset int) (*presenters.PaginationResponse, error)
+		FetchAllOrders(limit, offset int) (*presenters.PaginationResponse, error)
+		FetchMyClients(manager, limit, offset int) (*presenters.PaginationResponse, error)
+		FetchMyClientOrders(manager, limit, offset int) (*presenters.PaginationResponse, error)
+		FetchMyClientsPurchaseRequest(manager int) ([]*ent.Customer, error)
+		FetchProducts(major, minor string, limit, offset int) (*presenters.PaginationResponse, error)
+		FetchAdminProducts(limit, offset int) (*presenters.PaginationResponse, error)
+		FetchCounts(span string) (*presenters.DashboardRecordCount, error)
+		FetchAccountManagers(perm ...string) ([]*ent.Admin, error)
+		FetchConfigurations() ([]*ent.Configuration, error)
+		FetchConfigurationByIdOrName(slug any) (*ent.Configuration, error)
 		Fetch(id int) (*ent.Admin, error)
 		Update(id int, user *models.AdminUserRequest) (*ent.Admin, error)
+		AssignAccountManager(manager, customer int) (*ent.Customer, error)
+		UpdateCurrentConfiguration(id int, configType, configValue string) (*ent.Configuration, error)
 		Remove(id int) error
+		RemoveOrder(id int) error
 	}
 
 	AuthService interface {
 		Login(c *fiber.Ctx) error
 		Logout(c *fiber.Ctx) error
+		RefreshToken(c *fiber.Ctx) error
 		FetchAuthUser(c *fiber.Ctx) error
 		UpdatePassword(id string, request any, userType string, isOTP bool) (bool, error)
 		ResetPassword(request *models.ResetPassword, username, userType string) (bool, error)
 		SendUserVerificationCode(username string) (string, error)
 		SendPasswordResetCode(username, userType string) (string, error)
+		GenerateNewTokens(token string) (map[string]any, error)
 	}
 	RoleAndPermissionService interface {
 		Create(role *models.RoleRequest) (*ent.Role, error)
-		FetchAll(limit, offset int) (*presenters.ResponseWithTotalRecords, error)
+		FetchAll(limit, offset int) (*presenters.PaginationResponse, error)
 		FetchAllPermission() ([]*ent.Permission, error)
 		Fetch(id int) (*ent.Role, error)
 		Update(id int, role *models.RoleRequest) (*ent.Role, error)
@@ -189,18 +214,36 @@ type (
 		FormatPayload(request any) (*models.OrderPayload, error)
 	}
 	SMSService interface {
-		Send(request *services.SMSPayload) (any, error)
+		Listen()
+		Send(msg *services.SMSPayload)
+		Done()
+		CloseChannels()
 	}
 
 	EmailService interface {
 		Listen()
-		Send(msg *services.Message)
+		Send(msg *services.MailerMessage)
 		Done()
 		CloseChannels()
 	}
+
+	DBNotificationService interface {
+		Listen()
+		Send(msg *services.DBNotificationMessage)
+		Done()
+		CloseChannels()
+		Broker(action string, clientId string, params *services.NotificationFilters) *services.NotificationClient
+		FetchNotifications(limit, offset int) ([]*ent.Notification, error)
+		FetchUserNotifications(params *services.NotificationFilters) ([]*ent.Notification, error)
+		MarkAsRead(userId, notificationId int, userType, timestamp string) (*ent.Notification, error)
+		MarkSelectedAsRead(userId int, notificationIds []int, userType, timestamp string) error
+		RemoveSelected(id []int) error
+		Remove(id int) error
+	}
+
 	LogisticService interface {
-		New(repo OrderRepo) LogisticService
-		ExecuteTask(order *ent.Order, deliveryType string)
+		OrderRepo(repo OrderRepo) LogisticService
+		ExecuteTask(order *ent.Order, task ...any)
 		ExecuteWebhook(response any)
 		FareEstimate(coordinates *models.OrderFareEstimateRequest) ([]*services.FareEstimateResponseData, error)
 		Listen()
@@ -225,5 +268,15 @@ type (
 		Listen()
 		Done()
 		CloseChannels()
+	}
+	PriceModelService interface {
+		Create(model *models.PriceModelRequest) (*ent.PriceModel, error)
+		Fetch(id int) (*ent.PriceModel, error)
+		FetchAll(limit, offset int) (*presenters.PaginationResponse, error)
+		FetchAllPercentage(limit, offset int) (*presenters.PaginationResponse, error)
+		Update(id int, model *models.PriceModelRequest) (*ent.PriceModel, error)
+		UpdatePercentage(category, percentage int) (*ent.ProductCategoryMinor, error)
+		Remove(id int) error
+		RemovePercentage(id int) error
 	}
 )

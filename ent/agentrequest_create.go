@@ -55,50 +55,8 @@ func (arc *AgentRequestCreate) Mutation() *AgentRequestMutation {
 
 // Save creates the AgentRequest in the database.
 func (arc *AgentRequestCreate) Save(ctx context.Context) (*AgentRequest, error) {
-	var (
-		err  error
-		node *AgentRequest
-	)
 	arc.defaults()
-	if len(arc.hooks) == 0 {
-		if err = arc.check(); err != nil {
-			return nil, err
-		}
-		node, err = arc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AgentRequestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = arc.check(); err != nil {
-				return nil, err
-			}
-			arc.mutation = mutation
-			if node, err = arc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(arc.hooks) - 1; i >= 0; i-- {
-			if arc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = arc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, arc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*AgentRequest)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AgentRequestMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, arc.sqlSave, arc.mutation, arc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -147,6 +105,9 @@ func (arc *AgentRequestCreate) check() error {
 }
 
 func (arc *AgentRequestCreate) sqlSave(ctx context.Context) (*AgentRequest, error) {
+	if err := arc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := arc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, arc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -156,34 +117,22 @@ func (arc *AgentRequestCreate) sqlSave(ctx context.Context) (*AgentRequest, erro
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	arc.mutation.id = &_node.ID
+	arc.mutation.done = true
 	return _node, nil
 }
 
 func (arc *AgentRequestCreate) createSpec() (*AgentRequest, *sqlgraph.CreateSpec) {
 	var (
 		_node = &AgentRequest{config: arc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: agentrequest.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: agentrequest.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(agentrequest.Table, sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt))
 	)
 	if value, ok := arc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: agentrequest.FieldCreatedAt,
-		})
+		_spec.SetField(agentrequest.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := arc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: agentrequest.FieldUpdatedAt,
-		})
+		_spec.SetField(agentrequest.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	return _node, _spec
@@ -213,8 +162,8 @@ func (arcb *AgentRequestCreateBulk) Save(ctx context.Context) ([]*AgentRequest, 
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, arcb.builders[i+1].mutation)
 				} else {

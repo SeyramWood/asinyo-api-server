@@ -124,41 +124,8 @@ func (bcu *BusinessCustomerUpdate) ClearCustomer() *BusinessCustomerUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (bcu *BusinessCustomerUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	bcu.defaults()
-	if len(bcu.hooks) == 0 {
-		if err = bcu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = bcu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*BusinessCustomerMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = bcu.check(); err != nil {
-				return 0, err
-			}
-			bcu.mutation = mutation
-			affected, err = bcu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(bcu.hooks) - 1; i >= 0; i-- {
-			if bcu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = bcu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, bcu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, bcu.sqlSave, bcu.mutation, bcu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -210,16 +177,10 @@ func (bcu *BusinessCustomerUpdate) check() error {
 }
 
 func (bcu *BusinessCustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   businesscustomer.Table,
-			Columns: businesscustomer.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: businesscustomer.FieldID,
-			},
-		},
+	if err := bcu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(businesscustomer.Table, businesscustomer.Columns, sqlgraph.NewFieldSpec(businesscustomer.FieldID, field.TypeInt))
 	if ps := bcu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -228,64 +189,31 @@ func (bcu *BusinessCustomerUpdate) sqlSave(ctx context.Context) (n int, err erro
 		}
 	}
 	if value, ok := bcu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: businesscustomer.FieldUpdatedAt,
-		})
+		_spec.SetField(businesscustomer.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := bcu.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldName,
-		})
+		_spec.SetField(businesscustomer.FieldName, field.TypeString, value)
 	}
 	if value, ok := bcu.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldPhone,
-		})
+		_spec.SetField(businesscustomer.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := bcu.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldOtherPhone,
-		})
+		_spec.SetField(businesscustomer.FieldOtherPhone, field.TypeString, value)
 	}
 	if bcu.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: businesscustomer.FieldOtherPhone,
-		})
+		_spec.ClearField(businesscustomer.FieldOtherPhone, field.TypeString)
 	}
 	if value, ok := bcu.mutation.Logo(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldLogo,
-		})
+		_spec.SetField(businesscustomer.FieldLogo, field.TypeString, value)
 	}
 	if bcu.mutation.LogoCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: businesscustomer.FieldLogo,
-		})
+		_spec.ClearField(businesscustomer.FieldLogo, field.TypeString)
 	}
 	if value, ok := bcu.mutation.Contact(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: businesscustomer.FieldContact,
-		})
+		_spec.SetField(businesscustomer.FieldContact, field.TypeJSON, value)
 	}
 	if bcu.mutation.ContactCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: businesscustomer.FieldContact,
-		})
+		_spec.ClearField(businesscustomer.FieldContact, field.TypeJSON)
 	}
 	if bcu.mutation.CustomerCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -295,10 +223,7 @@ func (bcu *BusinessCustomerUpdate) sqlSave(ctx context.Context) (n int, err erro
 			Columns: []string{businesscustomer.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -311,10 +236,7 @@ func (bcu *BusinessCustomerUpdate) sqlSave(ctx context.Context) (n int, err erro
 			Columns: []string{businesscustomer.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -330,6 +252,7 @@ func (bcu *BusinessCustomerUpdate) sqlSave(ctx context.Context) (n int, err erro
 		}
 		return 0, err
 	}
+	bcu.mutation.done = true
 	return n, nil
 }
 
@@ -433,6 +356,12 @@ func (bcuo *BusinessCustomerUpdateOne) ClearCustomer() *BusinessCustomerUpdateOn
 	return bcuo
 }
 
+// Where appends a list predicates to the BusinessCustomerUpdate builder.
+func (bcuo *BusinessCustomerUpdateOne) Where(ps ...predicate.BusinessCustomer) *BusinessCustomerUpdateOne {
+	bcuo.mutation.Where(ps...)
+	return bcuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (bcuo *BusinessCustomerUpdateOne) Select(field string, fields ...string) *BusinessCustomerUpdateOne {
@@ -442,47 +371,8 @@ func (bcuo *BusinessCustomerUpdateOne) Select(field string, fields ...string) *B
 
 // Save executes the query and returns the updated BusinessCustomer entity.
 func (bcuo *BusinessCustomerUpdateOne) Save(ctx context.Context) (*BusinessCustomer, error) {
-	var (
-		err  error
-		node *BusinessCustomer
-	)
 	bcuo.defaults()
-	if len(bcuo.hooks) == 0 {
-		if err = bcuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = bcuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*BusinessCustomerMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = bcuo.check(); err != nil {
-				return nil, err
-			}
-			bcuo.mutation = mutation
-			node, err = bcuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(bcuo.hooks) - 1; i >= 0; i-- {
-			if bcuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = bcuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, bcuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*BusinessCustomer)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from BusinessCustomerMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, bcuo.sqlSave, bcuo.mutation, bcuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -534,16 +424,10 @@ func (bcuo *BusinessCustomerUpdateOne) check() error {
 }
 
 func (bcuo *BusinessCustomerUpdateOne) sqlSave(ctx context.Context) (_node *BusinessCustomer, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   businesscustomer.Table,
-			Columns: businesscustomer.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: businesscustomer.FieldID,
-			},
-		},
+	if err := bcuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(businesscustomer.Table, businesscustomer.Columns, sqlgraph.NewFieldSpec(businesscustomer.FieldID, field.TypeInt))
 	id, ok := bcuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "BusinessCustomer.id" for update`)}
@@ -569,64 +453,31 @@ func (bcuo *BusinessCustomerUpdateOne) sqlSave(ctx context.Context) (_node *Busi
 		}
 	}
 	if value, ok := bcuo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: businesscustomer.FieldUpdatedAt,
-		})
+		_spec.SetField(businesscustomer.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := bcuo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldName,
-		})
+		_spec.SetField(businesscustomer.FieldName, field.TypeString, value)
 	}
 	if value, ok := bcuo.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldPhone,
-		})
+		_spec.SetField(businesscustomer.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := bcuo.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldOtherPhone,
-		})
+		_spec.SetField(businesscustomer.FieldOtherPhone, field.TypeString, value)
 	}
 	if bcuo.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: businesscustomer.FieldOtherPhone,
-		})
+		_spec.ClearField(businesscustomer.FieldOtherPhone, field.TypeString)
 	}
 	if value, ok := bcuo.mutation.Logo(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldLogo,
-		})
+		_spec.SetField(businesscustomer.FieldLogo, field.TypeString, value)
 	}
 	if bcuo.mutation.LogoCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: businesscustomer.FieldLogo,
-		})
+		_spec.ClearField(businesscustomer.FieldLogo, field.TypeString)
 	}
 	if value, ok := bcuo.mutation.Contact(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: businesscustomer.FieldContact,
-		})
+		_spec.SetField(businesscustomer.FieldContact, field.TypeJSON, value)
 	}
 	if bcuo.mutation.ContactCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: businesscustomer.FieldContact,
-		})
+		_spec.ClearField(businesscustomer.FieldContact, field.TypeJSON)
 	}
 	if bcuo.mutation.CustomerCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -636,10 +487,7 @@ func (bcuo *BusinessCustomerUpdateOne) sqlSave(ctx context.Context) (_node *Busi
 			Columns: []string{businesscustomer.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -652,10 +500,7 @@ func (bcuo *BusinessCustomerUpdateOne) sqlSave(ctx context.Context) (_node *Busi
 			Columns: []string{businesscustomer.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -674,5 +519,6 @@ func (bcuo *BusinessCustomerUpdateOne) sqlSave(ctx context.Context) (_node *Busi
 		}
 		return nil, err
 	}
+	bcuo.mutation.done = true
 	return _node, nil
 }

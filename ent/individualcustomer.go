@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/individualcustomer"
@@ -33,6 +34,7 @@ type IndividualCustomer struct {
 	// The values are being populated by the IndividualCustomerQuery when eager-loading is set.
 	Edges               IndividualCustomerEdges `json:"edges"`
 	customer_individual *int
+	selectValues        sql.SelectValues
 }
 
 // IndividualCustomerEdges holds the relations/edges for other nodes in the graph.
@@ -71,7 +73,7 @@ func (*IndividualCustomer) scanValues(columns []string) ([]any, error) {
 		case individualcustomer.ForeignKeys[0]: // customer_individual
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type IndividualCustomer", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -134,21 +136,29 @@ func (ic *IndividualCustomer) assignValues(columns []string, values []any) error
 				ic.customer_individual = new(int)
 				*ic.customer_individual = int(value.Int64)
 			}
+		default:
+			ic.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the IndividualCustomer.
+// This includes values selected through modifiers, order, etc.
+func (ic *IndividualCustomer) Value(name string) (ent.Value, error) {
+	return ic.selectValues.Get(name)
+}
+
 // QueryCustomer queries the "customer" edge of the IndividualCustomer entity.
 func (ic *IndividualCustomer) QueryCustomer() *CustomerQuery {
-	return (&IndividualCustomerClient{config: ic.config}).QueryCustomer(ic)
+	return NewIndividualCustomerClient(ic.config).QueryCustomer(ic)
 }
 
 // Update returns a builder for updating this IndividualCustomer.
 // Note that you need to call IndividualCustomer.Unwrap() before calling this method if this IndividualCustomer
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (ic *IndividualCustomer) Update() *IndividualCustomerUpdateOne {
-	return (&IndividualCustomerClient{config: ic.config}).UpdateOne(ic)
+	return NewIndividualCustomerClient(ic.config).UpdateOne(ic)
 }
 
 // Unwrap unwraps the IndividualCustomer entity that was returned from a transaction after it was closed,
@@ -190,9 +200,3 @@ func (ic *IndividualCustomer) String() string {
 
 // IndividualCustomers is a parsable slice of IndividualCustomer.
 type IndividualCustomers []*IndividualCustomer
-
-func (ic IndividualCustomers) config(cfg config) {
-	for _i := range ic {
-		ic[_i].config = cfg
-	}
-}

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/agent"
@@ -35,17 +36,17 @@ type Agent struct {
 	// Phone holds the value of the "phone" field.
 	Phone string `json:"phone,omitempty"`
 	// OtherPhone holds the value of the "other_phone" field.
-	OtherPhone *string `json:"other_phone,omitempty"`
+	OtherPhone string `json:"other_phone,omitempty"`
 	// Address holds the value of the "address" field.
 	Address string `json:"address,omitempty"`
 	// DigitalAddress holds the value of the "digital_address" field.
 	DigitalAddress string `json:"digital_address,omitempty"`
 	// Region holds the value of the "region" field.
-	Region *string `json:"region,omitempty"`
+	Region string `json:"region,omitempty"`
 	// District holds the value of the "district" field.
-	District *string `json:"district,omitempty"`
+	District string `json:"district,omitempty"`
 	// City holds the value of the "city" field.
-	City *string `json:"city,omitempty"`
+	City string `json:"city,omitempty"`
 	// DefaultAccount holds the value of the "default_account" field.
 	DefaultAccount agent.DefaultAccount `json:"default_account,omitempty"`
 	// BankAccount holds the value of the "bank_account" field.
@@ -58,7 +59,8 @@ type Agent struct {
 	Compliance *models.AgentComplianceModel `json:"compliance,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AgentQuery when eager-loading is set.
-	Edges AgentEdges `json:"edges"`
+	Edges        AgentEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // AgentEdges holds the relations/edges for other nodes in the graph.
@@ -73,9 +75,11 @@ type AgentEdges struct {
 	Store []*MerchantStore `json:"store,omitempty"`
 	// Requests holds the value of the requests edge.
 	Requests []*AgentRequest `json:"requests,omitempty"`
+	// Notifications holds the value of the notifications edge.
+	Notifications []*Notification `json:"notifications,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // AddressesOrErr returns the Addresses value or an error if the edge
@@ -123,6 +127,15 @@ func (e AgentEdges) RequestsOrErr() ([]*AgentRequest, error) {
 	return nil, &NotLoadedError{edge: "requests"}
 }
 
+// NotificationsOrErr returns the Notifications value or an error if the edge
+// was not loaded in eager-loading.
+func (e AgentEdges) NotificationsOrErr() ([]*Notification, error) {
+	if e.loadedTypes[5] {
+		return e.Notifications, nil
+	}
+	return nil, &NotLoadedError{edge: "notifications"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Agent) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -139,7 +152,7 @@ func (*Agent) scanValues(columns []string) ([]any, error) {
 		case agent.FieldCreatedAt, agent.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Agent", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -211,8 +224,7 @@ func (a *Agent) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field other_phone", values[i])
 			} else if value.Valid {
-				a.OtherPhone = new(string)
-				*a.OtherPhone = value.String
+				a.OtherPhone = value.String
 			}
 		case agent.FieldAddress:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -230,22 +242,19 @@ func (a *Agent) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field region", values[i])
 			} else if value.Valid {
-				a.Region = new(string)
-				*a.Region = value.String
+				a.Region = value.String
 			}
 		case agent.FieldDistrict:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field district", values[i])
 			} else if value.Valid {
-				a.District = new(string)
-				*a.District = value.String
+				a.District = value.String
 			}
 		case agent.FieldCity:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field city", values[i])
 			} else if value.Valid {
-				a.City = new(string)
-				*a.City = value.String
+				a.City = value.String
 			}
 		case agent.FieldDefaultAccount:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -283,41 +292,54 @@ func (a *Agent) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field compliance: %w", err)
 				}
 			}
+		default:
+			a.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Agent.
+// This includes values selected through modifiers, order, etc.
+func (a *Agent) Value(name string) (ent.Value, error) {
+	return a.selectValues.Get(name)
+}
+
 // QueryAddresses queries the "addresses" edge of the Agent entity.
 func (a *Agent) QueryAddresses() *AddressQuery {
-	return (&AgentClient{config: a.config}).QueryAddresses(a)
+	return NewAgentClient(a.config).QueryAddresses(a)
 }
 
 // QueryOrders queries the "orders" edge of the Agent entity.
 func (a *Agent) QueryOrders() *OrderQuery {
-	return (&AgentClient{config: a.config}).QueryOrders(a)
+	return NewAgentClient(a.config).QueryOrders(a)
 }
 
 // QueryFavourites queries the "favourites" edge of the Agent entity.
 func (a *Agent) QueryFavourites() *FavouriteQuery {
-	return (&AgentClient{config: a.config}).QueryFavourites(a)
+	return NewAgentClient(a.config).QueryFavourites(a)
 }
 
 // QueryStore queries the "store" edge of the Agent entity.
 func (a *Agent) QueryStore() *MerchantStoreQuery {
-	return (&AgentClient{config: a.config}).QueryStore(a)
+	return NewAgentClient(a.config).QueryStore(a)
 }
 
 // QueryRequests queries the "requests" edge of the Agent entity.
 func (a *Agent) QueryRequests() *AgentRequestQuery {
-	return (&AgentClient{config: a.config}).QueryRequests(a)
+	return NewAgentClient(a.config).QueryRequests(a)
+}
+
+// QueryNotifications queries the "notifications" edge of the Agent entity.
+func (a *Agent) QueryNotifications() *NotificationQuery {
+	return NewAgentClient(a.config).QueryNotifications(a)
 }
 
 // Update returns a builder for updating this Agent.
 // Note that you need to call Agent.Unwrap() before calling this method if this Agent
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (a *Agent) Update() *AgentUpdateOne {
-	return (&AgentClient{config: a.config}).UpdateOne(a)
+	return NewAgentClient(a.config).UpdateOne(a)
 }
 
 // Unwrap unwraps the Agent entity that was returned from a transaction after it was closed,
@@ -359,10 +381,8 @@ func (a *Agent) String() string {
 	builder.WriteString("phone=")
 	builder.WriteString(a.Phone)
 	builder.WriteString(", ")
-	if v := a.OtherPhone; v != nil {
-		builder.WriteString("other_phone=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("other_phone=")
+	builder.WriteString(a.OtherPhone)
 	builder.WriteString(", ")
 	builder.WriteString("address=")
 	builder.WriteString(a.Address)
@@ -370,20 +390,14 @@ func (a *Agent) String() string {
 	builder.WriteString("digital_address=")
 	builder.WriteString(a.DigitalAddress)
 	builder.WriteString(", ")
-	if v := a.Region; v != nil {
-		builder.WriteString("region=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("region=")
+	builder.WriteString(a.Region)
 	builder.WriteString(", ")
-	if v := a.District; v != nil {
-		builder.WriteString("district=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("district=")
+	builder.WriteString(a.District)
 	builder.WriteString(", ")
-	if v := a.City; v != nil {
-		builder.WriteString("city=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("city=")
+	builder.WriteString(a.City)
 	builder.WriteString(", ")
 	builder.WriteString("default_account=")
 	builder.WriteString(fmt.Sprintf("%v", a.DefaultAccount))
@@ -405,9 +419,3 @@ func (a *Agent) String() string {
 
 // Agents is a parsable slice of Agent.
 type Agents []*Agent
-
-func (a Agents) config(cfg config) {
-	for _i := range a {
-		a[_i].config = cfg
-	}
-}

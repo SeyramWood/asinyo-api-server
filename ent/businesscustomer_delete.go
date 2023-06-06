@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (bcd *BusinessCustomerDelete) Where(ps ...predicate.BusinessCustomer) *Busi
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (bcd *BusinessCustomerDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(bcd.hooks) == 0 {
-		affected, err = bcd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*BusinessCustomerMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			bcd.mutation = mutation
-			affected, err = bcd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(bcd.hooks) - 1; i >= 0; i-- {
-			if bcd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = bcd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, bcd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, bcd.sqlExec, bcd.mutation, bcd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (bcd *BusinessCustomerDelete) ExecX(ctx context.Context) int {
 }
 
 func (bcd *BusinessCustomerDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: businesscustomer.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: businesscustomer.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(businesscustomer.Table, sqlgraph.NewFieldSpec(businesscustomer.FieldID, field.TypeInt))
 	if ps := bcd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (bcd *BusinessCustomerDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	bcd.mutation.done = true
 	return affected, err
 }
 
 // BusinessCustomerDeleteOne is the builder for deleting a single BusinessCustomer entity.
 type BusinessCustomerDeleteOne struct {
 	bcd *BusinessCustomerDelete
+}
+
+// Where appends a list predicates to the BusinessCustomerDelete builder.
+func (bcdo *BusinessCustomerDeleteOne) Where(ps ...predicate.BusinessCustomer) *BusinessCustomerDeleteOne {
+	bcdo.bcd.mutation.Where(ps...)
+	return bcdo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (bcdo *BusinessCustomerDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (bcdo *BusinessCustomerDeleteOne) ExecX(ctx context.Context) {
-	bcdo.bcd.ExecX(ctx)
+	if err := bcdo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

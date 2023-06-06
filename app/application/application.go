@@ -1,13 +1,16 @@
 package application
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"io"
 	"regexp"
 	"strings"
+	"unsafe"
 
 	"github.com/SeyramWood/ent"
+	"github.com/SeyramWood/ent/admin"
 )
 
 func Rollback(tx *ent.Tx, err error) error {
@@ -46,6 +49,16 @@ func GeneratePassword(max int) (string, error) {
 	return string(b), nil
 }
 
+func RandomString(size int) string {
+	chars := []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	b := make([]byte, size)
+	_, _ = rand.Read(b)
+	for i := 0; i < size; i++ {
+		b[i] = chars[b[i]%byte(len(chars))]
+	}
+	return *(*string)(unsafe.Pointer(&b))
+}
+
 func UsernameType(username, delimiter string) bool {
 	if strings.Contains(username, "@") && delimiter == "email" {
 		return true
@@ -55,4 +68,17 @@ func UsernameType(username, delimiter string) bool {
 		return true
 	}
 	return false
+}
+
+func ReadAdminPermissions(db *ent.Client, id int) ([]string, error) {
+	results, err := db.Admin.Query().Where(admin.ID(id)).QueryRoles().QueryPermissions().All(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	var permissions []string
+	for _, result := range results {
+		permissions = append(permissions, result.Slug)
+	}
+	return permissions, nil
+
 }

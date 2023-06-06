@@ -9,19 +9,23 @@ import (
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
+	"github.com/SeyramWood/app/application/app_cache"
 	"github.com/SeyramWood/app/application/auth"
+	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
+	"github.com/SeyramWood/pkg/jwt"
 )
 
 type authHandler struct {
 	service gateways.AuthService
 }
 
-func NewAuthHandler(db *database.Adapter, mail gateways.EmailService) *authHandler {
+func NewAuthHandler(
+	db *database.Adapter, noti notification.NotificationService, JWT *jwt.JWT, cache *app_cache.AppCache,
+) *authHandler {
 	repo := auth.NewAuthRepo(db)
-	service := auth.NewAuthService(repo, mail)
-
+	service := auth.NewAuthService(repo, noti, JWT, cache)
 	return &authHandler{
 		service: service,
 	}
@@ -31,6 +35,11 @@ func NewAuthHandler(db *database.Adapter, mail gateways.EmailService) *authHandl
 func (auth *authHandler) Login() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		return auth.service.Login(c)
+	}
+}
+func (auth *authHandler) RefreshToken() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		return auth.service.RefreshToken(c)
 	}
 }
 func (auth *authHandler) Logout() fiber.Handler {
@@ -119,13 +128,14 @@ func (auth *authHandler) SendVerificationCode() fiber.Handler {
 				},
 			)
 		}
-		if err := cache.Save(request.Username, code, 6*time.Hour); err != nil {
+		if err := cache.Save(request.Username, code, 30*time.Second); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
 					"status": false,
 					"msg":    "Could not saved OTP in cache",
 				},
 			)
+
 		}
 		return c.Status(fiber.StatusOK).JSON(
 			fiber.Map{
@@ -169,7 +179,7 @@ func (auth *authHandler) SendPasswordResetCode() fiber.Handler {
 			)
 		}
 		if code != "" {
-			if err := cache.Save(request.Username, code, 1*time.Hour); err != nil {
+			if err := cache.Save(request.Username, code, time.Hour); err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(
 					fiber.Map{
 						"status": false,

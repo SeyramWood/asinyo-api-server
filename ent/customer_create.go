@@ -11,11 +11,14 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
+	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/individualcustomer"
+	"github.com/SeyramWood/ent/notification"
 	"github.com/SeyramWood/ent/order"
+	"github.com/SeyramWood/ent/purchaserequest"
 )
 
 // CustomerCreate is the builder for creating a Customer entity.
@@ -154,6 +157,55 @@ func (cc *CustomerCreate) AddFavourites(f ...*Favourite) *CustomerCreate {
 	return cc.AddFavouriteIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (cc *CustomerCreate) AddNotificationIDs(ids ...int) *CustomerCreate {
+	cc.mutation.AddNotificationIDs(ids...)
+	return cc
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (cc *CustomerCreate) AddNotifications(n ...*Notification) *CustomerCreate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return cc.AddNotificationIDs(ids...)
+}
+
+// AddPurchaseRequestIDs adds the "purchase_request" edge to the PurchaseRequest entity by IDs.
+func (cc *CustomerCreate) AddPurchaseRequestIDs(ids ...int) *CustomerCreate {
+	cc.mutation.AddPurchaseRequestIDs(ids...)
+	return cc
+}
+
+// AddPurchaseRequest adds the "purchase_request" edges to the PurchaseRequest entity.
+func (cc *CustomerCreate) AddPurchaseRequest(p ...*PurchaseRequest) *CustomerCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cc.AddPurchaseRequestIDs(ids...)
+}
+
+// SetAdminID sets the "admin" edge to the Admin entity by ID.
+func (cc *CustomerCreate) SetAdminID(id int) *CustomerCreate {
+	cc.mutation.SetAdminID(id)
+	return cc
+}
+
+// SetNillableAdminID sets the "admin" edge to the Admin entity by ID if the given value is not nil.
+func (cc *CustomerCreate) SetNillableAdminID(id *int) *CustomerCreate {
+	if id != nil {
+		cc = cc.SetAdminID(*id)
+	}
+	return cc
+}
+
+// SetAdmin sets the "admin" edge to the Admin entity.
+func (cc *CustomerCreate) SetAdmin(a *Admin) *CustomerCreate {
+	return cc.SetAdminID(a.ID)
+}
+
 // Mutation returns the CustomerMutation object of the builder.
 func (cc *CustomerCreate) Mutation() *CustomerMutation {
 	return cc.mutation
@@ -161,50 +213,8 @@ func (cc *CustomerCreate) Mutation() *CustomerMutation {
 
 // Save creates the Customer in the database.
 func (cc *CustomerCreate) Save(ctx context.Context) (*Customer, error) {
-	var (
-		err  error
-		node *Customer
-	)
 	cc.defaults()
-	if len(cc.hooks) == 0 {
-		if err = cc.check(); err != nil {
-			return nil, err
-		}
-		node, err = cc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*CustomerMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = cc.check(); err != nil {
-				return nil, err
-			}
-			cc.mutation = mutation
-			if node, err = cc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(cc.hooks) - 1; i >= 0; i-- {
-			if cc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = cc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, cc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Customer)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from CustomerMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, cc.sqlSave, cc.mutation, cc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -277,6 +287,9 @@ func (cc *CustomerCreate) check() error {
 }
 
 func (cc *CustomerCreate) sqlSave(ctx context.Context) (*Customer, error) {
+	if err := cc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := cc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, cc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -286,58 +299,34 @@ func (cc *CustomerCreate) sqlSave(ctx context.Context) (*Customer, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	cc.mutation.id = &_node.ID
+	cc.mutation.done = true
 	return _node, nil
 }
 
 func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Customer{config: cc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: customer.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: customer.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(customer.Table, sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt))
 	)
 	if value, ok := cc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: customer.FieldCreatedAt,
-		})
+		_spec.SetField(customer.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := cc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: customer.FieldUpdatedAt,
-		})
+		_spec.SetField(customer.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := cc.mutation.Username(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldUsername,
-		})
+		_spec.SetField(customer.FieldUsername, field.TypeString, value)
 		_node.Username = value
 	}
 	if value, ok := cc.mutation.Password(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: customer.FieldPassword,
-		})
+		_spec.SetField(customer.FieldPassword, field.TypeBytes, value)
 		_node.Password = value
 	}
 	if value, ok := cc.mutation.GetType(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldType,
-		})
+		_spec.SetField(customer.FieldType, field.TypeString, value)
 		_node.Type = value
 	}
 	if nodes := cc.mutation.BusinessIDs(); len(nodes) > 0 {
@@ -348,10 +337,7 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 			Columns: []string{customer.BusinessColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: businesscustomer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(businesscustomer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -367,10 +353,7 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 			Columns: []string{customer.IndividualColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: individualcustomer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(individualcustomer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -386,10 +369,7 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 			Columns: []string{customer.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -405,10 +385,7 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 			Columns: []string{customer.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -424,15 +401,61 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 			Columns: []string{customer.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.NotificationsTable,
+			Columns: customer.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.PurchaseRequestIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PurchaseRequestTable,
+			Columns: []string{customer.PurchaseRequestColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.AdminIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   customer.AdminTable,
+			Columns: []string{customer.AdminColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(admin.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.admin_customers = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -462,8 +485,8 @@ func (ccb *CustomerCreateBulk) Save(ctx context.Context) ([]*Customer, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, ccb.builders[i+1].mutation)
 				} else {

@@ -119,8 +119,8 @@ func (h *AddressHandler) SaveDefaultAddress() fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.AddressErrorResponse(errors.New("error creating merchant")))
 		}
 		return c.JSON(presenters.AddressSuccessResponses(results))
-
 	}
+	
 }
 
 func (h *AddressHandler) Update() fiber.Handler {

@@ -34,8 +34,9 @@ func (Order) Fields() []ent.Field {
 			Values("ONLINE", "POD").
 			Default("ONLINE"),
 		field.Enum("status").
-			Values("pending", "in_progress", "fulfilled", "canceled").
-			Default("pending"),
+			Values("pending", "in_progress", "fulfilled", "canceled").Default("pending"),
+		field.Enum("customer_approval").
+			Values("pending", "approved").Optional(),
 		field.JSON("store_tasks_created", []int{}).Optional(),
 		field.Time("delivered_at").Nillable().Optional(),
 	}
@@ -45,6 +46,7 @@ func (Order) Fields() []ent.Field {
 func (Order) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("details", OrderDetail.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("logistic", Logistic.Type).Unique().Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 		edge.From("merchant", Merchant.Type).
 			Ref("orders").
 			Unique(),
@@ -62,7 +64,8 @@ func (Order) Edges() []ent.Edge {
 			Unique(),
 		edge.From("stores", MerchantStore.Type).
 			Ref("orders"),
-		edge.From("logistic", Logistic.Type).
-			Ref("order"),
+		edge.From("purchase_request", PurchaseRequest.Type).
+			Ref("order").
+			Unique(),
 	}
 }

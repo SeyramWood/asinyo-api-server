@@ -2,6 +2,7 @@ package agent
 
 import (
 	"github.com/SeyramWood/app/adapters/gateways"
+	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent"
 )
@@ -32,8 +33,8 @@ func (s *service) Fetch(id int) (*ent.Agent, error) {
 	return s.repo.Read(id)
 }
 
-func (s *service) FetchAll() ([]*ent.Agent, error) {
-	return s.repo.ReadAll()
+func (s *service) FetchAll(limit, offset int) (*presenters.PaginationResponse, error) {
+	return s.repo.ReadAll(limit, offset)
 }
 
 func (s *service) FetchAllMerchant(agentId int) ([]*ent.MerchantStore, error) {
@@ -57,6 +58,9 @@ func (s *service) UpdateAgentPoliceReport(agentId int, filePath string) (string,
 
 func (s *service) UpdateGuarantorComplianceCard(agentId int, newPath, oldPath string) ([]string, error) {
 	return s.repo.UpdateGuarantorComplianceCard(agentId, newPath, oldPath)
+}
+func (s *service) ApproveAgent(agentId int, complianceStatus bool) (*ent.Agent, error) {
+	return s.repo.ApproveAgent(agentId, complianceStatus)
 }
 
 func (s *service) SaveAccount(account any, agentId int, accountType string) (*ent.Agent, error) {

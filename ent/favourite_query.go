@@ -21,11 +21,9 @@ import (
 // FavouriteQuery is the builder for querying Favourite entities.
 type FavouriteQuery struct {
 	config
-	limit        *int
-	offset       *int
-	unique       *bool
-	order        []OrderFunc
-	fields       []string
+	ctx          *QueryContext
+	order        []favourite.OrderOption
+	inters       []Interceptor
 	predicates   []predicate.Favourite
 	withMerchant *MerchantQuery
 	withAgent    *AgentQuery
@@ -43,34 +41,34 @@ func (fq *FavouriteQuery) Where(ps ...predicate.Favourite) *FavouriteQuery {
 	return fq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (fq *FavouriteQuery) Limit(limit int) *FavouriteQuery {
-	fq.limit = &limit
+	fq.ctx.Limit = &limit
 	return fq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (fq *FavouriteQuery) Offset(offset int) *FavouriteQuery {
-	fq.offset = &offset
+	fq.ctx.Offset = &offset
 	return fq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (fq *FavouriteQuery) Unique(unique bool) *FavouriteQuery {
-	fq.unique = &unique
+	fq.ctx.Unique = &unique
 	return fq
 }
 
-// Order adds an order step to the query.
-func (fq *FavouriteQuery) Order(o ...OrderFunc) *FavouriteQuery {
+// Order specifies how the records should be ordered.
+func (fq *FavouriteQuery) Order(o ...favourite.OrderOption) *FavouriteQuery {
 	fq.order = append(fq.order, o...)
 	return fq
 }
 
 // QueryMerchant chains the current query on the "merchant" edge.
 func (fq *FavouriteQuery) QueryMerchant() *MerchantQuery {
-	query := &MerchantQuery{config: fq.config}
+	query := (&MerchantClient{config: fq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := fq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -92,7 +90,7 @@ func (fq *FavouriteQuery) QueryMerchant() *MerchantQuery {
 
 // QueryAgent chains the current query on the "agent" edge.
 func (fq *FavouriteQuery) QueryAgent() *AgentQuery {
-	query := &AgentQuery{config: fq.config}
+	query := (&AgentClient{config: fq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := fq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -114,7 +112,7 @@ func (fq *FavouriteQuery) QueryAgent() *AgentQuery {
 
 // QueryCustomer chains the current query on the "customer" edge.
 func (fq *FavouriteQuery) QueryCustomer() *CustomerQuery {
-	query := &CustomerQuery{config: fq.config}
+	query := (&CustomerClient{config: fq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := fq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -136,7 +134,7 @@ func (fq *FavouriteQuery) QueryCustomer() *CustomerQuery {
 
 // QueryProduct chains the current query on the "product" edge.
 func (fq *FavouriteQuery) QueryProduct() *ProductQuery {
-	query := &ProductQuery{config: fq.config}
+	query := (&ProductClient{config: fq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := fq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -159,7 +157,7 @@ func (fq *FavouriteQuery) QueryProduct() *ProductQuery {
 // First returns the first Favourite entity from the query.
 // Returns a *NotFoundError when no Favourite was found.
 func (fq *FavouriteQuery) First(ctx context.Context) (*Favourite, error) {
-	nodes, err := fq.Limit(1).All(ctx)
+	nodes, err := fq.Limit(1).All(setContextOp(ctx, fq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +180,7 @@ func (fq *FavouriteQuery) FirstX(ctx context.Context) *Favourite {
 // Returns a *NotFoundError when no Favourite ID was found.
 func (fq *FavouriteQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = fq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = fq.Limit(1).IDs(setContextOp(ctx, fq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -205,7 +203,7 @@ func (fq *FavouriteQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Favourite entity is found.
 // Returns a *NotFoundError when no Favourite entities are found.
 func (fq *FavouriteQuery) Only(ctx context.Context) (*Favourite, error) {
-	nodes, err := fq.Limit(2).All(ctx)
+	nodes, err := fq.Limit(2).All(setContextOp(ctx, fq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +231,7 @@ func (fq *FavouriteQuery) OnlyX(ctx context.Context) *Favourite {
 // Returns a *NotFoundError when no entities are found.
 func (fq *FavouriteQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = fq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = fq.Limit(2).IDs(setContextOp(ctx, fq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -258,10 +256,12 @@ func (fq *FavouriteQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Favourites.
 func (fq *FavouriteQuery) All(ctx context.Context) ([]*Favourite, error) {
+	ctx = setContextOp(ctx, fq.ctx, "All")
 	if err := fq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return fq.sqlAll(ctx)
+	qr := querierAll[[]*Favourite, *FavouriteQuery]()
+	return withInterceptors[[]*Favourite](ctx, fq, qr, fq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -274,9 +274,12 @@ func (fq *FavouriteQuery) AllX(ctx context.Context) []*Favourite {
 }
 
 // IDs executes the query and returns a list of Favourite IDs.
-func (fq *FavouriteQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := fq.Select(favourite.FieldID).Scan(ctx, &ids); err != nil {
+func (fq *FavouriteQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if fq.ctx.Unique == nil && fq.path != nil {
+		fq.Unique(true)
+	}
+	ctx = setContextOp(ctx, fq.ctx, "IDs")
+	if err = fq.Select(favourite.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -293,10 +296,11 @@ func (fq *FavouriteQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (fq *FavouriteQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, fq.ctx, "Count")
 	if err := fq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return fq.sqlCount(ctx)
+	return withInterceptors[int](ctx, fq, querierCount[*FavouriteQuery](), fq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -310,10 +314,15 @@ func (fq *FavouriteQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (fq *FavouriteQuery) Exist(ctx context.Context) (bool, error) {
-	if err := fq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, fq.ctx, "Exist")
+	switch _, err := fq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return fq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -333,25 +342,24 @@ func (fq *FavouriteQuery) Clone() *FavouriteQuery {
 	}
 	return &FavouriteQuery{
 		config:       fq.config,
-		limit:        fq.limit,
-		offset:       fq.offset,
-		order:        append([]OrderFunc{}, fq.order...),
+		ctx:          fq.ctx.Clone(),
+		order:        append([]favourite.OrderOption{}, fq.order...),
+		inters:       append([]Interceptor{}, fq.inters...),
 		predicates:   append([]predicate.Favourite{}, fq.predicates...),
 		withMerchant: fq.withMerchant.Clone(),
 		withAgent:    fq.withAgent.Clone(),
 		withCustomer: fq.withCustomer.Clone(),
 		withProduct:  fq.withProduct.Clone(),
 		// clone intermediate query.
-		sql:    fq.sql.Clone(),
-		path:   fq.path,
-		unique: fq.unique,
+		sql:  fq.sql.Clone(),
+		path: fq.path,
 	}
 }
 
 // WithMerchant tells the query-builder to eager-load the nodes that are connected to
 // the "merchant" edge. The optional arguments are used to configure the query builder of the edge.
 func (fq *FavouriteQuery) WithMerchant(opts ...func(*MerchantQuery)) *FavouriteQuery {
-	query := &MerchantQuery{config: fq.config}
+	query := (&MerchantClient{config: fq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -362,7 +370,7 @@ func (fq *FavouriteQuery) WithMerchant(opts ...func(*MerchantQuery)) *FavouriteQ
 // WithAgent tells the query-builder to eager-load the nodes that are connected to
 // the "agent" edge. The optional arguments are used to configure the query builder of the edge.
 func (fq *FavouriteQuery) WithAgent(opts ...func(*AgentQuery)) *FavouriteQuery {
-	query := &AgentQuery{config: fq.config}
+	query := (&AgentClient{config: fq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -373,7 +381,7 @@ func (fq *FavouriteQuery) WithAgent(opts ...func(*AgentQuery)) *FavouriteQuery {
 // WithCustomer tells the query-builder to eager-load the nodes that are connected to
 // the "customer" edge. The optional arguments are used to configure the query builder of the edge.
 func (fq *FavouriteQuery) WithCustomer(opts ...func(*CustomerQuery)) *FavouriteQuery {
-	query := &CustomerQuery{config: fq.config}
+	query := (&CustomerClient{config: fq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -384,7 +392,7 @@ func (fq *FavouriteQuery) WithCustomer(opts ...func(*CustomerQuery)) *FavouriteQ
 // WithProduct tells the query-builder to eager-load the nodes that are connected to
 // the "product" edge. The optional arguments are used to configure the query builder of the edge.
 func (fq *FavouriteQuery) WithProduct(opts ...func(*ProductQuery)) *FavouriteQuery {
-	query := &ProductQuery{config: fq.config}
+	query := (&ProductClient{config: fq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -407,16 +415,11 @@ func (fq *FavouriteQuery) WithProduct(opts ...func(*ProductQuery)) *FavouriteQue
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (fq *FavouriteQuery) GroupBy(field string, fields ...string) *FavouriteGroupBy {
-	grbuild := &FavouriteGroupBy{config: fq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := fq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return fq.sqlQuery(ctx), nil
-	}
+	fq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &FavouriteGroupBy{build: fq}
+	grbuild.flds = &fq.ctx.Fields
 	grbuild.label = favourite.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -433,15 +436,30 @@ func (fq *FavouriteQuery) GroupBy(field string, fields ...string) *FavouriteGrou
 //		Select(favourite.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (fq *FavouriteQuery) Select(fields ...string) *FavouriteSelect {
-	fq.fields = append(fq.fields, fields...)
-	selbuild := &FavouriteSelect{FavouriteQuery: fq}
-	selbuild.label = favourite.Label
-	selbuild.flds, selbuild.scan = &fq.fields, selbuild.Scan
-	return selbuild
+	fq.ctx.Fields = append(fq.ctx.Fields, fields...)
+	sbuild := &FavouriteSelect{FavouriteQuery: fq}
+	sbuild.label = favourite.Label
+	sbuild.flds, sbuild.scan = &fq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a FavouriteSelect configured with the given aggregations.
+func (fq *FavouriteQuery) Aggregate(fns ...AggregateFunc) *FavouriteSelect {
+	return fq.Select().Aggregate(fns...)
 }
 
 func (fq *FavouriteQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range fq.fields {
+	for _, inter := range fq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, fq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range fq.ctx.Fields {
 		if !favourite.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -532,6 +550,9 @@ func (fq *FavouriteQuery) loadMerchant(ctx context.Context, query *MerchantQuery
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(merchant.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -560,6 +581,9 @@ func (fq *FavouriteQuery) loadAgent(ctx context.Context, query *AgentQuery, node
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(agent.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -590,6 +614,9 @@ func (fq *FavouriteQuery) loadCustomer(ctx context.Context, query *CustomerQuery
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(customer.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -619,6 +646,9 @@ func (fq *FavouriteQuery) loadProduct(ctx context.Context, query *ProductQuery, 
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(product.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -638,41 +668,22 @@ func (fq *FavouriteQuery) loadProduct(ctx context.Context, query *ProductQuery, 
 
 func (fq *FavouriteQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := fq.querySpec()
-	_spec.Node.Columns = fq.fields
-	if len(fq.fields) > 0 {
-		_spec.Unique = fq.unique != nil && *fq.unique
+	_spec.Node.Columns = fq.ctx.Fields
+	if len(fq.ctx.Fields) > 0 {
+		_spec.Unique = fq.ctx.Unique != nil && *fq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, fq.driver, _spec)
 }
 
-func (fq *FavouriteQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := fq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (fq *FavouriteQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   favourite.Table,
-			Columns: favourite.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: favourite.FieldID,
-			},
-		},
-		From:   fq.sql,
-		Unique: true,
-	}
-	if unique := fq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(favourite.Table, favourite.Columns, sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt))
+	_spec.From = fq.sql
+	if unique := fq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if fq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := fq.fields; len(fields) > 0 {
+	if fields := fq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, favourite.FieldID)
 		for i := range fields {
@@ -688,10 +699,10 @@ func (fq *FavouriteQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := fq.limit; limit != nil {
+	if limit := fq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := fq.offset; offset != nil {
+	if offset := fq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := fq.order; len(ps) > 0 {
@@ -707,7 +718,7 @@ func (fq *FavouriteQuery) querySpec() *sqlgraph.QuerySpec {
 func (fq *FavouriteQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(fq.driver.Dialect())
 	t1 := builder.Table(favourite.Table)
-	columns := fq.fields
+	columns := fq.ctx.Fields
 	if len(columns) == 0 {
 		columns = favourite.Columns
 	}
@@ -716,7 +727,7 @@ func (fq *FavouriteQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = fq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if fq.unique != nil && *fq.unique {
+	if fq.ctx.Unique != nil && *fq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range fq.predicates {
@@ -725,12 +736,12 @@ func (fq *FavouriteQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range fq.order {
 		p(selector)
 	}
-	if offset := fq.offset; offset != nil {
+	if offset := fq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := fq.limit; limit != nil {
+	if limit := fq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -738,13 +749,8 @@ func (fq *FavouriteQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // FavouriteGroupBy is the group-by builder for Favourite entities.
 type FavouriteGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *FavouriteQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -753,74 +759,77 @@ func (fgb *FavouriteGroupBy) Aggregate(fns ...AggregateFunc) *FavouriteGroupBy {
 	return fgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (fgb *FavouriteGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := fgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, fgb.build.ctx, "GroupBy")
+	if err := fgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	fgb.sql = query
-	return fgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*FavouriteQuery, *FavouriteGroupBy](ctx, fgb.build, fgb, fgb.build.inters, v)
 }
 
-func (fgb *FavouriteGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range fgb.fields {
-		if !favourite.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (fgb *FavouriteGroupBy) sqlScan(ctx context.Context, root *FavouriteQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(fgb.fns))
+	for _, fn := range fgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := fgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*fgb.flds)+len(fgb.fns))
+		for _, f := range *fgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*fgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := fgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := fgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (fgb *FavouriteGroupBy) sqlQuery() *sql.Selector {
-	selector := fgb.sql.Select()
-	aggregation := make([]string, 0, len(fgb.fns))
-	for _, fn := range fgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(fgb.fields)+len(fgb.fns))
-		for _, f := range fgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(fgb.fields...)...)
-}
-
 // FavouriteSelect is the builder for selecting fields of Favourite entities.
 type FavouriteSelect struct {
 	*FavouriteQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (fs *FavouriteSelect) Aggregate(fns ...AggregateFunc) *FavouriteSelect {
+	fs.fns = append(fs.fns, fns...)
+	return fs
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (fs *FavouriteSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, fs.ctx, "Select")
 	if err := fs.prepareQuery(ctx); err != nil {
 		return err
 	}
-	fs.sql = fs.FavouriteQuery.sqlQuery(ctx)
-	return fs.sqlScan(ctx, v)
+	return scanWithInterceptors[*FavouriteQuery, *FavouriteSelect](ctx, fs.FavouriteQuery, fs, fs.inters, v)
 }
 
-func (fs *FavouriteSelect) sqlScan(ctx context.Context, v any) error {
+func (fs *FavouriteSelect) sqlScan(ctx context.Context, root *FavouriteQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(fs.fns))
+	for _, fn := range fs.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*fs.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := fs.sql.Query()
+	query, args := selector.Query()
 	if err := fs.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

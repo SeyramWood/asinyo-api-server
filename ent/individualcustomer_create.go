@@ -99,50 +99,8 @@ func (icc *IndividualCustomerCreate) Mutation() *IndividualCustomerMutation {
 
 // Save creates the IndividualCustomer in the database.
 func (icc *IndividualCustomerCreate) Save(ctx context.Context) (*IndividualCustomer, error) {
-	var (
-		err  error
-		node *IndividualCustomer
-	)
 	icc.defaults()
-	if len(icc.hooks) == 0 {
-		if err = icc.check(); err != nil {
-			return nil, err
-		}
-		node, err = icc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*IndividualCustomerMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = icc.check(); err != nil {
-				return nil, err
-			}
-			icc.mutation = mutation
-			if node, err = icc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(icc.hooks) - 1; i >= 0; i-- {
-			if icc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = icc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, icc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*IndividualCustomer)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from IndividualCustomerMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, icc.sqlSave, icc.mutation, icc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -218,6 +176,9 @@ func (icc *IndividualCustomerCreate) check() error {
 }
 
 func (icc *IndividualCustomerCreate) sqlSave(ctx context.Context) (*IndividualCustomer, error) {
+	if err := icc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := icc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, icc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -227,66 +188,38 @@ func (icc *IndividualCustomerCreate) sqlSave(ctx context.Context) (*IndividualCu
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	icc.mutation.id = &_node.ID
+	icc.mutation.done = true
 	return _node, nil
 }
 
 func (icc *IndividualCustomerCreate) createSpec() (*IndividualCustomer, *sqlgraph.CreateSpec) {
 	var (
 		_node = &IndividualCustomer{config: icc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: individualcustomer.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: individualcustomer.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(individualcustomer.Table, sqlgraph.NewFieldSpec(individualcustomer.FieldID, field.TypeInt))
 	)
 	if value, ok := icc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: individualcustomer.FieldCreatedAt,
-		})
+		_spec.SetField(individualcustomer.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := icc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: individualcustomer.FieldUpdatedAt,
-		})
+		_spec.SetField(individualcustomer.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := icc.mutation.LastName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldLastName,
-		})
+		_spec.SetField(individualcustomer.FieldLastName, field.TypeString, value)
 		_node.LastName = value
 	}
 	if value, ok := icc.mutation.OtherName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldOtherName,
-		})
+		_spec.SetField(individualcustomer.FieldOtherName, field.TypeString, value)
 		_node.OtherName = value
 	}
 	if value, ok := icc.mutation.Phone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldPhone,
-		})
+		_spec.SetField(individualcustomer.FieldPhone, field.TypeString, value)
 		_node.Phone = value
 	}
 	if value, ok := icc.mutation.OtherPhone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldOtherPhone,
-		})
+		_spec.SetField(individualcustomer.FieldOtherPhone, field.TypeString, value)
 		_node.OtherPhone = value
 	}
 	if nodes := icc.mutation.CustomerIDs(); len(nodes) > 0 {
@@ -297,10 +230,7 @@ func (icc *IndividualCustomerCreate) createSpec() (*IndividualCustomer, *sqlgrap
 			Columns: []string{individualcustomer.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -336,8 +266,8 @@ func (iccb *IndividualCustomerCreateBulk) Save(ctx context.Context) ([]*Individu
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, iccb.builders[i+1].mutation)
 				} else {

@@ -7,7 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/individualcustomer"
@@ -30,7 +32,9 @@ type Customer struct {
 	Type string `json:"type,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CustomerQuery when eager-loading is set.
-	Edges CustomerEdges `json:"edges"`
+	Edges           CustomerEdges `json:"edges"`
+	admin_customers *int
+	selectValues    sql.SelectValues
 }
 
 // CustomerEdges holds the relations/edges for other nodes in the graph.
@@ -45,9 +49,15 @@ type CustomerEdges struct {
 	Orders []*Order `json:"orders,omitempty"`
 	// Favourites holds the value of the favourites edge.
 	Favourites []*Favourite `json:"favourites,omitempty"`
+	// Notifications holds the value of the notifications edge.
+	Notifications []*Notification `json:"notifications,omitempty"`
+	// PurchaseRequest holds the value of the purchase_request edge.
+	PurchaseRequest []*PurchaseRequest `json:"purchase_request,omitempty"`
+	// Admin holds the value of the admin edge.
+	Admin *Admin `json:"admin,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [8]bool
 }
 
 // BusinessOrErr returns the Business value or an error if the edge
@@ -103,6 +113,37 @@ func (e CustomerEdges) FavouritesOrErr() ([]*Favourite, error) {
 	return nil, &NotLoadedError{edge: "favourites"}
 }
 
+// NotificationsOrErr returns the Notifications value or an error if the edge
+// was not loaded in eager-loading.
+func (e CustomerEdges) NotificationsOrErr() ([]*Notification, error) {
+	if e.loadedTypes[5] {
+		return e.Notifications, nil
+	}
+	return nil, &NotLoadedError{edge: "notifications"}
+}
+
+// PurchaseRequestOrErr returns the PurchaseRequest value or an error if the edge
+// was not loaded in eager-loading.
+func (e CustomerEdges) PurchaseRequestOrErr() ([]*PurchaseRequest, error) {
+	if e.loadedTypes[6] {
+		return e.PurchaseRequest, nil
+	}
+	return nil, &NotLoadedError{edge: "purchase_request"}
+}
+
+// AdminOrErr returns the Admin value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e CustomerEdges) AdminOrErr() (*Admin, error) {
+	if e.loadedTypes[7] {
+		if e.Admin == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: admin.Label}
+		}
+		return e.Admin, nil
+	}
+	return nil, &NotLoadedError{edge: "admin"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Customer) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -116,8 +157,10 @@ func (*Customer) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case customer.FieldCreatedAt, customer.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case customer.ForeignKeys[0]: // admin_customers
+			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Customer", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -167,41 +210,71 @@ func (c *Customer) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				c.Type = value.String
 			}
+		case customer.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field admin_customers", value)
+			} else if value.Valid {
+				c.admin_customers = new(int)
+				*c.admin_customers = int(value.Int64)
+			}
+		default:
+			c.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Customer.
+// This includes values selected through modifiers, order, etc.
+func (c *Customer) Value(name string) (ent.Value, error) {
+	return c.selectValues.Get(name)
+}
+
 // QueryBusiness queries the "business" edge of the Customer entity.
 func (c *Customer) QueryBusiness() *BusinessCustomerQuery {
-	return (&CustomerClient{config: c.config}).QueryBusiness(c)
+	return NewCustomerClient(c.config).QueryBusiness(c)
 }
 
 // QueryIndividual queries the "individual" edge of the Customer entity.
 func (c *Customer) QueryIndividual() *IndividualCustomerQuery {
-	return (&CustomerClient{config: c.config}).QueryIndividual(c)
+	return NewCustomerClient(c.config).QueryIndividual(c)
 }
 
 // QueryAddresses queries the "addresses" edge of the Customer entity.
 func (c *Customer) QueryAddresses() *AddressQuery {
-	return (&CustomerClient{config: c.config}).QueryAddresses(c)
+	return NewCustomerClient(c.config).QueryAddresses(c)
 }
 
 // QueryOrders queries the "orders" edge of the Customer entity.
 func (c *Customer) QueryOrders() *OrderQuery {
-	return (&CustomerClient{config: c.config}).QueryOrders(c)
+	return NewCustomerClient(c.config).QueryOrders(c)
 }
 
 // QueryFavourites queries the "favourites" edge of the Customer entity.
 func (c *Customer) QueryFavourites() *FavouriteQuery {
-	return (&CustomerClient{config: c.config}).QueryFavourites(c)
+	return NewCustomerClient(c.config).QueryFavourites(c)
+}
+
+// QueryNotifications queries the "notifications" edge of the Customer entity.
+func (c *Customer) QueryNotifications() *NotificationQuery {
+	return NewCustomerClient(c.config).QueryNotifications(c)
+}
+
+// QueryPurchaseRequest queries the "purchase_request" edge of the Customer entity.
+func (c *Customer) QueryPurchaseRequest() *PurchaseRequestQuery {
+	return NewCustomerClient(c.config).QueryPurchaseRequest(c)
+}
+
+// QueryAdmin queries the "admin" edge of the Customer entity.
+func (c *Customer) QueryAdmin() *AdminQuery {
+	return NewCustomerClient(c.config).QueryAdmin(c)
 }
 
 // Update returns a builder for updating this Customer.
 // Note that you need to call Customer.Unwrap() before calling this method if this Customer
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (c *Customer) Update() *CustomerUpdateOne {
-	return (&CustomerClient{config: c.config}).UpdateOne(c)
+	return NewCustomerClient(c.config).UpdateOne(c)
 }
 
 // Unwrap unwraps the Customer entity that was returned from a transaction after it was closed,
@@ -239,9 +312,3 @@ func (c *Customer) String() string {
 
 // Customers is a parsable slice of Customer.
 type Customers []*Customer
-
-func (c Customers) config(cfg config) {
-	for _i := range c {
-		c[_i].config = cfg
-	}
-}

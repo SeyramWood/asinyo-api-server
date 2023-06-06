@@ -51,16 +51,16 @@ func newTookanService(conf *logistic, repo gateways.LogisticRepo) gateways.Logis
 	}
 }
 
-func (t *tookan) New(repo gateways.OrderRepo) gateways.LogisticService {
+func (t *tookan) OrderRepo(repo gateways.OrderRepo) gateways.LogisticService {
 	t.orderRepo = repo
 	return t
 }
 
-func (t *tookan) ExecuteTask(order *ent.Order, deliveryType string) {
+func (t *tookan) ExecuteTask(order *ent.Order, deliveryType ...any) {
 	t.WG.Add(1)
 	t.DataChan <- order
-	if deliveryType != "" {
-		t.TaskType = deliveryType
+	if deliveryType != nil {
+		t.TaskType = deliveryType[0].(string)
 	}
 }
 
@@ -112,7 +112,6 @@ func (t *tookan) FareEstimate(coordinates *models.OrderFareEstimateRequest) (
 			mu.Lock()
 			response = append(response, result)
 			mu.Unlock()
-
 		}(coordinate)
 
 	}
@@ -133,6 +132,7 @@ func (t *tookan) createTask(order *ent.Order) {
 		}
 	}
 }
+
 func (t *tookan) processWebhookResponse(response any) {
 	defer t.WG.Done()
 	res, err := t.formatWebhookPayload(response)
@@ -152,7 +152,6 @@ func (t *tookan) processWebhookResponse(response any) {
 		}
 
 	}
-
 }
 
 func (t *tookan) createPickupAndDeliveryTask(order *ent.Order) error {
@@ -203,13 +202,14 @@ func (t *tookan) createPickupAndDeliveryTask(order *ent.Order) error {
 			CustomerAddress:     response.Data.CustomerAddress,
 			GeofenceDetails:     response.Data.GeofenceDetails,
 		}
-		_, err = t.repo.InsertResponse(order.OrderNumber, stores[index], resData)
+		_, err = t.repo.InsertResponse("Tookan", order.OrderNumber, resData)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
 }
+
 func (t *tookan) updatePickupDeliveryTasks(order *ent.Order) error {
 	task := &services.TookanPickupDeliveryUpdateTask{
 		APIKey:     t.APIKey,
@@ -218,7 +218,6 @@ func (t *tookan) updatePickupDeliveryTasks(order *ent.Order) error {
 	}
 	// log.Fatalln("UPDATE")
 	payloadBytes, err := json.Marshal(&task)
-
 	if err != nil {
 		return err
 	}
@@ -236,7 +235,6 @@ func (t *tookan) updatePickupDeliveryTasks(order *ent.Order) error {
 	res, reserr := http.DefaultClient.Do(req)
 	if reserr != nil {
 		return reserr
-
 	}
 
 	var response services.TookanPickupDeliveryResponse
@@ -328,7 +326,6 @@ func (t *tookan) formatMetadata(data *ent.Order, storeId int) []*services.Tookan
 func (t *tookan) formatPickupMetadata(
 	data []*ent.OrderDetail, orderNum string, storeId int,
 ) []*services.TookanMetadata {
-
 	return []*services.TookanMetadata{
 		{
 			Label: "Reference",
@@ -350,7 +347,6 @@ func (t *tookan) formatPickupMetadata(
 }
 
 func (t *tookan) formatPickupAndDelivery(order *ent.Order) ([]*services.TookanPickupAndDeliveryTask, []int) {
-
 	var response []*services.TookanPickupAndDeliveryTask
 	var storeIds []int
 
@@ -479,7 +475,6 @@ func (t *tookan) formatPickupAndDelivery(order *ent.Order) ([]*services.TookanPi
 }
 
 func (t *tookan) formatPickups(order *ent.Order) []*services.TookanPickupDelivery {
-
 	currentTime := time.Date(2022, time.December, 25, 23, 0, 0, 0, time.UTC)
 	var response []*services.TookanPickupDelivery
 
@@ -555,7 +550,6 @@ func (t *tookan) formatDeliveries(order *ent.Order) []*services.TookanPickupDeli
 		if !lo.Contains(storeIds, detail.Edges.Store.ID) && detail.Status == "processing" {
 			response = append(
 				response, &services.TookanPickupDelivery{
-
 					Address: fmt.Sprintf(
 						"%s\n%s, %s\n%s-%s",
 						order.Edges.Address.City, order.Edges.Address.StreetName, order.Edges.Address.District,
@@ -633,7 +627,6 @@ func (t *tookan) getMerchantAddress(data []*ent.OrderDetail, storeId int) string
 		if storeId != 0 && detail.Edges.Store.ID == storeId {
 			response = func() string {
 				if s, err := detail.Edges.Store.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
-
 					return fmt.Sprintf(
 						"%s %s\n%s\n%s, %s.\n%s", s.OtherName, s.LastName,
 						detail.Edges.Store.Address.StreetName,
@@ -652,7 +645,6 @@ func (t *tookan) getMerchantAddress(data []*ent.OrderDetail, storeId int) string
 
 			break
 		}
-
 	}
 	return response
 }

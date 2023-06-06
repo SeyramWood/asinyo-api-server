@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/SeyramWood/app/adapters/gateways"
+	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
@@ -15,6 +16,7 @@ import (
 	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/individualcustomer"
+	"github.com/SeyramWood/ent/purchaserequest"
 )
 
 type repository struct {
@@ -81,28 +83,87 @@ func (r *repository) Insert(customer any, customerType string) (*ent.Customer, e
 		return c.Unwrap(), nil
 
 	}
+}
 
+func (r *repository) InsertPurchaseRequest(customerId int, request *models.PurchaseOrderRequest) (
+	*ent.PurchaseRequest, error,
+) {
+	result, err := r.db.PurchaseRequest.Create().
+		SetCustomerID(customerId).
+		SetName(request.Name).
+		SetSigned(request.Signed).
+		SetDescription(request.Description).
+		SetFile(request.File).
+		Save(context.Background())
+
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (r *repository) Read(id int) (*ent.Customer, error) {
-
-	c, err := r.db.Customer.Query().Where(customer.ID(id)).WithBusiness().WithIndividual().Only(context.Background())
+	c, err := r.db.Customer.Query().Where(customer.ID(id)).
+		WithBusiness().
+		WithIndividual().
+		WithAdmin().
+		Only(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+func (r *repository) ReadPurchaseRequest(id int) (*ent.PurchaseRequest, error) {
+	c, err := r.db.PurchaseRequest.Query().Where(purchaserequest.ID(id)).Only(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	return c, nil
 }
 
-func (r *repository) ReadAll() ([]*ent.Customer, error) {
-
-	results, err := r.db.Customer.Query().
-		Order(ent.Desc(customer.FieldCreatedAt)).
-		All(context.Background())
-
+func (r *repository) ReadAll(limit, offset int) (*presenters.PaginationResponse, error) {
+	ctx := context.Background()
+	query := r.db.Customer.Query()
+	count, err := query.Count(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return results, nil
+	results, err := query.
+		Limit(limit).Offset(offset).
+		Order(ent.Desc(customer.FieldCreatedAt)).
+		WithBusiness().
+		WithIndividual().
+		WithAdmin().
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &presenters.PaginationResponse{
+		Count: count,
+		Data:  results,
+	}, nil
+}
+
+func (r *repository) ReadAllPurchaseRequestByCustomer(customerId, limit, offset int) (
+	*presenters.PaginationResponse, error,
+) {
+	ctx := context.Background()
+	query := r.db.Customer.Query().Where(customer.ID(customerId)).QueryPurchaseRequest()
+	count, err := query.Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+	results, err := query.
+		Limit(limit).Offset(offset).
+		Order(ent.Desc(purchaserequest.FieldCreatedAt)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &presenters.PaginationResponse{
+		Count: count,
+		Data:  results,
+	}, nil
 }
 
 func (r *repository) Update(id int, c any) (*ent.Customer, error) {
@@ -148,7 +209,11 @@ func (r *repository) Update(id int, c any) (*ent.Customer, error) {
 			return nil, err
 		}
 	}
-	result, err := r.db.Customer.Query().Where(customer.ID(id)).WithBusiness().WithIndividual().Only(ctx)
+	result, err := r.db.Customer.Query().Where(customer.ID(id)).
+		WithBusiness().
+		WithIndividual().
+		WithAdmin().
+		Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +229,25 @@ func (r *repository) UpdateLogo(c int, logo string) (string, error) {
 	return logo, nil
 }
 
-func (r *repository) Delete(ID string) error {
-	return fmt.Errorf("failed creating book")
-	// return r.Delete(ID).Error
+func (r *repository) UpdatePurchaseRequest(id int, request *models.PurchaseOrderRequest) (*ent.PurchaseRequest, error) {
+	result, err := r.db.PurchaseRequest.UpdateOneID(id).
+		SetName(request.Name).
+		SetSigned(request.Signed).
+		SetDescription(request.Description).
+		SetFile(request.File).
+		Save(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r *repository) Delete(id int) error {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (r *repository) DeletePurchaseRequest(id int) error {
+	// TODO implement me
+	panic("implement me")
 }

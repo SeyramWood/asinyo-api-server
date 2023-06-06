@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/domain/services"
@@ -56,6 +57,7 @@ type MerchantStore struct {
 	Edges          MerchantStoreEdges `json:"edges"`
 	agent_store    *int
 	merchant_store *int
+	selectValues   sql.SelectValues
 }
 
 // MerchantStoreEdges holds the relations/edges for other nodes in the graph.
@@ -64,8 +66,6 @@ type MerchantStoreEdges struct {
 	Merchant *Merchant `json:"merchant,omitempty"`
 	// Agent holds the value of the agent edge.
 	Agent *Agent `json:"agent,omitempty"`
-	// Logistics holds the value of the logistics edge.
-	Logistics []*Logistic `json:"logistics,omitempty"`
 	// Requests holds the value of the requests edge.
 	Requests []*AgentRequest `json:"requests,omitempty"`
 	// Orders holds the value of the orders edge.
@@ -74,7 +74,7 @@ type MerchantStoreEdges struct {
 	OrderDetails []*OrderDetail `json:"order_details,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [5]bool
 }
 
 // MerchantOrErr returns the Merchant value or an error if the edge
@@ -103,19 +103,10 @@ func (e MerchantStoreEdges) AgentOrErr() (*Agent, error) {
 	return nil, &NotLoadedError{edge: "agent"}
 }
 
-// LogisticsOrErr returns the Logistics value or an error if the edge
-// was not loaded in eager-loading.
-func (e MerchantStoreEdges) LogisticsOrErr() ([]*Logistic, error) {
-	if e.loadedTypes[2] {
-		return e.Logistics, nil
-	}
-	return nil, &NotLoadedError{edge: "logistics"}
-}
-
 // RequestsOrErr returns the Requests value or an error if the edge
 // was not loaded in eager-loading.
 func (e MerchantStoreEdges) RequestsOrErr() ([]*AgentRequest, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[2] {
 		return e.Requests, nil
 	}
 	return nil, &NotLoadedError{edge: "requests"}
@@ -124,7 +115,7 @@ func (e MerchantStoreEdges) RequestsOrErr() ([]*AgentRequest, error) {
 // OrdersOrErr returns the Orders value or an error if the edge
 // was not loaded in eager-loading.
 func (e MerchantStoreEdges) OrdersOrErr() ([]*Order, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[3] {
 		return e.Orders, nil
 	}
 	return nil, &NotLoadedError{edge: "orders"}
@@ -133,7 +124,7 @@ func (e MerchantStoreEdges) OrdersOrErr() ([]*Order, error) {
 // OrderDetailsOrErr returns the OrderDetails value or an error if the edge
 // was not loaded in eager-loading.
 func (e MerchantStoreEdges) OrderDetailsOrErr() ([]*OrderDetail, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[4] {
 		return e.OrderDetails, nil
 	}
 	return nil, &NotLoadedError{edge: "order_details"}
@@ -159,7 +150,7 @@ func (*MerchantStore) scanValues(columns []string) ([]any, error) {
 		case merchantstore.ForeignKeys[1]: // merchant_store
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type MerchantStore", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -293,46 +284,49 @@ func (ms *MerchantStore) assignValues(columns []string, values []any) error {
 				ms.merchant_store = new(int)
 				*ms.merchant_store = int(value.Int64)
 			}
+		default:
+			ms.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the MerchantStore.
+// This includes values selected through modifiers, order, etc.
+func (ms *MerchantStore) Value(name string) (ent.Value, error) {
+	return ms.selectValues.Get(name)
+}
+
 // QueryMerchant queries the "merchant" edge of the MerchantStore entity.
 func (ms *MerchantStore) QueryMerchant() *MerchantQuery {
-	return (&MerchantStoreClient{config: ms.config}).QueryMerchant(ms)
+	return NewMerchantStoreClient(ms.config).QueryMerchant(ms)
 }
 
 // QueryAgent queries the "agent" edge of the MerchantStore entity.
 func (ms *MerchantStore) QueryAgent() *AgentQuery {
-	return (&MerchantStoreClient{config: ms.config}).QueryAgent(ms)
-}
-
-// QueryLogistics queries the "logistics" edge of the MerchantStore entity.
-func (ms *MerchantStore) QueryLogistics() *LogisticQuery {
-	return (&MerchantStoreClient{config: ms.config}).QueryLogistics(ms)
+	return NewMerchantStoreClient(ms.config).QueryAgent(ms)
 }
 
 // QueryRequests queries the "requests" edge of the MerchantStore entity.
 func (ms *MerchantStore) QueryRequests() *AgentRequestQuery {
-	return (&MerchantStoreClient{config: ms.config}).QueryRequests(ms)
+	return NewMerchantStoreClient(ms.config).QueryRequests(ms)
 }
 
 // QueryOrders queries the "orders" edge of the MerchantStore entity.
 func (ms *MerchantStore) QueryOrders() *OrderQuery {
-	return (&MerchantStoreClient{config: ms.config}).QueryOrders(ms)
+	return NewMerchantStoreClient(ms.config).QueryOrders(ms)
 }
 
 // QueryOrderDetails queries the "order_details" edge of the MerchantStore entity.
 func (ms *MerchantStore) QueryOrderDetails() *OrderDetailQuery {
-	return (&MerchantStoreClient{config: ms.config}).QueryOrderDetails(ms)
+	return NewMerchantStoreClient(ms.config).QueryOrderDetails(ms)
 }
 
 // Update returns a builder for updating this MerchantStore.
 // Note that you need to call MerchantStore.Unwrap() before calling this method if this MerchantStore
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (ms *MerchantStore) Update() *MerchantStoreUpdateOne {
-	return (&MerchantStoreClient{config: ms.config}).UpdateOne(ms)
+	return NewMerchantStoreClient(ms.config).UpdateOne(ms)
 }
 
 // Unwrap unwraps the MerchantStore entity that was returned from a transaction after it was closed,
@@ -401,9 +395,3 @@ func (ms *MerchantStore) String() string {
 
 // MerchantStores is a parsable slice of MerchantStore.
 type MerchantStores []*MerchantStore
-
-func (ms MerchantStores) config(cfg config) {
-	for _i := range ms {
-		ms[_i].config = cfg
-	}
-}

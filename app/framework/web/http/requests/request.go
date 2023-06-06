@@ -2,6 +2,7 @@ package request
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/faabiosr/cachego/file"
@@ -20,7 +21,6 @@ func ValidateUser() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse(err))
 		}
-
 		if er := validator.Validate(&request); er != nil {
 			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
 		}
@@ -182,6 +182,39 @@ func ValidateAdmin() fiber.Handler {
 		return c.Next()
 	}
 }
+func ValidateNewCustomer() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+
+		if c.Query("step") == "detail" {
+			var request models.BusinessCustomerOnboardDetail
+			err := c.BodyParser(&request)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.AdminErrorResponse(err))
+			}
+			if er := validator.Validate(&request); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
+		}
+		var request models.BusinessCustomerOnboardRequest
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AdminErrorResponse(err))
+		}
+		if er := validator.Validate(
+			&models.BusinessCustomerContact{
+				Name:     request.Contact.Name,
+				Position: request.Contact.Position,
+				Phone:    request.Contact.Phone,
+				Email:    request.Contact.Email,
+			},
+		); er != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
+		return c.Next()
+
+	}
+}
 
 func ValidateCustomer() fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -220,6 +253,30 @@ func ValidateCustomerUpdate() fiber.Handler {
 			}
 		} else {
 			var request models.BusinessCustomerUpdate
+			err := c.BodyParser(&request)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
+			}
+			if er := validator.Validate(&request); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		}
+		return c.Next()
+	}
+}
+func ValidateCustomerPurchaseRequest() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		if c.Query("requestType") == "file" {
+			var request models.PurchaseOrderFile
+			err := c.BodyParser(&request)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
+			}
+			if er := validator.Validate(&request); er != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+			}
+		} else {
+			var request models.PurchaseOrderForm
 			err := c.BodyParser(&request)
 			if err != nil {
 				return c.Status(fiber.StatusBadRequest).JSON(presenters.CustomerErrorResponse(err))
@@ -730,6 +787,25 @@ func ValidateRole() fiber.Handler {
 		err := c.BodyParser(&request)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.AdminErrorResponse(err))
+		}
+
+		if er := validator.Validate(&request); er != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
+		return c.Next()
+	}
+}
+
+func ValidateCategoryPercentage() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		percentage, _ := strconv.Atoi(c.Query("percentage", "0"))
+		category, _ := c.ParamsInt("category")
+		request := struct {
+			Category   int `json:"category" validate:"required|int"`
+			Percentage int `json:"percentage" validate:"required|int"`
+		}{
+			Category:   category,
+			Percentage: percentage,
 		}
 
 		if er := validator.Validate(&request); er != nil {

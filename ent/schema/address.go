@@ -26,7 +26,6 @@ func (Address) Fields() []ent.Field {
 		field.String("other_name").NotEmpty(),
 		field.String("phone").NotEmpty(),
 		field.String("other_phone").Optional(),
-		field.String("digital_address").Optional(),
 		field.String("street_name").Optional(),
 		field.String("street_number").Optional(),
 		field.String("city").NotEmpty(),

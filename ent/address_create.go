@@ -85,20 +85,6 @@ func (ac *AddressCreate) SetNillableOtherPhone(s *string) *AddressCreate {
 	return ac
 }
 
-// SetDigitalAddress sets the "digital_address" field.
-func (ac *AddressCreate) SetDigitalAddress(s string) *AddressCreate {
-	ac.mutation.SetDigitalAddress(s)
-	return ac
-}
-
-// SetNillableDigitalAddress sets the "digital_address" field if the given value is not nil.
-func (ac *AddressCreate) SetNillableDigitalAddress(s *string) *AddressCreate {
-	if s != nil {
-		ac.SetDigitalAddress(*s)
-	}
-	return ac
-}
-
 // SetStreetName sets the "street_name" field.
 func (ac *AddressCreate) SetStreetName(s string) *AddressCreate {
 	ac.mutation.SetStreetName(s)
@@ -266,50 +252,8 @@ func (ac *AddressCreate) Mutation() *AddressMutation {
 
 // Save creates the Address in the database.
 func (ac *AddressCreate) Save(ctx context.Context) (*Address, error) {
-	var (
-		err  error
-		node *Address
-	)
 	ac.defaults()
-	if len(ac.hooks) == 0 {
-		if err = ac.check(); err != nil {
-			return nil, err
-		}
-		node, err = ac.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AddressMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = ac.check(); err != nil {
-				return nil, err
-			}
-			ac.mutation = mutation
-			if node, err = ac.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(ac.hooks) - 1; i >= 0; i-- {
-			if ac.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = ac.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, ac.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Address)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AddressMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, ac.sqlSave, ac.mutation, ac.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -412,6 +356,9 @@ func (ac *AddressCreate) check() error {
 }
 
 func (ac *AddressCreate) sqlSave(ctx context.Context) (*Address, error) {
+	if err := ac.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := ac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, ac.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -421,138 +368,70 @@ func (ac *AddressCreate) sqlSave(ctx context.Context) (*Address, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	ac.mutation.id = &_node.ID
+	ac.mutation.done = true
 	return _node, nil
 }
 
 func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Address{config: ac.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: address.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: address.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(address.Table, sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt))
 	)
 	if value, ok := ac.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: address.FieldCreatedAt,
-		})
+		_spec.SetField(address.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := ac.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: address.FieldUpdatedAt,
-		})
+		_spec.SetField(address.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := ac.mutation.LastName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldLastName,
-		})
+		_spec.SetField(address.FieldLastName, field.TypeString, value)
 		_node.LastName = value
 	}
 	if value, ok := ac.mutation.OtherName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldOtherName,
-		})
+		_spec.SetField(address.FieldOtherName, field.TypeString, value)
 		_node.OtherName = value
 	}
 	if value, ok := ac.mutation.Phone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldPhone,
-		})
+		_spec.SetField(address.FieldPhone, field.TypeString, value)
 		_node.Phone = value
 	}
 	if value, ok := ac.mutation.OtherPhone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldOtherPhone,
-		})
+		_spec.SetField(address.FieldOtherPhone, field.TypeString, value)
 		_node.OtherPhone = value
 	}
-	if value, ok := ac.mutation.DigitalAddress(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldDigitalAddress,
-		})
-		_node.DigitalAddress = value
-	}
 	if value, ok := ac.mutation.StreetName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldStreetName,
-		})
+		_spec.SetField(address.FieldStreetName, field.TypeString, value)
 		_node.StreetName = value
 	}
 	if value, ok := ac.mutation.StreetNumber(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldStreetNumber,
-		})
+		_spec.SetField(address.FieldStreetNumber, field.TypeString, value)
 		_node.StreetNumber = value
 	}
 	if value, ok := ac.mutation.City(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldCity,
-		})
+		_spec.SetField(address.FieldCity, field.TypeString, value)
 		_node.City = value
 	}
 	if value, ok := ac.mutation.District(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldDistrict,
-		})
+		_spec.SetField(address.FieldDistrict, field.TypeString, value)
 		_node.District = value
 	}
 	if value, ok := ac.mutation.Region(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldRegion,
-		})
+		_spec.SetField(address.FieldRegion, field.TypeString, value)
 		_node.Region = value
 	}
 	if value, ok := ac.mutation.Country(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldCountry,
-		})
+		_spec.SetField(address.FieldCountry, field.TypeString, value)
 		_node.Country = value
 	}
 	if value, ok := ac.mutation.Default(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: address.FieldDefault,
-		})
+		_spec.SetField(address.FieldDefault, field.TypeBool, value)
 		_node.Default = value
 	}
 	if value, ok := ac.mutation.Coordinate(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: address.FieldCoordinate,
-		})
+		_spec.SetField(address.FieldCoordinate, field.TypeJSON, value)
 		_node.Coordinate = value
 	}
 	if nodes := ac.mutation.MerchantIDs(); len(nodes) > 0 {
@@ -563,10 +442,7 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 			Columns: []string{address.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -583,10 +459,7 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 			Columns: []string{address.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -603,10 +476,7 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 			Columns: []string{address.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -623,10 +493,7 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 			Columns: []string{address.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -661,8 +528,8 @@ func (acb *AddressCreateBulk) Save(ctx context.Context) ([]*Address, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, acb.builders[i+1].mutation)
 				} else {

@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
@@ -21,6 +22,7 @@ import (
 	"github.com/SeyramWood/ent/orderdetail"
 	"github.com/SeyramWood/ent/pickupstation"
 	"github.com/SeyramWood/ent/predicate"
+	"github.com/SeyramWood/ent/purchaserequest"
 )
 
 // OrderUpdate is the builder for updating Order entities.
@@ -190,9 +192,35 @@ func (ou *OrderUpdate) SetNillableStatus(o *order.Status) *OrderUpdate {
 	return ou
 }
 
+// SetCustomerApproval sets the "customer_approval" field.
+func (ou *OrderUpdate) SetCustomerApproval(oa order.CustomerApproval) *OrderUpdate {
+	ou.mutation.SetCustomerApproval(oa)
+	return ou
+}
+
+// SetNillableCustomerApproval sets the "customer_approval" field if the given value is not nil.
+func (ou *OrderUpdate) SetNillableCustomerApproval(oa *order.CustomerApproval) *OrderUpdate {
+	if oa != nil {
+		ou.SetCustomerApproval(*oa)
+	}
+	return ou
+}
+
+// ClearCustomerApproval clears the value of the "customer_approval" field.
+func (ou *OrderUpdate) ClearCustomerApproval() *OrderUpdate {
+	ou.mutation.ClearCustomerApproval()
+	return ou
+}
+
 // SetStoreTasksCreated sets the "store_tasks_created" field.
 func (ou *OrderUpdate) SetStoreTasksCreated(i []int) *OrderUpdate {
 	ou.mutation.SetStoreTasksCreated(i)
+	return ou
+}
+
+// AppendStoreTasksCreated appends i to the "store_tasks_created" field.
+func (ou *OrderUpdate) AppendStoreTasksCreated(i []int) *OrderUpdate {
+	ou.mutation.AppendStoreTasksCreated(i)
 	return ou
 }
 
@@ -235,6 +263,25 @@ func (ou *OrderUpdate) AddDetails(o ...*OrderDetail) *OrderUpdate {
 		ids[i] = o[i].ID
 	}
 	return ou.AddDetailIDs(ids...)
+}
+
+// SetLogisticID sets the "logistic" edge to the Logistic entity by ID.
+func (ou *OrderUpdate) SetLogisticID(id int) *OrderUpdate {
+	ou.mutation.SetLogisticID(id)
+	return ou
+}
+
+// SetNillableLogisticID sets the "logistic" edge to the Logistic entity by ID if the given value is not nil.
+func (ou *OrderUpdate) SetNillableLogisticID(id *int) *OrderUpdate {
+	if id != nil {
+		ou = ou.SetLogisticID(*id)
+	}
+	return ou
+}
+
+// SetLogistic sets the "logistic" edge to the Logistic entity.
+func (ou *OrderUpdate) SetLogistic(l *Logistic) *OrderUpdate {
+	return ou.SetLogisticID(l.ID)
 }
 
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
@@ -347,19 +394,23 @@ func (ou *OrderUpdate) AddStores(m ...*MerchantStore) *OrderUpdate {
 	return ou.AddStoreIDs(ids...)
 }
 
-// AddLogisticIDs adds the "logistic" edge to the Logistic entity by IDs.
-func (ou *OrderUpdate) AddLogisticIDs(ids ...int) *OrderUpdate {
-	ou.mutation.AddLogisticIDs(ids...)
+// SetPurchaseRequestID sets the "purchase_request" edge to the PurchaseRequest entity by ID.
+func (ou *OrderUpdate) SetPurchaseRequestID(id int) *OrderUpdate {
+	ou.mutation.SetPurchaseRequestID(id)
 	return ou
 }
 
-// AddLogistic adds the "logistic" edges to the Logistic entity.
-func (ou *OrderUpdate) AddLogistic(l ...*Logistic) *OrderUpdate {
-	ids := make([]int, len(l))
-	for i := range l {
-		ids[i] = l[i].ID
+// SetNillablePurchaseRequestID sets the "purchase_request" edge to the PurchaseRequest entity by ID if the given value is not nil.
+func (ou *OrderUpdate) SetNillablePurchaseRequestID(id *int) *OrderUpdate {
+	if id != nil {
+		ou = ou.SetPurchaseRequestID(*id)
 	}
-	return ou.AddLogisticIDs(ids...)
+	return ou
+}
+
+// SetPurchaseRequest sets the "purchase_request" edge to the PurchaseRequest entity.
+func (ou *OrderUpdate) SetPurchaseRequest(p *PurchaseRequest) *OrderUpdate {
+	return ou.SetPurchaseRequestID(p.ID)
 }
 
 // Mutation returns the OrderMutation object of the builder.
@@ -386,6 +437,12 @@ func (ou *OrderUpdate) RemoveDetails(o ...*OrderDetail) *OrderUpdate {
 		ids[i] = o[i].ID
 	}
 	return ou.RemoveDetailIDs(ids...)
+}
+
+// ClearLogistic clears the "logistic" edge to the Logistic entity.
+func (ou *OrderUpdate) ClearLogistic() *OrderUpdate {
+	ou.mutation.ClearLogistic()
+	return ou
 }
 
 // ClearMerchant clears the "merchant" edge to the Merchant entity.
@@ -439,64 +496,16 @@ func (ou *OrderUpdate) RemoveStores(m ...*MerchantStore) *OrderUpdate {
 	return ou.RemoveStoreIDs(ids...)
 }
 
-// ClearLogistic clears all "logistic" edges to the Logistic entity.
-func (ou *OrderUpdate) ClearLogistic() *OrderUpdate {
-	ou.mutation.ClearLogistic()
+// ClearPurchaseRequest clears the "purchase_request" edge to the PurchaseRequest entity.
+func (ou *OrderUpdate) ClearPurchaseRequest() *OrderUpdate {
+	ou.mutation.ClearPurchaseRequest()
 	return ou
-}
-
-// RemoveLogisticIDs removes the "logistic" edge to Logistic entities by IDs.
-func (ou *OrderUpdate) RemoveLogisticIDs(ids ...int) *OrderUpdate {
-	ou.mutation.RemoveLogisticIDs(ids...)
-	return ou
-}
-
-// RemoveLogistic removes "logistic" edges to Logistic entities.
-func (ou *OrderUpdate) RemoveLogistic(l ...*Logistic) *OrderUpdate {
-	ids := make([]int, len(l))
-	for i := range l {
-		ids[i] = l[i].ID
-	}
-	return ou.RemoveLogisticIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (ou *OrderUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	ou.defaults()
-	if len(ou.hooks) == 0 {
-		if err = ou.check(); err != nil {
-			return 0, err
-		}
-		affected, err = ou.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*OrderMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = ou.check(); err != nil {
-				return 0, err
-			}
-			ou.mutation = mutation
-			affected, err = ou.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(ou.hooks) - 1; i >= 0; i-- {
-			if ou.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = ou.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, ou.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, ou.sqlSave, ou.mutation, ou.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -556,20 +565,19 @@ func (ou *OrderUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Order.status": %w`, err)}
 		}
 	}
+	if v, ok := ou.mutation.CustomerApproval(); ok {
+		if err := order.CustomerApprovalValidator(v); err != nil {
+			return &ValidationError{Name: "customer_approval", err: fmt.Errorf(`ent: validator failed for field "Order.customer_approval": %w`, err)}
+		}
+	}
 	return nil
 }
 
 func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   order.Table,
-			Columns: order.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: order.FieldID,
-			},
-		},
+	if err := ou.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(order.Table, order.Columns, sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt))
 	if ps := ou.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -578,139 +586,75 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := ou.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: order.FieldUpdatedAt,
-		})
+		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := ou.mutation.OrderNumber(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldOrderNumber,
-		})
+		_spec.SetField(order.FieldOrderNumber, field.TypeString, value)
 	}
 	if value, ok := ou.mutation.Currency(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldCurrency,
-		})
+		_spec.SetField(order.FieldCurrency, field.TypeString, value)
 	}
 	if value, ok := ou.mutation.Amount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldAmount,
-		})
+		_spec.SetField(order.FieldAmount, field.TypeFloat64, value)
 	}
 	if value, ok := ou.mutation.AddedAmount(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldAmount,
-		})
+		_spec.AddField(order.FieldAmount, field.TypeFloat64, value)
 	}
 	if value, ok := ou.mutation.DeliveryFee(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldDeliveryFee,
-		})
+		_spec.SetField(order.FieldDeliveryFee, field.TypeFloat64, value)
 	}
 	if value, ok := ou.mutation.AddedDeliveryFee(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldDeliveryFee,
-		})
+		_spec.AddField(order.FieldDeliveryFee, field.TypeFloat64, value)
 	}
 	if value, ok := ou.mutation.Reference(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldReference,
-		})
+		_spec.SetField(order.FieldReference, field.TypeString, value)
 	}
 	if ou.mutation.ReferenceCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: order.FieldReference,
-		})
+		_spec.ClearField(order.FieldReference, field.TypeString)
 	}
 	if value, ok := ou.mutation.Channel(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldChannel,
-		})
+		_spec.SetField(order.FieldChannel, field.TypeString, value)
 	}
 	if ou.mutation.ChannelCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: order.FieldChannel,
-		})
+		_spec.ClearField(order.FieldChannel, field.TypeString)
 	}
 	if value, ok := ou.mutation.PaidAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldPaidAt,
-		})
+		_spec.SetField(order.FieldPaidAt, field.TypeString, value)
 	}
 	if ou.mutation.PaidAtCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: order.FieldPaidAt,
-		})
+		_spec.ClearField(order.FieldPaidAt, field.TypeString)
 	}
 	if value, ok := ou.mutation.DeliveryMethod(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: order.FieldDeliveryMethod,
-		})
+		_spec.SetField(order.FieldDeliveryMethod, field.TypeEnum, value)
 	}
 	if value, ok := ou.mutation.PaymentMethod(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: order.FieldPaymentMethod,
-		})
+		_spec.SetField(order.FieldPaymentMethod, field.TypeEnum, value)
 	}
 	if value, ok := ou.mutation.Status(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: order.FieldStatus,
-		})
+		_spec.SetField(order.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := ou.mutation.CustomerApproval(); ok {
+		_spec.SetField(order.FieldCustomerApproval, field.TypeEnum, value)
+	}
+	if ou.mutation.CustomerApprovalCleared() {
+		_spec.ClearField(order.FieldCustomerApproval, field.TypeEnum)
 	}
 	if value, ok := ou.mutation.StoreTasksCreated(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: order.FieldStoreTasksCreated,
+		_spec.SetField(order.FieldStoreTasksCreated, field.TypeJSON, value)
+	}
+	if value, ok := ou.mutation.AppendedStoreTasksCreated(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, order.FieldStoreTasksCreated, value)
 		})
 	}
 	if ou.mutation.StoreTasksCreatedCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: order.FieldStoreTasksCreated,
-		})
+		_spec.ClearField(order.FieldStoreTasksCreated, field.TypeJSON)
 	}
 	if value, ok := ou.mutation.DeliveredAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: order.FieldDeliveredAt,
-		})
+		_spec.SetField(order.FieldDeliveredAt, field.TypeTime, value)
 	}
 	if ou.mutation.DeliveredAtCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Column: order.FieldDeliveredAt,
-		})
+		_spec.ClearField(order.FieldDeliveredAt, field.TypeTime)
 	}
 	if ou.mutation.DetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -720,10 +664,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.DetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -736,10 +677,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.DetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -755,10 +693,36 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.DetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ou.mutation.LogisticCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   order.LogisticTable,
+			Columns: []string{order.LogisticColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(logistic.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ou.mutation.LogisticIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   order.LogisticTable,
+			Columns: []string{order.LogisticColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(logistic.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -774,10 +738,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -790,10 +751,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -809,10 +767,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -825,10 +780,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -844,10 +796,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -860,10 +809,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -879,10 +825,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.AddressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -895,10 +838,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.AddressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -914,10 +854,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.PickupColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: pickupstation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(pickupstation.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -930,10 +867,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{order.PickupColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: pickupstation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(pickupstation.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -949,10 +883,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: order.StoresPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -965,10 +896,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: order.StoresPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -984,10 +912,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: order.StoresPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -995,53 +920,28 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ou.mutation.LogisticCleared() {
+	if ou.mutation.PurchaseRequestCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.LogisticTable,
-			Columns: order.LogisticPrimaryKey,
+			Table:   order.PurchaseRequestTable,
+			Columns: []string{order.PurchaseRequestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ou.mutation.RemovedLogisticIDs(); len(nodes) > 0 && !ou.mutation.LogisticCleared() {
+	if nodes := ou.mutation.PurchaseRequestIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.LogisticTable,
-			Columns: order.LogisticPrimaryKey,
+			Table:   order.PurchaseRequestTable,
+			Columns: []string{order.PurchaseRequestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ou.mutation.LogisticIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   order.LogisticTable,
-			Columns: order.LogisticPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1057,6 +957,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	ou.mutation.done = true
 	return n, nil
 }
 
@@ -1222,9 +1123,35 @@ func (ouo *OrderUpdateOne) SetNillableStatus(o *order.Status) *OrderUpdateOne {
 	return ouo
 }
 
+// SetCustomerApproval sets the "customer_approval" field.
+func (ouo *OrderUpdateOne) SetCustomerApproval(oa order.CustomerApproval) *OrderUpdateOne {
+	ouo.mutation.SetCustomerApproval(oa)
+	return ouo
+}
+
+// SetNillableCustomerApproval sets the "customer_approval" field if the given value is not nil.
+func (ouo *OrderUpdateOne) SetNillableCustomerApproval(oa *order.CustomerApproval) *OrderUpdateOne {
+	if oa != nil {
+		ouo.SetCustomerApproval(*oa)
+	}
+	return ouo
+}
+
+// ClearCustomerApproval clears the value of the "customer_approval" field.
+func (ouo *OrderUpdateOne) ClearCustomerApproval() *OrderUpdateOne {
+	ouo.mutation.ClearCustomerApproval()
+	return ouo
+}
+
 // SetStoreTasksCreated sets the "store_tasks_created" field.
 func (ouo *OrderUpdateOne) SetStoreTasksCreated(i []int) *OrderUpdateOne {
 	ouo.mutation.SetStoreTasksCreated(i)
+	return ouo
+}
+
+// AppendStoreTasksCreated appends i to the "store_tasks_created" field.
+func (ouo *OrderUpdateOne) AppendStoreTasksCreated(i []int) *OrderUpdateOne {
+	ouo.mutation.AppendStoreTasksCreated(i)
 	return ouo
 }
 
@@ -1267,6 +1194,25 @@ func (ouo *OrderUpdateOne) AddDetails(o ...*OrderDetail) *OrderUpdateOne {
 		ids[i] = o[i].ID
 	}
 	return ouo.AddDetailIDs(ids...)
+}
+
+// SetLogisticID sets the "logistic" edge to the Logistic entity by ID.
+func (ouo *OrderUpdateOne) SetLogisticID(id int) *OrderUpdateOne {
+	ouo.mutation.SetLogisticID(id)
+	return ouo
+}
+
+// SetNillableLogisticID sets the "logistic" edge to the Logistic entity by ID if the given value is not nil.
+func (ouo *OrderUpdateOne) SetNillableLogisticID(id *int) *OrderUpdateOne {
+	if id != nil {
+		ouo = ouo.SetLogisticID(*id)
+	}
+	return ouo
+}
+
+// SetLogistic sets the "logistic" edge to the Logistic entity.
+func (ouo *OrderUpdateOne) SetLogistic(l *Logistic) *OrderUpdateOne {
+	return ouo.SetLogisticID(l.ID)
 }
 
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
@@ -1379,19 +1325,23 @@ func (ouo *OrderUpdateOne) AddStores(m ...*MerchantStore) *OrderUpdateOne {
 	return ouo.AddStoreIDs(ids...)
 }
 
-// AddLogisticIDs adds the "logistic" edge to the Logistic entity by IDs.
-func (ouo *OrderUpdateOne) AddLogisticIDs(ids ...int) *OrderUpdateOne {
-	ouo.mutation.AddLogisticIDs(ids...)
+// SetPurchaseRequestID sets the "purchase_request" edge to the PurchaseRequest entity by ID.
+func (ouo *OrderUpdateOne) SetPurchaseRequestID(id int) *OrderUpdateOne {
+	ouo.mutation.SetPurchaseRequestID(id)
 	return ouo
 }
 
-// AddLogistic adds the "logistic" edges to the Logistic entity.
-func (ouo *OrderUpdateOne) AddLogistic(l ...*Logistic) *OrderUpdateOne {
-	ids := make([]int, len(l))
-	for i := range l {
-		ids[i] = l[i].ID
+// SetNillablePurchaseRequestID sets the "purchase_request" edge to the PurchaseRequest entity by ID if the given value is not nil.
+func (ouo *OrderUpdateOne) SetNillablePurchaseRequestID(id *int) *OrderUpdateOne {
+	if id != nil {
+		ouo = ouo.SetPurchaseRequestID(*id)
 	}
-	return ouo.AddLogisticIDs(ids...)
+	return ouo
+}
+
+// SetPurchaseRequest sets the "purchase_request" edge to the PurchaseRequest entity.
+func (ouo *OrderUpdateOne) SetPurchaseRequest(p *PurchaseRequest) *OrderUpdateOne {
+	return ouo.SetPurchaseRequestID(p.ID)
 }
 
 // Mutation returns the OrderMutation object of the builder.
@@ -1418,6 +1368,12 @@ func (ouo *OrderUpdateOne) RemoveDetails(o ...*OrderDetail) *OrderUpdateOne {
 		ids[i] = o[i].ID
 	}
 	return ouo.RemoveDetailIDs(ids...)
+}
+
+// ClearLogistic clears the "logistic" edge to the Logistic entity.
+func (ouo *OrderUpdateOne) ClearLogistic() *OrderUpdateOne {
+	ouo.mutation.ClearLogistic()
+	return ouo
 }
 
 // ClearMerchant clears the "merchant" edge to the Merchant entity.
@@ -1471,25 +1427,16 @@ func (ouo *OrderUpdateOne) RemoveStores(m ...*MerchantStore) *OrderUpdateOne {
 	return ouo.RemoveStoreIDs(ids...)
 }
 
-// ClearLogistic clears all "logistic" edges to the Logistic entity.
-func (ouo *OrderUpdateOne) ClearLogistic() *OrderUpdateOne {
-	ouo.mutation.ClearLogistic()
+// ClearPurchaseRequest clears the "purchase_request" edge to the PurchaseRequest entity.
+func (ouo *OrderUpdateOne) ClearPurchaseRequest() *OrderUpdateOne {
+	ouo.mutation.ClearPurchaseRequest()
 	return ouo
 }
 
-// RemoveLogisticIDs removes the "logistic" edge to Logistic entities by IDs.
-func (ouo *OrderUpdateOne) RemoveLogisticIDs(ids ...int) *OrderUpdateOne {
-	ouo.mutation.RemoveLogisticIDs(ids...)
+// Where appends a list predicates to the OrderUpdate builder.
+func (ouo *OrderUpdateOne) Where(ps ...predicate.Order) *OrderUpdateOne {
+	ouo.mutation.Where(ps...)
 	return ouo
-}
-
-// RemoveLogistic removes "logistic" edges to Logistic entities.
-func (ouo *OrderUpdateOne) RemoveLogistic(l ...*Logistic) *OrderUpdateOne {
-	ids := make([]int, len(l))
-	for i := range l {
-		ids[i] = l[i].ID
-	}
-	return ouo.RemoveLogisticIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -1501,47 +1448,8 @@ func (ouo *OrderUpdateOne) Select(field string, fields ...string) *OrderUpdateOn
 
 // Save executes the query and returns the updated Order entity.
 func (ouo *OrderUpdateOne) Save(ctx context.Context) (*Order, error) {
-	var (
-		err  error
-		node *Order
-	)
 	ouo.defaults()
-	if len(ouo.hooks) == 0 {
-		if err = ouo.check(); err != nil {
-			return nil, err
-		}
-		node, err = ouo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*OrderMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = ouo.check(); err != nil {
-				return nil, err
-			}
-			ouo.mutation = mutation
-			node, err = ouo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(ouo.hooks) - 1; i >= 0; i-- {
-			if ouo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = ouo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, ouo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Order)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from OrderMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, ouo.sqlSave, ouo.mutation, ouo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -1601,20 +1509,19 @@ func (ouo *OrderUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Order.status": %w`, err)}
 		}
 	}
+	if v, ok := ouo.mutation.CustomerApproval(); ok {
+		if err := order.CustomerApprovalValidator(v); err != nil {
+			return &ValidationError{Name: "customer_approval", err: fmt.Errorf(`ent: validator failed for field "Order.customer_approval": %w`, err)}
+		}
+	}
 	return nil
 }
 
 func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   order.Table,
-			Columns: order.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: order.FieldID,
-			},
-		},
+	if err := ouo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(order.Table, order.Columns, sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt))
 	id, ok := ouo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Order.id" for update`)}
@@ -1640,139 +1547,75 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 		}
 	}
 	if value, ok := ouo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: order.FieldUpdatedAt,
-		})
+		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := ouo.mutation.OrderNumber(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldOrderNumber,
-		})
+		_spec.SetField(order.FieldOrderNumber, field.TypeString, value)
 	}
 	if value, ok := ouo.mutation.Currency(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldCurrency,
-		})
+		_spec.SetField(order.FieldCurrency, field.TypeString, value)
 	}
 	if value, ok := ouo.mutation.Amount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldAmount,
-		})
+		_spec.SetField(order.FieldAmount, field.TypeFloat64, value)
 	}
 	if value, ok := ouo.mutation.AddedAmount(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldAmount,
-		})
+		_spec.AddField(order.FieldAmount, field.TypeFloat64, value)
 	}
 	if value, ok := ouo.mutation.DeliveryFee(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldDeliveryFee,
-		})
+		_spec.SetField(order.FieldDeliveryFee, field.TypeFloat64, value)
 	}
 	if value, ok := ouo.mutation.AddedDeliveryFee(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldDeliveryFee,
-		})
+		_spec.AddField(order.FieldDeliveryFee, field.TypeFloat64, value)
 	}
 	if value, ok := ouo.mutation.Reference(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldReference,
-		})
+		_spec.SetField(order.FieldReference, field.TypeString, value)
 	}
 	if ouo.mutation.ReferenceCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: order.FieldReference,
-		})
+		_spec.ClearField(order.FieldReference, field.TypeString)
 	}
 	if value, ok := ouo.mutation.Channel(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldChannel,
-		})
+		_spec.SetField(order.FieldChannel, field.TypeString, value)
 	}
 	if ouo.mutation.ChannelCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: order.FieldChannel,
-		})
+		_spec.ClearField(order.FieldChannel, field.TypeString)
 	}
 	if value, ok := ouo.mutation.PaidAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldPaidAt,
-		})
+		_spec.SetField(order.FieldPaidAt, field.TypeString, value)
 	}
 	if ouo.mutation.PaidAtCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: order.FieldPaidAt,
-		})
+		_spec.ClearField(order.FieldPaidAt, field.TypeString)
 	}
 	if value, ok := ouo.mutation.DeliveryMethod(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: order.FieldDeliveryMethod,
-		})
+		_spec.SetField(order.FieldDeliveryMethod, field.TypeEnum, value)
 	}
 	if value, ok := ouo.mutation.PaymentMethod(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: order.FieldPaymentMethod,
-		})
+		_spec.SetField(order.FieldPaymentMethod, field.TypeEnum, value)
 	}
 	if value, ok := ouo.mutation.Status(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: order.FieldStatus,
-		})
+		_spec.SetField(order.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := ouo.mutation.CustomerApproval(); ok {
+		_spec.SetField(order.FieldCustomerApproval, field.TypeEnum, value)
+	}
+	if ouo.mutation.CustomerApprovalCleared() {
+		_spec.ClearField(order.FieldCustomerApproval, field.TypeEnum)
 	}
 	if value, ok := ouo.mutation.StoreTasksCreated(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: order.FieldStoreTasksCreated,
+		_spec.SetField(order.FieldStoreTasksCreated, field.TypeJSON, value)
+	}
+	if value, ok := ouo.mutation.AppendedStoreTasksCreated(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, order.FieldStoreTasksCreated, value)
 		})
 	}
 	if ouo.mutation.StoreTasksCreatedCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: order.FieldStoreTasksCreated,
-		})
+		_spec.ClearField(order.FieldStoreTasksCreated, field.TypeJSON)
 	}
 	if value, ok := ouo.mutation.DeliveredAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: order.FieldDeliveredAt,
-		})
+		_spec.SetField(order.FieldDeliveredAt, field.TypeTime, value)
 	}
 	if ouo.mutation.DeliveredAtCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Column: order.FieldDeliveredAt,
-		})
+		_spec.ClearField(order.FieldDeliveredAt, field.TypeTime)
 	}
 	if ouo.mutation.DetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1782,10 +1625,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.DetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1798,10 +1638,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.DetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1817,10 +1654,36 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.DetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ouo.mutation.LogisticCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   order.LogisticTable,
+			Columns: []string{order.LogisticColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(logistic.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ouo.mutation.LogisticIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   order.LogisticTable,
+			Columns: []string{order.LogisticColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(logistic.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1836,10 +1699,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1852,10 +1712,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1871,10 +1728,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1887,10 +1741,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1906,10 +1757,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1922,10 +1770,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1941,10 +1786,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.AddressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1957,10 +1799,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.AddressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1976,10 +1815,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.PickupColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: pickupstation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(pickupstation.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1992,10 +1828,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: []string{order.PickupColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: pickupstation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(pickupstation.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -2011,10 +1844,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: order.StoresPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -2027,10 +1857,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: order.StoresPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -2046,10 +1873,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Columns: order.StoresPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -2057,53 +1881,28 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ouo.mutation.LogisticCleared() {
+	if ouo.mutation.PurchaseRequestCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.LogisticTable,
-			Columns: order.LogisticPrimaryKey,
+			Table:   order.PurchaseRequestTable,
+			Columns: []string{order.PurchaseRequestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ouo.mutation.RemovedLogisticIDs(); len(nodes) > 0 && !ouo.mutation.LogisticCleared() {
+	if nodes := ouo.mutation.PurchaseRequestIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.LogisticTable,
-			Columns: order.LogisticPrimaryKey,
+			Table:   order.PurchaseRequestTable,
+			Columns: []string{order.PurchaseRequestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ouo.mutation.LogisticIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   order.LogisticTable,
-			Columns: order.LogisticPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -2122,5 +1921,6 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 		}
 		return nil, err
 	}
+	ouo.mutation.done = true
 	return _node, nil
 }

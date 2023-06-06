@@ -54,6 +54,33 @@ func (pcmu *ProductCategoryMinorUpdate) SetSlug(s string) *ProductCategoryMinorU
 	return pcmu
 }
 
+// SetPercentage sets the "percentage" field.
+func (pcmu *ProductCategoryMinorUpdate) SetPercentage(i int) *ProductCategoryMinorUpdate {
+	pcmu.mutation.ResetPercentage()
+	pcmu.mutation.SetPercentage(i)
+	return pcmu
+}
+
+// SetNillablePercentage sets the "percentage" field if the given value is not nil.
+func (pcmu *ProductCategoryMinorUpdate) SetNillablePercentage(i *int) *ProductCategoryMinorUpdate {
+	if i != nil {
+		pcmu.SetPercentage(*i)
+	}
+	return pcmu
+}
+
+// AddPercentage adds i to the "percentage" field.
+func (pcmu *ProductCategoryMinorUpdate) AddPercentage(i int) *ProductCategoryMinorUpdate {
+	pcmu.mutation.AddPercentage(i)
+	return pcmu
+}
+
+// ClearPercentage clears the value of the "percentage" field.
+func (pcmu *ProductCategoryMinorUpdate) ClearPercentage() *ProductCategoryMinorUpdate {
+	pcmu.mutation.ClearPercentage()
+	return pcmu
+}
+
 // SetMajorID sets the "major" edge to the ProductCategoryMajor entity by ID.
 func (pcmu *ProductCategoryMinorUpdate) SetMajorID(id int) *ProductCategoryMinorUpdate {
 	pcmu.mutation.SetMajorID(id)
@@ -114,41 +141,8 @@ func (pcmu *ProductCategoryMinorUpdate) RemoveProducts(p ...*Product) *ProductCa
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (pcmu *ProductCategoryMinorUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	pcmu.defaults()
-	if len(pcmu.hooks) == 0 {
-		if err = pcmu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = pcmu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProductCategoryMinorMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pcmu.check(); err != nil {
-				return 0, err
-			}
-			pcmu.mutation = mutation
-			affected, err = pcmu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(pcmu.hooks) - 1; i >= 0; i-- {
-			if pcmu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pcmu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, pcmu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, pcmu.sqlSave, pcmu.mutation, pcmu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -205,16 +199,10 @@ func (pcmu *ProductCategoryMinorUpdate) check() error {
 }
 
 func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   productcategoryminor.Table,
-			Columns: productcategoryminor.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: productcategoryminor.FieldID,
-			},
-		},
+	if err := pcmu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(productcategoryminor.Table, productcategoryminor.Columns, sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt))
 	if ps := pcmu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -223,32 +211,25 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 	}
 	if value, ok := pcmu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: productcategoryminor.FieldUpdatedAt,
-		})
+		_spec.SetField(productcategoryminor.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := pcmu.mutation.Category(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategoryminor.FieldCategory,
-		})
+		_spec.SetField(productcategoryminor.FieldCategory, field.TypeString, value)
 	}
 	if value, ok := pcmu.mutation.Image(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategoryminor.FieldImage,
-		})
+		_spec.SetField(productcategoryminor.FieldImage, field.TypeString, value)
 	}
 	if value, ok := pcmu.mutation.Slug(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategoryminor.FieldSlug,
-		})
+		_spec.SetField(productcategoryminor.FieldSlug, field.TypeString, value)
+	}
+	if value, ok := pcmu.mutation.Percentage(); ok {
+		_spec.SetField(productcategoryminor.FieldPercentage, field.TypeInt, value)
+	}
+	if value, ok := pcmu.mutation.AddedPercentage(); ok {
+		_spec.AddField(productcategoryminor.FieldPercentage, field.TypeInt, value)
+	}
+	if pcmu.mutation.PercentageCleared() {
+		_spec.ClearField(productcategoryminor.FieldPercentage, field.TypeInt)
 	}
 	if pcmu.mutation.MajorCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -258,10 +239,7 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategoryminor.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -274,10 +252,7 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategoryminor.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -293,10 +268,7 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -309,10 +281,7 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -328,10 +297,7 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -347,6 +313,7 @@ func (pcmu *ProductCategoryMinorUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 		return 0, err
 	}
+	pcmu.mutation.done = true
 	return n, nil
 }
 
@@ -379,6 +346,33 @@ func (pcmuo *ProductCategoryMinorUpdateOne) SetImage(s string) *ProductCategoryM
 // SetSlug sets the "slug" field.
 func (pcmuo *ProductCategoryMinorUpdateOne) SetSlug(s string) *ProductCategoryMinorUpdateOne {
 	pcmuo.mutation.SetSlug(s)
+	return pcmuo
+}
+
+// SetPercentage sets the "percentage" field.
+func (pcmuo *ProductCategoryMinorUpdateOne) SetPercentage(i int) *ProductCategoryMinorUpdateOne {
+	pcmuo.mutation.ResetPercentage()
+	pcmuo.mutation.SetPercentage(i)
+	return pcmuo
+}
+
+// SetNillablePercentage sets the "percentage" field if the given value is not nil.
+func (pcmuo *ProductCategoryMinorUpdateOne) SetNillablePercentage(i *int) *ProductCategoryMinorUpdateOne {
+	if i != nil {
+		pcmuo.SetPercentage(*i)
+	}
+	return pcmuo
+}
+
+// AddPercentage adds i to the "percentage" field.
+func (pcmuo *ProductCategoryMinorUpdateOne) AddPercentage(i int) *ProductCategoryMinorUpdateOne {
+	pcmuo.mutation.AddPercentage(i)
+	return pcmuo
+}
+
+// ClearPercentage clears the value of the "percentage" field.
+func (pcmuo *ProductCategoryMinorUpdateOne) ClearPercentage() *ProductCategoryMinorUpdateOne {
+	pcmuo.mutation.ClearPercentage()
 	return pcmuo
 }
 
@@ -440,6 +434,12 @@ func (pcmuo *ProductCategoryMinorUpdateOne) RemoveProducts(p ...*Product) *Produ
 	return pcmuo.RemoveProductIDs(ids...)
 }
 
+// Where appends a list predicates to the ProductCategoryMinorUpdate builder.
+func (pcmuo *ProductCategoryMinorUpdateOne) Where(ps ...predicate.ProductCategoryMinor) *ProductCategoryMinorUpdateOne {
+	pcmuo.mutation.Where(ps...)
+	return pcmuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (pcmuo *ProductCategoryMinorUpdateOne) Select(field string, fields ...string) *ProductCategoryMinorUpdateOne {
@@ -449,47 +449,8 @@ func (pcmuo *ProductCategoryMinorUpdateOne) Select(field string, fields ...strin
 
 // Save executes the query and returns the updated ProductCategoryMinor entity.
 func (pcmuo *ProductCategoryMinorUpdateOne) Save(ctx context.Context) (*ProductCategoryMinor, error) {
-	var (
-		err  error
-		node *ProductCategoryMinor
-	)
 	pcmuo.defaults()
-	if len(pcmuo.hooks) == 0 {
-		if err = pcmuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = pcmuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProductCategoryMinorMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pcmuo.check(); err != nil {
-				return nil, err
-			}
-			pcmuo.mutation = mutation
-			node, err = pcmuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(pcmuo.hooks) - 1; i >= 0; i-- {
-			if pcmuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pcmuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, pcmuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*ProductCategoryMinor)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ProductCategoryMinorMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, pcmuo.sqlSave, pcmuo.mutation, pcmuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -546,16 +507,10 @@ func (pcmuo *ProductCategoryMinorUpdateOne) check() error {
 }
 
 func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node *ProductCategoryMinor, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   productcategoryminor.Table,
-			Columns: productcategoryminor.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: productcategoryminor.FieldID,
-			},
-		},
+	if err := pcmuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(productcategoryminor.Table, productcategoryminor.Columns, sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt))
 	id, ok := pcmuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "ProductCategoryMinor.id" for update`)}
@@ -581,32 +536,25 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 	}
 	if value, ok := pcmuo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: productcategoryminor.FieldUpdatedAt,
-		})
+		_spec.SetField(productcategoryminor.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := pcmuo.mutation.Category(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategoryminor.FieldCategory,
-		})
+		_spec.SetField(productcategoryminor.FieldCategory, field.TypeString, value)
 	}
 	if value, ok := pcmuo.mutation.Image(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategoryminor.FieldImage,
-		})
+		_spec.SetField(productcategoryminor.FieldImage, field.TypeString, value)
 	}
 	if value, ok := pcmuo.mutation.Slug(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategoryminor.FieldSlug,
-		})
+		_spec.SetField(productcategoryminor.FieldSlug, field.TypeString, value)
+	}
+	if value, ok := pcmuo.mutation.Percentage(); ok {
+		_spec.SetField(productcategoryminor.FieldPercentage, field.TypeInt, value)
+	}
+	if value, ok := pcmuo.mutation.AddedPercentage(); ok {
+		_spec.AddField(productcategoryminor.FieldPercentage, field.TypeInt, value)
+	}
+	if pcmuo.mutation.PercentageCleared() {
+		_spec.ClearField(productcategoryminor.FieldPercentage, field.TypeInt)
 	}
 	if pcmuo.mutation.MajorCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -616,10 +564,7 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategoryminor.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -632,10 +577,7 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategoryminor.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -651,10 +593,7 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -667,10 +606,7 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -686,10 +622,7 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategoryminor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -708,5 +641,6 @@ func (pcmuo *ProductCategoryMinorUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 		return nil, err
 	}
+	pcmuo.mutation.done = true
 	return _node, nil
 }

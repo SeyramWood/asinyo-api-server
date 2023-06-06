@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
@@ -31,6 +32,7 @@ type Favourite struct {
 	customer_favourites *int
 	merchant_favourites *int
 	product_favourites  *int
+	selectValues        sql.SelectValues
 }
 
 // FavouriteEdges holds the relations/edges for other nodes in the graph.
@@ -118,7 +120,7 @@ func (*Favourite) scanValues(columns []string) ([]any, error) {
 		case favourite.ForeignKeys[3]: // product_favourites
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Favourite", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -178,36 +180,44 @@ func (f *Favourite) assignValues(columns []string, values []any) error {
 				f.product_favourites = new(int)
 				*f.product_favourites = int(value.Int64)
 			}
+		default:
+			f.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Favourite.
+// This includes values selected through modifiers, order, etc.
+func (f *Favourite) Value(name string) (ent.Value, error) {
+	return f.selectValues.Get(name)
+}
+
 // QueryMerchant queries the "merchant" edge of the Favourite entity.
 func (f *Favourite) QueryMerchant() *MerchantQuery {
-	return (&FavouriteClient{config: f.config}).QueryMerchant(f)
+	return NewFavouriteClient(f.config).QueryMerchant(f)
 }
 
 // QueryAgent queries the "agent" edge of the Favourite entity.
 func (f *Favourite) QueryAgent() *AgentQuery {
-	return (&FavouriteClient{config: f.config}).QueryAgent(f)
+	return NewFavouriteClient(f.config).QueryAgent(f)
 }
 
 // QueryCustomer queries the "customer" edge of the Favourite entity.
 func (f *Favourite) QueryCustomer() *CustomerQuery {
-	return (&FavouriteClient{config: f.config}).QueryCustomer(f)
+	return NewFavouriteClient(f.config).QueryCustomer(f)
 }
 
 // QueryProduct queries the "product" edge of the Favourite entity.
 func (f *Favourite) QueryProduct() *ProductQuery {
-	return (&FavouriteClient{config: f.config}).QueryProduct(f)
+	return NewFavouriteClient(f.config).QueryProduct(f)
 }
 
 // Update returns a builder for updating this Favourite.
 // Note that you need to call Favourite.Unwrap() before calling this method if this Favourite
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (f *Favourite) Update() *FavouriteUpdateOne {
-	return (&FavouriteClient{config: f.config}).UpdateOne(f)
+	return NewFavouriteClient(f.config).UpdateOne(f)
 }
 
 // Unwrap unwraps the Favourite entity that was returned from a transaction after it was closed,
@@ -237,9 +247,3 @@ func (f *Favourite) String() string {
 
 // Favourites is a parsable slice of Favourite.
 type Favourites []*Favourite
-
-func (f Favourites) config(cfg config) {
-	for _i := range f {
-		f[_i].config = cfg
-	}
-}

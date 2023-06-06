@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (pcmd *ProductCategoryMinorDelete) Where(ps ...predicate.ProductCategoryMin
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (pcmd *ProductCategoryMinorDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(pcmd.hooks) == 0 {
-		affected, err = pcmd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProductCategoryMinorMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			pcmd.mutation = mutation
-			affected, err = pcmd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(pcmd.hooks) - 1; i >= 0; i-- {
-			if pcmd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pcmd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, pcmd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, pcmd.sqlExec, pcmd.mutation, pcmd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (pcmd *ProductCategoryMinorDelete) ExecX(ctx context.Context) int {
 }
 
 func (pcmd *ProductCategoryMinorDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: productcategoryminor.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: productcategoryminor.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(productcategoryminor.Table, sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt))
 	if ps := pcmd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (pcmd *ProductCategoryMinorDelete) sqlExec(ctx context.Context) (int, error
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	pcmd.mutation.done = true
 	return affected, err
 }
 
 // ProductCategoryMinorDeleteOne is the builder for deleting a single ProductCategoryMinor entity.
 type ProductCategoryMinorDeleteOne struct {
 	pcmd *ProductCategoryMinorDelete
+}
+
+// Where appends a list predicates to the ProductCategoryMinorDelete builder.
+func (pcmdo *ProductCategoryMinorDeleteOne) Where(ps ...predicate.ProductCategoryMinor) *ProductCategoryMinorDeleteOne {
+	pcmdo.pcmd.mutation.Where(ps...)
+	return pcmdo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (pcmdo *ProductCategoryMinorDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (pcmdo *ProductCategoryMinorDeleteOne) ExecX(ctx context.Context) {
-	pcmdo.pcmd.ExecX(ctx)
+	if err := pcmdo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

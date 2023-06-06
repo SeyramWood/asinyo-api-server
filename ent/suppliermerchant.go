@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/suppliermerchant"
@@ -35,6 +36,7 @@ type SupplierMerchant struct {
 	// The values are being populated by the SupplierMerchantQuery when eager-loading is set.
 	Edges             SupplierMerchantEdges `json:"edges"`
 	merchant_supplier *int
+	selectValues      sql.SelectValues
 }
 
 // SupplierMerchantEdges holds the relations/edges for other nodes in the graph.
@@ -73,7 +75,7 @@ func (*SupplierMerchant) scanValues(columns []string) ([]any, error) {
 		case suppliermerchant.ForeignKeys[0]: // merchant_supplier
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type SupplierMerchant", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -143,21 +145,29 @@ func (sm *SupplierMerchant) assignValues(columns []string, values []any) error {
 				sm.merchant_supplier = new(int)
 				*sm.merchant_supplier = int(value.Int64)
 			}
+		default:
+			sm.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the SupplierMerchant.
+// This includes values selected through modifiers, order, etc.
+func (sm *SupplierMerchant) Value(name string) (ent.Value, error) {
+	return sm.selectValues.Get(name)
+}
+
 // QueryMerchant queries the "merchant" edge of the SupplierMerchant entity.
 func (sm *SupplierMerchant) QueryMerchant() *MerchantQuery {
-	return (&SupplierMerchantClient{config: sm.config}).QueryMerchant(sm)
+	return NewSupplierMerchantClient(sm.config).QueryMerchant(sm)
 }
 
 // Update returns a builder for updating this SupplierMerchant.
 // Note that you need to call SupplierMerchant.Unwrap() before calling this method if this SupplierMerchant
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (sm *SupplierMerchant) Update() *SupplierMerchantUpdateOne {
-	return (&SupplierMerchantClient{config: sm.config}).UpdateOne(sm)
+	return NewSupplierMerchantClient(sm.config).UpdateOne(sm)
 }
 
 // Unwrap unwraps the SupplierMerchant entity that was returned from a transaction after it was closed,
@@ -204,9 +214,3 @@ func (sm *SupplierMerchant) String() string {
 
 // SupplierMerchants is a parsable slice of SupplierMerchant.
 type SupplierMerchants []*SupplierMerchant
-
-func (sm SupplierMerchants) config(cfg config) {
-	for _i := range sm {
-		sm[_i].config = cfg
-	}
-}

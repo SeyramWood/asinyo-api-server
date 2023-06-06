@@ -298,41 +298,8 @@ func (pu *ProductUpdate) ClearMinor() *ProductUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (pu *ProductUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	pu.defaults()
-	if len(pu.hooks) == 0 {
-		if err = pu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = pu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProductMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pu.check(); err != nil {
-				return 0, err
-			}
-			pu.mutation = mutation
-			affected, err = pu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(pu.hooks) - 1; i >= 0; i-- {
-			if pu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, pu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, pu.sqlSave, pu.mutation, pu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -400,16 +367,10 @@ func (pu *ProductUpdate) check() error {
 }
 
 func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   product.Table,
-			Columns: product.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: product.FieldID,
-			},
-		},
+	if err := pu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(product.Table, product.Columns, sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt))
 	if ps := pu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -418,109 +379,49 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := pu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: product.FieldUpdatedAt,
-		})
+		_spec.SetField(product.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := pu.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: product.FieldName,
-		})
+		_spec.SetField(product.FieldName, field.TypeString, value)
 	}
 	if value, ok := pu.mutation.Price(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: product.FieldPrice,
-		})
+		_spec.SetField(product.FieldPrice, field.TypeFloat64, value)
 	}
 	if value, ok := pu.mutation.AddedPrice(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: product.FieldPrice,
-		})
+		_spec.AddField(product.FieldPrice, field.TypeFloat64, value)
 	}
 	if value, ok := pu.mutation.PromoPrice(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: product.FieldPromoPrice,
-		})
+		_spec.SetField(product.FieldPromoPrice, field.TypeFloat64, value)
 	}
 	if value, ok := pu.mutation.AddedPromoPrice(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: product.FieldPromoPrice,
-		})
+		_spec.AddField(product.FieldPromoPrice, field.TypeFloat64, value)
 	}
 	if value, ok := pu.mutation.Weight(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint32,
-			Value:  value,
-			Column: product.FieldWeight,
-		})
+		_spec.SetField(product.FieldWeight, field.TypeUint32, value)
 	}
 	if value, ok := pu.mutation.AddedWeight(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint32,
-			Value:  value,
-			Column: product.FieldWeight,
-		})
+		_spec.AddField(product.FieldWeight, field.TypeUint32, value)
 	}
 	if value, ok := pu.mutation.Quantity(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint32,
-			Value:  value,
-			Column: product.FieldQuantity,
-		})
+		_spec.SetField(product.FieldQuantity, field.TypeUint32, value)
 	}
 	if value, ok := pu.mutation.AddedQuantity(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint32,
-			Value:  value,
-			Column: product.FieldQuantity,
-		})
+		_spec.AddField(product.FieldQuantity, field.TypeUint32, value)
 	}
 	if value, ok := pu.mutation.Unit(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: product.FieldUnit,
-		})
+		_spec.SetField(product.FieldUnit, field.TypeString, value)
 	}
 	if value, ok := pu.mutation.Description(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: product.FieldDescription,
-		})
+		_spec.SetField(product.FieldDescription, field.TypeString, value)
 	}
 	if value, ok := pu.mutation.Image(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: product.FieldImage,
-		})
+		_spec.SetField(product.FieldImage, field.TypeString, value)
 	}
 	if value, ok := pu.mutation.BestDeal(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: product.FieldBestDeal,
-		})
+		_spec.SetField(product.FieldBestDeal, field.TypeUint64, value)
 	}
 	if value, ok := pu.mutation.AddedBestDeal(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: product.FieldBestDeal,
-		})
+		_spec.AddField(product.FieldBestDeal, field.TypeUint64, value)
 	}
 	if pu.mutation.OrderDetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -530,10 +431,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -546,10 +444,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -565,10 +460,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -584,10 +476,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -600,10 +489,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -619,10 +505,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -638,10 +521,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -654,10 +534,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -673,10 +550,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -689,10 +563,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -708,10 +579,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.MinorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -724,10 +592,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{product.MinorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -743,6 +608,7 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	pu.mutation.done = true
 	return n, nil
 }
 
@@ -1017,6 +883,12 @@ func (puo *ProductUpdateOne) ClearMinor() *ProductUpdateOne {
 	return puo
 }
 
+// Where appends a list predicates to the ProductUpdate builder.
+func (puo *ProductUpdateOne) Where(ps ...predicate.Product) *ProductUpdateOne {
+	puo.mutation.Where(ps...)
+	return puo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (puo *ProductUpdateOne) Select(field string, fields ...string) *ProductUpdateOne {
@@ -1026,47 +898,8 @@ func (puo *ProductUpdateOne) Select(field string, fields ...string) *ProductUpda
 
 // Save executes the query and returns the updated Product entity.
 func (puo *ProductUpdateOne) Save(ctx context.Context) (*Product, error) {
-	var (
-		err  error
-		node *Product
-	)
 	puo.defaults()
-	if len(puo.hooks) == 0 {
-		if err = puo.check(); err != nil {
-			return nil, err
-		}
-		node, err = puo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProductMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = puo.check(); err != nil {
-				return nil, err
-			}
-			puo.mutation = mutation
-			node, err = puo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(puo.hooks) - 1; i >= 0; i-- {
-			if puo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = puo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, puo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Product)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ProductMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, puo.sqlSave, puo.mutation, puo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -1134,16 +967,10 @@ func (puo *ProductUpdateOne) check() error {
 }
 
 func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   product.Table,
-			Columns: product.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: product.FieldID,
-			},
-		},
+	if err := puo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(product.Table, product.Columns, sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt))
 	id, ok := puo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Product.id" for update`)}
@@ -1169,109 +996,49 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 		}
 	}
 	if value, ok := puo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: product.FieldUpdatedAt,
-		})
+		_spec.SetField(product.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := puo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: product.FieldName,
-		})
+		_spec.SetField(product.FieldName, field.TypeString, value)
 	}
 	if value, ok := puo.mutation.Price(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: product.FieldPrice,
-		})
+		_spec.SetField(product.FieldPrice, field.TypeFloat64, value)
 	}
 	if value, ok := puo.mutation.AddedPrice(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: product.FieldPrice,
-		})
+		_spec.AddField(product.FieldPrice, field.TypeFloat64, value)
 	}
 	if value, ok := puo.mutation.PromoPrice(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: product.FieldPromoPrice,
-		})
+		_spec.SetField(product.FieldPromoPrice, field.TypeFloat64, value)
 	}
 	if value, ok := puo.mutation.AddedPromoPrice(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: product.FieldPromoPrice,
-		})
+		_spec.AddField(product.FieldPromoPrice, field.TypeFloat64, value)
 	}
 	if value, ok := puo.mutation.Weight(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint32,
-			Value:  value,
-			Column: product.FieldWeight,
-		})
+		_spec.SetField(product.FieldWeight, field.TypeUint32, value)
 	}
 	if value, ok := puo.mutation.AddedWeight(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint32,
-			Value:  value,
-			Column: product.FieldWeight,
-		})
+		_spec.AddField(product.FieldWeight, field.TypeUint32, value)
 	}
 	if value, ok := puo.mutation.Quantity(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint32,
-			Value:  value,
-			Column: product.FieldQuantity,
-		})
+		_spec.SetField(product.FieldQuantity, field.TypeUint32, value)
 	}
 	if value, ok := puo.mutation.AddedQuantity(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint32,
-			Value:  value,
-			Column: product.FieldQuantity,
-		})
+		_spec.AddField(product.FieldQuantity, field.TypeUint32, value)
 	}
 	if value, ok := puo.mutation.Unit(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: product.FieldUnit,
-		})
+		_spec.SetField(product.FieldUnit, field.TypeString, value)
 	}
 	if value, ok := puo.mutation.Description(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: product.FieldDescription,
-		})
+		_spec.SetField(product.FieldDescription, field.TypeString, value)
 	}
 	if value, ok := puo.mutation.Image(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: product.FieldImage,
-		})
+		_spec.SetField(product.FieldImage, field.TypeString, value)
 	}
 	if value, ok := puo.mutation.BestDeal(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: product.FieldBestDeal,
-		})
+		_spec.SetField(product.FieldBestDeal, field.TypeUint64, value)
 	}
 	if value, ok := puo.mutation.AddedBestDeal(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: product.FieldBestDeal,
-		})
+		_spec.AddField(product.FieldBestDeal, field.TypeUint64, value)
 	}
 	if puo.mutation.OrderDetailsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1281,10 +1048,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1297,10 +1061,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1316,10 +1077,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1335,10 +1093,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1351,10 +1106,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1370,10 +1122,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1389,10 +1138,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1405,10 +1151,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1424,10 +1167,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1440,10 +1180,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.MajorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategorymajor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1459,10 +1196,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.MinorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1475,10 +1209,7 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Columns: []string{product.MinorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1497,5 +1228,6 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 		}
 		return nil, err
 	}
+	puo.mutation.done = true
 	return _node, nil
 }

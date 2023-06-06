@@ -27,20 +27,28 @@ func NewAuthRepo(db *database.Adapter) gateways.AuthRepo {
 func (r *repository) ReadAdmin(username, field string) (*ent.Admin, error) {
 	if field == "id" {
 		id, _ := strconv.Atoi(username)
-		user, err := r.db.Admin.Query().Where(admin.ID(id)).First(context.Background())
+		user, err := r.db.Admin.Query().Where(admin.ID(id)).WithRoles(
+			func(query *ent.RoleQuery) {
+				query.WithPermissions()
+			},
+		).First(context.Background())
 		if err != nil {
 			return nil, err
 		}
 		return user, nil
 	}
-	user, err := r.db.Admin.Query().Where(admin.Username(username)).First(context.Background())
+	user, err := r.db.Admin.Query().Where(admin.Username(username)).WithRoles(
+		func(query *ent.RoleQuery) {
+			query.WithPermissions()
+		},
+	).First(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	return user, nil
 }
-func (r *repository) ReadCustomer(username, field string) (*ent.Customer, error) {
 
+func (r *repository) ReadCustomer(username, field string) (*ent.Customer, error) {
 	if field == "id" {
 		id, _ := strconv.Atoi(username)
 		user, err := r.db.Customer.Query().Where(customer.ID(id)).
@@ -61,6 +69,7 @@ func (r *repository) ReadCustomer(username, field string) (*ent.Customer, error)
 	}
 	return user, nil
 }
+
 func (r *repository) ReadAgent(username, field string) (*ent.Agent, error) {
 	if field == "id" {
 		id, _ := strconv.Atoi(username)
@@ -76,22 +85,31 @@ func (r *repository) ReadAgent(username, field string) (*ent.Agent, error) {
 	}
 	return user, nil
 }
+
 func (r *repository) ReadMerchant(username, field string) (*ent.Merchant, error) {
 	if field == "id" {
 		id, _ := strconv.Atoi(username)
-		user, err := r.db.Merchant.Query().Where(merchant.ID(id)).WithSupplier().WithRetailer().
+		user, err := r.db.Merchant.Query().Where(merchant.ID(id)).
+			WithSupplier().
+			WithRetailer().
+			WithStore().
 			Only(context.Background())
 		if err != nil {
 			return nil, err
 		}
 		return user, nil
 	}
-	user, err := r.db.Merchant.Query().Where(merchant.Username(username)).WithSupplier().WithRetailer().Only(context.Background())
+	user, err := r.db.Merchant.Query().Where(merchant.Username(username)).
+		WithSupplier().
+		WithRetailer().
+		WithStore().
+		Only(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	return user, nil
 }
+
 func (r *repository) UpdatePassword(id int, password string, userType string, isOTP bool) (bool, error) {
 	ctx := context.Background()
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 16)
@@ -136,6 +154,7 @@ func (r *repository) UpdatePassword(id int, password string, userType string, is
 		return false, nil
 	}
 }
+
 func (r *repository) ResetPassword(id int, password, userType string) (bool, error) {
 	ctx := context.Background()
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 16)

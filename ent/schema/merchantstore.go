@@ -49,7 +49,6 @@ func (MerchantStore) Edges() []ent.Edge {
 		edge.From("agent", Agent.Type).
 			Ref("store").
 			Unique(),
-		edge.To("logistics", Logistic.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 		edge.To("requests", AgentRequest.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 		edge.To("orders", Order.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 		edge.To("order_details", OrderDetail.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),

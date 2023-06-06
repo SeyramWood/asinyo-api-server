@@ -12,427 +12,277 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id int) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id int) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id int) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...int) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...int) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id int) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id int) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id int) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id int) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldLTE(FieldID, id))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // Category applies equality check predicate on the "category" field. It's identical to CategoryEQ.
 func Category(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEQ(FieldCategory, v))
 }
 
 // Slug applies equality check predicate on the "slug" field. It's identical to SlugEQ.
 func Slug(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEQ(FieldSlug, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
 func CreatedAtNEQ(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldNEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtIn applies the In predicate on the "created_at" field.
 func CreatedAtIn(vs ...time.Time) predicate.ProductCategoryMajor {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
 func CreatedAtNotIn(vs ...time.Time) predicate.ProductCategoryMajor {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldNotIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtGT applies the GT predicate on the "created_at" field.
 func CreatedAtGT(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldGT(FieldCreatedAt, v))
 }
 
 // CreatedAtGTE applies the GTE predicate on the "created_at" field.
 func CreatedAtGTE(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldGTE(FieldCreatedAt, v))
 }
 
 // CreatedAtLT applies the LT predicate on the "created_at" field.
 func CreatedAtLT(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldLT(FieldCreatedAt, v))
 }
 
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldLTE(FieldCreatedAt, v))
 }
 
 // UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
 func UpdatedAtEQ(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
 func UpdatedAtNEQ(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldNEQ(FieldUpdatedAt, v))
 }
 
 // UpdatedAtIn applies the In predicate on the "updated_at" field.
 func UpdatedAtIn(vs ...time.Time) predicate.ProductCategoryMajor {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldUpdatedAt), v...))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldIn(FieldUpdatedAt, vs...))
 }
 
 // UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
 func UpdatedAtNotIn(vs ...time.Time) predicate.ProductCategoryMajor {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldUpdatedAt), v...))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldNotIn(FieldUpdatedAt, vs...))
 }
 
 // UpdatedAtGT applies the GT predicate on the "updated_at" field.
 func UpdatedAtGT(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldGT(FieldUpdatedAt, v))
 }
 
 // UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
 func UpdatedAtGTE(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldGTE(FieldUpdatedAt, v))
 }
 
 // UpdatedAtLT applies the LT predicate on the "updated_at" field.
 func UpdatedAtLT(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldLT(FieldUpdatedAt, v))
 }
 
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
 // CategoryEQ applies the EQ predicate on the "category" field.
 func CategoryEQ(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEQ(FieldCategory, v))
 }
 
 // CategoryNEQ applies the NEQ predicate on the "category" field.
 func CategoryNEQ(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldNEQ(FieldCategory, v))
 }
 
 // CategoryIn applies the In predicate on the "category" field.
 func CategoryIn(vs ...string) predicate.ProductCategoryMajor {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCategory), v...))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldIn(FieldCategory, vs...))
 }
 
 // CategoryNotIn applies the NotIn predicate on the "category" field.
 func CategoryNotIn(vs ...string) predicate.ProductCategoryMajor {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCategory), v...))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldNotIn(FieldCategory, vs...))
 }
 
 // CategoryGT applies the GT predicate on the "category" field.
 func CategoryGT(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldGT(FieldCategory, v))
 }
 
 // CategoryGTE applies the GTE predicate on the "category" field.
 func CategoryGTE(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldGTE(FieldCategory, v))
 }
 
 // CategoryLT applies the LT predicate on the "category" field.
 func CategoryLT(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldLT(FieldCategory, v))
 }
 
 // CategoryLTE applies the LTE predicate on the "category" field.
 func CategoryLTE(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldLTE(FieldCategory, v))
 }
 
 // CategoryContains applies the Contains predicate on the "category" field.
 func CategoryContains(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldContains(FieldCategory, v))
 }
 
 // CategoryHasPrefix applies the HasPrefix predicate on the "category" field.
 func CategoryHasPrefix(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldHasPrefix(FieldCategory, v))
 }
 
 // CategoryHasSuffix applies the HasSuffix predicate on the "category" field.
 func CategoryHasSuffix(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldHasSuffix(FieldCategory, v))
 }
 
 // CategoryEqualFold applies the EqualFold predicate on the "category" field.
 func CategoryEqualFold(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEqualFold(FieldCategory, v))
 }
 
 // CategoryContainsFold applies the ContainsFold predicate on the "category" field.
 func CategoryContainsFold(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldCategory), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldContainsFold(FieldCategory, v))
 }
 
 // SlugEQ applies the EQ predicate on the "slug" field.
 func SlugEQ(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEQ(FieldSlug, v))
 }
 
 // SlugNEQ applies the NEQ predicate on the "slug" field.
 func SlugNEQ(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldNEQ(FieldSlug, v))
 }
 
 // SlugIn applies the In predicate on the "slug" field.
 func SlugIn(vs ...string) predicate.ProductCategoryMajor {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldSlug), v...))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldIn(FieldSlug, vs...))
 }
 
 // SlugNotIn applies the NotIn predicate on the "slug" field.
 func SlugNotIn(vs ...string) predicate.ProductCategoryMajor {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldSlug), v...))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldNotIn(FieldSlug, vs...))
 }
 
 // SlugGT applies the GT predicate on the "slug" field.
 func SlugGT(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldGT(FieldSlug, v))
 }
 
 // SlugGTE applies the GTE predicate on the "slug" field.
 func SlugGTE(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldGTE(FieldSlug, v))
 }
 
 // SlugLT applies the LT predicate on the "slug" field.
 func SlugLT(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldLT(FieldSlug, v))
 }
 
 // SlugLTE applies the LTE predicate on the "slug" field.
 func SlugLTE(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldLTE(FieldSlug, v))
 }
 
 // SlugContains applies the Contains predicate on the "slug" field.
 func SlugContains(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldContains(FieldSlug, v))
 }
 
 // SlugHasPrefix applies the HasPrefix predicate on the "slug" field.
 func SlugHasPrefix(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldHasPrefix(FieldSlug, v))
 }
 
 // SlugHasSuffix applies the HasSuffix predicate on the "slug" field.
 func SlugHasSuffix(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldHasSuffix(FieldSlug, v))
 }
 
 // SlugEqualFold applies the EqualFold predicate on the "slug" field.
 func SlugEqualFold(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldEqualFold(FieldSlug, v))
 }
 
 // SlugContainsFold applies the ContainsFold predicate on the "slug" field.
 func SlugContainsFold(v string) predicate.ProductCategoryMajor {
-	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldSlug), v))
-	})
+	return predicate.ProductCategoryMajor(sql.FieldContainsFold(FieldSlug, v))
 }
 
 // HasMinors applies the HasEdge predicate on the "minors" edge.
@@ -440,7 +290,6 @@ func HasMinors() predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(MinorsTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, MinorsTable, MinorsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -450,11 +299,7 @@ func HasMinors() predicate.ProductCategoryMajor {
 // HasMinorsWith applies the HasEdge predicate on the "minors" edge with a given conditions (other predicates).
 func HasMinorsWith(preds ...predicate.ProductCategoryMinor) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(MinorsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, MinorsTable, MinorsColumn),
-		)
+		step := newMinorsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -468,7 +313,6 @@ func HasProducts() predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ProductsTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, ProductsTable, ProductsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -478,11 +322,7 @@ func HasProducts() predicate.ProductCategoryMajor {
 // HasProductsWith applies the HasEdge predicate on the "products" edge with a given conditions (other predicates).
 func HasProductsWith(preds ...predicate.Product) predicate.ProductCategoryMajor {
 	return predicate.ProductCategoryMajor(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ProductsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ProductsTable, ProductsColumn),
-		)
+		step := newProductsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

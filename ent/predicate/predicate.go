@@ -21,6 +21,9 @@ type AgentRequest func(*sql.Selector)
 // BusinessCustomer is the predicate function for businesscustomer builders.
 type BusinessCustomer func(*sql.Selector)
 
+// Configuration is the predicate function for configuration builders.
+type Configuration func(*sql.Selector)
+
 // Customer is the predicate function for customer builders.
 type Customer func(*sql.Selector)
 
@@ -39,6 +42,9 @@ type Merchant func(*sql.Selector)
 // MerchantStore is the predicate function for merchantstore builders.
 type MerchantStore func(*sql.Selector)
 
+// Notification is the predicate function for notification builders.
+type Notification func(*sql.Selector)
+
 // Order is the predicate function for order builders.
 type Order func(*sql.Selector)
 
@@ -51,6 +57,9 @@ type Permission func(*sql.Selector)
 // PickupStation is the predicate function for pickupstation builders.
 type PickupStation func(*sql.Selector)
 
+// PriceModel is the predicate function for pricemodel builders.
+type PriceModel func(*sql.Selector)
+
 // Product is the predicate function for product builders.
 type Product func(*sql.Selector)
 
@@ -59,6 +68,9 @@ type ProductCategoryMajor func(*sql.Selector)
 
 // ProductCategoryMinor is the predicate function for productcategoryminor builders.
 type ProductCategoryMinor func(*sql.Selector)
+
+// PurchaseRequest is the predicate function for purchaserequest builders.
+type PurchaseRequest func(*sql.Selector)
 
 // RetailMerchant is the predicate function for retailmerchant builders.
 type RetailMerchant func(*sql.Selector)

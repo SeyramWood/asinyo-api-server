@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -27,10 +28,13 @@ type ProductCategoryMinor struct {
 	Image string `json:"image,omitempty"`
 	// Slug holds the value of the "slug" field.
 	Slug string `json:"slug,omitempty"`
+	// Percentage holds the value of the "percentage" field.
+	Percentage int `json:"percentage,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProductCategoryMinorQuery when eager-loading is set.
 	Edges                         ProductCategoryMinorEdges `json:"edges"`
 	product_category_major_minors *int
+	selectValues                  sql.SelectValues
 }
 
 // ProductCategoryMinorEdges holds the relations/edges for other nodes in the graph.
@@ -71,7 +75,7 @@ func (*ProductCategoryMinor) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case productcategoryminor.FieldID:
+		case productcategoryminor.FieldID, productcategoryminor.FieldPercentage:
 			values[i] = new(sql.NullInt64)
 		case productcategoryminor.FieldCategory, productcategoryminor.FieldImage, productcategoryminor.FieldSlug:
 			values[i] = new(sql.NullString)
@@ -80,7 +84,7 @@ func (*ProductCategoryMinor) scanValues(columns []string) ([]any, error) {
 		case productcategoryminor.ForeignKeys[0]: // product_category_major_minors
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type ProductCategoryMinor", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -130,6 +134,12 @@ func (pcm *ProductCategoryMinor) assignValues(columns []string, values []any) er
 			} else if value.Valid {
 				pcm.Slug = value.String
 			}
+		case productcategoryminor.FieldPercentage:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field percentage", values[i])
+			} else if value.Valid {
+				pcm.Percentage = int(value.Int64)
+			}
 		case productcategoryminor.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field product_category_major_minors", value)
@@ -137,26 +147,34 @@ func (pcm *ProductCategoryMinor) assignValues(columns []string, values []any) er
 				pcm.product_category_major_minors = new(int)
 				*pcm.product_category_major_minors = int(value.Int64)
 			}
+		default:
+			pcm.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the ProductCategoryMinor.
+// This includes values selected through modifiers, order, etc.
+func (pcm *ProductCategoryMinor) Value(name string) (ent.Value, error) {
+	return pcm.selectValues.Get(name)
+}
+
 // QueryMajor queries the "major" edge of the ProductCategoryMinor entity.
 func (pcm *ProductCategoryMinor) QueryMajor() *ProductCategoryMajorQuery {
-	return (&ProductCategoryMinorClient{config: pcm.config}).QueryMajor(pcm)
+	return NewProductCategoryMinorClient(pcm.config).QueryMajor(pcm)
 }
 
 // QueryProducts queries the "products" edge of the ProductCategoryMinor entity.
 func (pcm *ProductCategoryMinor) QueryProducts() *ProductQuery {
-	return (&ProductCategoryMinorClient{config: pcm.config}).QueryProducts(pcm)
+	return NewProductCategoryMinorClient(pcm.config).QueryProducts(pcm)
 }
 
 // Update returns a builder for updating this ProductCategoryMinor.
 // Note that you need to call ProductCategoryMinor.Unwrap() before calling this method if this ProductCategoryMinor
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (pcm *ProductCategoryMinor) Update() *ProductCategoryMinorUpdateOne {
-	return (&ProductCategoryMinorClient{config: pcm.config}).UpdateOne(pcm)
+	return NewProductCategoryMinorClient(pcm.config).UpdateOne(pcm)
 }
 
 // Unwrap unwraps the ProductCategoryMinor entity that was returned from a transaction after it was closed,
@@ -189,15 +207,12 @@ func (pcm *ProductCategoryMinor) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("slug=")
 	builder.WriteString(pcm.Slug)
+	builder.WriteString(", ")
+	builder.WriteString("percentage=")
+	builder.WriteString(fmt.Sprintf("%v", pcm.Percentage))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // ProductCategoryMinors is a parsable slice of ProductCategoryMinor.
 type ProductCategoryMinors []*ProductCategoryMinor
-
-func (pcm ProductCategoryMinors) config(cfg config) {
-	for _i := range pcm {
-		pcm[_i].config = cfg
-	}
-}

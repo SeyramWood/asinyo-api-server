@@ -17,11 +17,9 @@ import (
 // AgentRequestQuery is the builder for querying AgentRequest entities.
 type AgentRequestQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
+	ctx        *QueryContext
+	order      []agentrequest.OrderOption
+	inters     []Interceptor
 	predicates []predicate.AgentRequest
 	withFKs    bool
 	// intermediate query (i.e. traversal path).
@@ -35,27 +33,27 @@ func (arq *AgentRequestQuery) Where(ps ...predicate.AgentRequest) *AgentRequestQ
 	return arq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (arq *AgentRequestQuery) Limit(limit int) *AgentRequestQuery {
-	arq.limit = &limit
+	arq.ctx.Limit = &limit
 	return arq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (arq *AgentRequestQuery) Offset(offset int) *AgentRequestQuery {
-	arq.offset = &offset
+	arq.ctx.Offset = &offset
 	return arq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (arq *AgentRequestQuery) Unique(unique bool) *AgentRequestQuery {
-	arq.unique = &unique
+	arq.ctx.Unique = &unique
 	return arq
 }
 
-// Order adds an order step to the query.
-func (arq *AgentRequestQuery) Order(o ...OrderFunc) *AgentRequestQuery {
+// Order specifies how the records should be ordered.
+func (arq *AgentRequestQuery) Order(o ...agentrequest.OrderOption) *AgentRequestQuery {
 	arq.order = append(arq.order, o...)
 	return arq
 }
@@ -63,7 +61,7 @@ func (arq *AgentRequestQuery) Order(o ...OrderFunc) *AgentRequestQuery {
 // First returns the first AgentRequest entity from the query.
 // Returns a *NotFoundError when no AgentRequest was found.
 func (arq *AgentRequestQuery) First(ctx context.Context) (*AgentRequest, error) {
-	nodes, err := arq.Limit(1).All(ctx)
+	nodes, err := arq.Limit(1).All(setContextOp(ctx, arq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +84,7 @@ func (arq *AgentRequestQuery) FirstX(ctx context.Context) *AgentRequest {
 // Returns a *NotFoundError when no AgentRequest ID was found.
 func (arq *AgentRequestQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = arq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = arq.Limit(1).IDs(setContextOp(ctx, arq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -109,7 +107,7 @@ func (arq *AgentRequestQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one AgentRequest entity is found.
 // Returns a *NotFoundError when no AgentRequest entities are found.
 func (arq *AgentRequestQuery) Only(ctx context.Context) (*AgentRequest, error) {
-	nodes, err := arq.Limit(2).All(ctx)
+	nodes, err := arq.Limit(2).All(setContextOp(ctx, arq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +135,7 @@ func (arq *AgentRequestQuery) OnlyX(ctx context.Context) *AgentRequest {
 // Returns a *NotFoundError when no entities are found.
 func (arq *AgentRequestQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = arq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = arq.Limit(2).IDs(setContextOp(ctx, arq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -162,10 +160,12 @@ func (arq *AgentRequestQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of AgentRequests.
 func (arq *AgentRequestQuery) All(ctx context.Context) ([]*AgentRequest, error) {
+	ctx = setContextOp(ctx, arq.ctx, "All")
 	if err := arq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return arq.sqlAll(ctx)
+	qr := querierAll[[]*AgentRequest, *AgentRequestQuery]()
+	return withInterceptors[[]*AgentRequest](ctx, arq, qr, arq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -178,9 +178,12 @@ func (arq *AgentRequestQuery) AllX(ctx context.Context) []*AgentRequest {
 }
 
 // IDs executes the query and returns a list of AgentRequest IDs.
-func (arq *AgentRequestQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := arq.Select(agentrequest.FieldID).Scan(ctx, &ids); err != nil {
+func (arq *AgentRequestQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if arq.ctx.Unique == nil && arq.path != nil {
+		arq.Unique(true)
+	}
+	ctx = setContextOp(ctx, arq.ctx, "IDs")
+	if err = arq.Select(agentrequest.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -197,10 +200,11 @@ func (arq *AgentRequestQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (arq *AgentRequestQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, arq.ctx, "Count")
 	if err := arq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return arq.sqlCount(ctx)
+	return withInterceptors[int](ctx, arq, querierCount[*AgentRequestQuery](), arq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -214,10 +218,15 @@ func (arq *AgentRequestQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (arq *AgentRequestQuery) Exist(ctx context.Context) (bool, error) {
-	if err := arq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, arq.ctx, "Exist")
+	switch _, err := arq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return arq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -237,14 +246,13 @@ func (arq *AgentRequestQuery) Clone() *AgentRequestQuery {
 	}
 	return &AgentRequestQuery{
 		config:     arq.config,
-		limit:      arq.limit,
-		offset:     arq.offset,
-		order:      append([]OrderFunc{}, arq.order...),
+		ctx:        arq.ctx.Clone(),
+		order:      append([]agentrequest.OrderOption{}, arq.order...),
+		inters:     append([]Interceptor{}, arq.inters...),
 		predicates: append([]predicate.AgentRequest{}, arq.predicates...),
 		// clone intermediate query.
-		sql:    arq.sql.Clone(),
-		path:   arq.path,
-		unique: arq.unique,
+		sql:  arq.sql.Clone(),
+		path: arq.path,
 	}
 }
 
@@ -263,16 +271,11 @@ func (arq *AgentRequestQuery) Clone() *AgentRequestQuery {
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (arq *AgentRequestQuery) GroupBy(field string, fields ...string) *AgentRequestGroupBy {
-	grbuild := &AgentRequestGroupBy{config: arq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := arq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return arq.sqlQuery(ctx), nil
-	}
+	arq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &AgentRequestGroupBy{build: arq}
+	grbuild.flds = &arq.ctx.Fields
 	grbuild.label = agentrequest.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -289,15 +292,30 @@ func (arq *AgentRequestQuery) GroupBy(field string, fields ...string) *AgentRequ
 //		Select(agentrequest.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (arq *AgentRequestQuery) Select(fields ...string) *AgentRequestSelect {
-	arq.fields = append(arq.fields, fields...)
-	selbuild := &AgentRequestSelect{AgentRequestQuery: arq}
-	selbuild.label = agentrequest.Label
-	selbuild.flds, selbuild.scan = &arq.fields, selbuild.Scan
-	return selbuild
+	arq.ctx.Fields = append(arq.ctx.Fields, fields...)
+	sbuild := &AgentRequestSelect{AgentRequestQuery: arq}
+	sbuild.label = agentrequest.Label
+	sbuild.flds, sbuild.scan = &arq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a AgentRequestSelect configured with the given aggregations.
+func (arq *AgentRequestQuery) Aggregate(fns ...AggregateFunc) *AgentRequestSelect {
+	return arq.Select().Aggregate(fns...)
 }
 
 func (arq *AgentRequestQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range arq.fields {
+	for _, inter := range arq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, arq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range arq.ctx.Fields {
 		if !agentrequest.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -343,41 +361,22 @@ func (arq *AgentRequestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([
 
 func (arq *AgentRequestQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := arq.querySpec()
-	_spec.Node.Columns = arq.fields
-	if len(arq.fields) > 0 {
-		_spec.Unique = arq.unique != nil && *arq.unique
+	_spec.Node.Columns = arq.ctx.Fields
+	if len(arq.ctx.Fields) > 0 {
+		_spec.Unique = arq.ctx.Unique != nil && *arq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, arq.driver, _spec)
 }
 
-func (arq *AgentRequestQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := arq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (arq *AgentRequestQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   agentrequest.Table,
-			Columns: agentrequest.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: agentrequest.FieldID,
-			},
-		},
-		From:   arq.sql,
-		Unique: true,
-	}
-	if unique := arq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(agentrequest.Table, agentrequest.Columns, sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt))
+	_spec.From = arq.sql
+	if unique := arq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if arq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := arq.fields; len(fields) > 0 {
+	if fields := arq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, agentrequest.FieldID)
 		for i := range fields {
@@ -393,10 +392,10 @@ func (arq *AgentRequestQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := arq.limit; limit != nil {
+	if limit := arq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := arq.offset; offset != nil {
+	if offset := arq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := arq.order; len(ps) > 0 {
@@ -412,7 +411,7 @@ func (arq *AgentRequestQuery) querySpec() *sqlgraph.QuerySpec {
 func (arq *AgentRequestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(arq.driver.Dialect())
 	t1 := builder.Table(agentrequest.Table)
-	columns := arq.fields
+	columns := arq.ctx.Fields
 	if len(columns) == 0 {
 		columns = agentrequest.Columns
 	}
@@ -421,7 +420,7 @@ func (arq *AgentRequestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = arq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if arq.unique != nil && *arq.unique {
+	if arq.ctx.Unique != nil && *arq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range arq.predicates {
@@ -430,12 +429,12 @@ func (arq *AgentRequestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range arq.order {
 		p(selector)
 	}
-	if offset := arq.offset; offset != nil {
+	if offset := arq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := arq.limit; limit != nil {
+	if limit := arq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -443,13 +442,8 @@ func (arq *AgentRequestQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // AgentRequestGroupBy is the group-by builder for AgentRequest entities.
 type AgentRequestGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *AgentRequestQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -458,74 +452,77 @@ func (argb *AgentRequestGroupBy) Aggregate(fns ...AggregateFunc) *AgentRequestGr
 	return argb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (argb *AgentRequestGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := argb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, argb.build.ctx, "GroupBy")
+	if err := argb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	argb.sql = query
-	return argb.sqlScan(ctx, v)
+	return scanWithInterceptors[*AgentRequestQuery, *AgentRequestGroupBy](ctx, argb.build, argb, argb.build.inters, v)
 }
 
-func (argb *AgentRequestGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range argb.fields {
-		if !agentrequest.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (argb *AgentRequestGroupBy) sqlScan(ctx context.Context, root *AgentRequestQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(argb.fns))
+	for _, fn := range argb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := argb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*argb.flds)+len(argb.fns))
+		for _, f := range *argb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*argb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := argb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := argb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (argb *AgentRequestGroupBy) sqlQuery() *sql.Selector {
-	selector := argb.sql.Select()
-	aggregation := make([]string, 0, len(argb.fns))
-	for _, fn := range argb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(argb.fields)+len(argb.fns))
-		for _, f := range argb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(argb.fields...)...)
-}
-
 // AgentRequestSelect is the builder for selecting fields of AgentRequest entities.
 type AgentRequestSelect struct {
 	*AgentRequestQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ars *AgentRequestSelect) Aggregate(fns ...AggregateFunc) *AgentRequestSelect {
+	ars.fns = append(ars.fns, fns...)
+	return ars
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (ars *AgentRequestSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ars.ctx, "Select")
 	if err := ars.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ars.sql = ars.AgentRequestQuery.sqlQuery(ctx)
-	return ars.sqlScan(ctx, v)
+	return scanWithInterceptors[*AgentRequestQuery, *AgentRequestSelect](ctx, ars.AgentRequestQuery, ars, ars.inters, v)
 }
 
-func (ars *AgentRequestSelect) sqlScan(ctx context.Context, v any) error {
+func (ars *AgentRequestSelect) sqlScan(ctx context.Context, root *AgentRequestQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ars.fns))
+	for _, fn := range ars.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ars.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ars.sql.Query()
+	query, args := selector.Query()
 	if err := ars.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

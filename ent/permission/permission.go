@@ -4,6 +4,9 @@ package permission
 
 import (
 	"time"
+
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -17,6 +20,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldPermission holds the string denoting the permission field in the database.
 	FieldPermission = "permission"
+	// FieldSlug holds the string denoting the slug field in the database.
+	FieldSlug = "slug"
 	// EdgeRole holds the string denoting the role edge name in mutations.
 	EdgeRole = "role"
 	// Table holds the table name of the permission in the database.
@@ -34,6 +39,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldPermission,
+	FieldSlug,
 }
 
 var (
@@ -61,4 +67,55 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultPermission holds the default value on creation for the "permission" field.
 	DefaultPermission string
+	// DefaultSlug holds the default value on creation for the "slug" field.
+	DefaultSlug string
 )
+
+// OrderOption defines the ordering options for the Permission queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByPermission orders the results by the permission field.
+func ByPermission(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPermission, opts...).ToFunc()
+}
+
+// BySlug orders the results by the slug field.
+func BySlug(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSlug, opts...).ToFunc()
+}
+
+// ByRoleCount orders the results by role count.
+func ByRoleCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRoleStep(), opts...)
+	}
+}
+
+// ByRole orders the results by role terms.
+func ByRole(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRoleStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newRoleStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RoleInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, RoleTable, RolePrimaryKey...),
+	)
+}

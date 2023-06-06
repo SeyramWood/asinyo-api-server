@@ -11,6 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/admin"
+	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/notification"
 	"github.com/SeyramWood/ent/role"
 )
 
@@ -73,6 +75,34 @@ func (ac *AdminCreate) SetOtherName(s string) *AdminCreate {
 	return ac
 }
 
+// SetPhone sets the "phone" field.
+func (ac *AdminCreate) SetPhone(s string) *AdminCreate {
+	ac.mutation.SetPhone(s)
+	return ac
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (ac *AdminCreate) SetNillablePhone(s *string) *AdminCreate {
+	if s != nil {
+		ac.SetPhone(*s)
+	}
+	return ac
+}
+
+// SetOtherPhone sets the "other_phone" field.
+func (ac *AdminCreate) SetOtherPhone(s string) *AdminCreate {
+	ac.mutation.SetOtherPhone(s)
+	return ac
+}
+
+// SetNillableOtherPhone sets the "other_phone" field if the given value is not nil.
+func (ac *AdminCreate) SetNillableOtherPhone(s *string) *AdminCreate {
+	if s != nil {
+		ac.SetOtherPhone(*s)
+	}
+	return ac
+}
+
 // SetStatus sets the "status" field.
 func (ac *AdminCreate) SetStatus(a admin.Status) *AdminCreate {
 	ac.mutation.SetStatus(a)
@@ -116,6 +146,36 @@ func (ac *AdminCreate) AddRoles(r ...*Role) *AdminCreate {
 	return ac.AddRoleIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (ac *AdminCreate) AddNotificationIDs(ids ...int) *AdminCreate {
+	ac.mutation.AddNotificationIDs(ids...)
+	return ac
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (ac *AdminCreate) AddNotifications(n ...*Notification) *AdminCreate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return ac.AddNotificationIDs(ids...)
+}
+
+// AddCustomerIDs adds the "customers" edge to the Customer entity by IDs.
+func (ac *AdminCreate) AddCustomerIDs(ids ...int) *AdminCreate {
+	ac.mutation.AddCustomerIDs(ids...)
+	return ac
+}
+
+// AddCustomers adds the "customers" edges to the Customer entity.
+func (ac *AdminCreate) AddCustomers(c ...*Customer) *AdminCreate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return ac.AddCustomerIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (ac *AdminCreate) Mutation() *AdminMutation {
 	return ac.mutation
@@ -123,50 +183,8 @@ func (ac *AdminCreate) Mutation() *AdminMutation {
 
 // Save creates the Admin in the database.
 func (ac *AdminCreate) Save(ctx context.Context) (*Admin, error) {
-	var (
-		err  error
-		node *Admin
-	)
 	ac.defaults()
-	if len(ac.hooks) == 0 {
-		if err = ac.check(); err != nil {
-			return nil, err
-		}
-		node, err = ac.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AdminMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = ac.check(); err != nil {
-				return nil, err
-			}
-			ac.mutation = mutation
-			if node, err = ac.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(ac.hooks) - 1; i >= 0; i-- {
-			if ac.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = ac.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, ac.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Admin)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AdminMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, ac.sqlSave, ac.mutation, ac.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -259,6 +277,9 @@ func (ac *AdminCreate) check() error {
 }
 
 func (ac *AdminCreate) sqlSave(ctx context.Context) (*Admin, error) {
+	if err := ac.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := ac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, ac.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -268,82 +289,54 @@ func (ac *AdminCreate) sqlSave(ctx context.Context) (*Admin, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	ac.mutation.id = &_node.ID
+	ac.mutation.done = true
 	return _node, nil
 }
 
 func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Admin{config: ac.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: admin.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: admin.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(admin.Table, sqlgraph.NewFieldSpec(admin.FieldID, field.TypeInt))
 	)
 	if value, ok := ac.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: admin.FieldCreatedAt,
-		})
+		_spec.SetField(admin.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := ac.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: admin.FieldUpdatedAt,
-		})
+		_spec.SetField(admin.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := ac.mutation.Username(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldUsername,
-		})
+		_spec.SetField(admin.FieldUsername, field.TypeString, value)
 		_node.Username = value
 	}
 	if value, ok := ac.mutation.Password(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: admin.FieldPassword,
-		})
+		_spec.SetField(admin.FieldPassword, field.TypeBytes, value)
 		_node.Password = value
 	}
 	if value, ok := ac.mutation.LastName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldLastName,
-		})
+		_spec.SetField(admin.FieldLastName, field.TypeString, value)
 		_node.LastName = value
 	}
 	if value, ok := ac.mutation.OtherName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldOtherName,
-		})
+		_spec.SetField(admin.FieldOtherName, field.TypeString, value)
 		_node.OtherName = value
 	}
+	if value, ok := ac.mutation.Phone(); ok {
+		_spec.SetField(admin.FieldPhone, field.TypeString, value)
+		_node.Phone = value
+	}
+	if value, ok := ac.mutation.OtherPhone(); ok {
+		_spec.SetField(admin.FieldOtherPhone, field.TypeString, value)
+		_node.OtherPhone = value
+	}
 	if value, ok := ac.mutation.Status(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: admin.FieldStatus,
-		})
+		_spec.SetField(admin.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
 	}
 	if value, ok := ac.mutation.LastActive(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldLastActive,
-		})
+		_spec.SetField(admin.FieldLastActive, field.TypeString, value)
 		_node.LastActive = value
 	}
 	if nodes := ac.mutation.RolesIDs(); len(nodes) > 0 {
@@ -354,10 +347,39 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 			Columns: admin.RolesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: role.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(role.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.NotificationsTable,
+			Columns: admin.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.CustomersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.CustomersTable,
+			Columns: []string{admin.CustomersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -392,8 +414,8 @@ func (acb *AdminCreateBulk) Save(ctx context.Context) ([]*Admin, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, acb.builders[i+1].mutation)
 				} else {

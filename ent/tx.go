@@ -22,6 +22,8 @@ type Tx struct {
 	AgentRequest *AgentRequestClient
 	// BusinessCustomer is the client for interacting with the BusinessCustomer builders.
 	BusinessCustomer *BusinessCustomerClient
+	// Configuration is the client for interacting with the Configuration builders.
+	Configuration *ConfigurationClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
 	// Favourite is the client for interacting with the Favourite builders.
@@ -34,6 +36,8 @@ type Tx struct {
 	Merchant *MerchantClient
 	// MerchantStore is the client for interacting with the MerchantStore builders.
 	MerchantStore *MerchantStoreClient
+	// Notification is the client for interacting with the Notification builders.
+	Notification *NotificationClient
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
 	// OrderDetail is the client for interacting with the OrderDetail builders.
@@ -42,12 +46,16 @@ type Tx struct {
 	Permission *PermissionClient
 	// PickupStation is the client for interacting with the PickupStation builders.
 	PickupStation *PickupStationClient
+	// PriceModel is the client for interacting with the PriceModel builders.
+	PriceModel *PriceModelClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
 	// ProductCategoryMajor is the client for interacting with the ProductCategoryMajor builders.
 	ProductCategoryMajor *ProductCategoryMajorClient
 	// ProductCategoryMinor is the client for interacting with the ProductCategoryMinor builders.
 	ProductCategoryMinor *ProductCategoryMinorClient
+	// PurchaseRequest is the client for interacting with the PurchaseRequest builders.
+	PurchaseRequest *PurchaseRequestClient
 	// RetailMerchant is the client for interacting with the RetailMerchant builders.
 	RetailMerchant *RetailMerchantClient
 	// Role is the client for interacting with the Role builders.
@@ -58,12 +66,6 @@ type Tx struct {
 	// lazily loaded.
 	client     *Client
 	clientOnce sync.Once
-
-	// completion callbacks.
-	mu         sync.Mutex
-	onCommit   []CommitHook
-	onRollback []RollbackHook
-
 	// ctx lives for the life of the transaction. It is
 	// the same context used by the underlying connection.
 	ctx context.Context
@@ -108,9 +110,9 @@ func (tx *Tx) Commit() error {
 	var fn Committer = CommitFunc(func(context.Context, *Tx) error {
 		return txDriver.tx.Commit()
 	})
-	tx.mu.Lock()
-	hooks := append([]CommitHook(nil), tx.onCommit...)
-	tx.mu.Unlock()
+	txDriver.mu.Lock()
+	hooks := append([]CommitHook(nil), txDriver.onCommit...)
+	txDriver.mu.Unlock()
 	for i := len(hooks) - 1; i >= 0; i-- {
 		fn = hooks[i](fn)
 	}
@@ -119,9 +121,10 @@ func (tx *Tx) Commit() error {
 
 // OnCommit adds a hook to call on commit.
 func (tx *Tx) OnCommit(f CommitHook) {
-	tx.mu.Lock()
-	defer tx.mu.Unlock()
-	tx.onCommit = append(tx.onCommit, f)
+	txDriver := tx.config.driver.(*txDriver)
+	txDriver.mu.Lock()
+	txDriver.onCommit = append(txDriver.onCommit, f)
+	txDriver.mu.Unlock()
 }
 
 type (
@@ -163,9 +166,9 @@ func (tx *Tx) Rollback() error {
 	var fn Rollbacker = RollbackFunc(func(context.Context, *Tx) error {
 		return txDriver.tx.Rollback()
 	})
-	tx.mu.Lock()
-	hooks := append([]RollbackHook(nil), tx.onRollback...)
-	tx.mu.Unlock()
+	txDriver.mu.Lock()
+	hooks := append([]RollbackHook(nil), txDriver.onRollback...)
+	txDriver.mu.Unlock()
 	for i := len(hooks) - 1; i >= 0; i-- {
 		fn = hooks[i](fn)
 	}
@@ -174,9 +177,10 @@ func (tx *Tx) Rollback() error {
 
 // OnRollback adds a hook to call on rollback.
 func (tx *Tx) OnRollback(f RollbackHook) {
-	tx.mu.Lock()
-	defer tx.mu.Unlock()
-	tx.onRollback = append(tx.onRollback, f)
+	txDriver := tx.config.driver.(*txDriver)
+	txDriver.mu.Lock()
+	txDriver.onRollback = append(txDriver.onRollback, f)
+	txDriver.mu.Unlock()
 }
 
 // Client returns a Client that binds to current transaction.
@@ -194,19 +198,23 @@ func (tx *Tx) init() {
 	tx.Agent = NewAgentClient(tx.config)
 	tx.AgentRequest = NewAgentRequestClient(tx.config)
 	tx.BusinessCustomer = NewBusinessCustomerClient(tx.config)
+	tx.Configuration = NewConfigurationClient(tx.config)
 	tx.Customer = NewCustomerClient(tx.config)
 	tx.Favourite = NewFavouriteClient(tx.config)
 	tx.IndividualCustomer = NewIndividualCustomerClient(tx.config)
 	tx.Logistic = NewLogisticClient(tx.config)
 	tx.Merchant = NewMerchantClient(tx.config)
 	tx.MerchantStore = NewMerchantStoreClient(tx.config)
+	tx.Notification = NewNotificationClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.OrderDetail = NewOrderDetailClient(tx.config)
 	tx.Permission = NewPermissionClient(tx.config)
 	tx.PickupStation = NewPickupStationClient(tx.config)
+	tx.PriceModel = NewPriceModelClient(tx.config)
 	tx.Product = NewProductClient(tx.config)
 	tx.ProductCategoryMajor = NewProductCategoryMajorClient(tx.config)
 	tx.ProductCategoryMinor = NewProductCategoryMinorClient(tx.config)
+	tx.PurchaseRequest = NewPurchaseRequestClient(tx.config)
 	tx.RetailMerchant = NewRetailMerchantClient(tx.config)
 	tx.Role = NewRoleClient(tx.config)
 	tx.SupplierMerchant = NewSupplierMerchantClient(tx.config)
@@ -228,6 +236,10 @@ type txDriver struct {
 	drv dialect.Driver
 	// tx is the underlying transaction.
 	tx dialect.Tx
+	// completion hooks.
+	mu         sync.Mutex
+	onCommit   []CommitHook
+	onRollback []RollbackHook
 }
 
 // newTx creates a new transactional driver.

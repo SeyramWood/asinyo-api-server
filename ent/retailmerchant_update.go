@@ -103,41 +103,8 @@ func (rmu *RetailMerchantUpdate) ClearMerchant() *RetailMerchantUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (rmu *RetailMerchantUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	rmu.defaults()
-	if len(rmu.hooks) == 0 {
-		if err = rmu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = rmu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*RetailMerchantMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = rmu.check(); err != nil {
-				return 0, err
-			}
-			rmu.mutation = mutation
-			affected, err = rmu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(rmu.hooks) - 1; i >= 0; i-- {
-			if rmu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = rmu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, rmu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, rmu.sqlSave, rmu.mutation, rmu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -199,16 +166,10 @@ func (rmu *RetailMerchantUpdate) check() error {
 }
 
 func (rmu *RetailMerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   retailmerchant.Table,
-			Columns: retailmerchant.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: retailmerchant.FieldID,
-			},
-		},
+	if err := rmu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(retailmerchant.Table, retailmerchant.Columns, sqlgraph.NewFieldSpec(retailmerchant.FieldID, field.TypeInt))
 	if ps := rmu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -217,52 +178,25 @@ func (rmu *RetailMerchantUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 	}
 	if value, ok := rmu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: retailmerchant.FieldUpdatedAt,
-		})
+		_spec.SetField(retailmerchant.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := rmu.mutation.GhanaCard(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldGhanaCard,
-		})
+		_spec.SetField(retailmerchant.FieldGhanaCard, field.TypeString, value)
 	}
 	if value, ok := rmu.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldLastName,
-		})
+		_spec.SetField(retailmerchant.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := rmu.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldOtherName,
-		})
+		_spec.SetField(retailmerchant.FieldOtherName, field.TypeString, value)
 	}
 	if value, ok := rmu.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldPhone,
-		})
+		_spec.SetField(retailmerchant.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := rmu.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldOtherPhone,
-		})
+		_spec.SetField(retailmerchant.FieldOtherPhone, field.TypeString, value)
 	}
 	if rmu.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: retailmerchant.FieldOtherPhone,
-		})
+		_spec.ClearField(retailmerchant.FieldOtherPhone, field.TypeString)
 	}
 	if rmu.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -272,10 +206,7 @@ func (rmu *RetailMerchantUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{retailmerchant.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -288,10 +219,7 @@ func (rmu *RetailMerchantUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{retailmerchant.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -307,6 +235,7 @@ func (rmu *RetailMerchantUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 		return 0, err
 	}
+	rmu.mutation.done = true
 	return n, nil
 }
 
@@ -390,6 +319,12 @@ func (rmuo *RetailMerchantUpdateOne) ClearMerchant() *RetailMerchantUpdateOne {
 	return rmuo
 }
 
+// Where appends a list predicates to the RetailMerchantUpdate builder.
+func (rmuo *RetailMerchantUpdateOne) Where(ps ...predicate.RetailMerchant) *RetailMerchantUpdateOne {
+	rmuo.mutation.Where(ps...)
+	return rmuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (rmuo *RetailMerchantUpdateOne) Select(field string, fields ...string) *RetailMerchantUpdateOne {
@@ -399,47 +334,8 @@ func (rmuo *RetailMerchantUpdateOne) Select(field string, fields ...string) *Ret
 
 // Save executes the query and returns the updated RetailMerchant entity.
 func (rmuo *RetailMerchantUpdateOne) Save(ctx context.Context) (*RetailMerchant, error) {
-	var (
-		err  error
-		node *RetailMerchant
-	)
 	rmuo.defaults()
-	if len(rmuo.hooks) == 0 {
-		if err = rmuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = rmuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*RetailMerchantMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = rmuo.check(); err != nil {
-				return nil, err
-			}
-			rmuo.mutation = mutation
-			node, err = rmuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(rmuo.hooks) - 1; i >= 0; i-- {
-			if rmuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = rmuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, rmuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*RetailMerchant)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from RetailMerchantMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, rmuo.sqlSave, rmuo.mutation, rmuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -501,16 +397,10 @@ func (rmuo *RetailMerchantUpdateOne) check() error {
 }
 
 func (rmuo *RetailMerchantUpdateOne) sqlSave(ctx context.Context) (_node *RetailMerchant, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   retailmerchant.Table,
-			Columns: retailmerchant.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: retailmerchant.FieldID,
-			},
-		},
+	if err := rmuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(retailmerchant.Table, retailmerchant.Columns, sqlgraph.NewFieldSpec(retailmerchant.FieldID, field.TypeInt))
 	id, ok := rmuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "RetailMerchant.id" for update`)}
@@ -536,52 +426,25 @@ func (rmuo *RetailMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Retail
 		}
 	}
 	if value, ok := rmuo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: retailmerchant.FieldUpdatedAt,
-		})
+		_spec.SetField(retailmerchant.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := rmuo.mutation.GhanaCard(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldGhanaCard,
-		})
+		_spec.SetField(retailmerchant.FieldGhanaCard, field.TypeString, value)
 	}
 	if value, ok := rmuo.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldLastName,
-		})
+		_spec.SetField(retailmerchant.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := rmuo.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldOtherName,
-		})
+		_spec.SetField(retailmerchant.FieldOtherName, field.TypeString, value)
 	}
 	if value, ok := rmuo.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldPhone,
-		})
+		_spec.SetField(retailmerchant.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := rmuo.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldOtherPhone,
-		})
+		_spec.SetField(retailmerchant.FieldOtherPhone, field.TypeString, value)
 	}
 	if rmuo.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: retailmerchant.FieldOtherPhone,
-		})
+		_spec.ClearField(retailmerchant.FieldOtherPhone, field.TypeString)
 	}
 	if rmuo.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -591,10 +454,7 @@ func (rmuo *RetailMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Retail
 			Columns: []string{retailmerchant.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -607,10 +467,7 @@ func (rmuo *RetailMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Retail
 			Columns: []string{retailmerchant.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -629,5 +486,6 @@ func (rmuo *RetailMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Retail
 		}
 		return nil, err
 	}
+	rmuo.mutation.done = true
 	return _node, nil
 }

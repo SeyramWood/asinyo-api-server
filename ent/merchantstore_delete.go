@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (msd *MerchantStoreDelete) Where(ps ...predicate.MerchantStore) *MerchantSt
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (msd *MerchantStoreDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(msd.hooks) == 0 {
-		affected, err = msd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MerchantStoreMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			msd.mutation = mutation
-			affected, err = msd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(msd.hooks) - 1; i >= 0; i-- {
-			if msd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = msd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, msd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, msd.sqlExec, msd.mutation, msd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (msd *MerchantStoreDelete) ExecX(ctx context.Context) int {
 }
 
 func (msd *MerchantStoreDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: merchantstore.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: merchantstore.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(merchantstore.Table, sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt))
 	if ps := msd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (msd *MerchantStoreDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	msd.mutation.done = true
 	return affected, err
 }
 
 // MerchantStoreDeleteOne is the builder for deleting a single MerchantStore entity.
 type MerchantStoreDeleteOne struct {
 	msd *MerchantStoreDelete
+}
+
+// Where appends a list predicates to the MerchantStoreDelete builder.
+func (msdo *MerchantStoreDeleteOne) Where(ps ...predicate.MerchantStore) *MerchantStoreDeleteOne {
+	msdo.msd.mutation.Where(ps...)
+	return msdo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (msdo *MerchantStoreDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (msdo *MerchantStoreDeleteOne) ExecX(ctx context.Context) {
-	msdo.msd.ExecX(ctx)
+	if err := msdo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

@@ -12,12 +12,15 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/address"
+	"github.com/SeyramWood/ent/admin"
 	"github.com/SeyramWood/ent/businesscustomer"
 	"github.com/SeyramWood/ent/customer"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/individualcustomer"
+	"github.com/SeyramWood/ent/notification"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
+	"github.com/SeyramWood/ent/purchaserequest"
 )
 
 // CustomerUpdate is the builder for updating Customer entities.
@@ -140,6 +143,55 @@ func (cu *CustomerUpdate) AddFavourites(f ...*Favourite) *CustomerUpdate {
 	return cu.AddFavouriteIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (cu *CustomerUpdate) AddNotificationIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.AddNotificationIDs(ids...)
+	return cu
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (cu *CustomerUpdate) AddNotifications(n ...*Notification) *CustomerUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return cu.AddNotificationIDs(ids...)
+}
+
+// AddPurchaseRequestIDs adds the "purchase_request" edge to the PurchaseRequest entity by IDs.
+func (cu *CustomerUpdate) AddPurchaseRequestIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.AddPurchaseRequestIDs(ids...)
+	return cu
+}
+
+// AddPurchaseRequest adds the "purchase_request" edges to the PurchaseRequest entity.
+func (cu *CustomerUpdate) AddPurchaseRequest(p ...*PurchaseRequest) *CustomerUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cu.AddPurchaseRequestIDs(ids...)
+}
+
+// SetAdminID sets the "admin" edge to the Admin entity by ID.
+func (cu *CustomerUpdate) SetAdminID(id int) *CustomerUpdate {
+	cu.mutation.SetAdminID(id)
+	return cu
+}
+
+// SetNillableAdminID sets the "admin" edge to the Admin entity by ID if the given value is not nil.
+func (cu *CustomerUpdate) SetNillableAdminID(id *int) *CustomerUpdate {
+	if id != nil {
+		cu = cu.SetAdminID(*id)
+	}
+	return cu
+}
+
+// SetAdmin sets the "admin" edge to the Admin entity.
+func (cu *CustomerUpdate) SetAdmin(a *Admin) *CustomerUpdate {
+	return cu.SetAdminID(a.ID)
+}
+
 // Mutation returns the CustomerMutation object of the builder.
 func (cu *CustomerUpdate) Mutation() *CustomerMutation {
 	return cu.mutation
@@ -220,43 +272,58 @@ func (cu *CustomerUpdate) RemoveFavourites(f ...*Favourite) *CustomerUpdate {
 	return cu.RemoveFavouriteIDs(ids...)
 }
 
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (cu *CustomerUpdate) ClearNotifications() *CustomerUpdate {
+	cu.mutation.ClearNotifications()
+	return cu
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (cu *CustomerUpdate) RemoveNotificationIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.RemoveNotificationIDs(ids...)
+	return cu
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (cu *CustomerUpdate) RemoveNotifications(n ...*Notification) *CustomerUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return cu.RemoveNotificationIDs(ids...)
+}
+
+// ClearPurchaseRequest clears all "purchase_request" edges to the PurchaseRequest entity.
+func (cu *CustomerUpdate) ClearPurchaseRequest() *CustomerUpdate {
+	cu.mutation.ClearPurchaseRequest()
+	return cu
+}
+
+// RemovePurchaseRequestIDs removes the "purchase_request" edge to PurchaseRequest entities by IDs.
+func (cu *CustomerUpdate) RemovePurchaseRequestIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.RemovePurchaseRequestIDs(ids...)
+	return cu
+}
+
+// RemovePurchaseRequest removes "purchase_request" edges to PurchaseRequest entities.
+func (cu *CustomerUpdate) RemovePurchaseRequest(p ...*PurchaseRequest) *CustomerUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cu.RemovePurchaseRequestIDs(ids...)
+}
+
+// ClearAdmin clears the "admin" edge to the Admin entity.
+func (cu *CustomerUpdate) ClearAdmin() *CustomerUpdate {
+	cu.mutation.ClearAdmin()
+	return cu
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (cu *CustomerUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	cu.defaults()
-	if len(cu.hooks) == 0 {
-		if err = cu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = cu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*CustomerMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = cu.check(); err != nil {
-				return 0, err
-			}
-			cu.mutation = mutation
-			affected, err = cu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(cu.hooks) - 1; i >= 0; i-- {
-			if cu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = cu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, cu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, cu.sqlSave, cu.mutation, cu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -310,16 +377,10 @@ func (cu *CustomerUpdate) check() error {
 }
 
 func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   customer.Table,
-			Columns: customer.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: customer.FieldID,
-			},
-		},
+	if err := cu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(customer.Table, customer.Columns, sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt))
 	if ps := cu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -328,32 +389,16 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := cu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: customer.FieldUpdatedAt,
-		})
+		_spec.SetField(customer.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := cu.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldUsername,
-		})
+		_spec.SetField(customer.FieldUsername, field.TypeString, value)
 	}
 	if value, ok := cu.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: customer.FieldPassword,
-		})
+		_spec.SetField(customer.FieldPassword, field.TypeBytes, value)
 	}
 	if value, ok := cu.mutation.GetType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldType,
-		})
+		_spec.SetField(customer.FieldType, field.TypeString, value)
 	}
 	if cu.mutation.BusinessCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -363,10 +408,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.BusinessColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: businesscustomer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(businesscustomer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -379,10 +421,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.BusinessColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: businesscustomer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(businesscustomer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -398,10 +437,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.IndividualColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: individualcustomer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(individualcustomer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -414,10 +450,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.IndividualColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: individualcustomer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(individualcustomer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -433,10 +466,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -449,10 +479,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -468,10 +495,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -487,10 +511,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -503,10 +524,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -522,10 +540,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -541,10 +556,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -557,10 +569,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -576,10 +585,126 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{customer.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cu.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.NotificationsTable,
+			Columns: customer.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !cu.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.NotificationsTable,
+			Columns: customer.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.NotificationsTable,
+			Columns: customer.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cu.mutation.PurchaseRequestCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PurchaseRequestTable,
+			Columns: []string{customer.PurchaseRequestColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.RemovedPurchaseRequestIDs(); len(nodes) > 0 && !cu.mutation.PurchaseRequestCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PurchaseRequestTable,
+			Columns: []string{customer.PurchaseRequestColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.PurchaseRequestIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PurchaseRequestTable,
+			Columns: []string{customer.PurchaseRequestColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cu.mutation.AdminCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   customer.AdminTable,
+			Columns: []string{customer.AdminColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(admin.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.AdminIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   customer.AdminTable,
+			Columns: []string{customer.AdminColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(admin.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -595,6 +720,7 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	cu.mutation.done = true
 	return n, nil
 }
 
@@ -713,6 +839,55 @@ func (cuo *CustomerUpdateOne) AddFavourites(f ...*Favourite) *CustomerUpdateOne 
 	return cuo.AddFavouriteIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (cuo *CustomerUpdateOne) AddNotificationIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.AddNotificationIDs(ids...)
+	return cuo
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (cuo *CustomerUpdateOne) AddNotifications(n ...*Notification) *CustomerUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return cuo.AddNotificationIDs(ids...)
+}
+
+// AddPurchaseRequestIDs adds the "purchase_request" edge to the PurchaseRequest entity by IDs.
+func (cuo *CustomerUpdateOne) AddPurchaseRequestIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.AddPurchaseRequestIDs(ids...)
+	return cuo
+}
+
+// AddPurchaseRequest adds the "purchase_request" edges to the PurchaseRequest entity.
+func (cuo *CustomerUpdateOne) AddPurchaseRequest(p ...*PurchaseRequest) *CustomerUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cuo.AddPurchaseRequestIDs(ids...)
+}
+
+// SetAdminID sets the "admin" edge to the Admin entity by ID.
+func (cuo *CustomerUpdateOne) SetAdminID(id int) *CustomerUpdateOne {
+	cuo.mutation.SetAdminID(id)
+	return cuo
+}
+
+// SetNillableAdminID sets the "admin" edge to the Admin entity by ID if the given value is not nil.
+func (cuo *CustomerUpdateOne) SetNillableAdminID(id *int) *CustomerUpdateOne {
+	if id != nil {
+		cuo = cuo.SetAdminID(*id)
+	}
+	return cuo
+}
+
+// SetAdmin sets the "admin" edge to the Admin entity.
+func (cuo *CustomerUpdateOne) SetAdmin(a *Admin) *CustomerUpdateOne {
+	return cuo.SetAdminID(a.ID)
+}
+
 // Mutation returns the CustomerMutation object of the builder.
 func (cuo *CustomerUpdateOne) Mutation() *CustomerMutation {
 	return cuo.mutation
@@ -793,6 +968,60 @@ func (cuo *CustomerUpdateOne) RemoveFavourites(f ...*Favourite) *CustomerUpdateO
 	return cuo.RemoveFavouriteIDs(ids...)
 }
 
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (cuo *CustomerUpdateOne) ClearNotifications() *CustomerUpdateOne {
+	cuo.mutation.ClearNotifications()
+	return cuo
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (cuo *CustomerUpdateOne) RemoveNotificationIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.RemoveNotificationIDs(ids...)
+	return cuo
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (cuo *CustomerUpdateOne) RemoveNotifications(n ...*Notification) *CustomerUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return cuo.RemoveNotificationIDs(ids...)
+}
+
+// ClearPurchaseRequest clears all "purchase_request" edges to the PurchaseRequest entity.
+func (cuo *CustomerUpdateOne) ClearPurchaseRequest() *CustomerUpdateOne {
+	cuo.mutation.ClearPurchaseRequest()
+	return cuo
+}
+
+// RemovePurchaseRequestIDs removes the "purchase_request" edge to PurchaseRequest entities by IDs.
+func (cuo *CustomerUpdateOne) RemovePurchaseRequestIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.RemovePurchaseRequestIDs(ids...)
+	return cuo
+}
+
+// RemovePurchaseRequest removes "purchase_request" edges to PurchaseRequest entities.
+func (cuo *CustomerUpdateOne) RemovePurchaseRequest(p ...*PurchaseRequest) *CustomerUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cuo.RemovePurchaseRequestIDs(ids...)
+}
+
+// ClearAdmin clears the "admin" edge to the Admin entity.
+func (cuo *CustomerUpdateOne) ClearAdmin() *CustomerUpdateOne {
+	cuo.mutation.ClearAdmin()
+	return cuo
+}
+
+// Where appends a list predicates to the CustomerUpdate builder.
+func (cuo *CustomerUpdateOne) Where(ps ...predicate.Customer) *CustomerUpdateOne {
+	cuo.mutation.Where(ps...)
+	return cuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (cuo *CustomerUpdateOne) Select(field string, fields ...string) *CustomerUpdateOne {
@@ -802,47 +1031,8 @@ func (cuo *CustomerUpdateOne) Select(field string, fields ...string) *CustomerUp
 
 // Save executes the query and returns the updated Customer entity.
 func (cuo *CustomerUpdateOne) Save(ctx context.Context) (*Customer, error) {
-	var (
-		err  error
-		node *Customer
-	)
 	cuo.defaults()
-	if len(cuo.hooks) == 0 {
-		if err = cuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = cuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*CustomerMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = cuo.check(); err != nil {
-				return nil, err
-			}
-			cuo.mutation = mutation
-			node, err = cuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(cuo.hooks) - 1; i >= 0; i-- {
-			if cuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = cuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, cuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Customer)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from CustomerMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, cuo.sqlSave, cuo.mutation, cuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -896,16 +1086,10 @@ func (cuo *CustomerUpdateOne) check() error {
 }
 
 func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   customer.Table,
-			Columns: customer.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: customer.FieldID,
-			},
-		},
+	if err := cuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(customer.Table, customer.Columns, sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt))
 	id, ok := cuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Customer.id" for update`)}
@@ -931,32 +1115,16 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 		}
 	}
 	if value, ok := cuo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: customer.FieldUpdatedAt,
-		})
+		_spec.SetField(customer.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := cuo.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldUsername,
-		})
+		_spec.SetField(customer.FieldUsername, field.TypeString, value)
 	}
 	if value, ok := cuo.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: customer.FieldPassword,
-		})
+		_spec.SetField(customer.FieldPassword, field.TypeBytes, value)
 	}
 	if value, ok := cuo.mutation.GetType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: customer.FieldType,
-		})
+		_spec.SetField(customer.FieldType, field.TypeString, value)
 	}
 	if cuo.mutation.BusinessCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -966,10 +1134,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.BusinessColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: businesscustomer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(businesscustomer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -982,10 +1147,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.BusinessColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: businesscustomer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(businesscustomer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1001,10 +1163,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.IndividualColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: individualcustomer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(individualcustomer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1017,10 +1176,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.IndividualColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: individualcustomer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(individualcustomer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1036,10 +1192,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1052,10 +1205,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1071,10 +1221,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1090,10 +1237,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1106,10 +1250,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1125,10 +1266,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1144,10 +1282,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1160,10 +1295,7 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1179,10 +1311,126 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Columns: []string{customer.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cuo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.NotificationsTable,
+			Columns: customer.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !cuo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.NotificationsTable,
+			Columns: customer.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.NotificationsTable,
+			Columns: customer.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cuo.mutation.PurchaseRequestCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PurchaseRequestTable,
+			Columns: []string{customer.PurchaseRequestColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.RemovedPurchaseRequestIDs(); len(nodes) > 0 && !cuo.mutation.PurchaseRequestCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PurchaseRequestTable,
+			Columns: []string{customer.PurchaseRequestColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.PurchaseRequestIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PurchaseRequestTable,
+			Columns: []string{customer.PurchaseRequestColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cuo.mutation.AdminCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   customer.AdminTable,
+			Columns: []string{customer.AdminColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(admin.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.AdminIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   customer.AdminTable,
+			Columns: []string{customer.AdminColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(admin.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1201,5 +1449,6 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 		}
 		return nil, err
 	}
+	cuo.mutation.done = true
 	return _node, nil
 }

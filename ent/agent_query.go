@@ -16,6 +16,7 @@ import (
 	"github.com/SeyramWood/ent/agentrequest"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/notification"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
@@ -23,17 +24,16 @@ import (
 // AgentQuery is the builder for querying Agent entities.
 type AgentQuery struct {
 	config
-	limit          *int
-	offset         *int
-	unique         *bool
-	order          []OrderFunc
-	fields         []string
-	predicates     []predicate.Agent
-	withAddresses  *AddressQuery
-	withOrders     *OrderQuery
-	withFavourites *FavouriteQuery
-	withStore      *MerchantStoreQuery
-	withRequests   *AgentRequestQuery
+	ctx               *QueryContext
+	order             []agent.OrderOption
+	inters            []Interceptor
+	predicates        []predicate.Agent
+	withAddresses     *AddressQuery
+	withOrders        *OrderQuery
+	withFavourites    *FavouriteQuery
+	withStore         *MerchantStoreQuery
+	withRequests      *AgentRequestQuery
+	withNotifications *NotificationQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -45,34 +45,34 @@ func (aq *AgentQuery) Where(ps ...predicate.Agent) *AgentQuery {
 	return aq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (aq *AgentQuery) Limit(limit int) *AgentQuery {
-	aq.limit = &limit
+	aq.ctx.Limit = &limit
 	return aq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (aq *AgentQuery) Offset(offset int) *AgentQuery {
-	aq.offset = &offset
+	aq.ctx.Offset = &offset
 	return aq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (aq *AgentQuery) Unique(unique bool) *AgentQuery {
-	aq.unique = &unique
+	aq.ctx.Unique = &unique
 	return aq
 }
 
-// Order adds an order step to the query.
-func (aq *AgentQuery) Order(o ...OrderFunc) *AgentQuery {
+// Order specifies how the records should be ordered.
+func (aq *AgentQuery) Order(o ...agent.OrderOption) *AgentQuery {
 	aq.order = append(aq.order, o...)
 	return aq
 }
 
 // QueryAddresses chains the current query on the "addresses" edge.
 func (aq *AgentQuery) QueryAddresses() *AddressQuery {
-	query := &AddressQuery{config: aq.config}
+	query := (&AddressClient{config: aq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -94,7 +94,7 @@ func (aq *AgentQuery) QueryAddresses() *AddressQuery {
 
 // QueryOrders chains the current query on the "orders" edge.
 func (aq *AgentQuery) QueryOrders() *OrderQuery {
-	query := &OrderQuery{config: aq.config}
+	query := (&OrderClient{config: aq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -116,7 +116,7 @@ func (aq *AgentQuery) QueryOrders() *OrderQuery {
 
 // QueryFavourites chains the current query on the "favourites" edge.
 func (aq *AgentQuery) QueryFavourites() *FavouriteQuery {
-	query := &FavouriteQuery{config: aq.config}
+	query := (&FavouriteClient{config: aq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -138,7 +138,7 @@ func (aq *AgentQuery) QueryFavourites() *FavouriteQuery {
 
 // QueryStore chains the current query on the "store" edge.
 func (aq *AgentQuery) QueryStore() *MerchantStoreQuery {
-	query := &MerchantStoreQuery{config: aq.config}
+	query := (&MerchantStoreClient{config: aq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -160,7 +160,7 @@ func (aq *AgentQuery) QueryStore() *MerchantStoreQuery {
 
 // QueryRequests chains the current query on the "requests" edge.
 func (aq *AgentQuery) QueryRequests() *AgentRequestQuery {
-	query := &AgentRequestQuery{config: aq.config}
+	query := (&AgentRequestClient{config: aq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -180,10 +180,32 @@ func (aq *AgentQuery) QueryRequests() *AgentRequestQuery {
 	return query
 }
 
+// QueryNotifications chains the current query on the "notifications" edge.
+func (aq *AgentQuery) QueryNotifications() *NotificationQuery {
+	query := (&NotificationClient{config: aq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(agent.Table, agent.FieldID, selector),
+			sqlgraph.To(notification.Table, notification.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, agent.NotificationsTable, agent.NotificationsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Agent entity from the query.
 // Returns a *NotFoundError when no Agent was found.
 func (aq *AgentQuery) First(ctx context.Context) (*Agent, error) {
-	nodes, err := aq.Limit(1).All(ctx)
+	nodes, err := aq.Limit(1).All(setContextOp(ctx, aq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +228,7 @@ func (aq *AgentQuery) FirstX(ctx context.Context) *Agent {
 // Returns a *NotFoundError when no Agent ID was found.
 func (aq *AgentQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = aq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = aq.Limit(1).IDs(setContextOp(ctx, aq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -229,7 +251,7 @@ func (aq *AgentQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Agent entity is found.
 // Returns a *NotFoundError when no Agent entities are found.
 func (aq *AgentQuery) Only(ctx context.Context) (*Agent, error) {
-	nodes, err := aq.Limit(2).All(ctx)
+	nodes, err := aq.Limit(2).All(setContextOp(ctx, aq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +279,7 @@ func (aq *AgentQuery) OnlyX(ctx context.Context) *Agent {
 // Returns a *NotFoundError when no entities are found.
 func (aq *AgentQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = aq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = aq.Limit(2).IDs(setContextOp(ctx, aq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -282,10 +304,12 @@ func (aq *AgentQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Agents.
 func (aq *AgentQuery) All(ctx context.Context) ([]*Agent, error) {
+	ctx = setContextOp(ctx, aq.ctx, "All")
 	if err := aq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return aq.sqlAll(ctx)
+	qr := querierAll[[]*Agent, *AgentQuery]()
+	return withInterceptors[[]*Agent](ctx, aq, qr, aq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -298,9 +322,12 @@ func (aq *AgentQuery) AllX(ctx context.Context) []*Agent {
 }
 
 // IDs executes the query and returns a list of Agent IDs.
-func (aq *AgentQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := aq.Select(agent.FieldID).Scan(ctx, &ids); err != nil {
+func (aq *AgentQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if aq.ctx.Unique == nil && aq.path != nil {
+		aq.Unique(true)
+	}
+	ctx = setContextOp(ctx, aq.ctx, "IDs")
+	if err = aq.Select(agent.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -317,10 +344,11 @@ func (aq *AgentQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (aq *AgentQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, aq.ctx, "Count")
 	if err := aq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return aq.sqlCount(ctx)
+	return withInterceptors[int](ctx, aq, querierCount[*AgentQuery](), aq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -334,10 +362,15 @@ func (aq *AgentQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (aq *AgentQuery) Exist(ctx context.Context) (bool, error) {
-	if err := aq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, aq.ctx, "Exist")
+	switch _, err := aq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return aq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -356,27 +389,27 @@ func (aq *AgentQuery) Clone() *AgentQuery {
 		return nil
 	}
 	return &AgentQuery{
-		config:         aq.config,
-		limit:          aq.limit,
-		offset:         aq.offset,
-		order:          append([]OrderFunc{}, aq.order...),
-		predicates:     append([]predicate.Agent{}, aq.predicates...),
-		withAddresses:  aq.withAddresses.Clone(),
-		withOrders:     aq.withOrders.Clone(),
-		withFavourites: aq.withFavourites.Clone(),
-		withStore:      aq.withStore.Clone(),
-		withRequests:   aq.withRequests.Clone(),
+		config:            aq.config,
+		ctx:               aq.ctx.Clone(),
+		order:             append([]agent.OrderOption{}, aq.order...),
+		inters:            append([]Interceptor{}, aq.inters...),
+		predicates:        append([]predicate.Agent{}, aq.predicates...),
+		withAddresses:     aq.withAddresses.Clone(),
+		withOrders:        aq.withOrders.Clone(),
+		withFavourites:    aq.withFavourites.Clone(),
+		withStore:         aq.withStore.Clone(),
+		withRequests:      aq.withRequests.Clone(),
+		withNotifications: aq.withNotifications.Clone(),
 		// clone intermediate query.
-		sql:    aq.sql.Clone(),
-		path:   aq.path,
-		unique: aq.unique,
+		sql:  aq.sql.Clone(),
+		path: aq.path,
 	}
 }
 
 // WithAddresses tells the query-builder to eager-load the nodes that are connected to
 // the "addresses" edge. The optional arguments are used to configure the query builder of the edge.
 func (aq *AgentQuery) WithAddresses(opts ...func(*AddressQuery)) *AgentQuery {
-	query := &AddressQuery{config: aq.config}
+	query := (&AddressClient{config: aq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -387,7 +420,7 @@ func (aq *AgentQuery) WithAddresses(opts ...func(*AddressQuery)) *AgentQuery {
 // WithOrders tells the query-builder to eager-load the nodes that are connected to
 // the "orders" edge. The optional arguments are used to configure the query builder of the edge.
 func (aq *AgentQuery) WithOrders(opts ...func(*OrderQuery)) *AgentQuery {
-	query := &OrderQuery{config: aq.config}
+	query := (&OrderClient{config: aq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -398,7 +431,7 @@ func (aq *AgentQuery) WithOrders(opts ...func(*OrderQuery)) *AgentQuery {
 // WithFavourites tells the query-builder to eager-load the nodes that are connected to
 // the "favourites" edge. The optional arguments are used to configure the query builder of the edge.
 func (aq *AgentQuery) WithFavourites(opts ...func(*FavouriteQuery)) *AgentQuery {
-	query := &FavouriteQuery{config: aq.config}
+	query := (&FavouriteClient{config: aq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -409,7 +442,7 @@ func (aq *AgentQuery) WithFavourites(opts ...func(*FavouriteQuery)) *AgentQuery 
 // WithStore tells the query-builder to eager-load the nodes that are connected to
 // the "store" edge. The optional arguments are used to configure the query builder of the edge.
 func (aq *AgentQuery) WithStore(opts ...func(*MerchantStoreQuery)) *AgentQuery {
-	query := &MerchantStoreQuery{config: aq.config}
+	query := (&MerchantStoreClient{config: aq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -420,11 +453,22 @@ func (aq *AgentQuery) WithStore(opts ...func(*MerchantStoreQuery)) *AgentQuery {
 // WithRequests tells the query-builder to eager-load the nodes that are connected to
 // the "requests" edge. The optional arguments are used to configure the query builder of the edge.
 func (aq *AgentQuery) WithRequests(opts ...func(*AgentRequestQuery)) *AgentQuery {
-	query := &AgentRequestQuery{config: aq.config}
+	query := (&AgentRequestClient{config: aq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
 	aq.withRequests = query
+	return aq
+}
+
+// WithNotifications tells the query-builder to eager-load the nodes that are connected to
+// the "notifications" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AgentQuery) WithNotifications(opts ...func(*NotificationQuery)) *AgentQuery {
+	query := (&NotificationClient{config: aq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withNotifications = query
 	return aq
 }
 
@@ -443,16 +487,11 @@ func (aq *AgentQuery) WithRequests(opts ...func(*AgentRequestQuery)) *AgentQuery
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (aq *AgentQuery) GroupBy(field string, fields ...string) *AgentGroupBy {
-	grbuild := &AgentGroupBy{config: aq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := aq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return aq.sqlQuery(ctx), nil
-	}
+	aq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &AgentGroupBy{build: aq}
+	grbuild.flds = &aq.ctx.Fields
 	grbuild.label = agent.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -469,15 +508,30 @@ func (aq *AgentQuery) GroupBy(field string, fields ...string) *AgentGroupBy {
 //		Select(agent.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (aq *AgentQuery) Select(fields ...string) *AgentSelect {
-	aq.fields = append(aq.fields, fields...)
-	selbuild := &AgentSelect{AgentQuery: aq}
-	selbuild.label = agent.Label
-	selbuild.flds, selbuild.scan = &aq.fields, selbuild.Scan
-	return selbuild
+	aq.ctx.Fields = append(aq.ctx.Fields, fields...)
+	sbuild := &AgentSelect{AgentQuery: aq}
+	sbuild.label = agent.Label
+	sbuild.flds, sbuild.scan = &aq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a AgentSelect configured with the given aggregations.
+func (aq *AgentQuery) Aggregate(fns ...AggregateFunc) *AgentSelect {
+	return aq.Select().Aggregate(fns...)
 }
 
 func (aq *AgentQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range aq.fields {
+	for _, inter := range aq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, aq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range aq.ctx.Fields {
 		if !agent.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -496,12 +550,13 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 	var (
 		nodes       = []*Agent{}
 		_spec       = aq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			aq.withAddresses != nil,
 			aq.withOrders != nil,
 			aq.withFavourites != nil,
 			aq.withStore != nil,
 			aq.withRequests != nil,
+			aq.withNotifications != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -557,6 +612,13 @@ func (aq *AgentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Agent,
 			return nil, err
 		}
 	}
+	if query := aq.withNotifications; query != nil {
+		if err := aq.loadNotifications(ctx, query, nodes,
+			func(n *Agent) { n.Edges.Notifications = []*Notification{} },
+			func(n *Agent, e *Notification) { n.Edges.Notifications = append(n.Edges.Notifications, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -572,7 +634,7 @@ func (aq *AgentQuery) loadAddresses(ctx context.Context, query *AddressQuery, no
 	}
 	query.withFKs = true
 	query.Where(predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.InValues(agent.AddressesColumn, fks...))
+		s.Where(sql.InValues(s.C(agent.AddressesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -585,7 +647,7 @@ func (aq *AgentQuery) loadAddresses(ctx context.Context, query *AddressQuery, no
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "agent_addresses" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "agent_addresses" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -603,7 +665,7 @@ func (aq *AgentQuery) loadOrders(ctx context.Context, query *OrderQuery, nodes [
 	}
 	query.withFKs = true
 	query.Where(predicate.Order(func(s *sql.Selector) {
-		s.Where(sql.InValues(agent.OrdersColumn, fks...))
+		s.Where(sql.InValues(s.C(agent.OrdersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -616,7 +678,7 @@ func (aq *AgentQuery) loadOrders(ctx context.Context, query *OrderQuery, nodes [
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "agent_orders" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "agent_orders" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -634,7 +696,7 @@ func (aq *AgentQuery) loadFavourites(ctx context.Context, query *FavouriteQuery,
 	}
 	query.withFKs = true
 	query.Where(predicate.Favourite(func(s *sql.Selector) {
-		s.Where(sql.InValues(agent.FavouritesColumn, fks...))
+		s.Where(sql.InValues(s.C(agent.FavouritesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -647,7 +709,7 @@ func (aq *AgentQuery) loadFavourites(ctx context.Context, query *FavouriteQuery,
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "agent_favourites" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "agent_favourites" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -665,7 +727,7 @@ func (aq *AgentQuery) loadStore(ctx context.Context, query *MerchantStoreQuery, 
 	}
 	query.withFKs = true
 	query.Where(predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.InValues(agent.StoreColumn, fks...))
+		s.Where(sql.InValues(s.C(agent.StoreColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -678,7 +740,7 @@ func (aq *AgentQuery) loadStore(ctx context.Context, query *MerchantStoreQuery, 
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "agent_store" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "agent_store" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -696,7 +758,7 @@ func (aq *AgentQuery) loadRequests(ctx context.Context, query *AgentRequestQuery
 	}
 	query.withFKs = true
 	query.Where(predicate.AgentRequest(func(s *sql.Selector) {
-		s.Where(sql.InValues(agent.RequestsColumn, fks...))
+		s.Where(sql.InValues(s.C(agent.RequestsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -709,50 +771,92 @@ func (aq *AgentQuery) loadRequests(ctx context.Context, query *AgentRequestQuery
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "agent_requests" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "agent_requests" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (aq *AgentQuery) loadNotifications(ctx context.Context, query *NotificationQuery, nodes []*Agent, init func(*Agent), assign func(*Agent, *Notification)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Agent)
+	nids := make(map[int]map[*Agent]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(agent.NotificationsTable)
+		s.Join(joinT).On(s.C(notification.FieldID), joinT.C(agent.NotificationsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(agent.NotificationsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(agent.NotificationsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Agent]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Notification](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "notifications" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
 	}
 	return nil
 }
 
 func (aq *AgentQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := aq.querySpec()
-	_spec.Node.Columns = aq.fields
-	if len(aq.fields) > 0 {
-		_spec.Unique = aq.unique != nil && *aq.unique
+	_spec.Node.Columns = aq.ctx.Fields
+	if len(aq.ctx.Fields) > 0 {
+		_spec.Unique = aq.ctx.Unique != nil && *aq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, aq.driver, _spec)
 }
 
-func (aq *AgentQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := aq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (aq *AgentQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   agent.Table,
-			Columns: agent.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: agent.FieldID,
-			},
-		},
-		From:   aq.sql,
-		Unique: true,
-	}
-	if unique := aq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt))
+	_spec.From = aq.sql
+	if unique := aq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if aq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := aq.fields; len(fields) > 0 {
+	if fields := aq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, agent.FieldID)
 		for i := range fields {
@@ -768,10 +872,10 @@ func (aq *AgentQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := aq.limit; limit != nil {
+	if limit := aq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := aq.offset; offset != nil {
+	if offset := aq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := aq.order; len(ps) > 0 {
@@ -787,7 +891,7 @@ func (aq *AgentQuery) querySpec() *sqlgraph.QuerySpec {
 func (aq *AgentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(aq.driver.Dialect())
 	t1 := builder.Table(agent.Table)
-	columns := aq.fields
+	columns := aq.ctx.Fields
 	if len(columns) == 0 {
 		columns = agent.Columns
 	}
@@ -796,7 +900,7 @@ func (aq *AgentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = aq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if aq.unique != nil && *aq.unique {
+	if aq.ctx.Unique != nil && *aq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range aq.predicates {
@@ -805,12 +909,12 @@ func (aq *AgentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range aq.order {
 		p(selector)
 	}
-	if offset := aq.offset; offset != nil {
+	if offset := aq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := aq.limit; limit != nil {
+	if limit := aq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -818,13 +922,8 @@ func (aq *AgentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // AgentGroupBy is the group-by builder for Agent entities.
 type AgentGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *AgentQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -833,74 +932,77 @@ func (agb *AgentGroupBy) Aggregate(fns ...AggregateFunc) *AgentGroupBy {
 	return agb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (agb *AgentGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := agb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, agb.build.ctx, "GroupBy")
+	if err := agb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	agb.sql = query
-	return agb.sqlScan(ctx, v)
+	return scanWithInterceptors[*AgentQuery, *AgentGroupBy](ctx, agb.build, agb, agb.build.inters, v)
 }
 
-func (agb *AgentGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range agb.fields {
-		if !agent.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (agb *AgentGroupBy) sqlScan(ctx context.Context, root *AgentQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(agb.fns))
+	for _, fn := range agb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := agb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*agb.flds)+len(agb.fns))
+		for _, f := range *agb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*agb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := agb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := agb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (agb *AgentGroupBy) sqlQuery() *sql.Selector {
-	selector := agb.sql.Select()
-	aggregation := make([]string, 0, len(agb.fns))
-	for _, fn := range agb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(agb.fields)+len(agb.fns))
-		for _, f := range agb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(agb.fields...)...)
-}
-
 // AgentSelect is the builder for selecting fields of Agent entities.
 type AgentSelect struct {
 	*AgentQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (as *AgentSelect) Aggregate(fns ...AggregateFunc) *AgentSelect {
+	as.fns = append(as.fns, fns...)
+	return as
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (as *AgentSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, as.ctx, "Select")
 	if err := as.prepareQuery(ctx); err != nil {
 		return err
 	}
-	as.sql = as.AgentQuery.sqlQuery(ctx)
-	return as.sqlScan(ctx, v)
+	return scanWithInterceptors[*AgentQuery, *AgentSelect](ctx, as.AgentQuery, as, as.inters, v)
 }
 
-func (as *AgentSelect) sqlScan(ctx context.Context, v any) error {
+func (as *AgentSelect) sqlScan(ctx context.Context, root *AgentQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(as.fns))
+	for _, fn := range as.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*as.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := as.sql.Query()
+	query, args := selector.Query()
 	if err := as.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

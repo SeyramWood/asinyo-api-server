@@ -12,6 +12,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/admin"
+	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/notification"
 	"github.com/SeyramWood/ent/predicate"
 	"github.com/SeyramWood/ent/role"
 )
@@ -56,6 +58,46 @@ func (au *AdminUpdate) SetLastName(s string) *AdminUpdate {
 // SetOtherName sets the "other_name" field.
 func (au *AdminUpdate) SetOtherName(s string) *AdminUpdate {
 	au.mutation.SetOtherName(s)
+	return au
+}
+
+// SetPhone sets the "phone" field.
+func (au *AdminUpdate) SetPhone(s string) *AdminUpdate {
+	au.mutation.SetPhone(s)
+	return au
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (au *AdminUpdate) SetNillablePhone(s *string) *AdminUpdate {
+	if s != nil {
+		au.SetPhone(*s)
+	}
+	return au
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (au *AdminUpdate) ClearPhone() *AdminUpdate {
+	au.mutation.ClearPhone()
+	return au
+}
+
+// SetOtherPhone sets the "other_phone" field.
+func (au *AdminUpdate) SetOtherPhone(s string) *AdminUpdate {
+	au.mutation.SetOtherPhone(s)
+	return au
+}
+
+// SetNillableOtherPhone sets the "other_phone" field if the given value is not nil.
+func (au *AdminUpdate) SetNillableOtherPhone(s *string) *AdminUpdate {
+	if s != nil {
+		au.SetOtherPhone(*s)
+	}
+	return au
+}
+
+// ClearOtherPhone clears the value of the "other_phone" field.
+func (au *AdminUpdate) ClearOtherPhone() *AdminUpdate {
+	au.mutation.ClearOtherPhone()
 	return au
 }
 
@@ -108,6 +150,36 @@ func (au *AdminUpdate) AddRoles(r ...*Role) *AdminUpdate {
 	return au.AddRoleIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (au *AdminUpdate) AddNotificationIDs(ids ...int) *AdminUpdate {
+	au.mutation.AddNotificationIDs(ids...)
+	return au
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (au *AdminUpdate) AddNotifications(n ...*Notification) *AdminUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return au.AddNotificationIDs(ids...)
+}
+
+// AddCustomerIDs adds the "customers" edge to the Customer entity by IDs.
+func (au *AdminUpdate) AddCustomerIDs(ids ...int) *AdminUpdate {
+	au.mutation.AddCustomerIDs(ids...)
+	return au
+}
+
+// AddCustomers adds the "customers" edges to the Customer entity.
+func (au *AdminUpdate) AddCustomers(c ...*Customer) *AdminUpdate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return au.AddCustomerIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (au *AdminUpdate) Mutation() *AdminMutation {
 	return au.mutation
@@ -134,43 +206,52 @@ func (au *AdminUpdate) RemoveRoles(r ...*Role) *AdminUpdate {
 	return au.RemoveRoleIDs(ids...)
 }
 
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (au *AdminUpdate) ClearNotifications() *AdminUpdate {
+	au.mutation.ClearNotifications()
+	return au
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (au *AdminUpdate) RemoveNotificationIDs(ids ...int) *AdminUpdate {
+	au.mutation.RemoveNotificationIDs(ids...)
+	return au
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (au *AdminUpdate) RemoveNotifications(n ...*Notification) *AdminUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return au.RemoveNotificationIDs(ids...)
+}
+
+// ClearCustomers clears all "customers" edges to the Customer entity.
+func (au *AdminUpdate) ClearCustomers() *AdminUpdate {
+	au.mutation.ClearCustomers()
+	return au
+}
+
+// RemoveCustomerIDs removes the "customers" edge to Customer entities by IDs.
+func (au *AdminUpdate) RemoveCustomerIDs(ids ...int) *AdminUpdate {
+	au.mutation.RemoveCustomerIDs(ids...)
+	return au
+}
+
+// RemoveCustomers removes "customers" edges to Customer entities.
+func (au *AdminUpdate) RemoveCustomers(c ...*Customer) *AdminUpdate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return au.RemoveCustomerIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (au *AdminUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	au.defaults()
-	if len(au.hooks) == 0 {
-		if err = au.check(); err != nil {
-			return 0, err
-		}
-		affected, err = au.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AdminMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = au.check(); err != nil {
-				return 0, err
-			}
-			au.mutation = mutation
-			affected, err = au.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(au.hooks) - 1; i >= 0; i-- {
-			if au.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = au.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, au.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, au.sqlSave, au.mutation, au.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -234,16 +315,10 @@ func (au *AdminUpdate) check() error {
 }
 
 func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   admin.Table,
-			Columns: admin.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: admin.FieldID,
-			},
-		},
+	if err := au.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(admin.Table, admin.Columns, sqlgraph.NewFieldSpec(admin.FieldID, field.TypeInt))
 	if ps := au.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -252,59 +327,40 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := au.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: admin.FieldUpdatedAt,
-		})
+		_spec.SetField(admin.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := au.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldUsername,
-		})
+		_spec.SetField(admin.FieldUsername, field.TypeString, value)
 	}
 	if value, ok := au.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: admin.FieldPassword,
-		})
+		_spec.SetField(admin.FieldPassword, field.TypeBytes, value)
 	}
 	if value, ok := au.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldLastName,
-		})
+		_spec.SetField(admin.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := au.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldOtherName,
-		})
+		_spec.SetField(admin.FieldOtherName, field.TypeString, value)
+	}
+	if value, ok := au.mutation.Phone(); ok {
+		_spec.SetField(admin.FieldPhone, field.TypeString, value)
+	}
+	if au.mutation.PhoneCleared() {
+		_spec.ClearField(admin.FieldPhone, field.TypeString)
+	}
+	if value, ok := au.mutation.OtherPhone(); ok {
+		_spec.SetField(admin.FieldOtherPhone, field.TypeString, value)
+	}
+	if au.mutation.OtherPhoneCleared() {
+		_spec.ClearField(admin.FieldOtherPhone, field.TypeString)
 	}
 	if value, ok := au.mutation.Status(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: admin.FieldStatus,
-		})
+		_spec.SetField(admin.FieldStatus, field.TypeEnum, value)
 	}
 	if value, ok := au.mutation.LastActive(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldLastActive,
-		})
+		_spec.SetField(admin.FieldLastActive, field.TypeString, value)
 	}
 	if au.mutation.LastActiveCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: admin.FieldLastActive,
-		})
+		_spec.ClearField(admin.FieldLastActive, field.TypeString)
 	}
 	if au.mutation.RolesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -314,10 +370,7 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: admin.RolesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: role.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(role.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -330,10 +383,7 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: admin.RolesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: role.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(role.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -349,10 +399,97 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: admin.RolesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: role.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(role.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if au.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.NotificationsTable,
+			Columns: admin.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !au.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.NotificationsTable,
+			Columns: admin.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.NotificationsTable,
+			Columns: admin.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if au.mutation.CustomersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.CustomersTable,
+			Columns: []string{admin.CustomersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedCustomersIDs(); len(nodes) > 0 && !au.mutation.CustomersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.CustomersTable,
+			Columns: []string{admin.CustomersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.CustomersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.CustomersTable,
+			Columns: []string{admin.CustomersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -368,6 +505,7 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	au.mutation.done = true
 	return n, nil
 }
 
@@ -406,6 +544,46 @@ func (auo *AdminUpdateOne) SetLastName(s string) *AdminUpdateOne {
 // SetOtherName sets the "other_name" field.
 func (auo *AdminUpdateOne) SetOtherName(s string) *AdminUpdateOne {
 	auo.mutation.SetOtherName(s)
+	return auo
+}
+
+// SetPhone sets the "phone" field.
+func (auo *AdminUpdateOne) SetPhone(s string) *AdminUpdateOne {
+	auo.mutation.SetPhone(s)
+	return auo
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (auo *AdminUpdateOne) SetNillablePhone(s *string) *AdminUpdateOne {
+	if s != nil {
+		auo.SetPhone(*s)
+	}
+	return auo
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (auo *AdminUpdateOne) ClearPhone() *AdminUpdateOne {
+	auo.mutation.ClearPhone()
+	return auo
+}
+
+// SetOtherPhone sets the "other_phone" field.
+func (auo *AdminUpdateOne) SetOtherPhone(s string) *AdminUpdateOne {
+	auo.mutation.SetOtherPhone(s)
+	return auo
+}
+
+// SetNillableOtherPhone sets the "other_phone" field if the given value is not nil.
+func (auo *AdminUpdateOne) SetNillableOtherPhone(s *string) *AdminUpdateOne {
+	if s != nil {
+		auo.SetOtherPhone(*s)
+	}
+	return auo
+}
+
+// ClearOtherPhone clears the value of the "other_phone" field.
+func (auo *AdminUpdateOne) ClearOtherPhone() *AdminUpdateOne {
+	auo.mutation.ClearOtherPhone()
 	return auo
 }
 
@@ -458,6 +636,36 @@ func (auo *AdminUpdateOne) AddRoles(r ...*Role) *AdminUpdateOne {
 	return auo.AddRoleIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (auo *AdminUpdateOne) AddNotificationIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.AddNotificationIDs(ids...)
+	return auo
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (auo *AdminUpdateOne) AddNotifications(n ...*Notification) *AdminUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return auo.AddNotificationIDs(ids...)
+}
+
+// AddCustomerIDs adds the "customers" edge to the Customer entity by IDs.
+func (auo *AdminUpdateOne) AddCustomerIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.AddCustomerIDs(ids...)
+	return auo
+}
+
+// AddCustomers adds the "customers" edges to the Customer entity.
+func (auo *AdminUpdateOne) AddCustomers(c ...*Customer) *AdminUpdateOne {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return auo.AddCustomerIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (auo *AdminUpdateOne) Mutation() *AdminMutation {
 	return auo.mutation
@@ -484,6 +692,54 @@ func (auo *AdminUpdateOne) RemoveRoles(r ...*Role) *AdminUpdateOne {
 	return auo.RemoveRoleIDs(ids...)
 }
 
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (auo *AdminUpdateOne) ClearNotifications() *AdminUpdateOne {
+	auo.mutation.ClearNotifications()
+	return auo
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (auo *AdminUpdateOne) RemoveNotificationIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.RemoveNotificationIDs(ids...)
+	return auo
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (auo *AdminUpdateOne) RemoveNotifications(n ...*Notification) *AdminUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return auo.RemoveNotificationIDs(ids...)
+}
+
+// ClearCustomers clears all "customers" edges to the Customer entity.
+func (auo *AdminUpdateOne) ClearCustomers() *AdminUpdateOne {
+	auo.mutation.ClearCustomers()
+	return auo
+}
+
+// RemoveCustomerIDs removes the "customers" edge to Customer entities by IDs.
+func (auo *AdminUpdateOne) RemoveCustomerIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.RemoveCustomerIDs(ids...)
+	return auo
+}
+
+// RemoveCustomers removes "customers" edges to Customer entities.
+func (auo *AdminUpdateOne) RemoveCustomers(c ...*Customer) *AdminUpdateOne {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return auo.RemoveCustomerIDs(ids...)
+}
+
+// Where appends a list predicates to the AdminUpdate builder.
+func (auo *AdminUpdateOne) Where(ps ...predicate.Admin) *AdminUpdateOne {
+	auo.mutation.Where(ps...)
+	return auo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (auo *AdminUpdateOne) Select(field string, fields ...string) *AdminUpdateOne {
@@ -493,47 +749,8 @@ func (auo *AdminUpdateOne) Select(field string, fields ...string) *AdminUpdateOn
 
 // Save executes the query and returns the updated Admin entity.
 func (auo *AdminUpdateOne) Save(ctx context.Context) (*Admin, error) {
-	var (
-		err  error
-		node *Admin
-	)
 	auo.defaults()
-	if len(auo.hooks) == 0 {
-		if err = auo.check(); err != nil {
-			return nil, err
-		}
-		node, err = auo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AdminMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = auo.check(); err != nil {
-				return nil, err
-			}
-			auo.mutation = mutation
-			node, err = auo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(auo.hooks) - 1; i >= 0; i-- {
-			if auo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = auo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, auo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Admin)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AdminMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, auo.sqlSave, auo.mutation, auo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -597,16 +814,10 @@ func (auo *AdminUpdateOne) check() error {
 }
 
 func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   admin.Table,
-			Columns: admin.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: admin.FieldID,
-			},
-		},
+	if err := auo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(admin.Table, admin.Columns, sqlgraph.NewFieldSpec(admin.FieldID, field.TypeInt))
 	id, ok := auo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Admin.id" for update`)}
@@ -632,59 +843,40 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 		}
 	}
 	if value, ok := auo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: admin.FieldUpdatedAt,
-		})
+		_spec.SetField(admin.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := auo.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldUsername,
-		})
+		_spec.SetField(admin.FieldUsername, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: admin.FieldPassword,
-		})
+		_spec.SetField(admin.FieldPassword, field.TypeBytes, value)
 	}
 	if value, ok := auo.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldLastName,
-		})
+		_spec.SetField(admin.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldOtherName,
-		})
+		_spec.SetField(admin.FieldOtherName, field.TypeString, value)
+	}
+	if value, ok := auo.mutation.Phone(); ok {
+		_spec.SetField(admin.FieldPhone, field.TypeString, value)
+	}
+	if auo.mutation.PhoneCleared() {
+		_spec.ClearField(admin.FieldPhone, field.TypeString)
+	}
+	if value, ok := auo.mutation.OtherPhone(); ok {
+		_spec.SetField(admin.FieldOtherPhone, field.TypeString, value)
+	}
+	if auo.mutation.OtherPhoneCleared() {
+		_spec.ClearField(admin.FieldOtherPhone, field.TypeString)
 	}
 	if value, ok := auo.mutation.Status(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: admin.FieldStatus,
-		})
+		_spec.SetField(admin.FieldStatus, field.TypeEnum, value)
 	}
 	if value, ok := auo.mutation.LastActive(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: admin.FieldLastActive,
-		})
+		_spec.SetField(admin.FieldLastActive, field.TypeString, value)
 	}
 	if auo.mutation.LastActiveCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: admin.FieldLastActive,
-		})
+		_spec.ClearField(admin.FieldLastActive, field.TypeString)
 	}
 	if auo.mutation.RolesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -694,10 +886,7 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 			Columns: admin.RolesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: role.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(role.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -710,10 +899,7 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 			Columns: admin.RolesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: role.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(role.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -729,10 +915,97 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 			Columns: admin.RolesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: role.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(role.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.NotificationsTable,
+			Columns: admin.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !auo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.NotificationsTable,
+			Columns: admin.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.NotificationsTable,
+			Columns: admin.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.CustomersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.CustomersTable,
+			Columns: []string{admin.CustomersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedCustomersIDs(); len(nodes) > 0 && !auo.mutation.CustomersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.CustomersTable,
+			Columns: []string{admin.CustomersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.CustomersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.CustomersTable,
+			Columns: []string{admin.CustomersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -751,5 +1024,6 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 		}
 		return nil, err
 	}
+	auo.mutation.done = true
 	return _node, nil
 }

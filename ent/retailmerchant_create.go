@@ -105,50 +105,8 @@ func (rmc *RetailMerchantCreate) Mutation() *RetailMerchantMutation {
 
 // Save creates the RetailMerchant in the database.
 func (rmc *RetailMerchantCreate) Save(ctx context.Context) (*RetailMerchant, error) {
-	var (
-		err  error
-		node *RetailMerchant
-	)
 	rmc.defaults()
-	if len(rmc.hooks) == 0 {
-		if err = rmc.check(); err != nil {
-			return nil, err
-		}
-		node, err = rmc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*RetailMerchantMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = rmc.check(); err != nil {
-				return nil, err
-			}
-			rmc.mutation = mutation
-			if node, err = rmc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(rmc.hooks) - 1; i >= 0; i-- {
-			if rmc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = rmc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, rmc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*RetailMerchant)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from RetailMerchantMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, rmc.sqlSave, rmc.mutation, rmc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -232,6 +190,9 @@ func (rmc *RetailMerchantCreate) check() error {
 }
 
 func (rmc *RetailMerchantCreate) sqlSave(ctx context.Context) (*RetailMerchant, error) {
+	if err := rmc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := rmc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, rmc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -241,74 +202,42 @@ func (rmc *RetailMerchantCreate) sqlSave(ctx context.Context) (*RetailMerchant, 
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	rmc.mutation.id = &_node.ID
+	rmc.mutation.done = true
 	return _node, nil
 }
 
 func (rmc *RetailMerchantCreate) createSpec() (*RetailMerchant, *sqlgraph.CreateSpec) {
 	var (
 		_node = &RetailMerchant{config: rmc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: retailmerchant.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: retailmerchant.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(retailmerchant.Table, sqlgraph.NewFieldSpec(retailmerchant.FieldID, field.TypeInt))
 	)
 	if value, ok := rmc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: retailmerchant.FieldCreatedAt,
-		})
+		_spec.SetField(retailmerchant.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := rmc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: retailmerchant.FieldUpdatedAt,
-		})
+		_spec.SetField(retailmerchant.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := rmc.mutation.GhanaCard(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldGhanaCard,
-		})
+		_spec.SetField(retailmerchant.FieldGhanaCard, field.TypeString, value)
 		_node.GhanaCard = value
 	}
 	if value, ok := rmc.mutation.LastName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldLastName,
-		})
+		_spec.SetField(retailmerchant.FieldLastName, field.TypeString, value)
 		_node.LastName = value
 	}
 	if value, ok := rmc.mutation.OtherName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldOtherName,
-		})
+		_spec.SetField(retailmerchant.FieldOtherName, field.TypeString, value)
 		_node.OtherName = value
 	}
 	if value, ok := rmc.mutation.Phone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldPhone,
-		})
+		_spec.SetField(retailmerchant.FieldPhone, field.TypeString, value)
 		_node.Phone = value
 	}
 	if value, ok := rmc.mutation.OtherPhone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: retailmerchant.FieldOtherPhone,
-		})
+		_spec.SetField(retailmerchant.FieldOtherPhone, field.TypeString, value)
 		_node.OtherPhone = &value
 	}
 	if nodes := rmc.mutation.MerchantIDs(); len(nodes) > 0 {
@@ -319,10 +248,7 @@ func (rmc *RetailMerchantCreate) createSpec() (*RetailMerchant, *sqlgraph.Create
 			Columns: []string{retailmerchant.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -358,8 +284,8 @@ func (rmcb *RetailMerchantCreateBulk) Save(ctx context.Context) ([]*RetailMercha
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, rmcb.builders[i+1].mutation)
 				} else {

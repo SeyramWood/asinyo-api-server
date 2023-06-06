@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	cacheDriver "github.com/faabiosr/cachego/file"
 	"github.com/goccy/go-json"
@@ -11,6 +12,7 @@ import (
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application/merchant"
+	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/pkg/storage"
@@ -21,9 +23,11 @@ type MerchantHandler struct {
 	maps    gateways.MapService
 }
 
-func NewMerchantHandler(db *database.Adapter, mail gateways.EmailService, maps gateways.MapService) *MerchantHandler {
+func NewMerchantHandler(
+	db *database.Adapter, noti notification.NotificationService, maps gateways.MapService,
+) *MerchantHandler {
 	repo := merchant.NewMerchantRepo(db)
-	service := merchant.NewMerchantService(repo, mail)
+	service := merchant.NewMerchantService(repo, noti)
 	mapService := maps.SetMerchantRepo(repo)
 	return &MerchantHandler{
 		service: service,
@@ -35,21 +39,30 @@ func (h *MerchantHandler) FetchByID() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		id, _ := c.ParamsInt("id")
 		result, err := h.service.Fetch(id)
-
 		if err != nil {
-
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
 		return c.JSON(presenters.MerchantSuccessResponse(result))
 	}
 }
+
+func (h *MerchantHandler) FetchStorefrontByID() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		id, _ := c.ParamsInt("id")
+		result, err := h.service.FetchStorefront(id)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
+		}
+		return c.JSON(presenters.MerchantStoreSuccessResponse(result))
+	}
+}
+
 func (h *MerchantHandler) Fetch() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
-		result, err := h.service.FetchAll()
-
+		limit, _ := strconv.Atoi(c.Query("limit", "0"))
+		offset, _ := strconv.Atoi(c.Query("offset", "0"))
+		result, err := h.service.FetchAll(limit, offset)
 		if err != nil {
-
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
 		return c.JSON(presenters.MerchantsSuccessResponse(result))
@@ -58,11 +71,9 @@ func (h *MerchantHandler) Fetch() fiber.Handler {
 
 func (h *MerchantHandler) Create() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
 		var request models.MerchantRequest
 
 		err := c.BodyParser(&request)
-
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
@@ -146,7 +157,7 @@ func (h *MerchantHandler) OnboardMerchant() fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
 
-		for key, _ := range cachedData {
+		for key := range cachedData {
 			cache.Delete(key)
 		}
 
@@ -155,9 +166,9 @@ func (h *MerchantHandler) OnboardMerchant() fiber.Handler {
 		return c.JSON(presenters.EmptySuccessResponse())
 	}
 }
+
 func (h *MerchantHandler) Update() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
 		merchantId, _ := c.ParamsInt("id")
 		if c.Get("userType") == "retailer" {
 			var request models.RetailerProfileUpdate
@@ -186,10 +197,9 @@ func (h *MerchantHandler) Update() fiber.Handler {
 			return c.JSON(presenters.MerchantErrorResponse(err))
 		}
 		return c.JSON(presenters.MerchantSuccessResponse(result))
-
 	}
-
 }
+
 func (h *MerchantHandler) Delete() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if err := h.service.Remove(c.Params("id")); err != nil {

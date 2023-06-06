@@ -97,41 +97,8 @@ func (icu *IndividualCustomerUpdate) ClearCustomer() *IndividualCustomerUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (icu *IndividualCustomerUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	icu.defaults()
-	if len(icu.hooks) == 0 {
-		if err = icu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = icu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*IndividualCustomerMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = icu.check(); err != nil {
-				return 0, err
-			}
-			icu.mutation = mutation
-			affected, err = icu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(icu.hooks) - 1; i >= 0; i-- {
-			if icu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = icu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, icu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, icu.sqlSave, icu.mutation, icu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -188,16 +155,10 @@ func (icu *IndividualCustomerUpdate) check() error {
 }
 
 func (icu *IndividualCustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   individualcustomer.Table,
-			Columns: individualcustomer.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: individualcustomer.FieldID,
-			},
-		},
+	if err := icu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(individualcustomer.Table, individualcustomer.Columns, sqlgraph.NewFieldSpec(individualcustomer.FieldID, field.TypeInt))
 	if ps := icu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -206,45 +167,22 @@ func (icu *IndividualCustomerUpdate) sqlSave(ctx context.Context) (n int, err er
 		}
 	}
 	if value, ok := icu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: individualcustomer.FieldUpdatedAt,
-		})
+		_spec.SetField(individualcustomer.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := icu.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldLastName,
-		})
+		_spec.SetField(individualcustomer.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := icu.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldOtherName,
-		})
+		_spec.SetField(individualcustomer.FieldOtherName, field.TypeString, value)
 	}
 	if value, ok := icu.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldPhone,
-		})
+		_spec.SetField(individualcustomer.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := icu.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldOtherPhone,
-		})
+		_spec.SetField(individualcustomer.FieldOtherPhone, field.TypeString, value)
 	}
 	if icu.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: individualcustomer.FieldOtherPhone,
-		})
+		_spec.ClearField(individualcustomer.FieldOtherPhone, field.TypeString)
 	}
 	if icu.mutation.CustomerCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -254,10 +192,7 @@ func (icu *IndividualCustomerUpdate) sqlSave(ctx context.Context) (n int, err er
 			Columns: []string{individualcustomer.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -270,10 +205,7 @@ func (icu *IndividualCustomerUpdate) sqlSave(ctx context.Context) (n int, err er
 			Columns: []string{individualcustomer.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -289,6 +221,7 @@ func (icu *IndividualCustomerUpdate) sqlSave(ctx context.Context) (n int, err er
 		}
 		return 0, err
 	}
+	icu.mutation.done = true
 	return n, nil
 }
 
@@ -366,6 +299,12 @@ func (icuo *IndividualCustomerUpdateOne) ClearCustomer() *IndividualCustomerUpda
 	return icuo
 }
 
+// Where appends a list predicates to the IndividualCustomerUpdate builder.
+func (icuo *IndividualCustomerUpdateOne) Where(ps ...predicate.IndividualCustomer) *IndividualCustomerUpdateOne {
+	icuo.mutation.Where(ps...)
+	return icuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (icuo *IndividualCustomerUpdateOne) Select(field string, fields ...string) *IndividualCustomerUpdateOne {
@@ -375,47 +314,8 @@ func (icuo *IndividualCustomerUpdateOne) Select(field string, fields ...string) 
 
 // Save executes the query and returns the updated IndividualCustomer entity.
 func (icuo *IndividualCustomerUpdateOne) Save(ctx context.Context) (*IndividualCustomer, error) {
-	var (
-		err  error
-		node *IndividualCustomer
-	)
 	icuo.defaults()
-	if len(icuo.hooks) == 0 {
-		if err = icuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = icuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*IndividualCustomerMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = icuo.check(); err != nil {
-				return nil, err
-			}
-			icuo.mutation = mutation
-			node, err = icuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(icuo.hooks) - 1; i >= 0; i-- {
-			if icuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = icuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, icuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*IndividualCustomer)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from IndividualCustomerMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, icuo.sqlSave, icuo.mutation, icuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -472,16 +372,10 @@ func (icuo *IndividualCustomerUpdateOne) check() error {
 }
 
 func (icuo *IndividualCustomerUpdateOne) sqlSave(ctx context.Context) (_node *IndividualCustomer, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   individualcustomer.Table,
-			Columns: individualcustomer.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: individualcustomer.FieldID,
-			},
-		},
+	if err := icuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(individualcustomer.Table, individualcustomer.Columns, sqlgraph.NewFieldSpec(individualcustomer.FieldID, field.TypeInt))
 	id, ok := icuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "IndividualCustomer.id" for update`)}
@@ -507,45 +401,22 @@ func (icuo *IndividualCustomerUpdateOne) sqlSave(ctx context.Context) (_node *In
 		}
 	}
 	if value, ok := icuo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: individualcustomer.FieldUpdatedAt,
-		})
+		_spec.SetField(individualcustomer.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := icuo.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldLastName,
-		})
+		_spec.SetField(individualcustomer.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := icuo.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldOtherName,
-		})
+		_spec.SetField(individualcustomer.FieldOtherName, field.TypeString, value)
 	}
 	if value, ok := icuo.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldPhone,
-		})
+		_spec.SetField(individualcustomer.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := icuo.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: individualcustomer.FieldOtherPhone,
-		})
+		_spec.SetField(individualcustomer.FieldOtherPhone, field.TypeString, value)
 	}
 	if icuo.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: individualcustomer.FieldOtherPhone,
-		})
+		_spec.ClearField(individualcustomer.FieldOtherPhone, field.TypeString)
 	}
 	if icuo.mutation.CustomerCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -555,10 +426,7 @@ func (icuo *IndividualCustomerUpdateOne) sqlSave(ctx context.Context) (_node *In
 			Columns: []string{individualcustomer.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -571,10 +439,7 @@ func (icuo *IndividualCustomerUpdateOne) sqlSave(ctx context.Context) (_node *In
 			Columns: []string{individualcustomer.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -593,5 +458,6 @@ func (icuo *IndividualCustomerUpdateOne) sqlSave(ctx context.Context) (_node *In
 		}
 		return nil, err
 	}
+	icuo.mutation.done = true
 	return _node, nil
 }

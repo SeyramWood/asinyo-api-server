@@ -7,14 +7,26 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 
 	"github.com/SeyramWood/app/adapters/gateways"
+	"github.com/SeyramWood/app/application/app_cache"
+	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/framework/database"
 	handler "github.com/SeyramWood/app/framework/web/http/handlers/page"
+	"github.com/SeyramWood/pkg/app"
 )
 
 type PageRouter struct {
 }
 
-func NewPageRouter(db *database.Adapter, mail gateways.EmailService, logis gateways.LogisticService) *PageRouter {
+func NewPageRouter(
+	app *app.Server,
+	db *database.Adapter,
+	noti notification.NotificationService,
+	dbNoti gateways.DBNotificationService,
+	storageSrv gateways.StorageService,
+	logis gateways.LogisticService,
+	ms gateways.MapService,
+	appcache *app_cache.AppCache,
+) *PageRouter {
 	return &PageRouter{}
 }
 

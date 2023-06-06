@@ -18,11 +18,9 @@ import (
 // SupplierMerchantQuery is the builder for querying SupplierMerchant entities.
 type SupplierMerchantQuery struct {
 	config
-	limit        *int
-	offset       *int
-	unique       *bool
-	order        []OrderFunc
-	fields       []string
+	ctx          *QueryContext
+	order        []suppliermerchant.OrderOption
+	inters       []Interceptor
 	predicates   []predicate.SupplierMerchant
 	withMerchant *MerchantQuery
 	withFKs      bool
@@ -37,34 +35,34 @@ func (smq *SupplierMerchantQuery) Where(ps ...predicate.SupplierMerchant) *Suppl
 	return smq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (smq *SupplierMerchantQuery) Limit(limit int) *SupplierMerchantQuery {
-	smq.limit = &limit
+	smq.ctx.Limit = &limit
 	return smq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (smq *SupplierMerchantQuery) Offset(offset int) *SupplierMerchantQuery {
-	smq.offset = &offset
+	smq.ctx.Offset = &offset
 	return smq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (smq *SupplierMerchantQuery) Unique(unique bool) *SupplierMerchantQuery {
-	smq.unique = &unique
+	smq.ctx.Unique = &unique
 	return smq
 }
 
-// Order adds an order step to the query.
-func (smq *SupplierMerchantQuery) Order(o ...OrderFunc) *SupplierMerchantQuery {
+// Order specifies how the records should be ordered.
+func (smq *SupplierMerchantQuery) Order(o ...suppliermerchant.OrderOption) *SupplierMerchantQuery {
 	smq.order = append(smq.order, o...)
 	return smq
 }
 
 // QueryMerchant chains the current query on the "merchant" edge.
 func (smq *SupplierMerchantQuery) QueryMerchant() *MerchantQuery {
-	query := &MerchantQuery{config: smq.config}
+	query := (&MerchantClient{config: smq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := smq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -87,7 +85,7 @@ func (smq *SupplierMerchantQuery) QueryMerchant() *MerchantQuery {
 // First returns the first SupplierMerchant entity from the query.
 // Returns a *NotFoundError when no SupplierMerchant was found.
 func (smq *SupplierMerchantQuery) First(ctx context.Context) (*SupplierMerchant, error) {
-	nodes, err := smq.Limit(1).All(ctx)
+	nodes, err := smq.Limit(1).All(setContextOp(ctx, smq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +108,7 @@ func (smq *SupplierMerchantQuery) FirstX(ctx context.Context) *SupplierMerchant 
 // Returns a *NotFoundError when no SupplierMerchant ID was found.
 func (smq *SupplierMerchantQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = smq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = smq.Limit(1).IDs(setContextOp(ctx, smq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -133,7 +131,7 @@ func (smq *SupplierMerchantQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one SupplierMerchant entity is found.
 // Returns a *NotFoundError when no SupplierMerchant entities are found.
 func (smq *SupplierMerchantQuery) Only(ctx context.Context) (*SupplierMerchant, error) {
-	nodes, err := smq.Limit(2).All(ctx)
+	nodes, err := smq.Limit(2).All(setContextOp(ctx, smq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +159,7 @@ func (smq *SupplierMerchantQuery) OnlyX(ctx context.Context) *SupplierMerchant {
 // Returns a *NotFoundError when no entities are found.
 func (smq *SupplierMerchantQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = smq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = smq.Limit(2).IDs(setContextOp(ctx, smq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -186,10 +184,12 @@ func (smq *SupplierMerchantQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of SupplierMerchants.
 func (smq *SupplierMerchantQuery) All(ctx context.Context) ([]*SupplierMerchant, error) {
+	ctx = setContextOp(ctx, smq.ctx, "All")
 	if err := smq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return smq.sqlAll(ctx)
+	qr := querierAll[[]*SupplierMerchant, *SupplierMerchantQuery]()
+	return withInterceptors[[]*SupplierMerchant](ctx, smq, qr, smq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -202,9 +202,12 @@ func (smq *SupplierMerchantQuery) AllX(ctx context.Context) []*SupplierMerchant 
 }
 
 // IDs executes the query and returns a list of SupplierMerchant IDs.
-func (smq *SupplierMerchantQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := smq.Select(suppliermerchant.FieldID).Scan(ctx, &ids); err != nil {
+func (smq *SupplierMerchantQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if smq.ctx.Unique == nil && smq.path != nil {
+		smq.Unique(true)
+	}
+	ctx = setContextOp(ctx, smq.ctx, "IDs")
+	if err = smq.Select(suppliermerchant.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -221,10 +224,11 @@ func (smq *SupplierMerchantQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (smq *SupplierMerchantQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, smq.ctx, "Count")
 	if err := smq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return smq.sqlCount(ctx)
+	return withInterceptors[int](ctx, smq, querierCount[*SupplierMerchantQuery](), smq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -238,10 +242,15 @@ func (smq *SupplierMerchantQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (smq *SupplierMerchantQuery) Exist(ctx context.Context) (bool, error) {
-	if err := smq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, smq.ctx, "Exist")
+	switch _, err := smq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return smq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -261,22 +270,21 @@ func (smq *SupplierMerchantQuery) Clone() *SupplierMerchantQuery {
 	}
 	return &SupplierMerchantQuery{
 		config:       smq.config,
-		limit:        smq.limit,
-		offset:       smq.offset,
-		order:        append([]OrderFunc{}, smq.order...),
+		ctx:          smq.ctx.Clone(),
+		order:        append([]suppliermerchant.OrderOption{}, smq.order...),
+		inters:       append([]Interceptor{}, smq.inters...),
 		predicates:   append([]predicate.SupplierMerchant{}, smq.predicates...),
 		withMerchant: smq.withMerchant.Clone(),
 		// clone intermediate query.
-		sql:    smq.sql.Clone(),
-		path:   smq.path,
-		unique: smq.unique,
+		sql:  smq.sql.Clone(),
+		path: smq.path,
 	}
 }
 
 // WithMerchant tells the query-builder to eager-load the nodes that are connected to
 // the "merchant" edge. The optional arguments are used to configure the query builder of the edge.
 func (smq *SupplierMerchantQuery) WithMerchant(opts ...func(*MerchantQuery)) *SupplierMerchantQuery {
-	query := &MerchantQuery{config: smq.config}
+	query := (&MerchantClient{config: smq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -299,16 +307,11 @@ func (smq *SupplierMerchantQuery) WithMerchant(opts ...func(*MerchantQuery)) *Su
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (smq *SupplierMerchantQuery) GroupBy(field string, fields ...string) *SupplierMerchantGroupBy {
-	grbuild := &SupplierMerchantGroupBy{config: smq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := smq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return smq.sqlQuery(ctx), nil
-	}
+	smq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &SupplierMerchantGroupBy{build: smq}
+	grbuild.flds = &smq.ctx.Fields
 	grbuild.label = suppliermerchant.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -325,15 +328,30 @@ func (smq *SupplierMerchantQuery) GroupBy(field string, fields ...string) *Suppl
 //		Select(suppliermerchant.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (smq *SupplierMerchantQuery) Select(fields ...string) *SupplierMerchantSelect {
-	smq.fields = append(smq.fields, fields...)
-	selbuild := &SupplierMerchantSelect{SupplierMerchantQuery: smq}
-	selbuild.label = suppliermerchant.Label
-	selbuild.flds, selbuild.scan = &smq.fields, selbuild.Scan
-	return selbuild
+	smq.ctx.Fields = append(smq.ctx.Fields, fields...)
+	sbuild := &SupplierMerchantSelect{SupplierMerchantQuery: smq}
+	sbuild.label = suppliermerchant.Label
+	sbuild.flds, sbuild.scan = &smq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a SupplierMerchantSelect configured with the given aggregations.
+func (smq *SupplierMerchantQuery) Aggregate(fns ...AggregateFunc) *SupplierMerchantSelect {
+	return smq.Select().Aggregate(fns...)
 }
 
 func (smq *SupplierMerchantQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range smq.fields {
+	for _, inter := range smq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, smq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range smq.ctx.Fields {
 		if !suppliermerchant.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -403,6 +421,9 @@ func (smq *SupplierMerchantQuery) loadMerchant(ctx context.Context, query *Merch
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(merchant.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -422,41 +443,22 @@ func (smq *SupplierMerchantQuery) loadMerchant(ctx context.Context, query *Merch
 
 func (smq *SupplierMerchantQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := smq.querySpec()
-	_spec.Node.Columns = smq.fields
-	if len(smq.fields) > 0 {
-		_spec.Unique = smq.unique != nil && *smq.unique
+	_spec.Node.Columns = smq.ctx.Fields
+	if len(smq.ctx.Fields) > 0 {
+		_spec.Unique = smq.ctx.Unique != nil && *smq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, smq.driver, _spec)
 }
 
-func (smq *SupplierMerchantQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := smq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (smq *SupplierMerchantQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   suppliermerchant.Table,
-			Columns: suppliermerchant.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: suppliermerchant.FieldID,
-			},
-		},
-		From:   smq.sql,
-		Unique: true,
-	}
-	if unique := smq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(suppliermerchant.Table, suppliermerchant.Columns, sqlgraph.NewFieldSpec(suppliermerchant.FieldID, field.TypeInt))
+	_spec.From = smq.sql
+	if unique := smq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if smq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := smq.fields; len(fields) > 0 {
+	if fields := smq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, suppliermerchant.FieldID)
 		for i := range fields {
@@ -472,10 +474,10 @@ func (smq *SupplierMerchantQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := smq.limit; limit != nil {
+	if limit := smq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := smq.offset; offset != nil {
+	if offset := smq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := smq.order; len(ps) > 0 {
@@ -491,7 +493,7 @@ func (smq *SupplierMerchantQuery) querySpec() *sqlgraph.QuerySpec {
 func (smq *SupplierMerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(smq.driver.Dialect())
 	t1 := builder.Table(suppliermerchant.Table)
-	columns := smq.fields
+	columns := smq.ctx.Fields
 	if len(columns) == 0 {
 		columns = suppliermerchant.Columns
 	}
@@ -500,7 +502,7 @@ func (smq *SupplierMerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = smq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if smq.unique != nil && *smq.unique {
+	if smq.ctx.Unique != nil && *smq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range smq.predicates {
@@ -509,12 +511,12 @@ func (smq *SupplierMerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range smq.order {
 		p(selector)
 	}
-	if offset := smq.offset; offset != nil {
+	if offset := smq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := smq.limit; limit != nil {
+	if limit := smq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -522,13 +524,8 @@ func (smq *SupplierMerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // SupplierMerchantGroupBy is the group-by builder for SupplierMerchant entities.
 type SupplierMerchantGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *SupplierMerchantQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -537,74 +534,77 @@ func (smgb *SupplierMerchantGroupBy) Aggregate(fns ...AggregateFunc) *SupplierMe
 	return smgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (smgb *SupplierMerchantGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := smgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, smgb.build.ctx, "GroupBy")
+	if err := smgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	smgb.sql = query
-	return smgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*SupplierMerchantQuery, *SupplierMerchantGroupBy](ctx, smgb.build, smgb, smgb.build.inters, v)
 }
 
-func (smgb *SupplierMerchantGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range smgb.fields {
-		if !suppliermerchant.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (smgb *SupplierMerchantGroupBy) sqlScan(ctx context.Context, root *SupplierMerchantQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(smgb.fns))
+	for _, fn := range smgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := smgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*smgb.flds)+len(smgb.fns))
+		for _, f := range *smgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*smgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := smgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := smgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (smgb *SupplierMerchantGroupBy) sqlQuery() *sql.Selector {
-	selector := smgb.sql.Select()
-	aggregation := make([]string, 0, len(smgb.fns))
-	for _, fn := range smgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(smgb.fields)+len(smgb.fns))
-		for _, f := range smgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(smgb.fields...)...)
-}
-
 // SupplierMerchantSelect is the builder for selecting fields of SupplierMerchant entities.
 type SupplierMerchantSelect struct {
 	*SupplierMerchantQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (sms *SupplierMerchantSelect) Aggregate(fns ...AggregateFunc) *SupplierMerchantSelect {
+	sms.fns = append(sms.fns, fns...)
+	return sms
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (sms *SupplierMerchantSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, sms.ctx, "Select")
 	if err := sms.prepareQuery(ctx); err != nil {
 		return err
 	}
-	sms.sql = sms.SupplierMerchantQuery.sqlQuery(ctx)
-	return sms.sqlScan(ctx, v)
+	return scanWithInterceptors[*SupplierMerchantQuery, *SupplierMerchantSelect](ctx, sms.SupplierMerchantQuery, sms, sms.inters, v)
 }
 
-func (sms *SupplierMerchantSelect) sqlScan(ctx context.Context, v any) error {
+func (sms *SupplierMerchantSelect) sqlScan(ctx context.Context, root *SupplierMerchantQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(sms.fns))
+	for _, fn := range sms.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*sms.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := sms.sql.Query()
+	query, args := selector.Query()
 	if err := sms.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

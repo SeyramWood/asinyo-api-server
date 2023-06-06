@@ -99,50 +99,8 @@ func (pcmc *ProductCategoryMajorCreate) Mutation() *ProductCategoryMajorMutation
 
 // Save creates the ProductCategoryMajor in the database.
 func (pcmc *ProductCategoryMajorCreate) Save(ctx context.Context) (*ProductCategoryMajor, error) {
-	var (
-		err  error
-		node *ProductCategoryMajor
-	)
 	pcmc.defaults()
-	if len(pcmc.hooks) == 0 {
-		if err = pcmc.check(); err != nil {
-			return nil, err
-		}
-		node, err = pcmc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProductCategoryMajorMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pcmc.check(); err != nil {
-				return nil, err
-			}
-			pcmc.mutation = mutation
-			if node, err = pcmc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(pcmc.hooks) - 1; i >= 0; i-- {
-			if pcmc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pcmc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, pcmc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*ProductCategoryMajor)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ProductCategoryMajorMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, pcmc.sqlSave, pcmc.mutation, pcmc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -207,6 +165,9 @@ func (pcmc *ProductCategoryMajorCreate) check() error {
 }
 
 func (pcmc *ProductCategoryMajorCreate) sqlSave(ctx context.Context) (*ProductCategoryMajor, error) {
+	if err := pcmc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := pcmc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pcmc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -216,50 +177,30 @@ func (pcmc *ProductCategoryMajorCreate) sqlSave(ctx context.Context) (*ProductCa
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	pcmc.mutation.id = &_node.ID
+	pcmc.mutation.done = true
 	return _node, nil
 }
 
 func (pcmc *ProductCategoryMajorCreate) createSpec() (*ProductCategoryMajor, *sqlgraph.CreateSpec) {
 	var (
 		_node = &ProductCategoryMajor{config: pcmc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: productcategorymajor.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: productcategorymajor.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(productcategorymajor.Table, sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt))
 	)
 	if value, ok := pcmc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: productcategorymajor.FieldCreatedAt,
-		})
+		_spec.SetField(productcategorymajor.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := pcmc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: productcategorymajor.FieldUpdatedAt,
-		})
+		_spec.SetField(productcategorymajor.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := pcmc.mutation.Category(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategorymajor.FieldCategory,
-		})
+		_spec.SetField(productcategorymajor.FieldCategory, field.TypeString, value)
 		_node.Category = value
 	}
 	if value, ok := pcmc.mutation.Slug(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategorymajor.FieldSlug,
-		})
+		_spec.SetField(productcategorymajor.FieldSlug, field.TypeString, value)
 		_node.Slug = value
 	}
 	if nodes := pcmc.mutation.MinorsIDs(); len(nodes) > 0 {
@@ -270,10 +211,7 @@ func (pcmc *ProductCategoryMajorCreate) createSpec() (*ProductCategoryMajor, *sq
 			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -289,10 +227,7 @@ func (pcmc *ProductCategoryMajorCreate) createSpec() (*ProductCategoryMajor, *sq
 			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -327,8 +262,8 @@ func (pcmcb *ProductCategoryMajorCreateBulk) Save(ctx context.Context) ([]*Produ
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, pcmcb.builders[i+1].mutation)
 				} else {

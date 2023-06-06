@@ -15,6 +15,7 @@ import (
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/notification"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 	"github.com/SeyramWood/ent/product"
@@ -25,19 +26,18 @@ import (
 // MerchantQuery is the builder for querying Merchant entities.
 type MerchantQuery struct {
 	config
-	limit          *int
-	offset         *int
-	unique         *bool
-	order          []OrderFunc
-	fields         []string
-	predicates     []predicate.Merchant
-	withSupplier   *SupplierMerchantQuery
-	withRetailer   *RetailMerchantQuery
-	withStore      *MerchantStoreQuery
-	withProducts   *ProductQuery
-	withAddresses  *AddressQuery
-	withOrders     *OrderQuery
-	withFavourites *FavouriteQuery
+	ctx               *QueryContext
+	order             []merchant.OrderOption
+	inters            []Interceptor
+	predicates        []predicate.Merchant
+	withSupplier      *SupplierMerchantQuery
+	withRetailer      *RetailMerchantQuery
+	withStore         *MerchantStoreQuery
+	withProducts      *ProductQuery
+	withAddresses     *AddressQuery
+	withOrders        *OrderQuery
+	withFavourites    *FavouriteQuery
+	withNotifications *NotificationQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -49,34 +49,34 @@ func (mq *MerchantQuery) Where(ps ...predicate.Merchant) *MerchantQuery {
 	return mq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (mq *MerchantQuery) Limit(limit int) *MerchantQuery {
-	mq.limit = &limit
+	mq.ctx.Limit = &limit
 	return mq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (mq *MerchantQuery) Offset(offset int) *MerchantQuery {
-	mq.offset = &offset
+	mq.ctx.Offset = &offset
 	return mq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (mq *MerchantQuery) Unique(unique bool) *MerchantQuery {
-	mq.unique = &unique
+	mq.ctx.Unique = &unique
 	return mq
 }
 
-// Order adds an order step to the query.
-func (mq *MerchantQuery) Order(o ...OrderFunc) *MerchantQuery {
+// Order specifies how the records should be ordered.
+func (mq *MerchantQuery) Order(o ...merchant.OrderOption) *MerchantQuery {
 	mq.order = append(mq.order, o...)
 	return mq
 }
 
 // QuerySupplier chains the current query on the "supplier" edge.
 func (mq *MerchantQuery) QuerySupplier() *SupplierMerchantQuery {
-	query := &SupplierMerchantQuery{config: mq.config}
+	query := (&SupplierMerchantClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -98,7 +98,7 @@ func (mq *MerchantQuery) QuerySupplier() *SupplierMerchantQuery {
 
 // QueryRetailer chains the current query on the "retailer" edge.
 func (mq *MerchantQuery) QueryRetailer() *RetailMerchantQuery {
-	query := &RetailMerchantQuery{config: mq.config}
+	query := (&RetailMerchantClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -120,7 +120,7 @@ func (mq *MerchantQuery) QueryRetailer() *RetailMerchantQuery {
 
 // QueryStore chains the current query on the "store" edge.
 func (mq *MerchantQuery) QueryStore() *MerchantStoreQuery {
-	query := &MerchantStoreQuery{config: mq.config}
+	query := (&MerchantStoreClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -142,7 +142,7 @@ func (mq *MerchantQuery) QueryStore() *MerchantStoreQuery {
 
 // QueryProducts chains the current query on the "products" edge.
 func (mq *MerchantQuery) QueryProducts() *ProductQuery {
-	query := &ProductQuery{config: mq.config}
+	query := (&ProductClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -164,7 +164,7 @@ func (mq *MerchantQuery) QueryProducts() *ProductQuery {
 
 // QueryAddresses chains the current query on the "addresses" edge.
 func (mq *MerchantQuery) QueryAddresses() *AddressQuery {
-	query := &AddressQuery{config: mq.config}
+	query := (&AddressClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -186,7 +186,7 @@ func (mq *MerchantQuery) QueryAddresses() *AddressQuery {
 
 // QueryOrders chains the current query on the "orders" edge.
 func (mq *MerchantQuery) QueryOrders() *OrderQuery {
-	query := &OrderQuery{config: mq.config}
+	query := (&OrderClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -208,7 +208,7 @@ func (mq *MerchantQuery) QueryOrders() *OrderQuery {
 
 // QueryFavourites chains the current query on the "favourites" edge.
 func (mq *MerchantQuery) QueryFavourites() *FavouriteQuery {
-	query := &FavouriteQuery{config: mq.config}
+	query := (&FavouriteClient{config: mq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := mq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -228,10 +228,32 @@ func (mq *MerchantQuery) QueryFavourites() *FavouriteQuery {
 	return query
 }
 
+// QueryNotifications chains the current query on the "notifications" edge.
+func (mq *MerchantQuery) QueryNotifications() *NotificationQuery {
+	query := (&NotificationClient{config: mq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
+			sqlgraph.To(notification.Table, notification.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, merchant.NotificationsTable, merchant.NotificationsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Merchant entity from the query.
 // Returns a *NotFoundError when no Merchant was found.
 func (mq *MerchantQuery) First(ctx context.Context) (*Merchant, error) {
-	nodes, err := mq.Limit(1).All(ctx)
+	nodes, err := mq.Limit(1).All(setContextOp(ctx, mq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +276,7 @@ func (mq *MerchantQuery) FirstX(ctx context.Context) *Merchant {
 // Returns a *NotFoundError when no Merchant ID was found.
 func (mq *MerchantQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = mq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = mq.Limit(1).IDs(setContextOp(ctx, mq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -277,7 +299,7 @@ func (mq *MerchantQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Merchant entity is found.
 // Returns a *NotFoundError when no Merchant entities are found.
 func (mq *MerchantQuery) Only(ctx context.Context) (*Merchant, error) {
-	nodes, err := mq.Limit(2).All(ctx)
+	nodes, err := mq.Limit(2).All(setContextOp(ctx, mq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +327,7 @@ func (mq *MerchantQuery) OnlyX(ctx context.Context) *Merchant {
 // Returns a *NotFoundError when no entities are found.
 func (mq *MerchantQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = mq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = mq.Limit(2).IDs(setContextOp(ctx, mq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -330,10 +352,12 @@ func (mq *MerchantQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Merchants.
 func (mq *MerchantQuery) All(ctx context.Context) ([]*Merchant, error) {
+	ctx = setContextOp(ctx, mq.ctx, "All")
 	if err := mq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return mq.sqlAll(ctx)
+	qr := querierAll[[]*Merchant, *MerchantQuery]()
+	return withInterceptors[[]*Merchant](ctx, mq, qr, mq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -346,9 +370,12 @@ func (mq *MerchantQuery) AllX(ctx context.Context) []*Merchant {
 }
 
 // IDs executes the query and returns a list of Merchant IDs.
-func (mq *MerchantQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := mq.Select(merchant.FieldID).Scan(ctx, &ids); err != nil {
+func (mq *MerchantQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if mq.ctx.Unique == nil && mq.path != nil {
+		mq.Unique(true)
+	}
+	ctx = setContextOp(ctx, mq.ctx, "IDs")
+	if err = mq.Select(merchant.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -365,10 +392,11 @@ func (mq *MerchantQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (mq *MerchantQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, mq.ctx, "Count")
 	if err := mq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return mq.sqlCount(ctx)
+	return withInterceptors[int](ctx, mq, querierCount[*MerchantQuery](), mq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -382,10 +410,15 @@ func (mq *MerchantQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (mq *MerchantQuery) Exist(ctx context.Context) (bool, error) {
-	if err := mq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, mq.ctx, "Exist")
+	switch _, err := mq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return mq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -404,29 +437,29 @@ func (mq *MerchantQuery) Clone() *MerchantQuery {
 		return nil
 	}
 	return &MerchantQuery{
-		config:         mq.config,
-		limit:          mq.limit,
-		offset:         mq.offset,
-		order:          append([]OrderFunc{}, mq.order...),
-		predicates:     append([]predicate.Merchant{}, mq.predicates...),
-		withSupplier:   mq.withSupplier.Clone(),
-		withRetailer:   mq.withRetailer.Clone(),
-		withStore:      mq.withStore.Clone(),
-		withProducts:   mq.withProducts.Clone(),
-		withAddresses:  mq.withAddresses.Clone(),
-		withOrders:     mq.withOrders.Clone(),
-		withFavourites: mq.withFavourites.Clone(),
+		config:            mq.config,
+		ctx:               mq.ctx.Clone(),
+		order:             append([]merchant.OrderOption{}, mq.order...),
+		inters:            append([]Interceptor{}, mq.inters...),
+		predicates:        append([]predicate.Merchant{}, mq.predicates...),
+		withSupplier:      mq.withSupplier.Clone(),
+		withRetailer:      mq.withRetailer.Clone(),
+		withStore:         mq.withStore.Clone(),
+		withProducts:      mq.withProducts.Clone(),
+		withAddresses:     mq.withAddresses.Clone(),
+		withOrders:        mq.withOrders.Clone(),
+		withFavourites:    mq.withFavourites.Clone(),
+		withNotifications: mq.withNotifications.Clone(),
 		// clone intermediate query.
-		sql:    mq.sql.Clone(),
-		path:   mq.path,
-		unique: mq.unique,
+		sql:  mq.sql.Clone(),
+		path: mq.path,
 	}
 }
 
 // WithSupplier tells the query-builder to eager-load the nodes that are connected to
 // the "supplier" edge. The optional arguments are used to configure the query builder of the edge.
 func (mq *MerchantQuery) WithSupplier(opts ...func(*SupplierMerchantQuery)) *MerchantQuery {
-	query := &SupplierMerchantQuery{config: mq.config}
+	query := (&SupplierMerchantClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -437,7 +470,7 @@ func (mq *MerchantQuery) WithSupplier(opts ...func(*SupplierMerchantQuery)) *Mer
 // WithRetailer tells the query-builder to eager-load the nodes that are connected to
 // the "retailer" edge. The optional arguments are used to configure the query builder of the edge.
 func (mq *MerchantQuery) WithRetailer(opts ...func(*RetailMerchantQuery)) *MerchantQuery {
-	query := &RetailMerchantQuery{config: mq.config}
+	query := (&RetailMerchantClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -448,7 +481,7 @@ func (mq *MerchantQuery) WithRetailer(opts ...func(*RetailMerchantQuery)) *Merch
 // WithStore tells the query-builder to eager-load the nodes that are connected to
 // the "store" edge. The optional arguments are used to configure the query builder of the edge.
 func (mq *MerchantQuery) WithStore(opts ...func(*MerchantStoreQuery)) *MerchantQuery {
-	query := &MerchantStoreQuery{config: mq.config}
+	query := (&MerchantStoreClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -459,7 +492,7 @@ func (mq *MerchantQuery) WithStore(opts ...func(*MerchantStoreQuery)) *MerchantQ
 // WithProducts tells the query-builder to eager-load the nodes that are connected to
 // the "products" edge. The optional arguments are used to configure the query builder of the edge.
 func (mq *MerchantQuery) WithProducts(opts ...func(*ProductQuery)) *MerchantQuery {
-	query := &ProductQuery{config: mq.config}
+	query := (&ProductClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -470,7 +503,7 @@ func (mq *MerchantQuery) WithProducts(opts ...func(*ProductQuery)) *MerchantQuer
 // WithAddresses tells the query-builder to eager-load the nodes that are connected to
 // the "addresses" edge. The optional arguments are used to configure the query builder of the edge.
 func (mq *MerchantQuery) WithAddresses(opts ...func(*AddressQuery)) *MerchantQuery {
-	query := &AddressQuery{config: mq.config}
+	query := (&AddressClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -481,7 +514,7 @@ func (mq *MerchantQuery) WithAddresses(opts ...func(*AddressQuery)) *MerchantQue
 // WithOrders tells the query-builder to eager-load the nodes that are connected to
 // the "orders" edge. The optional arguments are used to configure the query builder of the edge.
 func (mq *MerchantQuery) WithOrders(opts ...func(*OrderQuery)) *MerchantQuery {
-	query := &OrderQuery{config: mq.config}
+	query := (&OrderClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -492,11 +525,22 @@ func (mq *MerchantQuery) WithOrders(opts ...func(*OrderQuery)) *MerchantQuery {
 // WithFavourites tells the query-builder to eager-load the nodes that are connected to
 // the "favourites" edge. The optional arguments are used to configure the query builder of the edge.
 func (mq *MerchantQuery) WithFavourites(opts ...func(*FavouriteQuery)) *MerchantQuery {
-	query := &FavouriteQuery{config: mq.config}
+	query := (&FavouriteClient{config: mq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
 	mq.withFavourites = query
+	return mq
+}
+
+// WithNotifications tells the query-builder to eager-load the nodes that are connected to
+// the "notifications" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MerchantQuery) WithNotifications(opts ...func(*NotificationQuery)) *MerchantQuery {
+	query := (&NotificationClient{config: mq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withNotifications = query
 	return mq
 }
 
@@ -515,16 +559,11 @@ func (mq *MerchantQuery) WithFavourites(opts ...func(*FavouriteQuery)) *Merchant
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (mq *MerchantQuery) GroupBy(field string, fields ...string) *MerchantGroupBy {
-	grbuild := &MerchantGroupBy{config: mq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := mq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return mq.sqlQuery(ctx), nil
-	}
+	mq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &MerchantGroupBy{build: mq}
+	grbuild.flds = &mq.ctx.Fields
 	grbuild.label = merchant.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -541,15 +580,30 @@ func (mq *MerchantQuery) GroupBy(field string, fields ...string) *MerchantGroupB
 //		Select(merchant.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (mq *MerchantQuery) Select(fields ...string) *MerchantSelect {
-	mq.fields = append(mq.fields, fields...)
-	selbuild := &MerchantSelect{MerchantQuery: mq}
-	selbuild.label = merchant.Label
-	selbuild.flds, selbuild.scan = &mq.fields, selbuild.Scan
-	return selbuild
+	mq.ctx.Fields = append(mq.ctx.Fields, fields...)
+	sbuild := &MerchantSelect{MerchantQuery: mq}
+	sbuild.label = merchant.Label
+	sbuild.flds, sbuild.scan = &mq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a MerchantSelect configured with the given aggregations.
+func (mq *MerchantQuery) Aggregate(fns ...AggregateFunc) *MerchantSelect {
+	return mq.Select().Aggregate(fns...)
 }
 
 func (mq *MerchantQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range mq.fields {
+	for _, inter := range mq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, mq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range mq.ctx.Fields {
 		if !merchant.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -568,7 +622,7 @@ func (mq *MerchantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mer
 	var (
 		nodes       = []*Merchant{}
 		_spec       = mq.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [8]bool{
 			mq.withSupplier != nil,
 			mq.withRetailer != nil,
 			mq.withStore != nil,
@@ -576,6 +630,7 @@ func (mq *MerchantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mer
 			mq.withAddresses != nil,
 			mq.withOrders != nil,
 			mq.withFavourites != nil,
+			mq.withNotifications != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -642,6 +697,13 @@ func (mq *MerchantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mer
 			return nil, err
 		}
 	}
+	if query := mq.withNotifications; query != nil {
+		if err := mq.loadNotifications(ctx, query, nodes,
+			func(n *Merchant) { n.Edges.Notifications = []*Notification{} },
+			func(n *Merchant, e *Notification) { n.Edges.Notifications = append(n.Edges.Notifications, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -654,7 +716,7 @@ func (mq *MerchantQuery) loadSupplier(ctx context.Context, query *SupplierMercha
 	}
 	query.withFKs = true
 	query.Where(predicate.SupplierMerchant(func(s *sql.Selector) {
-		s.Where(sql.InValues(merchant.SupplierColumn, fks...))
+		s.Where(sql.InValues(s.C(merchant.SupplierColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -667,7 +729,7 @@ func (mq *MerchantQuery) loadSupplier(ctx context.Context, query *SupplierMercha
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_supplier" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "merchant_supplier" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -682,7 +744,7 @@ func (mq *MerchantQuery) loadRetailer(ctx context.Context, query *RetailMerchant
 	}
 	query.withFKs = true
 	query.Where(predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.InValues(merchant.RetailerColumn, fks...))
+		s.Where(sql.InValues(s.C(merchant.RetailerColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -695,7 +757,7 @@ func (mq *MerchantQuery) loadRetailer(ctx context.Context, query *RetailMerchant
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_retailer" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "merchant_retailer" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -710,7 +772,7 @@ func (mq *MerchantQuery) loadStore(ctx context.Context, query *MerchantStoreQuer
 	}
 	query.withFKs = true
 	query.Where(predicate.MerchantStore(func(s *sql.Selector) {
-		s.Where(sql.InValues(merchant.StoreColumn, fks...))
+		s.Where(sql.InValues(s.C(merchant.StoreColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -723,7 +785,7 @@ func (mq *MerchantQuery) loadStore(ctx context.Context, query *MerchantStoreQuer
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_store" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "merchant_store" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -741,7 +803,7 @@ func (mq *MerchantQuery) loadProducts(ctx context.Context, query *ProductQuery, 
 	}
 	query.withFKs = true
 	query.Where(predicate.Product(func(s *sql.Selector) {
-		s.Where(sql.InValues(merchant.ProductsColumn, fks...))
+		s.Where(sql.InValues(s.C(merchant.ProductsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -754,7 +816,7 @@ func (mq *MerchantQuery) loadProducts(ctx context.Context, query *ProductQuery, 
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_products" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "merchant_products" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -772,7 +834,7 @@ func (mq *MerchantQuery) loadAddresses(ctx context.Context, query *AddressQuery,
 	}
 	query.withFKs = true
 	query.Where(predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.InValues(merchant.AddressesColumn, fks...))
+		s.Where(sql.InValues(s.C(merchant.AddressesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -785,7 +847,7 @@ func (mq *MerchantQuery) loadAddresses(ctx context.Context, query *AddressQuery,
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_addresses" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "merchant_addresses" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -803,7 +865,7 @@ func (mq *MerchantQuery) loadOrders(ctx context.Context, query *OrderQuery, node
 	}
 	query.withFKs = true
 	query.Where(predicate.Order(func(s *sql.Selector) {
-		s.Where(sql.InValues(merchant.OrdersColumn, fks...))
+		s.Where(sql.InValues(s.C(merchant.OrdersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -816,7 +878,7 @@ func (mq *MerchantQuery) loadOrders(ctx context.Context, query *OrderQuery, node
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_orders" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "merchant_orders" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -834,7 +896,7 @@ func (mq *MerchantQuery) loadFavourites(ctx context.Context, query *FavouriteQue
 	}
 	query.withFKs = true
 	query.Where(predicate.Favourite(func(s *sql.Selector) {
-		s.Where(sql.InValues(merchant.FavouritesColumn, fks...))
+		s.Where(sql.InValues(s.C(merchant.FavouritesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -847,50 +909,92 @@ func (mq *MerchantQuery) loadFavourites(ctx context.Context, query *FavouriteQue
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_favourites" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "merchant_favourites" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (mq *MerchantQuery) loadNotifications(ctx context.Context, query *NotificationQuery, nodes []*Merchant, init func(*Merchant), assign func(*Merchant, *Notification)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Merchant)
+	nids := make(map[int]map[*Merchant]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(merchant.NotificationsTable)
+		s.Join(joinT).On(s.C(notification.FieldID), joinT.C(merchant.NotificationsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(merchant.NotificationsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(merchant.NotificationsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Merchant]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Notification](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "notifications" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
 	}
 	return nil
 }
 
 func (mq *MerchantQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := mq.querySpec()
-	_spec.Node.Columns = mq.fields
-	if len(mq.fields) > 0 {
-		_spec.Unique = mq.unique != nil && *mq.unique
+	_spec.Node.Columns = mq.ctx.Fields
+	if len(mq.ctx.Fields) > 0 {
+		_spec.Unique = mq.ctx.Unique != nil && *mq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, mq.driver, _spec)
 }
 
-func (mq *MerchantQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := mq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (mq *MerchantQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   merchant.Table,
-			Columns: merchant.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: merchant.FieldID,
-			},
-		},
-		From:   mq.sql,
-		Unique: true,
-	}
-	if unique := mq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(merchant.Table, merchant.Columns, sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt))
+	_spec.From = mq.sql
+	if unique := mq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if mq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := mq.fields; len(fields) > 0 {
+	if fields := mq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, merchant.FieldID)
 		for i := range fields {
@@ -906,10 +1010,10 @@ func (mq *MerchantQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := mq.limit; limit != nil {
+	if limit := mq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := mq.offset; offset != nil {
+	if offset := mq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := mq.order; len(ps) > 0 {
@@ -925,7 +1029,7 @@ func (mq *MerchantQuery) querySpec() *sqlgraph.QuerySpec {
 func (mq *MerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(mq.driver.Dialect())
 	t1 := builder.Table(merchant.Table)
-	columns := mq.fields
+	columns := mq.ctx.Fields
 	if len(columns) == 0 {
 		columns = merchant.Columns
 	}
@@ -934,7 +1038,7 @@ func (mq *MerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = mq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if mq.unique != nil && *mq.unique {
+	if mq.ctx.Unique != nil && *mq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range mq.predicates {
@@ -943,12 +1047,12 @@ func (mq *MerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range mq.order {
 		p(selector)
 	}
-	if offset := mq.offset; offset != nil {
+	if offset := mq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := mq.limit; limit != nil {
+	if limit := mq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -956,13 +1060,8 @@ func (mq *MerchantQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // MerchantGroupBy is the group-by builder for Merchant entities.
 type MerchantGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *MerchantQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -971,74 +1070,77 @@ func (mgb *MerchantGroupBy) Aggregate(fns ...AggregateFunc) *MerchantGroupBy {
 	return mgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (mgb *MerchantGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := mgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, mgb.build.ctx, "GroupBy")
+	if err := mgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	mgb.sql = query
-	return mgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*MerchantQuery, *MerchantGroupBy](ctx, mgb.build, mgb, mgb.build.inters, v)
 }
 
-func (mgb *MerchantGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range mgb.fields {
-		if !merchant.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (mgb *MerchantGroupBy) sqlScan(ctx context.Context, root *MerchantQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(mgb.fns))
+	for _, fn := range mgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := mgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*mgb.flds)+len(mgb.fns))
+		for _, f := range *mgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*mgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := mgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := mgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (mgb *MerchantGroupBy) sqlQuery() *sql.Selector {
-	selector := mgb.sql.Select()
-	aggregation := make([]string, 0, len(mgb.fns))
-	for _, fn := range mgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(mgb.fields)+len(mgb.fns))
-		for _, f := range mgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(mgb.fields...)...)
-}
-
 // MerchantSelect is the builder for selecting fields of Merchant entities.
 type MerchantSelect struct {
 	*MerchantQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ms *MerchantSelect) Aggregate(fns ...AggregateFunc) *MerchantSelect {
+	ms.fns = append(ms.fns, fns...)
+	return ms
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (ms *MerchantSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ms.ctx, "Select")
 	if err := ms.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ms.sql = ms.MerchantQuery.sqlQuery(ctx)
-	return ms.sqlScan(ctx, v)
+	return scanWithInterceptors[*MerchantQuery, *MerchantSelect](ctx, ms.MerchantQuery, ms, ms.inters, v)
 }
 
-func (ms *MerchantSelect) sqlScan(ctx context.Context, v any) error {
+func (ms *MerchantSelect) sqlScan(ctx context.Context, root *MerchantQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ms.fns))
+	for _, fn := range ms.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ms.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ms.sql.Query()
+	query, args := selector.Query()
 	if err := ms.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

@@ -4,6 +4,9 @@ package product
 
 import (
 	"time"
+
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -147,3 +150,150 @@ var (
 	// DefaultBestDeal holds the default value on creation for the "best_deal" field.
 	DefaultBestDeal uint64
 )
+
+// OrderOption defines the ordering options for the Product queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByPrice orders the results by the price field.
+func ByPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPrice, opts...).ToFunc()
+}
+
+// ByPromoPrice orders the results by the promo_price field.
+func ByPromoPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPromoPrice, opts...).ToFunc()
+}
+
+// ByWeight orders the results by the weight field.
+func ByWeight(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeight, opts...).ToFunc()
+}
+
+// ByQuantity orders the results by the quantity field.
+func ByQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQuantity, opts...).ToFunc()
+}
+
+// ByUnit orders the results by the unit field.
+func ByUnit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnit, opts...).ToFunc()
+}
+
+// ByDescription orders the results by the description field.
+func ByDescription(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDescription, opts...).ToFunc()
+}
+
+// ByImage orders the results by the image field.
+func ByImage(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldImage, opts...).ToFunc()
+}
+
+// ByBestDeal orders the results by the best_deal field.
+func ByBestDeal(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBestDeal, opts...).ToFunc()
+}
+
+// ByOrderDetailsCount orders the results by order_details count.
+func ByOrderDetailsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOrderDetailsStep(), opts...)
+	}
+}
+
+// ByOrderDetails orders the results by order_details terms.
+func ByOrderDetails(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOrderDetailsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByFavouritesCount orders the results by favourites count.
+func ByFavouritesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFavouritesStep(), opts...)
+	}
+}
+
+// ByFavourites orders the results by favourites terms.
+func ByFavourites(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFavouritesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByMerchantField orders the results by merchant field.
+func ByMerchantField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMerchantStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByMajorField orders the results by major field.
+func ByMajorField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMajorStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByMinorField orders the results by minor field.
+func ByMinorField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMinorStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newOrderDetailsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OrderDetailsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OrderDetailsTable, OrderDetailsColumn),
+	)
+}
+func newFavouritesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FavouritesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
+	)
+}
+func newMerchantStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MerchantInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, MerchantTable, MerchantColumn),
+	)
+}
+func newMajorStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MajorInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, MajorTable, MajorColumn),
+	)
+}
+func newMinorStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MinorInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, MinorTable, MinorColumn),
+	)
+}

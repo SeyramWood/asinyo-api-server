@@ -127,41 +127,8 @@ func (pcmu *ProductCategoryMajorUpdate) RemoveProducts(p ...*Product) *ProductCa
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (pcmu *ProductCategoryMajorUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	pcmu.defaults()
-	if len(pcmu.hooks) == 0 {
-		if err = pcmu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = pcmu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProductCategoryMajorMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pcmu.check(); err != nil {
-				return 0, err
-			}
-			pcmu.mutation = mutation
-			affected, err = pcmu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(pcmu.hooks) - 1; i >= 0; i-- {
-			if pcmu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pcmu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, pcmu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, pcmu.sqlSave, pcmu.mutation, pcmu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -210,16 +177,10 @@ func (pcmu *ProductCategoryMajorUpdate) check() error {
 }
 
 func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   productcategorymajor.Table,
-			Columns: productcategorymajor.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: productcategorymajor.FieldID,
-			},
-		},
+	if err := pcmu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(productcategorymajor.Table, productcategorymajor.Columns, sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt))
 	if ps := pcmu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -228,25 +189,13 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 	}
 	if value, ok := pcmu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: productcategorymajor.FieldUpdatedAt,
-		})
+		_spec.SetField(productcategorymajor.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := pcmu.mutation.Category(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategorymajor.FieldCategory,
-		})
+		_spec.SetField(productcategorymajor.FieldCategory, field.TypeString, value)
 	}
 	if value, ok := pcmu.mutation.Slug(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategorymajor.FieldSlug,
-		})
+		_spec.SetField(productcategorymajor.FieldSlug, field.TypeString, value)
 	}
 	if pcmu.mutation.MinorsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -256,10 +205,7 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -272,10 +218,7 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -291,10 +234,7 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -310,10 +250,7 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -326,10 +263,7 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -345,10 +279,7 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -364,6 +295,7 @@ func (pcmu *ProductCategoryMajorUpdate) sqlSave(ctx context.Context) (n int, err
 		}
 		return 0, err
 	}
+	pcmu.mutation.done = true
 	return n, nil
 }
 
@@ -470,6 +402,12 @@ func (pcmuo *ProductCategoryMajorUpdateOne) RemoveProducts(p ...*Product) *Produ
 	return pcmuo.RemoveProductIDs(ids...)
 }
 
+// Where appends a list predicates to the ProductCategoryMajorUpdate builder.
+func (pcmuo *ProductCategoryMajorUpdateOne) Where(ps ...predicate.ProductCategoryMajor) *ProductCategoryMajorUpdateOne {
+	pcmuo.mutation.Where(ps...)
+	return pcmuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (pcmuo *ProductCategoryMajorUpdateOne) Select(field string, fields ...string) *ProductCategoryMajorUpdateOne {
@@ -479,47 +417,8 @@ func (pcmuo *ProductCategoryMajorUpdateOne) Select(field string, fields ...strin
 
 // Save executes the query and returns the updated ProductCategoryMajor entity.
 func (pcmuo *ProductCategoryMajorUpdateOne) Save(ctx context.Context) (*ProductCategoryMajor, error) {
-	var (
-		err  error
-		node *ProductCategoryMajor
-	)
 	pcmuo.defaults()
-	if len(pcmuo.hooks) == 0 {
-		if err = pcmuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = pcmuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProductCategoryMajorMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pcmuo.check(); err != nil {
-				return nil, err
-			}
-			pcmuo.mutation = mutation
-			node, err = pcmuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(pcmuo.hooks) - 1; i >= 0; i-- {
-			if pcmuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pcmuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, pcmuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*ProductCategoryMajor)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from ProductCategoryMajorMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, pcmuo.sqlSave, pcmuo.mutation, pcmuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -568,16 +467,10 @@ func (pcmuo *ProductCategoryMajorUpdateOne) check() error {
 }
 
 func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node *ProductCategoryMajor, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   productcategorymajor.Table,
-			Columns: productcategorymajor.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: productcategorymajor.FieldID,
-			},
-		},
+	if err := pcmuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(productcategorymajor.Table, productcategorymajor.Columns, sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt))
 	id, ok := pcmuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "ProductCategoryMajor.id" for update`)}
@@ -603,25 +496,13 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 	}
 	if value, ok := pcmuo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: productcategorymajor.FieldUpdatedAt,
-		})
+		_spec.SetField(productcategorymajor.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := pcmuo.mutation.Category(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategorymajor.FieldCategory,
-		})
+		_spec.SetField(productcategorymajor.FieldCategory, field.TypeString, value)
 	}
 	if value, ok := pcmuo.mutation.Slug(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: productcategorymajor.FieldSlug,
-		})
+		_spec.SetField(productcategorymajor.FieldSlug, field.TypeString, value)
 	}
 	if pcmuo.mutation.MinorsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -631,10 +512,7 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -647,10 +525,7 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -666,10 +541,7 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategorymajor.MinorsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: productcategoryminor.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -685,10 +557,7 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -701,10 +570,7 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -720,10 +586,7 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 			Columns: []string{productcategorymajor.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -742,5 +605,6 @@ func (pcmuo *ProductCategoryMajorUpdateOne) sqlSave(ctx context.Context) (_node 
 		}
 		return nil, err
 	}
+	pcmuo.mutation.done = true
 	return _node, nil
 }

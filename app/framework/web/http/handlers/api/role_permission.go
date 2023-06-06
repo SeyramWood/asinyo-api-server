@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,6 +29,7 @@ func (h *roleAndPermissionHandler) Fetch() fiber.Handler {
 		offset, _ := strconv.Atoi(c.Query("offset", "0"))
 		result, err := h.service.FetchAll(limit, offset)
 		if err != nil {
+			fmt.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.RolePermissionErrorResponse(err))
 		}
 		return c.JSON(presenters.RoleSuccessResponses(result))

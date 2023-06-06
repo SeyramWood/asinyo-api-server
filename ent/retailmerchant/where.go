@@ -12,759 +12,497 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id int) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id int) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id int) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.RetailMerchant(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...int) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...int) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id int) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.RetailMerchant(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id int) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.RetailMerchant(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id int) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.RetailMerchant(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id int) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.RetailMerchant(sql.FieldLTE(FieldID, id))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // GhanaCard applies equality check predicate on the "ghana_card" field. It's identical to GhanaCardEQ.
 func GhanaCard(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldGhanaCard, v))
 }
 
 // LastName applies equality check predicate on the "last_name" field. It's identical to LastNameEQ.
 func LastName(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldLastName, v))
 }
 
 // OtherName applies equality check predicate on the "other_name" field. It's identical to OtherNameEQ.
 func OtherName(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldOtherName, v))
 }
 
 // Phone applies equality check predicate on the "phone" field. It's identical to PhoneEQ.
 func Phone(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldPhone, v))
 }
 
 // OtherPhone applies equality check predicate on the "other_phone" field. It's identical to OtherPhoneEQ.
 func OtherPhone(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldOtherPhone, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
 func CreatedAtNEQ(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldNEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtIn applies the In predicate on the "created_at" field.
 func CreatedAtIn(vs ...time.Time) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
 func CreatedAtNotIn(vs ...time.Time) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldNotIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtGT applies the GT predicate on the "created_at" field.
 func CreatedAtGT(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGT(FieldCreatedAt, v))
 }
 
 // CreatedAtGTE applies the GTE predicate on the "created_at" field.
 func CreatedAtGTE(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGTE(FieldCreatedAt, v))
 }
 
 // CreatedAtLT applies the LT predicate on the "created_at" field.
 func CreatedAtLT(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLT(FieldCreatedAt, v))
 }
 
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLTE(FieldCreatedAt, v))
 }
 
 // UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
 func UpdatedAtEQ(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
 func UpdatedAtNEQ(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldNEQ(FieldUpdatedAt, v))
 }
 
 // UpdatedAtIn applies the In predicate on the "updated_at" field.
 func UpdatedAtIn(vs ...time.Time) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldUpdatedAt), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldIn(FieldUpdatedAt, vs...))
 }
 
 // UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
 func UpdatedAtNotIn(vs ...time.Time) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldUpdatedAt), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldNotIn(FieldUpdatedAt, vs...))
 }
 
 // UpdatedAtGT applies the GT predicate on the "updated_at" field.
 func UpdatedAtGT(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGT(FieldUpdatedAt, v))
 }
 
 // UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
 func UpdatedAtGTE(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGTE(FieldUpdatedAt, v))
 }
 
 // UpdatedAtLT applies the LT predicate on the "updated_at" field.
 func UpdatedAtLT(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLT(FieldUpdatedAt, v))
 }
 
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
 // GhanaCardEQ applies the EQ predicate on the "ghana_card" field.
 func GhanaCardEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldGhanaCard, v))
 }
 
 // GhanaCardNEQ applies the NEQ predicate on the "ghana_card" field.
 func GhanaCardNEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldNEQ(FieldGhanaCard, v))
 }
 
 // GhanaCardIn applies the In predicate on the "ghana_card" field.
 func GhanaCardIn(vs ...string) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldGhanaCard), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldIn(FieldGhanaCard, vs...))
 }
 
 // GhanaCardNotIn applies the NotIn predicate on the "ghana_card" field.
 func GhanaCardNotIn(vs ...string) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldGhanaCard), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldNotIn(FieldGhanaCard, vs...))
 }
 
 // GhanaCardGT applies the GT predicate on the "ghana_card" field.
 func GhanaCardGT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGT(FieldGhanaCard, v))
 }
 
 // GhanaCardGTE applies the GTE predicate on the "ghana_card" field.
 func GhanaCardGTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGTE(FieldGhanaCard, v))
 }
 
 // GhanaCardLT applies the LT predicate on the "ghana_card" field.
 func GhanaCardLT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLT(FieldGhanaCard, v))
 }
 
 // GhanaCardLTE applies the LTE predicate on the "ghana_card" field.
 func GhanaCardLTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLTE(FieldGhanaCard, v))
 }
 
 // GhanaCardContains applies the Contains predicate on the "ghana_card" field.
 func GhanaCardContains(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldContains(FieldGhanaCard, v))
 }
 
 // GhanaCardHasPrefix applies the HasPrefix predicate on the "ghana_card" field.
 func GhanaCardHasPrefix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldHasPrefix(FieldGhanaCard, v))
 }
 
 // GhanaCardHasSuffix applies the HasSuffix predicate on the "ghana_card" field.
 func GhanaCardHasSuffix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldHasSuffix(FieldGhanaCard, v))
 }
 
 // GhanaCardEqualFold applies the EqualFold predicate on the "ghana_card" field.
 func GhanaCardEqualFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEqualFold(FieldGhanaCard, v))
 }
 
 // GhanaCardContainsFold applies the ContainsFold predicate on the "ghana_card" field.
 func GhanaCardContainsFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldGhanaCard), v))
-	})
+	return predicate.RetailMerchant(sql.FieldContainsFold(FieldGhanaCard, v))
 }
 
 // LastNameEQ applies the EQ predicate on the "last_name" field.
 func LastNameEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldLastName, v))
 }
 
 // LastNameNEQ applies the NEQ predicate on the "last_name" field.
 func LastNameNEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldNEQ(FieldLastName, v))
 }
 
 // LastNameIn applies the In predicate on the "last_name" field.
 func LastNameIn(vs ...string) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldLastName), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldIn(FieldLastName, vs...))
 }
 
 // LastNameNotIn applies the NotIn predicate on the "last_name" field.
 func LastNameNotIn(vs ...string) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldLastName), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldNotIn(FieldLastName, vs...))
 }
 
 // LastNameGT applies the GT predicate on the "last_name" field.
 func LastNameGT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGT(FieldLastName, v))
 }
 
 // LastNameGTE applies the GTE predicate on the "last_name" field.
 func LastNameGTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGTE(FieldLastName, v))
 }
 
 // LastNameLT applies the LT predicate on the "last_name" field.
 func LastNameLT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLT(FieldLastName, v))
 }
 
 // LastNameLTE applies the LTE predicate on the "last_name" field.
 func LastNameLTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLTE(FieldLastName, v))
 }
 
 // LastNameContains applies the Contains predicate on the "last_name" field.
 func LastNameContains(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldContains(FieldLastName, v))
 }
 
 // LastNameHasPrefix applies the HasPrefix predicate on the "last_name" field.
 func LastNameHasPrefix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldHasPrefix(FieldLastName, v))
 }
 
 // LastNameHasSuffix applies the HasSuffix predicate on the "last_name" field.
 func LastNameHasSuffix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldHasSuffix(FieldLastName, v))
 }
 
 // LastNameEqualFold applies the EqualFold predicate on the "last_name" field.
 func LastNameEqualFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEqualFold(FieldLastName, v))
 }
 
 // LastNameContainsFold applies the ContainsFold predicate on the "last_name" field.
 func LastNameContainsFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldLastName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldContainsFold(FieldLastName, v))
 }
 
 // OtherNameEQ applies the EQ predicate on the "other_name" field.
 func OtherNameEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldOtherName, v))
 }
 
 // OtherNameNEQ applies the NEQ predicate on the "other_name" field.
 func OtherNameNEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldNEQ(FieldOtherName, v))
 }
 
 // OtherNameIn applies the In predicate on the "other_name" field.
 func OtherNameIn(vs ...string) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldOtherName), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldIn(FieldOtherName, vs...))
 }
 
 // OtherNameNotIn applies the NotIn predicate on the "other_name" field.
 func OtherNameNotIn(vs ...string) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldOtherName), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldNotIn(FieldOtherName, vs...))
 }
 
 // OtherNameGT applies the GT predicate on the "other_name" field.
 func OtherNameGT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGT(FieldOtherName, v))
 }
 
 // OtherNameGTE applies the GTE predicate on the "other_name" field.
 func OtherNameGTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGTE(FieldOtherName, v))
 }
 
 // OtherNameLT applies the LT predicate on the "other_name" field.
 func OtherNameLT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLT(FieldOtherName, v))
 }
 
 // OtherNameLTE applies the LTE predicate on the "other_name" field.
 func OtherNameLTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLTE(FieldOtherName, v))
 }
 
 // OtherNameContains applies the Contains predicate on the "other_name" field.
 func OtherNameContains(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldContains(FieldOtherName, v))
 }
 
 // OtherNameHasPrefix applies the HasPrefix predicate on the "other_name" field.
 func OtherNameHasPrefix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldHasPrefix(FieldOtherName, v))
 }
 
 // OtherNameHasSuffix applies the HasSuffix predicate on the "other_name" field.
 func OtherNameHasSuffix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldHasSuffix(FieldOtherName, v))
 }
 
 // OtherNameEqualFold applies the EqualFold predicate on the "other_name" field.
 func OtherNameEqualFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEqualFold(FieldOtherName, v))
 }
 
 // OtherNameContainsFold applies the ContainsFold predicate on the "other_name" field.
 func OtherNameContainsFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldOtherName), v))
-	})
+	return predicate.RetailMerchant(sql.FieldContainsFold(FieldOtherName, v))
 }
 
 // PhoneEQ applies the EQ predicate on the "phone" field.
 func PhoneEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldPhone, v))
 }
 
 // PhoneNEQ applies the NEQ predicate on the "phone" field.
 func PhoneNEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldNEQ(FieldPhone, v))
 }
 
 // PhoneIn applies the In predicate on the "phone" field.
 func PhoneIn(vs ...string) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldPhone), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldIn(FieldPhone, vs...))
 }
 
 // PhoneNotIn applies the NotIn predicate on the "phone" field.
 func PhoneNotIn(vs ...string) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldPhone), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldNotIn(FieldPhone, vs...))
 }
 
 // PhoneGT applies the GT predicate on the "phone" field.
 func PhoneGT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGT(FieldPhone, v))
 }
 
 // PhoneGTE applies the GTE predicate on the "phone" field.
 func PhoneGTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGTE(FieldPhone, v))
 }
 
 // PhoneLT applies the LT predicate on the "phone" field.
 func PhoneLT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLT(FieldPhone, v))
 }
 
 // PhoneLTE applies the LTE predicate on the "phone" field.
 func PhoneLTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLTE(FieldPhone, v))
 }
 
 // PhoneContains applies the Contains predicate on the "phone" field.
 func PhoneContains(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldContains(FieldPhone, v))
 }
 
 // PhoneHasPrefix applies the HasPrefix predicate on the "phone" field.
 func PhoneHasPrefix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldHasPrefix(FieldPhone, v))
 }
 
 // PhoneHasSuffix applies the HasSuffix predicate on the "phone" field.
 func PhoneHasSuffix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldHasSuffix(FieldPhone, v))
 }
 
 // PhoneEqualFold applies the EqualFold predicate on the "phone" field.
 func PhoneEqualFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEqualFold(FieldPhone, v))
 }
 
 // PhoneContainsFold applies the ContainsFold predicate on the "phone" field.
 func PhoneContainsFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldContainsFold(FieldPhone, v))
 }
 
 // OtherPhoneEQ applies the EQ predicate on the "other_phone" field.
 func OtherPhoneEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEQ(FieldOtherPhone, v))
 }
 
 // OtherPhoneNEQ applies the NEQ predicate on the "other_phone" field.
 func OtherPhoneNEQ(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldNEQ(FieldOtherPhone, v))
 }
 
 // OtherPhoneIn applies the In predicate on the "other_phone" field.
 func OtherPhoneIn(vs ...string) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldOtherPhone), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldIn(FieldOtherPhone, vs...))
 }
 
 // OtherPhoneNotIn applies the NotIn predicate on the "other_phone" field.
 func OtherPhoneNotIn(vs ...string) predicate.RetailMerchant {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldOtherPhone), v...))
-	})
+	return predicate.RetailMerchant(sql.FieldNotIn(FieldOtherPhone, vs...))
 }
 
 // OtherPhoneGT applies the GT predicate on the "other_phone" field.
 func OtherPhoneGT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGT(FieldOtherPhone, v))
 }
 
 // OtherPhoneGTE applies the GTE predicate on the "other_phone" field.
 func OtherPhoneGTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldGTE(FieldOtherPhone, v))
 }
 
 // OtherPhoneLT applies the LT predicate on the "other_phone" field.
 func OtherPhoneLT(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLT(FieldOtherPhone, v))
 }
 
 // OtherPhoneLTE applies the LTE predicate on the "other_phone" field.
 func OtherPhoneLTE(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldLTE(FieldOtherPhone, v))
 }
 
 // OtherPhoneContains applies the Contains predicate on the "other_phone" field.
 func OtherPhoneContains(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldContains(FieldOtherPhone, v))
 }
 
 // OtherPhoneHasPrefix applies the HasPrefix predicate on the "other_phone" field.
 func OtherPhoneHasPrefix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldHasPrefix(FieldOtherPhone, v))
 }
 
 // OtherPhoneHasSuffix applies the HasSuffix predicate on the "other_phone" field.
 func OtherPhoneHasSuffix(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldHasSuffix(FieldOtherPhone, v))
 }
 
 // OtherPhoneIsNil applies the IsNil predicate on the "other_phone" field.
 func OtherPhoneIsNil() predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldOtherPhone)))
-	})
+	return predicate.RetailMerchant(sql.FieldIsNull(FieldOtherPhone))
 }
 
 // OtherPhoneNotNil applies the NotNil predicate on the "other_phone" field.
 func OtherPhoneNotNil() predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldOtherPhone)))
-	})
+	return predicate.RetailMerchant(sql.FieldNotNull(FieldOtherPhone))
 }
 
 // OtherPhoneEqualFold applies the EqualFold predicate on the "other_phone" field.
 func OtherPhoneEqualFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldEqualFold(FieldOtherPhone, v))
 }
 
 // OtherPhoneContainsFold applies the ContainsFold predicate on the "other_phone" field.
 func OtherPhoneContainsFold(v string) predicate.RetailMerchant {
-	return predicate.RetailMerchant(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldOtherPhone), v))
-	})
+	return predicate.RetailMerchant(sql.FieldContainsFold(FieldOtherPhone, v))
 }
 
 // HasMerchant applies the HasEdge predicate on the "merchant" edge.
@@ -772,7 +510,6 @@ func HasMerchant() predicate.RetailMerchant {
 	return predicate.RetailMerchant(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(MerchantTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, MerchantTable, MerchantColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -782,11 +519,7 @@ func HasMerchant() predicate.RetailMerchant {
 // HasMerchantWith applies the HasEdge predicate on the "merchant" edge with a given conditions (other predicates).
 func HasMerchantWith(preds ...predicate.Merchant) predicate.RetailMerchant {
 	return predicate.RetailMerchant(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(MerchantInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, MerchantTable, MerchantColumn),
-		)
+		step := newMerchantStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

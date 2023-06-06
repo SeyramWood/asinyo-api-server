@@ -77,26 +77,6 @@ func (au *AddressUpdate) ClearOtherPhone() *AddressUpdate {
 	return au
 }
 
-// SetDigitalAddress sets the "digital_address" field.
-func (au *AddressUpdate) SetDigitalAddress(s string) *AddressUpdate {
-	au.mutation.SetDigitalAddress(s)
-	return au
-}
-
-// SetNillableDigitalAddress sets the "digital_address" field if the given value is not nil.
-func (au *AddressUpdate) SetNillableDigitalAddress(s *string) *AddressUpdate {
-	if s != nil {
-		au.SetDigitalAddress(*s)
-	}
-	return au
-}
-
-// ClearDigitalAddress clears the value of the "digital_address" field.
-func (au *AddressUpdate) ClearDigitalAddress() *AddressUpdate {
-	au.mutation.ClearDigitalAddress()
-	return au
-}
-
 // SetStreetName sets the "street_name" field.
 func (au *AddressUpdate) SetStreetName(s string) *AddressUpdate {
 	au.mutation.SetStreetName(s)
@@ -327,41 +307,8 @@ func (au *AddressUpdate) RemoveOrders(o ...*Order) *AddressUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (au *AddressUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	au.defaults()
-	if len(au.hooks) == 0 {
-		if err = au.check(); err != nil {
-			return 0, err
-		}
-		affected, err = au.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AddressMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = au.check(); err != nil {
-				return 0, err
-			}
-			au.mutation = mutation
-			affected, err = au.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(au.hooks) - 1; i >= 0; i-- {
-			if au.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = au.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, au.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, au.sqlSave, au.mutation, au.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -425,16 +372,10 @@ func (au *AddressUpdate) check() error {
 }
 
 func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   address.Table,
-			Columns: address.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: address.FieldID,
-			},
-		},
+	if err := au.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(address.Table, address.Columns, sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt))
 	if ps := au.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -443,138 +384,58 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := au.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: address.FieldUpdatedAt,
-		})
+		_spec.SetField(address.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := au.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldLastName,
-		})
+		_spec.SetField(address.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := au.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldOtherName,
-		})
+		_spec.SetField(address.FieldOtherName, field.TypeString, value)
 	}
 	if value, ok := au.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldPhone,
-		})
+		_spec.SetField(address.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := au.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldOtherPhone,
-		})
+		_spec.SetField(address.FieldOtherPhone, field.TypeString, value)
 	}
 	if au.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldOtherPhone,
-		})
-	}
-	if value, ok := au.mutation.DigitalAddress(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldDigitalAddress,
-		})
-	}
-	if au.mutation.DigitalAddressCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldDigitalAddress,
-		})
+		_spec.ClearField(address.FieldOtherPhone, field.TypeString)
 	}
 	if value, ok := au.mutation.StreetName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldStreetName,
-		})
+		_spec.SetField(address.FieldStreetName, field.TypeString, value)
 	}
 	if au.mutation.StreetNameCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldStreetName,
-		})
+		_spec.ClearField(address.FieldStreetName, field.TypeString)
 	}
 	if value, ok := au.mutation.StreetNumber(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldStreetNumber,
-		})
+		_spec.SetField(address.FieldStreetNumber, field.TypeString, value)
 	}
 	if au.mutation.StreetNumberCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldStreetNumber,
-		})
+		_spec.ClearField(address.FieldStreetNumber, field.TypeString)
 	}
 	if value, ok := au.mutation.City(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldCity,
-		})
+		_spec.SetField(address.FieldCity, field.TypeString, value)
 	}
 	if value, ok := au.mutation.District(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldDistrict,
-		})
+		_spec.SetField(address.FieldDistrict, field.TypeString, value)
 	}
 	if au.mutation.DistrictCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldDistrict,
-		})
+		_spec.ClearField(address.FieldDistrict, field.TypeString)
 	}
 	if value, ok := au.mutation.Region(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldRegion,
-		})
+		_spec.SetField(address.FieldRegion, field.TypeString, value)
 	}
 	if value, ok := au.mutation.Country(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldCountry,
-		})
+		_spec.SetField(address.FieldCountry, field.TypeString, value)
 	}
 	if value, ok := au.mutation.Default(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: address.FieldDefault,
-		})
+		_spec.SetField(address.FieldDefault, field.TypeBool, value)
 	}
 	if value, ok := au.mutation.Coordinate(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: address.FieldCoordinate,
-		})
+		_spec.SetField(address.FieldCoordinate, field.TypeJSON, value)
 	}
 	if au.mutation.CoordinateCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: address.FieldCoordinate,
-		})
+		_spec.ClearField(address.FieldCoordinate, field.TypeJSON)
 	}
 	if au.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -584,10 +445,7 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{address.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -600,10 +458,7 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{address.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -619,10 +474,7 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{address.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -635,10 +487,7 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{address.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -654,10 +503,7 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{address.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -670,10 +516,7 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{address.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -689,10 +532,7 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{address.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -705,10 +545,7 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{address.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -724,10 +561,7 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{address.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -743,6 +577,7 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	au.mutation.done = true
 	return n, nil
 }
 
@@ -795,26 +630,6 @@ func (auo *AddressUpdateOne) SetNillableOtherPhone(s *string) *AddressUpdateOne 
 // ClearOtherPhone clears the value of the "other_phone" field.
 func (auo *AddressUpdateOne) ClearOtherPhone() *AddressUpdateOne {
 	auo.mutation.ClearOtherPhone()
-	return auo
-}
-
-// SetDigitalAddress sets the "digital_address" field.
-func (auo *AddressUpdateOne) SetDigitalAddress(s string) *AddressUpdateOne {
-	auo.mutation.SetDigitalAddress(s)
-	return auo
-}
-
-// SetNillableDigitalAddress sets the "digital_address" field if the given value is not nil.
-func (auo *AddressUpdateOne) SetNillableDigitalAddress(s *string) *AddressUpdateOne {
-	if s != nil {
-		auo.SetDigitalAddress(*s)
-	}
-	return auo
-}
-
-// ClearDigitalAddress clears the value of the "digital_address" field.
-func (auo *AddressUpdateOne) ClearDigitalAddress() *AddressUpdateOne {
-	auo.mutation.ClearDigitalAddress()
 	return auo
 }
 
@@ -1046,6 +861,12 @@ func (auo *AddressUpdateOne) RemoveOrders(o ...*Order) *AddressUpdateOne {
 	return auo.RemoveOrderIDs(ids...)
 }
 
+// Where appends a list predicates to the AddressUpdate builder.
+func (auo *AddressUpdateOne) Where(ps ...predicate.Address) *AddressUpdateOne {
+	auo.mutation.Where(ps...)
+	return auo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (auo *AddressUpdateOne) Select(field string, fields ...string) *AddressUpdateOne {
@@ -1055,47 +876,8 @@ func (auo *AddressUpdateOne) Select(field string, fields ...string) *AddressUpda
 
 // Save executes the query and returns the updated Address entity.
 func (auo *AddressUpdateOne) Save(ctx context.Context) (*Address, error) {
-	var (
-		err  error
-		node *Address
-	)
 	auo.defaults()
-	if len(auo.hooks) == 0 {
-		if err = auo.check(); err != nil {
-			return nil, err
-		}
-		node, err = auo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AddressMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = auo.check(); err != nil {
-				return nil, err
-			}
-			auo.mutation = mutation
-			node, err = auo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(auo.hooks) - 1; i >= 0; i-- {
-			if auo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = auo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, auo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Address)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AddressMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, auo.sqlSave, auo.mutation, auo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -1159,16 +941,10 @@ func (auo *AddressUpdateOne) check() error {
 }
 
 func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   address.Table,
-			Columns: address.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: address.FieldID,
-			},
-		},
+	if err := auo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(address.Table, address.Columns, sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt))
 	id, ok := auo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Address.id" for update`)}
@@ -1194,138 +970,58 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 		}
 	}
 	if value, ok := auo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: address.FieldUpdatedAt,
-		})
+		_spec.SetField(address.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := auo.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldLastName,
-		})
+		_spec.SetField(address.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldOtherName,
-		})
+		_spec.SetField(address.FieldOtherName, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldPhone,
-		})
+		_spec.SetField(address.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldOtherPhone,
-		})
+		_spec.SetField(address.FieldOtherPhone, field.TypeString, value)
 	}
 	if auo.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldOtherPhone,
-		})
-	}
-	if value, ok := auo.mutation.DigitalAddress(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldDigitalAddress,
-		})
-	}
-	if auo.mutation.DigitalAddressCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldDigitalAddress,
-		})
+		_spec.ClearField(address.FieldOtherPhone, field.TypeString)
 	}
 	if value, ok := auo.mutation.StreetName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldStreetName,
-		})
+		_spec.SetField(address.FieldStreetName, field.TypeString, value)
 	}
 	if auo.mutation.StreetNameCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldStreetName,
-		})
+		_spec.ClearField(address.FieldStreetName, field.TypeString)
 	}
 	if value, ok := auo.mutation.StreetNumber(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldStreetNumber,
-		})
+		_spec.SetField(address.FieldStreetNumber, field.TypeString, value)
 	}
 	if auo.mutation.StreetNumberCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldStreetNumber,
-		})
+		_spec.ClearField(address.FieldStreetNumber, field.TypeString)
 	}
 	if value, ok := auo.mutation.City(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldCity,
-		})
+		_spec.SetField(address.FieldCity, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.District(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldDistrict,
-		})
+		_spec.SetField(address.FieldDistrict, field.TypeString, value)
 	}
 	if auo.mutation.DistrictCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: address.FieldDistrict,
-		})
+		_spec.ClearField(address.FieldDistrict, field.TypeString)
 	}
 	if value, ok := auo.mutation.Region(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldRegion,
-		})
+		_spec.SetField(address.FieldRegion, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.Country(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: address.FieldCountry,
-		})
+		_spec.SetField(address.FieldCountry, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.Default(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: address.FieldDefault,
-		})
+		_spec.SetField(address.FieldDefault, field.TypeBool, value)
 	}
 	if value, ok := auo.mutation.Coordinate(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: address.FieldCoordinate,
-		})
+		_spec.SetField(address.FieldCoordinate, field.TypeJSON, value)
 	}
 	if auo.mutation.CoordinateCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: address.FieldCoordinate,
-		})
+		_spec.ClearField(address.FieldCoordinate, field.TypeJSON)
 	}
 	if auo.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1335,10 +1031,7 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Columns: []string{address.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1351,10 +1044,7 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Columns: []string{address.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1370,10 +1060,7 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Columns: []string{address.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1386,10 +1073,7 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Columns: []string{address.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1405,10 +1089,7 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Columns: []string{address.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1421,10 +1102,7 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Columns: []string{address.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1440,10 +1118,7 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Columns: []string{address.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1456,10 +1131,7 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Columns: []string{address.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1475,10 +1147,7 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Columns: []string{address.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1497,5 +1166,6 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 		}
 		return nil, err
 	}
+	auo.mutation.done = true
 	return _node, nil
 }

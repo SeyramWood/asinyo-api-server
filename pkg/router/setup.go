@@ -1,23 +1,32 @@
 package router
 
 import (
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/SeyramWood/app/adapters/gateways"
+	"github.com/SeyramWood/app/application/app_cache"
+	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/app/framework/web/http/routes"
+	"github.com/SeyramWood/pkg/app"
 )
 
 func NewRouter(
-	app *fiber.App, db *database.Adapter, mail gateways.EmailService, logis gateways.LogisticService,
-	maps gateways.MapService,
+	app *app.Server,
+	db *database.Adapter,
+	noti notification.NotificationService,
+	dbNoti gateways.DBNotificationService,
 	storageSrv gateways.StorageService,
+	logis gateways.LogisticService,
+	ms gateways.MapService,
+	appcache *app_cache.AppCache,
 ) {
-	setup(app, routes.NewApiRouter(db, mail, logis, maps, storageSrv), routes.NewPageRouter(db, mail, logis))
+	setup(
+		app, routes.NewApiRouter(app, db, noti, dbNoti, storageSrv, logis, ms, appcache),
+		routes.NewPageRouter(app, db, noti, dbNoti, storageSrv, logis, ms, appcache),
+	)
 }
 
-func setup(app *fiber.App, routers ...Router) {
+func setup(app *app.Server, routers ...Router) {
 	for _, r := range routers {
-		r.Router(app)
+		r.Router(app.HTTP)
 	}
 }

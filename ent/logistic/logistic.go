@@ -4,6 +4,9 @@ package logistic
 
 import (
 	"time"
+
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -15,26 +18,21 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldType holds the string denoting the type field in the database.
+	FieldType = "type"
 	// FieldTask holds the string denoting the task field in the database.
 	FieldTask = "task"
 	// EdgeOrder holds the string denoting the order edge name in mutations.
 	EdgeOrder = "order"
-	// EdgeStore holds the string denoting the store edge name in mutations.
-	EdgeStore = "store"
 	// Table holds the table name of the logistic in the database.
 	Table = "logistics"
-	// OrderTable is the table that holds the order relation/edge. The primary key declared below.
-	OrderTable = "logistic_order"
+	// OrderTable is the table that holds the order relation/edge.
+	OrderTable = "logistics"
 	// OrderInverseTable is the table name for the Order entity.
 	// It exists in this package in order to avoid circular dependency with the "order" package.
 	OrderInverseTable = "orders"
-	// StoreTable is the table that holds the store relation/edge.
-	StoreTable = "logistics"
-	// StoreInverseTable is the table name for the MerchantStore entity.
-	// It exists in this package in order to avoid circular dependency with the "merchantstore" package.
-	StoreInverseTable = "merchant_stores"
-	// StoreColumn is the table column denoting the store relation/edge.
-	StoreColumn = "merchant_store_logistics"
+	// OrderColumn is the table column denoting the order relation/edge.
+	OrderColumn = "order_logistic"
 )
 
 // Columns holds all SQL columns for logistic fields.
@@ -42,20 +40,15 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldType,
 	FieldTask,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "logistics"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"merchant_store_logistics",
+	"order_logistic",
 }
-
-var (
-	// OrderPrimaryKey and OrderColumn2 are the table columns denoting the
-	// primary key for the order relation (M2M).
-	OrderPrimaryKey = []string{"logistic_id", "order_id"}
-)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -79,4 +72,45 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultType holds the default value on creation for the "type" field.
+	DefaultType string
+	// TypeValidator is a validator for the "type" field. It is called by the builders before save.
+	TypeValidator func(string) error
 )
+
+// OrderOption defines the ordering options for the Logistic queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByType orders the results by the type field.
+func ByType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldType, opts...).ToFunc()
+}
+
+// ByOrderField orders the results by order field.
+func ByOrderField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOrderStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newOrderStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OrderInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, true, OrderTable, OrderColumn),
+	)
+}

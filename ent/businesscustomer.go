@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/businesscustomer"
@@ -37,6 +38,7 @@ type BusinessCustomer struct {
 	// The values are being populated by the BusinessCustomerQuery when eager-loading is set.
 	Edges             BusinessCustomerEdges `json:"edges"`
 	customer_business *int
+	selectValues      sql.SelectValues
 }
 
 // BusinessCustomerEdges holds the relations/edges for other nodes in the graph.
@@ -77,7 +79,7 @@ func (*BusinessCustomer) scanValues(columns []string) ([]any, error) {
 		case businesscustomer.ForeignKeys[0]: // customer_business
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type BusinessCustomer", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -148,21 +150,29 @@ func (bc *BusinessCustomer) assignValues(columns []string, values []any) error {
 				bc.customer_business = new(int)
 				*bc.customer_business = int(value.Int64)
 			}
+		default:
+			bc.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the BusinessCustomer.
+// This includes values selected through modifiers, order, etc.
+func (bc *BusinessCustomer) Value(name string) (ent.Value, error) {
+	return bc.selectValues.Get(name)
+}
+
 // QueryCustomer queries the "customer" edge of the BusinessCustomer entity.
 func (bc *BusinessCustomer) QueryCustomer() *CustomerQuery {
-	return (&BusinessCustomerClient{config: bc.config}).QueryCustomer(bc)
+	return NewBusinessCustomerClient(bc.config).QueryCustomer(bc)
 }
 
 // Update returns a builder for updating this BusinessCustomer.
 // Note that you need to call BusinessCustomer.Unwrap() before calling this method if this BusinessCustomer
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (bc *BusinessCustomer) Update() *BusinessCustomerUpdateOne {
-	return (&BusinessCustomerClient{config: bc.config}).UpdateOne(bc)
+	return NewBusinessCustomerClient(bc.config).UpdateOne(bc)
 }
 
 // Unwrap unwraps the BusinessCustomer entity that was returned from a transaction after it was closed,
@@ -207,9 +217,3 @@ func (bc *BusinessCustomer) String() string {
 
 // BusinessCustomers is a parsable slice of BusinessCustomer.
 type BusinessCustomers []*BusinessCustomer
-
-func (bc BusinessCustomers) config(cfg config) {
-	for _i := range bc {
-		bc[_i].config = cfg
-	}
-}

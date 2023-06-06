@@ -31,7 +31,7 @@ func (r *repository) Insert(role *models.RoleRequest) (*ent.Role, error) {
 	return r.Read(result.ID)
 }
 
-func (r *repository) ReadAll(limit, offset int) (*presenters.ResponseWithTotalRecords, error) {
+func (r *repository) ReadAll(limit, offset int) (*presenters.PaginationResponse, error) {
 	ctx := context.Background()
 	roleQuery := r.db.Role.Query()
 	totalRecords, err := roleQuery.Count(ctx)
@@ -47,9 +47,9 @@ func (r *repository) ReadAll(limit, offset int) (*presenters.ResponseWithTotalRe
 	if err != nil {
 		return nil, err
 	}
-	return &presenters.ResponseWithTotalRecords{
-		TotalRecords: totalRecords,
-		Records:      results,
+	return &presenters.PaginationResponse{
+		Count: totalRecords,
+		Data:  results,
 	}, nil
 }
 

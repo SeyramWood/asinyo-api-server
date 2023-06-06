@@ -11,53 +11,62 @@ import (
 
 	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/config"
+	"github.com/SeyramWood/pkg/jwt"
 )
 
-type serverconfig struct {
+type Server struct {
 	HTTP   *fiber.App
 	Mailer *config.MailServer
 	WG     *sync.WaitGroup
+	JWT    *jwt.JWT
 	Logger *zap.Logger
 }
 
-func New() *serverconfig {
+func New() *Server {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
 	}
-	var wg = sync.WaitGroup{}
 
+	jwtServ := jwt.NewJWT().Command()
+
+	var wg = sync.WaitGroup{}
 	errorChan := make(chan error)
-	mailerChan := make(chan *services.Message, 1024)
+	mailerChan := make(chan *services.MailerMessage, 1024)
+	failedMailerChan := make(chan *services.MailerMessage, 1024)
 	mailerDoneChan := make(chan bool)
 
-	return &serverconfig{
+	return &Server{
 		HTTP: fiber.New(
 			fiber.Config{
-				Prefork:       config.Server().Prefork,
-				CaseSensitive: config.Server().CaseSensitive,
-				StrictRouting: config.Server().StrictRouting,
-				ServerHeader:  config.Server().ServerHeader,
-				AppName:       config.App().Name,
-				BodyLimit:     10485760,
-				JSONEncoder:   json.Marshal,
-				JSONDecoder:   json.Unmarshal,
+				Prefork:                 config.Server().Prefork,
+				CaseSensitive:           config.Server().CaseSensitive,
+				StrictRouting:           config.Server().StrictRouting,
+				ServerHeader:            config.Server().ServerHeader,
+				EnablePrintRoutes:       config.Server().EnablePrintRoutes,
+				EnableTrustedProxyCheck: config.Server().EnableTrustedProxyCheck,
+				AppName:                 config.App().Name,
+				BodyLimit:               10485760,
+				JSONEncoder:             json.Marshal,
+				JSONDecoder:             json.Unmarshal,
 			},
 		),
 		Mailer: &config.MailServer{
-			SMTP:       config.SMTPServer(),
-			WG:         &wg,
-			MailerChan: mailerChan,
-			DoneChan:   mailerDoneChan,
-			ErrorChan:  errorChan,
+			SMTP:           config.SMTPServer(),
+			FailedDataChan: failedMailerChan,
+			WG:             &wg,
+			MailerChan:     mailerChan,
+			DoneChan:       mailerDoneChan,
+			ErrorChan:      errorChan,
 		},
 		WG:     &wg,
+		JWT:    jwtServ,
 		Logger: logger,
 	}
 
 }
 
-func (http *serverconfig) Run() {
+func (http *Server) Run() {
 	if os.Getenv("APP_ENV") == "production" {
 		port := os.Getenv("PORT")
 		if port == "" {

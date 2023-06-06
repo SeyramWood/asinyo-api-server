@@ -103,41 +103,8 @@ func (smu *SupplierMerchantUpdate) ClearMerchant() *SupplierMerchantUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (smu *SupplierMerchantUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	smu.defaults()
-	if len(smu.hooks) == 0 {
-		if err = smu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = smu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SupplierMerchantMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = smu.check(); err != nil {
-				return 0, err
-			}
-			smu.mutation = mutation
-			affected, err = smu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(smu.hooks) - 1; i >= 0; i-- {
-			if smu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = smu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, smu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, smu.sqlSave, smu.mutation, smu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -199,16 +166,10 @@ func (smu *SupplierMerchantUpdate) check() error {
 }
 
 func (smu *SupplierMerchantUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   suppliermerchant.Table,
-			Columns: suppliermerchant.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: suppliermerchant.FieldID,
-			},
-		},
+	if err := smu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(suppliermerchant.Table, suppliermerchant.Columns, sqlgraph.NewFieldSpec(suppliermerchant.FieldID, field.TypeInt))
 	if ps := smu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -217,52 +178,25 @@ func (smu *SupplierMerchantUpdate) sqlSave(ctx context.Context) (n int, err erro
 		}
 	}
 	if value, ok := smu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: suppliermerchant.FieldUpdatedAt,
-		})
+		_spec.SetField(suppliermerchant.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := smu.mutation.GhanaCard(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldGhanaCard,
-		})
+		_spec.SetField(suppliermerchant.FieldGhanaCard, field.TypeString, value)
 	}
 	if value, ok := smu.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldLastName,
-		})
+		_spec.SetField(suppliermerchant.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := smu.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldOtherName,
-		})
+		_spec.SetField(suppliermerchant.FieldOtherName, field.TypeString, value)
 	}
 	if value, ok := smu.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldPhone,
-		})
+		_spec.SetField(suppliermerchant.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := smu.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldOtherPhone,
-		})
+		_spec.SetField(suppliermerchant.FieldOtherPhone, field.TypeString, value)
 	}
 	if smu.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: suppliermerchant.FieldOtherPhone,
-		})
+		_spec.ClearField(suppliermerchant.FieldOtherPhone, field.TypeString)
 	}
 	if smu.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -272,10 +206,7 @@ func (smu *SupplierMerchantUpdate) sqlSave(ctx context.Context) (n int, err erro
 			Columns: []string{suppliermerchant.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -288,10 +219,7 @@ func (smu *SupplierMerchantUpdate) sqlSave(ctx context.Context) (n int, err erro
 			Columns: []string{suppliermerchant.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -307,6 +235,7 @@ func (smu *SupplierMerchantUpdate) sqlSave(ctx context.Context) (n int, err erro
 		}
 		return 0, err
 	}
+	smu.mutation.done = true
 	return n, nil
 }
 
@@ -390,6 +319,12 @@ func (smuo *SupplierMerchantUpdateOne) ClearMerchant() *SupplierMerchantUpdateOn
 	return smuo
 }
 
+// Where appends a list predicates to the SupplierMerchantUpdate builder.
+func (smuo *SupplierMerchantUpdateOne) Where(ps ...predicate.SupplierMerchant) *SupplierMerchantUpdateOne {
+	smuo.mutation.Where(ps...)
+	return smuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (smuo *SupplierMerchantUpdateOne) Select(field string, fields ...string) *SupplierMerchantUpdateOne {
@@ -399,47 +334,8 @@ func (smuo *SupplierMerchantUpdateOne) Select(field string, fields ...string) *S
 
 // Save executes the query and returns the updated SupplierMerchant entity.
 func (smuo *SupplierMerchantUpdateOne) Save(ctx context.Context) (*SupplierMerchant, error) {
-	var (
-		err  error
-		node *SupplierMerchant
-	)
 	smuo.defaults()
-	if len(smuo.hooks) == 0 {
-		if err = smuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = smuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SupplierMerchantMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = smuo.check(); err != nil {
-				return nil, err
-			}
-			smuo.mutation = mutation
-			node, err = smuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(smuo.hooks) - 1; i >= 0; i-- {
-			if smuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = smuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, smuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*SupplierMerchant)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from SupplierMerchantMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, smuo.sqlSave, smuo.mutation, smuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -501,16 +397,10 @@ func (smuo *SupplierMerchantUpdateOne) check() error {
 }
 
 func (smuo *SupplierMerchantUpdateOne) sqlSave(ctx context.Context) (_node *SupplierMerchant, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   suppliermerchant.Table,
-			Columns: suppliermerchant.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: suppliermerchant.FieldID,
-			},
-		},
+	if err := smuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(suppliermerchant.Table, suppliermerchant.Columns, sqlgraph.NewFieldSpec(suppliermerchant.FieldID, field.TypeInt))
 	id, ok := smuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "SupplierMerchant.id" for update`)}
@@ -536,52 +426,25 @@ func (smuo *SupplierMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Supp
 		}
 	}
 	if value, ok := smuo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: suppliermerchant.FieldUpdatedAt,
-		})
+		_spec.SetField(suppliermerchant.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := smuo.mutation.GhanaCard(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldGhanaCard,
-		})
+		_spec.SetField(suppliermerchant.FieldGhanaCard, field.TypeString, value)
 	}
 	if value, ok := smuo.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldLastName,
-		})
+		_spec.SetField(suppliermerchant.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := smuo.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldOtherName,
-		})
+		_spec.SetField(suppliermerchant.FieldOtherName, field.TypeString, value)
 	}
 	if value, ok := smuo.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldPhone,
-		})
+		_spec.SetField(suppliermerchant.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := smuo.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: suppliermerchant.FieldOtherPhone,
-		})
+		_spec.SetField(suppliermerchant.FieldOtherPhone, field.TypeString, value)
 	}
 	if smuo.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: suppliermerchant.FieldOtherPhone,
-		})
+		_spec.ClearField(suppliermerchant.FieldOtherPhone, field.TypeString)
 	}
 	if smuo.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -591,10 +454,7 @@ func (smuo *SupplierMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Supp
 			Columns: []string{suppliermerchant.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -607,10 +467,7 @@ func (smuo *SupplierMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Supp
 			Columns: []string{suppliermerchant.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -629,5 +486,6 @@ func (smuo *SupplierMerchantUpdateOne) sqlSave(ctx context.Context) (_node *Supp
 		}
 		return nil, err
 	}
+	smuo.mutation.done = true
 	return _node, nil
 }

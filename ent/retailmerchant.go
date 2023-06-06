@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/retailmerchant"
@@ -35,6 +36,7 @@ type RetailMerchant struct {
 	// The values are being populated by the RetailMerchantQuery when eager-loading is set.
 	Edges             RetailMerchantEdges `json:"edges"`
 	merchant_retailer *int
+	selectValues      sql.SelectValues
 }
 
 // RetailMerchantEdges holds the relations/edges for other nodes in the graph.
@@ -73,7 +75,7 @@ func (*RetailMerchant) scanValues(columns []string) ([]any, error) {
 		case retailmerchant.ForeignKeys[0]: // merchant_retailer
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type RetailMerchant", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -143,21 +145,29 @@ func (rm *RetailMerchant) assignValues(columns []string, values []any) error {
 				rm.merchant_retailer = new(int)
 				*rm.merchant_retailer = int(value.Int64)
 			}
+		default:
+			rm.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the RetailMerchant.
+// This includes values selected through modifiers, order, etc.
+func (rm *RetailMerchant) Value(name string) (ent.Value, error) {
+	return rm.selectValues.Get(name)
+}
+
 // QueryMerchant queries the "merchant" edge of the RetailMerchant entity.
 func (rm *RetailMerchant) QueryMerchant() *MerchantQuery {
-	return (&RetailMerchantClient{config: rm.config}).QueryMerchant(rm)
+	return NewRetailMerchantClient(rm.config).QueryMerchant(rm)
 }
 
 // Update returns a builder for updating this RetailMerchant.
 // Note that you need to call RetailMerchant.Unwrap() before calling this method if this RetailMerchant
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (rm *RetailMerchant) Update() *RetailMerchantUpdateOne {
-	return (&RetailMerchantClient{config: rm.config}).UpdateOne(rm)
+	return NewRetailMerchantClient(rm.config).UpdateOne(rm)
 }
 
 // Unwrap unwraps the RetailMerchant entity that was returned from a transaction after it was closed,
@@ -204,9 +214,3 @@ func (rm *RetailMerchant) String() string {
 
 // RetailMerchants is a parsable slice of RetailMerchant.
 type RetailMerchants []*RetailMerchant
-
-func (rm RetailMerchants) config(cfg config) {
-	for _i := range rm {
-		rm[_i].config = cfg
-	}
-}

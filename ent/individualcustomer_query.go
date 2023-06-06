@@ -18,11 +18,9 @@ import (
 // IndividualCustomerQuery is the builder for querying IndividualCustomer entities.
 type IndividualCustomerQuery struct {
 	config
-	limit        *int
-	offset       *int
-	unique       *bool
-	order        []OrderFunc
-	fields       []string
+	ctx          *QueryContext
+	order        []individualcustomer.OrderOption
+	inters       []Interceptor
 	predicates   []predicate.IndividualCustomer
 	withCustomer *CustomerQuery
 	withFKs      bool
@@ -37,34 +35,34 @@ func (icq *IndividualCustomerQuery) Where(ps ...predicate.IndividualCustomer) *I
 	return icq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (icq *IndividualCustomerQuery) Limit(limit int) *IndividualCustomerQuery {
-	icq.limit = &limit
+	icq.ctx.Limit = &limit
 	return icq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (icq *IndividualCustomerQuery) Offset(offset int) *IndividualCustomerQuery {
-	icq.offset = &offset
+	icq.ctx.Offset = &offset
 	return icq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (icq *IndividualCustomerQuery) Unique(unique bool) *IndividualCustomerQuery {
-	icq.unique = &unique
+	icq.ctx.Unique = &unique
 	return icq
 }
 
-// Order adds an order step to the query.
-func (icq *IndividualCustomerQuery) Order(o ...OrderFunc) *IndividualCustomerQuery {
+// Order specifies how the records should be ordered.
+func (icq *IndividualCustomerQuery) Order(o ...individualcustomer.OrderOption) *IndividualCustomerQuery {
 	icq.order = append(icq.order, o...)
 	return icq
 }
 
 // QueryCustomer chains the current query on the "customer" edge.
 func (icq *IndividualCustomerQuery) QueryCustomer() *CustomerQuery {
-	query := &CustomerQuery{config: icq.config}
+	query := (&CustomerClient{config: icq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := icq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -87,7 +85,7 @@ func (icq *IndividualCustomerQuery) QueryCustomer() *CustomerQuery {
 // First returns the first IndividualCustomer entity from the query.
 // Returns a *NotFoundError when no IndividualCustomer was found.
 func (icq *IndividualCustomerQuery) First(ctx context.Context) (*IndividualCustomer, error) {
-	nodes, err := icq.Limit(1).All(ctx)
+	nodes, err := icq.Limit(1).All(setContextOp(ctx, icq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +108,7 @@ func (icq *IndividualCustomerQuery) FirstX(ctx context.Context) *IndividualCusto
 // Returns a *NotFoundError when no IndividualCustomer ID was found.
 func (icq *IndividualCustomerQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = icq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = icq.Limit(1).IDs(setContextOp(ctx, icq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -133,7 +131,7 @@ func (icq *IndividualCustomerQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one IndividualCustomer entity is found.
 // Returns a *NotFoundError when no IndividualCustomer entities are found.
 func (icq *IndividualCustomerQuery) Only(ctx context.Context) (*IndividualCustomer, error) {
-	nodes, err := icq.Limit(2).All(ctx)
+	nodes, err := icq.Limit(2).All(setContextOp(ctx, icq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +159,7 @@ func (icq *IndividualCustomerQuery) OnlyX(ctx context.Context) *IndividualCustom
 // Returns a *NotFoundError when no entities are found.
 func (icq *IndividualCustomerQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = icq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = icq.Limit(2).IDs(setContextOp(ctx, icq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -186,10 +184,12 @@ func (icq *IndividualCustomerQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of IndividualCustomers.
 func (icq *IndividualCustomerQuery) All(ctx context.Context) ([]*IndividualCustomer, error) {
+	ctx = setContextOp(ctx, icq.ctx, "All")
 	if err := icq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return icq.sqlAll(ctx)
+	qr := querierAll[[]*IndividualCustomer, *IndividualCustomerQuery]()
+	return withInterceptors[[]*IndividualCustomer](ctx, icq, qr, icq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -202,9 +202,12 @@ func (icq *IndividualCustomerQuery) AllX(ctx context.Context) []*IndividualCusto
 }
 
 // IDs executes the query and returns a list of IndividualCustomer IDs.
-func (icq *IndividualCustomerQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := icq.Select(individualcustomer.FieldID).Scan(ctx, &ids); err != nil {
+func (icq *IndividualCustomerQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if icq.ctx.Unique == nil && icq.path != nil {
+		icq.Unique(true)
+	}
+	ctx = setContextOp(ctx, icq.ctx, "IDs")
+	if err = icq.Select(individualcustomer.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -221,10 +224,11 @@ func (icq *IndividualCustomerQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (icq *IndividualCustomerQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, icq.ctx, "Count")
 	if err := icq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return icq.sqlCount(ctx)
+	return withInterceptors[int](ctx, icq, querierCount[*IndividualCustomerQuery](), icq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -238,10 +242,15 @@ func (icq *IndividualCustomerQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (icq *IndividualCustomerQuery) Exist(ctx context.Context) (bool, error) {
-	if err := icq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, icq.ctx, "Exist")
+	switch _, err := icq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return icq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -261,22 +270,21 @@ func (icq *IndividualCustomerQuery) Clone() *IndividualCustomerQuery {
 	}
 	return &IndividualCustomerQuery{
 		config:       icq.config,
-		limit:        icq.limit,
-		offset:       icq.offset,
-		order:        append([]OrderFunc{}, icq.order...),
+		ctx:          icq.ctx.Clone(),
+		order:        append([]individualcustomer.OrderOption{}, icq.order...),
+		inters:       append([]Interceptor{}, icq.inters...),
 		predicates:   append([]predicate.IndividualCustomer{}, icq.predicates...),
 		withCustomer: icq.withCustomer.Clone(),
 		// clone intermediate query.
-		sql:    icq.sql.Clone(),
-		path:   icq.path,
-		unique: icq.unique,
+		sql:  icq.sql.Clone(),
+		path: icq.path,
 	}
 }
 
 // WithCustomer tells the query-builder to eager-load the nodes that are connected to
 // the "customer" edge. The optional arguments are used to configure the query builder of the edge.
 func (icq *IndividualCustomerQuery) WithCustomer(opts ...func(*CustomerQuery)) *IndividualCustomerQuery {
-	query := &CustomerQuery{config: icq.config}
+	query := (&CustomerClient{config: icq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -299,16 +307,11 @@ func (icq *IndividualCustomerQuery) WithCustomer(opts ...func(*CustomerQuery)) *
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (icq *IndividualCustomerQuery) GroupBy(field string, fields ...string) *IndividualCustomerGroupBy {
-	grbuild := &IndividualCustomerGroupBy{config: icq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := icq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return icq.sqlQuery(ctx), nil
-	}
+	icq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &IndividualCustomerGroupBy{build: icq}
+	grbuild.flds = &icq.ctx.Fields
 	grbuild.label = individualcustomer.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -325,15 +328,30 @@ func (icq *IndividualCustomerQuery) GroupBy(field string, fields ...string) *Ind
 //		Select(individualcustomer.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (icq *IndividualCustomerQuery) Select(fields ...string) *IndividualCustomerSelect {
-	icq.fields = append(icq.fields, fields...)
-	selbuild := &IndividualCustomerSelect{IndividualCustomerQuery: icq}
-	selbuild.label = individualcustomer.Label
-	selbuild.flds, selbuild.scan = &icq.fields, selbuild.Scan
-	return selbuild
+	icq.ctx.Fields = append(icq.ctx.Fields, fields...)
+	sbuild := &IndividualCustomerSelect{IndividualCustomerQuery: icq}
+	sbuild.label = individualcustomer.Label
+	sbuild.flds, sbuild.scan = &icq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a IndividualCustomerSelect configured with the given aggregations.
+func (icq *IndividualCustomerQuery) Aggregate(fns ...AggregateFunc) *IndividualCustomerSelect {
+	return icq.Select().Aggregate(fns...)
 }
 
 func (icq *IndividualCustomerQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range icq.fields {
+	for _, inter := range icq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, icq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range icq.ctx.Fields {
 		if !individualcustomer.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -403,6 +421,9 @@ func (icq *IndividualCustomerQuery) loadCustomer(ctx context.Context, query *Cus
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(customer.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -422,41 +443,22 @@ func (icq *IndividualCustomerQuery) loadCustomer(ctx context.Context, query *Cus
 
 func (icq *IndividualCustomerQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := icq.querySpec()
-	_spec.Node.Columns = icq.fields
-	if len(icq.fields) > 0 {
-		_spec.Unique = icq.unique != nil && *icq.unique
+	_spec.Node.Columns = icq.ctx.Fields
+	if len(icq.ctx.Fields) > 0 {
+		_spec.Unique = icq.ctx.Unique != nil && *icq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, icq.driver, _spec)
 }
 
-func (icq *IndividualCustomerQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := icq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (icq *IndividualCustomerQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   individualcustomer.Table,
-			Columns: individualcustomer.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: individualcustomer.FieldID,
-			},
-		},
-		From:   icq.sql,
-		Unique: true,
-	}
-	if unique := icq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(individualcustomer.Table, individualcustomer.Columns, sqlgraph.NewFieldSpec(individualcustomer.FieldID, field.TypeInt))
+	_spec.From = icq.sql
+	if unique := icq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if icq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := icq.fields; len(fields) > 0 {
+	if fields := icq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, individualcustomer.FieldID)
 		for i := range fields {
@@ -472,10 +474,10 @@ func (icq *IndividualCustomerQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := icq.limit; limit != nil {
+	if limit := icq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := icq.offset; offset != nil {
+	if offset := icq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := icq.order; len(ps) > 0 {
@@ -491,7 +493,7 @@ func (icq *IndividualCustomerQuery) querySpec() *sqlgraph.QuerySpec {
 func (icq *IndividualCustomerQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(icq.driver.Dialect())
 	t1 := builder.Table(individualcustomer.Table)
-	columns := icq.fields
+	columns := icq.ctx.Fields
 	if len(columns) == 0 {
 		columns = individualcustomer.Columns
 	}
@@ -500,7 +502,7 @@ func (icq *IndividualCustomerQuery) sqlQuery(ctx context.Context) *sql.Selector 
 		selector = icq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if icq.unique != nil && *icq.unique {
+	if icq.ctx.Unique != nil && *icq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range icq.predicates {
@@ -509,12 +511,12 @@ func (icq *IndividualCustomerQuery) sqlQuery(ctx context.Context) *sql.Selector 
 	for _, p := range icq.order {
 		p(selector)
 	}
-	if offset := icq.offset; offset != nil {
+	if offset := icq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := icq.limit; limit != nil {
+	if limit := icq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -522,13 +524,8 @@ func (icq *IndividualCustomerQuery) sqlQuery(ctx context.Context) *sql.Selector 
 
 // IndividualCustomerGroupBy is the group-by builder for IndividualCustomer entities.
 type IndividualCustomerGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *IndividualCustomerQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -537,74 +534,77 @@ func (icgb *IndividualCustomerGroupBy) Aggregate(fns ...AggregateFunc) *Individu
 	return icgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (icgb *IndividualCustomerGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := icgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, icgb.build.ctx, "GroupBy")
+	if err := icgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	icgb.sql = query
-	return icgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*IndividualCustomerQuery, *IndividualCustomerGroupBy](ctx, icgb.build, icgb, icgb.build.inters, v)
 }
 
-func (icgb *IndividualCustomerGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range icgb.fields {
-		if !individualcustomer.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (icgb *IndividualCustomerGroupBy) sqlScan(ctx context.Context, root *IndividualCustomerQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(icgb.fns))
+	for _, fn := range icgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := icgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*icgb.flds)+len(icgb.fns))
+		for _, f := range *icgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*icgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := icgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := icgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (icgb *IndividualCustomerGroupBy) sqlQuery() *sql.Selector {
-	selector := icgb.sql.Select()
-	aggregation := make([]string, 0, len(icgb.fns))
-	for _, fn := range icgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(icgb.fields)+len(icgb.fns))
-		for _, f := range icgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(icgb.fields...)...)
-}
-
 // IndividualCustomerSelect is the builder for selecting fields of IndividualCustomer entities.
 type IndividualCustomerSelect struct {
 	*IndividualCustomerQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ics *IndividualCustomerSelect) Aggregate(fns ...AggregateFunc) *IndividualCustomerSelect {
+	ics.fns = append(ics.fns, fns...)
+	return ics
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (ics *IndividualCustomerSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ics.ctx, "Select")
 	if err := ics.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ics.sql = ics.IndividualCustomerQuery.sqlQuery(ctx)
-	return ics.sqlScan(ctx, v)
+	return scanWithInterceptors[*IndividualCustomerQuery, *IndividualCustomerSelect](ctx, ics.IndividualCustomerQuery, ics, ics.inters, v)
 }
 
-func (ics *IndividualCustomerSelect) sqlScan(ctx context.Context, v any) error {
+func (ics *IndividualCustomerSelect) sqlScan(ctx context.Context, root *IndividualCustomerQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ics.fns))
+	for _, fn := range ics.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ics.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ics.sql.Query()
+	query, args := selector.Query()
 	if err := ics.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

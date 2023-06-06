@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (smd *SupplierMerchantDelete) Where(ps ...predicate.SupplierMerchant) *Supp
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (smd *SupplierMerchantDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(smd.hooks) == 0 {
-		affected, err = smd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*SupplierMerchantMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			smd.mutation = mutation
-			affected, err = smd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(smd.hooks) - 1; i >= 0; i-- {
-			if smd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = smd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, smd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, smd.sqlExec, smd.mutation, smd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (smd *SupplierMerchantDelete) ExecX(ctx context.Context) int {
 }
 
 func (smd *SupplierMerchantDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: suppliermerchant.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: suppliermerchant.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(suppliermerchant.Table, sqlgraph.NewFieldSpec(suppliermerchant.FieldID, field.TypeInt))
 	if ps := smd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (smd *SupplierMerchantDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	smd.mutation.done = true
 	return affected, err
 }
 
 // SupplierMerchantDeleteOne is the builder for deleting a single SupplierMerchant entity.
 type SupplierMerchantDeleteOne struct {
 	smd *SupplierMerchantDelete
+}
+
+// Where appends a list predicates to the SupplierMerchantDelete builder.
+func (smdo *SupplierMerchantDeleteOne) Where(ps ...predicate.SupplierMerchant) *SupplierMerchantDeleteOne {
+	smdo.smd.mutation.Where(ps...)
+	return smdo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (smdo *SupplierMerchantDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (smdo *SupplierMerchantDeleteOne) ExecX(ctx context.Context) {
-	smdo.smd.ExecX(ctx)
+	if err := smdo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

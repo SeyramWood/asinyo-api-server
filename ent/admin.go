@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/admin"
 )
@@ -28,22 +29,31 @@ type Admin struct {
 	LastName string `json:"last_name,omitempty"`
 	// OtherName holds the value of the "other_name" field.
 	OtherName string `json:"other_name,omitempty"`
+	// Phone holds the value of the "phone" field.
+	Phone string `json:"phone,omitempty"`
+	// OtherPhone holds the value of the "other_phone" field.
+	OtherPhone string `json:"other_phone,omitempty"`
 	// Status holds the value of the "status" field.
 	Status admin.Status `json:"status,omitempty"`
 	// LastActive holds the value of the "last_active" field.
 	LastActive string `json:"last_active,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AdminQuery when eager-loading is set.
-	Edges AdminEdges `json:"edges"`
+	Edges        AdminEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // AdminEdges holds the relations/edges for other nodes in the graph.
 type AdminEdges struct {
 	// Roles holds the value of the roles edge.
 	Roles []*Role `json:"roles,omitempty"`
+	// Notifications holds the value of the notifications edge.
+	Notifications []*Notification `json:"notifications,omitempty"`
+	// Customers holds the value of the customers edge.
+	Customers []*Customer `json:"customers,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [3]bool
 }
 
 // RolesOrErr returns the Roles value or an error if the edge
@@ -55,6 +65,24 @@ func (e AdminEdges) RolesOrErr() ([]*Role, error) {
 	return nil, &NotLoadedError{edge: "roles"}
 }
 
+// NotificationsOrErr returns the Notifications value or an error if the edge
+// was not loaded in eager-loading.
+func (e AdminEdges) NotificationsOrErr() ([]*Notification, error) {
+	if e.loadedTypes[1] {
+		return e.Notifications, nil
+	}
+	return nil, &NotLoadedError{edge: "notifications"}
+}
+
+// CustomersOrErr returns the Customers value or an error if the edge
+// was not loaded in eager-loading.
+func (e AdminEdges) CustomersOrErr() ([]*Customer, error) {
+	if e.loadedTypes[2] {
+		return e.Customers, nil
+	}
+	return nil, &NotLoadedError{edge: "customers"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Admin) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -64,12 +92,12 @@ func (*Admin) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case admin.FieldID:
 			values[i] = new(sql.NullInt64)
-		case admin.FieldUsername, admin.FieldLastName, admin.FieldOtherName, admin.FieldStatus, admin.FieldLastActive:
+		case admin.FieldUsername, admin.FieldLastName, admin.FieldOtherName, admin.FieldPhone, admin.FieldOtherPhone, admin.FieldStatus, admin.FieldLastActive:
 			values[i] = new(sql.NullString)
 		case admin.FieldCreatedAt, admin.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Admin", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -125,6 +153,18 @@ func (a *Admin) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				a.OtherName = value.String
 			}
+		case admin.FieldPhone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field phone", values[i])
+			} else if value.Valid {
+				a.Phone = value.String
+			}
+		case admin.FieldOtherPhone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field other_phone", values[i])
+			} else if value.Valid {
+				a.OtherPhone = value.String
+			}
 		case admin.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
@@ -137,21 +177,39 @@ func (a *Admin) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				a.LastActive = value.String
 			}
+		default:
+			a.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Admin.
+// This includes values selected through modifiers, order, etc.
+func (a *Admin) Value(name string) (ent.Value, error) {
+	return a.selectValues.Get(name)
+}
+
 // QueryRoles queries the "roles" edge of the Admin entity.
 func (a *Admin) QueryRoles() *RoleQuery {
-	return (&AdminClient{config: a.config}).QueryRoles(a)
+	return NewAdminClient(a.config).QueryRoles(a)
+}
+
+// QueryNotifications queries the "notifications" edge of the Admin entity.
+func (a *Admin) QueryNotifications() *NotificationQuery {
+	return NewAdminClient(a.config).QueryNotifications(a)
+}
+
+// QueryCustomers queries the "customers" edge of the Admin entity.
+func (a *Admin) QueryCustomers() *CustomerQuery {
+	return NewAdminClient(a.config).QueryCustomers(a)
 }
 
 // Update returns a builder for updating this Admin.
 // Note that you need to call Admin.Unwrap() before calling this method if this Admin
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (a *Admin) Update() *AdminUpdateOne {
-	return (&AdminClient{config: a.config}).UpdateOne(a)
+	return NewAdminClient(a.config).UpdateOne(a)
 }
 
 // Unwrap unwraps the Admin entity that was returned from a transaction after it was closed,
@@ -187,6 +245,12 @@ func (a *Admin) String() string {
 	builder.WriteString("other_name=")
 	builder.WriteString(a.OtherName)
 	builder.WriteString(", ")
+	builder.WriteString("phone=")
+	builder.WriteString(a.Phone)
+	builder.WriteString(", ")
+	builder.WriteString("other_phone=")
+	builder.WriteString(a.OtherPhone)
+	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", a.Status))
 	builder.WriteString(", ")
@@ -198,9 +262,3 @@ func (a *Admin) String() string {
 
 // Admins is a parsable slice of Admin.
 type Admins []*Admin
-
-func (a Admins) config(cfg config) {
-	for _i := range a {
-		a[_i].config = cfg
-	}
-}

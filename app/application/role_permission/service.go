@@ -1,4 +1,4 @@
-package role_permission
+﻿package role_permission
 
 import (
 	"github.com/SeyramWood/app/adapters/gateways"
@@ -20,7 +20,7 @@ func (s *service) Create(role *models.RoleRequest) (*ent.Role, error) {
 	return s.repo.Insert(role)
 }
 
-func (s *service) FetchAll(limit, offset int) (*presenters.ResponseWithTotalRecords, error) {
+func (s *service) FetchAll(limit, offset int) (*presenters.PaginationResponse, error) {
 	return s.repo.ReadAll(limit, offset)
 }
 

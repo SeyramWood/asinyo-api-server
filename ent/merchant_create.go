@@ -14,6 +14,7 @@ import (
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/notification"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/retailmerchant"
@@ -204,6 +205,21 @@ func (mc *MerchantCreate) AddFavourites(f ...*Favourite) *MerchantCreate {
 	return mc.AddFavouriteIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (mc *MerchantCreate) AddNotificationIDs(ids ...int) *MerchantCreate {
+	mc.mutation.AddNotificationIDs(ids...)
+	return mc
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (mc *MerchantCreate) AddNotifications(n ...*Notification) *MerchantCreate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return mc.AddNotificationIDs(ids...)
+}
+
 // Mutation returns the MerchantMutation object of the builder.
 func (mc *MerchantCreate) Mutation() *MerchantMutation {
 	return mc.mutation
@@ -211,50 +227,8 @@ func (mc *MerchantCreate) Mutation() *MerchantMutation {
 
 // Save creates the Merchant in the database.
 func (mc *MerchantCreate) Save(ctx context.Context) (*Merchant, error) {
-	var (
-		err  error
-		node *Merchant
-	)
 	mc.defaults()
-	if len(mc.hooks) == 0 {
-		if err = mc.check(); err != nil {
-			return nil, err
-		}
-		node, err = mc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MerchantMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = mc.check(); err != nil {
-				return nil, err
-			}
-			mc.mutation = mutation
-			if node, err = mc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(mc.hooks) - 1; i >= 0; i-- {
-			if mc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = mc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, mc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Merchant)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from MerchantMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, mc.sqlSave, mc.mutation, mc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -327,6 +301,9 @@ func (mc *MerchantCreate) check() error {
 }
 
 func (mc *MerchantCreate) sqlSave(ctx context.Context) (*Merchant, error) {
+	if err := mc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := mc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, mc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -336,66 +313,38 @@ func (mc *MerchantCreate) sqlSave(ctx context.Context) (*Merchant, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	mc.mutation.id = &_node.ID
+	mc.mutation.done = true
 	return _node, nil
 }
 
 func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Merchant{config: mc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: merchant.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: merchant.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(merchant.Table, sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt))
 	)
 	if value, ok := mc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: merchant.FieldCreatedAt,
-		})
+		_spec.SetField(merchant.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := mc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: merchant.FieldUpdatedAt,
-		})
+		_spec.SetField(merchant.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := mc.mutation.Username(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchant.FieldUsername,
-		})
+		_spec.SetField(merchant.FieldUsername, field.TypeString, value)
 		_node.Username = value
 	}
 	if value, ok := mc.mutation.Password(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: merchant.FieldPassword,
-		})
+		_spec.SetField(merchant.FieldPassword, field.TypeBytes, value)
 		_node.Password = value
 	}
 	if value, ok := mc.mutation.GetType(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchant.FieldType,
-		})
+		_spec.SetField(merchant.FieldType, field.TypeString, value)
 		_node.Type = value
 	}
 	if value, ok := mc.mutation.Otp(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: merchant.FieldOtp,
-		})
+		_spec.SetField(merchant.FieldOtp, field.TypeBool, value)
 		_node.Otp = value
 	}
 	if nodes := mc.mutation.SupplierIDs(); len(nodes) > 0 {
@@ -406,10 +355,7 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 			Columns: []string{merchant.SupplierColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: suppliermerchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(suppliermerchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -425,10 +371,7 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 			Columns: []string{merchant.RetailerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: retailmerchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(retailmerchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -444,10 +387,7 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 			Columns: []string{merchant.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -463,10 +403,7 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 			Columns: []string{merchant.ProductsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -482,10 +419,7 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 			Columns: []string{merchant.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -501,10 +435,7 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 			Columns: []string{merchant.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -520,10 +451,23 @@ func (mc *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 			Columns: []string{merchant.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := mc.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   merchant.NotificationsTable,
+			Columns: merchant.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -558,8 +502,8 @@ func (mcb *MerchantCreateBulk) Save(ctx context.Context) ([]*Merchant, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, mcb.builders[i+1].mutation)
 				} else {

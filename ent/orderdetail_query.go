@@ -20,11 +20,9 @@ import (
 // OrderDetailQuery is the builder for querying OrderDetail entities.
 type OrderDetailQuery struct {
 	config
-	limit       *int
-	offset      *int
-	unique      *bool
-	order       []OrderFunc
-	fields      []string
+	ctx         *QueryContext
+	order       []orderdetail.OrderOption
+	inters      []Interceptor
 	predicates  []predicate.OrderDetail
 	withOrder   *OrderQuery
 	withProduct *ProductQuery
@@ -41,34 +39,34 @@ func (odq *OrderDetailQuery) Where(ps ...predicate.OrderDetail) *OrderDetailQuer
 	return odq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (odq *OrderDetailQuery) Limit(limit int) *OrderDetailQuery {
-	odq.limit = &limit
+	odq.ctx.Limit = &limit
 	return odq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (odq *OrderDetailQuery) Offset(offset int) *OrderDetailQuery {
-	odq.offset = &offset
+	odq.ctx.Offset = &offset
 	return odq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (odq *OrderDetailQuery) Unique(unique bool) *OrderDetailQuery {
-	odq.unique = &unique
+	odq.ctx.Unique = &unique
 	return odq
 }
 
-// Order adds an order step to the query.
-func (odq *OrderDetailQuery) Order(o ...OrderFunc) *OrderDetailQuery {
+// Order specifies how the records should be ordered.
+func (odq *OrderDetailQuery) Order(o ...orderdetail.OrderOption) *OrderDetailQuery {
 	odq.order = append(odq.order, o...)
 	return odq
 }
 
 // QueryOrder chains the current query on the "Order" edge.
 func (odq *OrderDetailQuery) QueryOrder() *OrderQuery {
-	query := &OrderQuery{config: odq.config}
+	query := (&OrderClient{config: odq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := odq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -90,7 +88,7 @@ func (odq *OrderDetailQuery) QueryOrder() *OrderQuery {
 
 // QueryProduct chains the current query on the "product" edge.
 func (odq *OrderDetailQuery) QueryProduct() *ProductQuery {
-	query := &ProductQuery{config: odq.config}
+	query := (&ProductClient{config: odq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := odq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -112,7 +110,7 @@ func (odq *OrderDetailQuery) QueryProduct() *ProductQuery {
 
 // QueryStore chains the current query on the "store" edge.
 func (odq *OrderDetailQuery) QueryStore() *MerchantStoreQuery {
-	query := &MerchantStoreQuery{config: odq.config}
+	query := (&MerchantStoreClient{config: odq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := odq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -135,7 +133,7 @@ func (odq *OrderDetailQuery) QueryStore() *MerchantStoreQuery {
 // First returns the first OrderDetail entity from the query.
 // Returns a *NotFoundError when no OrderDetail was found.
 func (odq *OrderDetailQuery) First(ctx context.Context) (*OrderDetail, error) {
-	nodes, err := odq.Limit(1).All(ctx)
+	nodes, err := odq.Limit(1).All(setContextOp(ctx, odq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +156,7 @@ func (odq *OrderDetailQuery) FirstX(ctx context.Context) *OrderDetail {
 // Returns a *NotFoundError when no OrderDetail ID was found.
 func (odq *OrderDetailQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = odq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = odq.Limit(1).IDs(setContextOp(ctx, odq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -181,7 +179,7 @@ func (odq *OrderDetailQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one OrderDetail entity is found.
 // Returns a *NotFoundError when no OrderDetail entities are found.
 func (odq *OrderDetailQuery) Only(ctx context.Context) (*OrderDetail, error) {
-	nodes, err := odq.Limit(2).All(ctx)
+	nodes, err := odq.Limit(2).All(setContextOp(ctx, odq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +207,7 @@ func (odq *OrderDetailQuery) OnlyX(ctx context.Context) *OrderDetail {
 // Returns a *NotFoundError when no entities are found.
 func (odq *OrderDetailQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = odq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = odq.Limit(2).IDs(setContextOp(ctx, odq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -234,10 +232,12 @@ func (odq *OrderDetailQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of OrderDetails.
 func (odq *OrderDetailQuery) All(ctx context.Context) ([]*OrderDetail, error) {
+	ctx = setContextOp(ctx, odq.ctx, "All")
 	if err := odq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return odq.sqlAll(ctx)
+	qr := querierAll[[]*OrderDetail, *OrderDetailQuery]()
+	return withInterceptors[[]*OrderDetail](ctx, odq, qr, odq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -250,9 +250,12 @@ func (odq *OrderDetailQuery) AllX(ctx context.Context) []*OrderDetail {
 }
 
 // IDs executes the query and returns a list of OrderDetail IDs.
-func (odq *OrderDetailQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := odq.Select(orderdetail.FieldID).Scan(ctx, &ids); err != nil {
+func (odq *OrderDetailQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if odq.ctx.Unique == nil && odq.path != nil {
+		odq.Unique(true)
+	}
+	ctx = setContextOp(ctx, odq.ctx, "IDs")
+	if err = odq.Select(orderdetail.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -269,10 +272,11 @@ func (odq *OrderDetailQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (odq *OrderDetailQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, odq.ctx, "Count")
 	if err := odq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return odq.sqlCount(ctx)
+	return withInterceptors[int](ctx, odq, querierCount[*OrderDetailQuery](), odq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -286,10 +290,15 @@ func (odq *OrderDetailQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (odq *OrderDetailQuery) Exist(ctx context.Context) (bool, error) {
-	if err := odq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, odq.ctx, "Exist")
+	switch _, err := odq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return odq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -309,24 +318,23 @@ func (odq *OrderDetailQuery) Clone() *OrderDetailQuery {
 	}
 	return &OrderDetailQuery{
 		config:      odq.config,
-		limit:       odq.limit,
-		offset:      odq.offset,
-		order:       append([]OrderFunc{}, odq.order...),
+		ctx:         odq.ctx.Clone(),
+		order:       append([]orderdetail.OrderOption{}, odq.order...),
+		inters:      append([]Interceptor{}, odq.inters...),
 		predicates:  append([]predicate.OrderDetail{}, odq.predicates...),
 		withOrder:   odq.withOrder.Clone(),
 		withProduct: odq.withProduct.Clone(),
 		withStore:   odq.withStore.Clone(),
 		// clone intermediate query.
-		sql:    odq.sql.Clone(),
-		path:   odq.path,
-		unique: odq.unique,
+		sql:  odq.sql.Clone(),
+		path: odq.path,
 	}
 }
 
 // WithOrder tells the query-builder to eager-load the nodes that are connected to
 // the "Order" edge. The optional arguments are used to configure the query builder of the edge.
 func (odq *OrderDetailQuery) WithOrder(opts ...func(*OrderQuery)) *OrderDetailQuery {
-	query := &OrderQuery{config: odq.config}
+	query := (&OrderClient{config: odq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -337,7 +345,7 @@ func (odq *OrderDetailQuery) WithOrder(opts ...func(*OrderQuery)) *OrderDetailQu
 // WithProduct tells the query-builder to eager-load the nodes that are connected to
 // the "product" edge. The optional arguments are used to configure the query builder of the edge.
 func (odq *OrderDetailQuery) WithProduct(opts ...func(*ProductQuery)) *OrderDetailQuery {
-	query := &ProductQuery{config: odq.config}
+	query := (&ProductClient{config: odq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -348,7 +356,7 @@ func (odq *OrderDetailQuery) WithProduct(opts ...func(*ProductQuery)) *OrderDeta
 // WithStore tells the query-builder to eager-load the nodes that are connected to
 // the "store" edge. The optional arguments are used to configure the query builder of the edge.
 func (odq *OrderDetailQuery) WithStore(opts ...func(*MerchantStoreQuery)) *OrderDetailQuery {
-	query := &MerchantStoreQuery{config: odq.config}
+	query := (&MerchantStoreClient{config: odq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -371,16 +379,11 @@ func (odq *OrderDetailQuery) WithStore(opts ...func(*MerchantStoreQuery)) *Order
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (odq *OrderDetailQuery) GroupBy(field string, fields ...string) *OrderDetailGroupBy {
-	grbuild := &OrderDetailGroupBy{config: odq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := odq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return odq.sqlQuery(ctx), nil
-	}
+	odq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &OrderDetailGroupBy{build: odq}
+	grbuild.flds = &odq.ctx.Fields
 	grbuild.label = orderdetail.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -397,15 +400,30 @@ func (odq *OrderDetailQuery) GroupBy(field string, fields ...string) *OrderDetai
 //		Select(orderdetail.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (odq *OrderDetailQuery) Select(fields ...string) *OrderDetailSelect {
-	odq.fields = append(odq.fields, fields...)
-	selbuild := &OrderDetailSelect{OrderDetailQuery: odq}
-	selbuild.label = orderdetail.Label
-	selbuild.flds, selbuild.scan = &odq.fields, selbuild.Scan
-	return selbuild
+	odq.ctx.Fields = append(odq.ctx.Fields, fields...)
+	sbuild := &OrderDetailSelect{OrderDetailQuery: odq}
+	sbuild.label = orderdetail.Label
+	sbuild.flds, sbuild.scan = &odq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a OrderDetailSelect configured with the given aggregations.
+func (odq *OrderDetailQuery) Aggregate(fns ...AggregateFunc) *OrderDetailSelect {
+	return odq.Select().Aggregate(fns...)
 }
 
 func (odq *OrderDetailQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range odq.fields {
+	for _, inter := range odq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, odq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range odq.ctx.Fields {
 		if !orderdetail.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -489,6 +507,9 @@ func (odq *OrderDetailQuery) loadOrder(ctx context.Context, query *OrderQuery, n
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(order.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -517,6 +538,9 @@ func (odq *OrderDetailQuery) loadProduct(ctx context.Context, query *ProductQuer
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	query.Where(product.IDIn(ids...))
 	neighbors, err := query.All(ctx)
@@ -547,6 +571,9 @@ func (odq *OrderDetailQuery) loadStore(ctx context.Context, query *MerchantStore
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(merchantstore.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -566,41 +593,22 @@ func (odq *OrderDetailQuery) loadStore(ctx context.Context, query *MerchantStore
 
 func (odq *OrderDetailQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := odq.querySpec()
-	_spec.Node.Columns = odq.fields
-	if len(odq.fields) > 0 {
-		_spec.Unique = odq.unique != nil && *odq.unique
+	_spec.Node.Columns = odq.ctx.Fields
+	if len(odq.ctx.Fields) > 0 {
+		_spec.Unique = odq.ctx.Unique != nil && *odq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, odq.driver, _spec)
 }
 
-func (odq *OrderDetailQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := odq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (odq *OrderDetailQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   orderdetail.Table,
-			Columns: orderdetail.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: orderdetail.FieldID,
-			},
-		},
-		From:   odq.sql,
-		Unique: true,
-	}
-	if unique := odq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(orderdetail.Table, orderdetail.Columns, sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt))
+	_spec.From = odq.sql
+	if unique := odq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if odq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := odq.fields; len(fields) > 0 {
+	if fields := odq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, orderdetail.FieldID)
 		for i := range fields {
@@ -616,10 +624,10 @@ func (odq *OrderDetailQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := odq.limit; limit != nil {
+	if limit := odq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := odq.offset; offset != nil {
+	if offset := odq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := odq.order; len(ps) > 0 {
@@ -635,7 +643,7 @@ func (odq *OrderDetailQuery) querySpec() *sqlgraph.QuerySpec {
 func (odq *OrderDetailQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(odq.driver.Dialect())
 	t1 := builder.Table(orderdetail.Table)
-	columns := odq.fields
+	columns := odq.ctx.Fields
 	if len(columns) == 0 {
 		columns = orderdetail.Columns
 	}
@@ -644,7 +652,7 @@ func (odq *OrderDetailQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = odq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if odq.unique != nil && *odq.unique {
+	if odq.ctx.Unique != nil && *odq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range odq.predicates {
@@ -653,12 +661,12 @@ func (odq *OrderDetailQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range odq.order {
 		p(selector)
 	}
-	if offset := odq.offset; offset != nil {
+	if offset := odq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := odq.limit; limit != nil {
+	if limit := odq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -666,13 +674,8 @@ func (odq *OrderDetailQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // OrderDetailGroupBy is the group-by builder for OrderDetail entities.
 type OrderDetailGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *OrderDetailQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -681,74 +684,77 @@ func (odgb *OrderDetailGroupBy) Aggregate(fns ...AggregateFunc) *OrderDetailGrou
 	return odgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (odgb *OrderDetailGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := odgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, odgb.build.ctx, "GroupBy")
+	if err := odgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	odgb.sql = query
-	return odgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*OrderDetailQuery, *OrderDetailGroupBy](ctx, odgb.build, odgb, odgb.build.inters, v)
 }
 
-func (odgb *OrderDetailGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range odgb.fields {
-		if !orderdetail.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (odgb *OrderDetailGroupBy) sqlScan(ctx context.Context, root *OrderDetailQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(odgb.fns))
+	for _, fn := range odgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := odgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*odgb.flds)+len(odgb.fns))
+		for _, f := range *odgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*odgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := odgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := odgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (odgb *OrderDetailGroupBy) sqlQuery() *sql.Selector {
-	selector := odgb.sql.Select()
-	aggregation := make([]string, 0, len(odgb.fns))
-	for _, fn := range odgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(odgb.fields)+len(odgb.fns))
-		for _, f := range odgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(odgb.fields...)...)
-}
-
 // OrderDetailSelect is the builder for selecting fields of OrderDetail entities.
 type OrderDetailSelect struct {
 	*OrderDetailQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ods *OrderDetailSelect) Aggregate(fns ...AggregateFunc) *OrderDetailSelect {
+	ods.fns = append(ods.fns, fns...)
+	return ods
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (ods *OrderDetailSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ods.ctx, "Select")
 	if err := ods.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ods.sql = ods.OrderDetailQuery.sqlQuery(ctx)
-	return ods.sqlScan(ctx, v)
+	return scanWithInterceptors[*OrderDetailQuery, *OrderDetailSelect](ctx, ods.OrderDetailQuery, ods, ods.inters, v)
 }
 
-func (ods *OrderDetailSelect) sqlScan(ctx context.Context, v any) error {
+func (ods *OrderDetailSelect) sqlScan(ctx context.Context, root *OrderDetailQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ods.fns))
+	for _, fn := range ods.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ods.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ods.sql.Query()
+	query, args := selector.Query()
 	if err := ods.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

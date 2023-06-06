@@ -41,35 +41,8 @@ func (aru *AgentRequestUpdate) Mutation() *AgentRequestMutation {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (aru *AgentRequestUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	aru.defaults()
-	if len(aru.hooks) == 0 {
-		affected, err = aru.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AgentRequestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			aru.mutation = mutation
-			affected, err = aru.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(aru.hooks) - 1; i >= 0; i-- {
-			if aru.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aru.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, aru.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, aru.sqlSave, aru.mutation, aru.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -103,16 +76,7 @@ func (aru *AgentRequestUpdate) defaults() {
 }
 
 func (aru *AgentRequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   agentrequest.Table,
-			Columns: agentrequest.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: agentrequest.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(agentrequest.Table, agentrequest.Columns, sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt))
 	if ps := aru.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -121,11 +85,7 @@ func (aru *AgentRequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := aru.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: agentrequest.FieldUpdatedAt,
-		})
+		_spec.SetField(agentrequest.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, aru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -135,6 +95,7 @@ func (aru *AgentRequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	aru.mutation.done = true
 	return n, nil
 }
 
@@ -157,6 +118,12 @@ func (aruo *AgentRequestUpdateOne) Mutation() *AgentRequestMutation {
 	return aruo.mutation
 }
 
+// Where appends a list predicates to the AgentRequestUpdate builder.
+func (aruo *AgentRequestUpdateOne) Where(ps ...predicate.AgentRequest) *AgentRequestUpdateOne {
+	aruo.mutation.Where(ps...)
+	return aruo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (aruo *AgentRequestUpdateOne) Select(field string, fields ...string) *AgentRequestUpdateOne {
@@ -166,41 +133,8 @@ func (aruo *AgentRequestUpdateOne) Select(field string, fields ...string) *Agent
 
 // Save executes the query and returns the updated AgentRequest entity.
 func (aruo *AgentRequestUpdateOne) Save(ctx context.Context) (*AgentRequest, error) {
-	var (
-		err  error
-		node *AgentRequest
-	)
 	aruo.defaults()
-	if len(aruo.hooks) == 0 {
-		node, err = aruo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AgentRequestMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			aruo.mutation = mutation
-			node, err = aruo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(aruo.hooks) - 1; i >= 0; i-- {
-			if aruo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = aruo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, aruo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*AgentRequest)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AgentRequestMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, aruo.sqlSave, aruo.mutation, aruo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -234,16 +168,7 @@ func (aruo *AgentRequestUpdateOne) defaults() {
 }
 
 func (aruo *AgentRequestUpdateOne) sqlSave(ctx context.Context) (_node *AgentRequest, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   agentrequest.Table,
-			Columns: agentrequest.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: agentrequest.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(agentrequest.Table, agentrequest.Columns, sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt))
 	id, ok := aruo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AgentRequest.id" for update`)}
@@ -269,11 +194,7 @@ func (aruo *AgentRequestUpdateOne) sqlSave(ctx context.Context) (_node *AgentReq
 		}
 	}
 	if value, ok := aruo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: agentrequest.FieldUpdatedAt,
-		})
+		_spec.SetField(agentrequest.FieldUpdatedAt, field.TypeTime, value)
 	}
 	_node = &AgentRequest{config: aruo.config}
 	_spec.Assign = _node.assignValues
@@ -286,5 +207,6 @@ func (aruo *AgentRequestUpdateOne) sqlSave(ctx context.Context) (_node *AgentReq
 		}
 		return nil, err
 	}
+	aruo.mutation.done = true
 	return _node, nil
 }

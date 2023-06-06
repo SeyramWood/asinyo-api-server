@@ -1,0 +1,38 @@
+{{define "body"}}
+    <!doctype html>
+    <html lang="en" xmlns="http://www.w3.org/1999/html">
+
+    <head>
+        <meta name="viewport" content="width=device-width"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <title></title>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Handlee&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100&display=swap");
+            html {
+                font-family: "Poppins", sans-serif;
+            }
+        </style>
+    </head>
+
+    <body>
+
+    <main>
+        <section style="width: 60%; margin: 4rem auto;">
+            <h2>Sign up and get started with Asinyo!</h2>
+            <article style="margin: 2rem 0;">
+                <h4>OTP: {{.message.Code}}</h4>
+            </article>
+            <p>We appreciate your effort to join Asinyo! Enter the OTP code provided in this email to proceed with your signup.</p>
+            <p style="margin:2rem 0">
+                Team Asinyo<br>
+                Connecting farmers and impacting lives<br>
+                Tel: {{.message.Tel}} <br><br>
+                <a href="tel:{{.message.Tel}}">{{.message.Tel}}</a>
+            </p>
+        </section>
+    </main>
+
+    </body>
+
+    </html>
+{{end}}

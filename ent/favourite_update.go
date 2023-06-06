@@ -145,35 +145,8 @@ func (fu *FavouriteUpdate) ClearProduct() *FavouriteUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (fu *FavouriteUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	fu.defaults()
-	if len(fu.hooks) == 0 {
-		affected, err = fu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*FavouriteMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			fu.mutation = mutation
-			affected, err = fu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(fu.hooks) - 1; i >= 0; i-- {
-			if fu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = fu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, fu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, fu.sqlSave, fu.mutation, fu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -207,16 +180,7 @@ func (fu *FavouriteUpdate) defaults() {
 }
 
 func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   favourite.Table,
-			Columns: favourite.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: favourite.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(favourite.Table, favourite.Columns, sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt))
 	if ps := fu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -225,11 +189,7 @@ func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := fu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: favourite.FieldUpdatedAt,
-		})
+		_spec.SetField(favourite.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if fu.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -239,10 +199,7 @@ func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{favourite.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -255,10 +212,7 @@ func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{favourite.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -274,10 +228,7 @@ func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{favourite.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -290,10 +241,7 @@ func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{favourite.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -309,10 +257,7 @@ func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{favourite.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -325,10 +270,7 @@ func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{favourite.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -344,10 +286,7 @@ func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{favourite.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -360,10 +299,7 @@ func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{favourite.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -379,6 +315,7 @@ func (fu *FavouriteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	fu.mutation.done = true
 	return n, nil
 }
 
@@ -501,6 +438,12 @@ func (fuo *FavouriteUpdateOne) ClearProduct() *FavouriteUpdateOne {
 	return fuo
 }
 
+// Where appends a list predicates to the FavouriteUpdate builder.
+func (fuo *FavouriteUpdateOne) Where(ps ...predicate.Favourite) *FavouriteUpdateOne {
+	fuo.mutation.Where(ps...)
+	return fuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (fuo *FavouriteUpdateOne) Select(field string, fields ...string) *FavouriteUpdateOne {
@@ -510,41 +453,8 @@ func (fuo *FavouriteUpdateOne) Select(field string, fields ...string) *Favourite
 
 // Save executes the query and returns the updated Favourite entity.
 func (fuo *FavouriteUpdateOne) Save(ctx context.Context) (*Favourite, error) {
-	var (
-		err  error
-		node *Favourite
-	)
 	fuo.defaults()
-	if len(fuo.hooks) == 0 {
-		node, err = fuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*FavouriteMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			fuo.mutation = mutation
-			node, err = fuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(fuo.hooks) - 1; i >= 0; i-- {
-			if fuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = fuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, fuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Favourite)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from FavouriteMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, fuo.sqlSave, fuo.mutation, fuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -578,16 +488,7 @@ func (fuo *FavouriteUpdateOne) defaults() {
 }
 
 func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   favourite.Table,
-			Columns: favourite.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: favourite.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(favourite.Table, favourite.Columns, sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt))
 	id, ok := fuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Favourite.id" for update`)}
@@ -613,11 +514,7 @@ func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, e
 		}
 	}
 	if value, ok := fuo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: favourite.FieldUpdatedAt,
-		})
+		_spec.SetField(favourite.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if fuo.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -627,10 +524,7 @@ func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, e
 			Columns: []string{favourite.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -643,10 +537,7 @@ func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, e
 			Columns: []string{favourite.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -662,10 +553,7 @@ func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, e
 			Columns: []string{favourite.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -678,10 +566,7 @@ func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, e
 			Columns: []string{favourite.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -697,10 +582,7 @@ func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, e
 			Columns: []string{favourite.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -713,10 +595,7 @@ func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, e
 			Columns: []string{favourite.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -732,10 +611,7 @@ func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, e
 			Columns: []string{favourite.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -748,10 +624,7 @@ func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, e
 			Columns: []string{favourite.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -770,5 +643,6 @@ func (fuo *FavouriteUpdateOne) sqlSave(ctx context.Context) (_node *Favourite, e
 		}
 		return nil, err
 	}
+	fuo.mutation.done = true
 	return _node, nil
 }

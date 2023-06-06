@@ -5,19 +5,18 @@ import (
 	"fmt"
 
 	"entgo.io/ent/dialect/sql"
-
-	"github.com/SeyramWood/app/application"
-	"github.com/SeyramWood/app/domain/services"
-	"github.com/SeyramWood/ent/merchant"
-	"github.com/SeyramWood/ent/retailmerchant"
-	"github.com/SeyramWood/ent/suppliermerchant"
-
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/SeyramWood/app/adapters/gateways"
+	"github.com/SeyramWood/app/adapters/presenters"
+	"github.com/SeyramWood/app/application"
 	"github.com/SeyramWood/app/domain/models"
+	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/ent"
+	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/retailmerchant"
+	"github.com/SeyramWood/ent/suppliermerchant"
 )
 
 type repository struct {
@@ -31,7 +30,6 @@ func NewMerchantRepo(db *database.Adapter) gateways.MerchantRepo {
 }
 
 func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merchant, error) {
-
 	hashPassword, _ := bcrypt.GenerateFromPassword([]byte(mc.Credentials.Password), 16)
 
 	ctx := context.Background()
@@ -78,6 +76,7 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 		if err = tx.Commit(); err != nil {
 			return nil, fmt.Errorf("failed commiting merchant transaction: %w", err)
 		}
+
 		return merc.Unwrap(), nil
 
 	}
@@ -87,7 +86,6 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 		SetUsername(mc.Credentials.Username).
 		SetPassword(hashPassword).
 		Save(ctx)
-
 	if err != nil {
 		return nil, application.Rollback(tx, fmt.Errorf("failed creating merchant: %w", err))
 	}
@@ -122,7 +120,6 @@ func (r *repository) Insert(mc *models.MerchantRequest, onboard bool) (*ent.Merc
 		return nil, fmt.Errorf("failed commiting merchant transaction: %w", err)
 	}
 	return merc.Unwrap(), nil
-
 }
 
 func (r *repository) Onboard(
@@ -130,7 +127,6 @@ func (r *repository) Onboard(
 ) (
 	*ent.Merchant, error,
 ) {
-
 	mr := &models.MerchantRequest{
 		Info: models.RetailMerchantRequestInfo{
 			MerchantType: merc.PersonalInfo.MerchantType,
@@ -152,8 +148,7 @@ func (r *repository) Onboard(
 		return nil, merr
 	}
 	ctx := context.Background()
-	mq := r.db.Merchant.Query().Where(merchant.ID(m.ID)).OnlyX(ctx)
-	_, err := r.db.MerchantStore.Create().SetMerchant(mq).
+	_, err := r.db.MerchantStore.Create().SetMerchantID(m.ID).
 		SetAgentID(agentId).
 		SetName(merc.StoreInfo.BusinessName).
 		SetSlogan(merc.StoreInfo.BusinessSlogan).
@@ -167,8 +162,14 @@ func (r *repository) Onboard(
 	if err != nil {
 		return nil, fmt.Errorf("failed creating merchant store: %w", err)
 	}
-	return m, nil
+	result, err := r.db.Merchant.Query().Where(merchant.ID(m.ID)).WithStore().Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
+
 func (r repository) SaveCoordinate(coordinate *services.Coordinate, id int) error {
 	_, err := r.db.MerchantStore.UpdateOneID(id).SetCoordinate(coordinate).Save(context.Background())
 	if err != nil {
@@ -176,24 +177,46 @@ func (r repository) SaveCoordinate(coordinate *services.Coordinate, id int) erro
 	}
 	return nil
 }
-func (r *repository) Read(id int) (*ent.Merchant, error) {
 
+func (r *repository) Read(id int) (*ent.Merchant, error) {
 	m, err := r.db.Merchant.Query().Where(merchant.ID(id)).WithSupplier().WithRetailer().Only(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	return m, nil
-
 }
 
-func (r *repository) ReadAll() ([]*ent.Merchant, error) {
+func (r *repository) ReadStorefront(id int) (*ent.MerchantStore, error) {
+	store, err := r.db.Merchant.Query().Where(merchant.ID(id)).
+		QueryStore().
+		WithAgent().
+		Only(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return store, nil
+}
 
-	// b, err := r.db.User.Query().
-	// 	All(context.Background())
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+func (r *repository) ReadAll(limit, offset int) (*presenters.PaginationResponse, error) {
+	ctx := context.Background()
+	query := r.db.Merchant.Query()
+	count, err := query.Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+	results, err := query.
+		Limit(limit).Offset(offset).
+		Order(ent.Desc(merchant.FieldCreatedAt)).
+		WithSupplier().
+		WithRetailer().
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &presenters.PaginationResponse{
+		Count: count,
+		Data:  results,
+	}, nil
 }
 
 func (r *repository) Update(id int, request any) (*ent.Merchant, error) {
@@ -238,7 +261,6 @@ func (r *repository) Update(id int, request any) (*ent.Merchant, error) {
 		return nil, err
 	}
 	return result, nil
-
 }
 
 func (r *repository) Delete(ID string) error {

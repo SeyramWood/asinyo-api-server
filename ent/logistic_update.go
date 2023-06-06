@@ -11,9 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/logistic"
-	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
@@ -37,9 +35,25 @@ func (lu *LogisticUpdate) SetUpdatedAt(t time.Time) *LogisticUpdate {
 	return lu
 }
 
+// SetType sets the "type" field.
+func (lu *LogisticUpdate) SetType(s string) *LogisticUpdate {
+	lu.mutation.SetType(s)
+	return lu
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (lu *LogisticUpdate) SetNillableType(s *string) *LogisticUpdate {
+	if s != nil {
+		lu.SetType(*s)
+	}
+	return lu
+}
+
 // SetTask sets the "task" field.
-func (lu *LogisticUpdate) SetTask(mpadtr *models.TookanPickupAndDeliveryTaskResponse) *LogisticUpdate {
-	lu.mutation.SetTask(mpadtr)
+func (lu *LogisticUpdate) SetTask(s *struct {
+	Data interface{} "json:\"data\""
+}) *LogisticUpdate {
+	lu.mutation.SetTask(s)
 	return lu
 }
 
@@ -49,38 +63,23 @@ func (lu *LogisticUpdate) ClearTask() *LogisticUpdate {
 	return lu
 }
 
-// AddOrderIDs adds the "order" edge to the Order entity by IDs.
-func (lu *LogisticUpdate) AddOrderIDs(ids ...int) *LogisticUpdate {
-	lu.mutation.AddOrderIDs(ids...)
+// SetOrderID sets the "order" edge to the Order entity by ID.
+func (lu *LogisticUpdate) SetOrderID(id int) *LogisticUpdate {
+	lu.mutation.SetOrderID(id)
 	return lu
 }
 
-// AddOrder adds the "order" edges to the Order entity.
-func (lu *LogisticUpdate) AddOrder(o ...*Order) *LogisticUpdate {
-	ids := make([]int, len(o))
-	for i := range o {
-		ids[i] = o[i].ID
-	}
-	return lu.AddOrderIDs(ids...)
-}
-
-// SetStoreID sets the "store" edge to the MerchantStore entity by ID.
-func (lu *LogisticUpdate) SetStoreID(id int) *LogisticUpdate {
-	lu.mutation.SetStoreID(id)
-	return lu
-}
-
-// SetNillableStoreID sets the "store" edge to the MerchantStore entity by ID if the given value is not nil.
-func (lu *LogisticUpdate) SetNillableStoreID(id *int) *LogisticUpdate {
+// SetNillableOrderID sets the "order" edge to the Order entity by ID if the given value is not nil.
+func (lu *LogisticUpdate) SetNillableOrderID(id *int) *LogisticUpdate {
 	if id != nil {
-		lu = lu.SetStoreID(*id)
+		lu = lu.SetOrderID(*id)
 	}
 	return lu
 }
 
-// SetStore sets the "store" edge to the MerchantStore entity.
-func (lu *LogisticUpdate) SetStore(m *MerchantStore) *LogisticUpdate {
-	return lu.SetStoreID(m.ID)
+// SetOrder sets the "order" edge to the Order entity.
+func (lu *LogisticUpdate) SetOrder(o *Order) *LogisticUpdate {
+	return lu.SetOrderID(o.ID)
 }
 
 // Mutation returns the LogisticMutation object of the builder.
@@ -88,64 +87,16 @@ func (lu *LogisticUpdate) Mutation() *LogisticMutation {
 	return lu.mutation
 }
 
-// ClearOrder clears all "order" edges to the Order entity.
+// ClearOrder clears the "order" edge to the Order entity.
 func (lu *LogisticUpdate) ClearOrder() *LogisticUpdate {
 	lu.mutation.ClearOrder()
 	return lu
 }
 
-// RemoveOrderIDs removes the "order" edge to Order entities by IDs.
-func (lu *LogisticUpdate) RemoveOrderIDs(ids ...int) *LogisticUpdate {
-	lu.mutation.RemoveOrderIDs(ids...)
-	return lu
-}
-
-// RemoveOrder removes "order" edges to Order entities.
-func (lu *LogisticUpdate) RemoveOrder(o ...*Order) *LogisticUpdate {
-	ids := make([]int, len(o))
-	for i := range o {
-		ids[i] = o[i].ID
-	}
-	return lu.RemoveOrderIDs(ids...)
-}
-
-// ClearStore clears the "store" edge to the MerchantStore entity.
-func (lu *LogisticUpdate) ClearStore() *LogisticUpdate {
-	lu.mutation.ClearStore()
-	return lu
-}
-
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (lu *LogisticUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	lu.defaults()
-	if len(lu.hooks) == 0 {
-		affected, err = lu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*LogisticMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			lu.mutation = mutation
-			affected, err = lu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(lu.hooks) - 1; i >= 0; i-- {
-			if lu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = lu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, lu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, lu.sqlSave, lu.mutation, lu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -178,17 +129,21 @@ func (lu *LogisticUpdate) defaults() {
 	}
 }
 
-func (lu *LogisticUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   logistic.Table,
-			Columns: logistic.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: logistic.FieldID,
-			},
-		},
+// check runs all checks and user-defined validators on the builder.
+func (lu *LogisticUpdate) check() error {
+	if v, ok := lu.mutation.GetType(); ok {
+		if err := logistic.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Logistic.type": %w`, err)}
+		}
 	}
+	return nil
+}
+
+func (lu *LogisticUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := lu.check(); err != nil {
+		return n, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(logistic.Table, logistic.Columns, sqlgraph.NewFieldSpec(logistic.FieldID, field.TypeInt))
 	if ps := lu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -197,107 +152,39 @@ func (lu *LogisticUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := lu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: logistic.FieldUpdatedAt,
-		})
+		_spec.SetField(logistic.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := lu.mutation.GetType(); ok {
+		_spec.SetField(logistic.FieldType, field.TypeString, value)
 	}
 	if value, ok := lu.mutation.Task(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: logistic.FieldTask,
-		})
+		_spec.SetField(logistic.FieldTask, field.TypeJSON, value)
 	}
 	if lu.mutation.TaskCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: logistic.FieldTask,
-		})
+		_spec.ClearField(logistic.FieldTask, field.TypeJSON)
 	}
 	if lu.mutation.OrderCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
 			Table:   logistic.OrderTable,
-			Columns: logistic.OrderPrimaryKey,
+			Columns: []string{logistic.OrderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := lu.mutation.RemovedOrderIDs(); len(nodes) > 0 && !lu.mutation.OrderCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   logistic.OrderTable,
-			Columns: logistic.OrderPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := lu.mutation.OrderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
 			Table:   logistic.OrderTable,
-			Columns: logistic.OrderPrimaryKey,
+			Columns: []string{logistic.OrderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if lu.mutation.StoreCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   logistic.StoreTable,
-			Columns: []string{logistic.StoreColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := lu.mutation.StoreIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   logistic.StoreTable,
-			Columns: []string{logistic.StoreColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -313,6 +200,7 @@ func (lu *LogisticUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	lu.mutation.done = true
 	return n, nil
 }
 
@@ -330,9 +218,25 @@ func (luo *LogisticUpdateOne) SetUpdatedAt(t time.Time) *LogisticUpdateOne {
 	return luo
 }
 
+// SetType sets the "type" field.
+func (luo *LogisticUpdateOne) SetType(s string) *LogisticUpdateOne {
+	luo.mutation.SetType(s)
+	return luo
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (luo *LogisticUpdateOne) SetNillableType(s *string) *LogisticUpdateOne {
+	if s != nil {
+		luo.SetType(*s)
+	}
+	return luo
+}
+
 // SetTask sets the "task" field.
-func (luo *LogisticUpdateOne) SetTask(mpadtr *models.TookanPickupAndDeliveryTaskResponse) *LogisticUpdateOne {
-	luo.mutation.SetTask(mpadtr)
+func (luo *LogisticUpdateOne) SetTask(s *struct {
+	Data interface{} "json:\"data\""
+}) *LogisticUpdateOne {
+	luo.mutation.SetTask(s)
 	return luo
 }
 
@@ -342,38 +246,23 @@ func (luo *LogisticUpdateOne) ClearTask() *LogisticUpdateOne {
 	return luo
 }
 
-// AddOrderIDs adds the "order" edge to the Order entity by IDs.
-func (luo *LogisticUpdateOne) AddOrderIDs(ids ...int) *LogisticUpdateOne {
-	luo.mutation.AddOrderIDs(ids...)
+// SetOrderID sets the "order" edge to the Order entity by ID.
+func (luo *LogisticUpdateOne) SetOrderID(id int) *LogisticUpdateOne {
+	luo.mutation.SetOrderID(id)
 	return luo
 }
 
-// AddOrder adds the "order" edges to the Order entity.
-func (luo *LogisticUpdateOne) AddOrder(o ...*Order) *LogisticUpdateOne {
-	ids := make([]int, len(o))
-	for i := range o {
-		ids[i] = o[i].ID
-	}
-	return luo.AddOrderIDs(ids...)
-}
-
-// SetStoreID sets the "store" edge to the MerchantStore entity by ID.
-func (luo *LogisticUpdateOne) SetStoreID(id int) *LogisticUpdateOne {
-	luo.mutation.SetStoreID(id)
-	return luo
-}
-
-// SetNillableStoreID sets the "store" edge to the MerchantStore entity by ID if the given value is not nil.
-func (luo *LogisticUpdateOne) SetNillableStoreID(id *int) *LogisticUpdateOne {
+// SetNillableOrderID sets the "order" edge to the Order entity by ID if the given value is not nil.
+func (luo *LogisticUpdateOne) SetNillableOrderID(id *int) *LogisticUpdateOne {
 	if id != nil {
-		luo = luo.SetStoreID(*id)
+		luo = luo.SetOrderID(*id)
 	}
 	return luo
 }
 
-// SetStore sets the "store" edge to the MerchantStore entity.
-func (luo *LogisticUpdateOne) SetStore(m *MerchantStore) *LogisticUpdateOne {
-	return luo.SetStoreID(m.ID)
+// SetOrder sets the "order" edge to the Order entity.
+func (luo *LogisticUpdateOne) SetOrder(o *Order) *LogisticUpdateOne {
+	return luo.SetOrderID(o.ID)
 }
 
 // Mutation returns the LogisticMutation object of the builder.
@@ -381,30 +270,15 @@ func (luo *LogisticUpdateOne) Mutation() *LogisticMutation {
 	return luo.mutation
 }
 
-// ClearOrder clears all "order" edges to the Order entity.
+// ClearOrder clears the "order" edge to the Order entity.
 func (luo *LogisticUpdateOne) ClearOrder() *LogisticUpdateOne {
 	luo.mutation.ClearOrder()
 	return luo
 }
 
-// RemoveOrderIDs removes the "order" edge to Order entities by IDs.
-func (luo *LogisticUpdateOne) RemoveOrderIDs(ids ...int) *LogisticUpdateOne {
-	luo.mutation.RemoveOrderIDs(ids...)
-	return luo
-}
-
-// RemoveOrder removes "order" edges to Order entities.
-func (luo *LogisticUpdateOne) RemoveOrder(o ...*Order) *LogisticUpdateOne {
-	ids := make([]int, len(o))
-	for i := range o {
-		ids[i] = o[i].ID
-	}
-	return luo.RemoveOrderIDs(ids...)
-}
-
-// ClearStore clears the "store" edge to the MerchantStore entity.
-func (luo *LogisticUpdateOne) ClearStore() *LogisticUpdateOne {
-	luo.mutation.ClearStore()
+// Where appends a list predicates to the LogisticUpdate builder.
+func (luo *LogisticUpdateOne) Where(ps ...predicate.Logistic) *LogisticUpdateOne {
+	luo.mutation.Where(ps...)
 	return luo
 }
 
@@ -417,41 +291,8 @@ func (luo *LogisticUpdateOne) Select(field string, fields ...string) *LogisticUp
 
 // Save executes the query and returns the updated Logistic entity.
 func (luo *LogisticUpdateOne) Save(ctx context.Context) (*Logistic, error) {
-	var (
-		err  error
-		node *Logistic
-	)
 	luo.defaults()
-	if len(luo.hooks) == 0 {
-		node, err = luo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*LogisticMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			luo.mutation = mutation
-			node, err = luo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(luo.hooks) - 1; i >= 0; i-- {
-			if luo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = luo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, luo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Logistic)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from LogisticMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, luo.sqlSave, luo.mutation, luo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -484,17 +325,21 @@ func (luo *LogisticUpdateOne) defaults() {
 	}
 }
 
-func (luo *LogisticUpdateOne) sqlSave(ctx context.Context) (_node *Logistic, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   logistic.Table,
-			Columns: logistic.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: logistic.FieldID,
-			},
-		},
+// check runs all checks and user-defined validators on the builder.
+func (luo *LogisticUpdateOne) check() error {
+	if v, ok := luo.mutation.GetType(); ok {
+		if err := logistic.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Logistic.type": %w`, err)}
+		}
 	}
+	return nil
+}
+
+func (luo *LogisticUpdateOne) sqlSave(ctx context.Context) (_node *Logistic, err error) {
+	if err := luo.check(); err != nil {
+		return _node, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(logistic.Table, logistic.Columns, sqlgraph.NewFieldSpec(logistic.FieldID, field.TypeInt))
 	id, ok := luo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Logistic.id" for update`)}
@@ -520,107 +365,39 @@ func (luo *LogisticUpdateOne) sqlSave(ctx context.Context) (_node *Logistic, err
 		}
 	}
 	if value, ok := luo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: logistic.FieldUpdatedAt,
-		})
+		_spec.SetField(logistic.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := luo.mutation.GetType(); ok {
+		_spec.SetField(logistic.FieldType, field.TypeString, value)
 	}
 	if value, ok := luo.mutation.Task(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: logistic.FieldTask,
-		})
+		_spec.SetField(logistic.FieldTask, field.TypeJSON, value)
 	}
 	if luo.mutation.TaskCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: logistic.FieldTask,
-		})
+		_spec.ClearField(logistic.FieldTask, field.TypeJSON)
 	}
 	if luo.mutation.OrderCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
 			Table:   logistic.OrderTable,
-			Columns: logistic.OrderPrimaryKey,
+			Columns: []string{logistic.OrderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := luo.mutation.RemovedOrderIDs(); len(nodes) > 0 && !luo.mutation.OrderCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   logistic.OrderTable,
-			Columns: logistic.OrderPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := luo.mutation.OrderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
 			Table:   logistic.OrderTable,
-			Columns: logistic.OrderPrimaryKey,
+			Columns: []string{logistic.OrderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if luo.mutation.StoreCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   logistic.StoreTable,
-			Columns: []string{logistic.StoreColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := luo.mutation.StoreIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   logistic.StoreTable,
-			Columns: []string{logistic.StoreColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -639,5 +416,6 @@ func (luo *LogisticUpdateOne) sqlSave(ctx context.Context) (_node *Logistic, err
 		}
 		return nil, err
 	}
+	luo.mutation.done = true
 	return _node, nil
 }

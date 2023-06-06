@@ -10,12 +10,12 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/agentrequest"
-	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -75,6 +75,12 @@ func (msu *MerchantStoreUpdate) SetLogo(s string) *MerchantStoreUpdate {
 // SetImages sets the "images" field.
 func (msu *MerchantStoreUpdate) SetImages(s []string) *MerchantStoreUpdate {
 	msu.mutation.SetImages(s)
+	return msu
+}
+
+// AppendImages appends s to the "images" field.
+func (msu *MerchantStoreUpdate) AppendImages(s []string) *MerchantStoreUpdate {
+	msu.mutation.AppendImages(s)
 	return msu
 }
 
@@ -210,21 +216,6 @@ func (msu *MerchantStoreUpdate) SetAgent(a *Agent) *MerchantStoreUpdate {
 	return msu.SetAgentID(a.ID)
 }
 
-// AddLogisticIDs adds the "logistics" edge to the Logistic entity by IDs.
-func (msu *MerchantStoreUpdate) AddLogisticIDs(ids ...int) *MerchantStoreUpdate {
-	msu.mutation.AddLogisticIDs(ids...)
-	return msu
-}
-
-// AddLogistics adds the "logistics" edges to the Logistic entity.
-func (msu *MerchantStoreUpdate) AddLogistics(l ...*Logistic) *MerchantStoreUpdate {
-	ids := make([]int, len(l))
-	for i := range l {
-		ids[i] = l[i].ID
-	}
-	return msu.AddLogisticIDs(ids...)
-}
-
 // AddRequestIDs adds the "requests" edge to the AgentRequest entity by IDs.
 func (msu *MerchantStoreUpdate) AddRequestIDs(ids ...int) *MerchantStoreUpdate {
 	msu.mutation.AddRequestIDs(ids...)
@@ -285,27 +276,6 @@ func (msu *MerchantStoreUpdate) ClearMerchant() *MerchantStoreUpdate {
 func (msu *MerchantStoreUpdate) ClearAgent() *MerchantStoreUpdate {
 	msu.mutation.ClearAgent()
 	return msu
-}
-
-// ClearLogistics clears all "logistics" edges to the Logistic entity.
-func (msu *MerchantStoreUpdate) ClearLogistics() *MerchantStoreUpdate {
-	msu.mutation.ClearLogistics()
-	return msu
-}
-
-// RemoveLogisticIDs removes the "logistics" edge to Logistic entities by IDs.
-func (msu *MerchantStoreUpdate) RemoveLogisticIDs(ids ...int) *MerchantStoreUpdate {
-	msu.mutation.RemoveLogisticIDs(ids...)
-	return msu
-}
-
-// RemoveLogistics removes "logistics" edges to Logistic entities.
-func (msu *MerchantStoreUpdate) RemoveLogistics(l ...*Logistic) *MerchantStoreUpdate {
-	ids := make([]int, len(l))
-	for i := range l {
-		ids[i] = l[i].ID
-	}
-	return msu.RemoveLogisticIDs(ids...)
 }
 
 // ClearRequests clears all "requests" edges to the AgentRequest entity.
@@ -373,41 +343,8 @@ func (msu *MerchantStoreUpdate) RemoveOrderDetails(o ...*OrderDetail) *MerchantS
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (msu *MerchantStoreUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	msu.defaults()
-	if len(msu.hooks) == 0 {
-		if err = msu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = msu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MerchantStoreMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = msu.check(); err != nil {
-				return 0, err
-			}
-			msu.mutation = mutation
-			affected, err = msu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(msu.hooks) - 1; i >= 0; i-- {
-			if msu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = msu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, msu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, msu.sqlSave, msu.mutation, msu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -481,16 +418,10 @@ func (msu *MerchantStoreUpdate) check() error {
 }
 
 func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   merchantstore.Table,
-			Columns: merchantstore.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: merchantstore.FieldID,
-			},
-		},
+	if err := msu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(merchantstore.Table, merchantstore.Columns, sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt))
 	if ps := msu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -499,138 +430,69 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 	}
 	if value, ok := msu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: merchantstore.FieldUpdatedAt,
-		})
+		_spec.SetField(merchantstore.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := msu.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldName,
-		})
+		_spec.SetField(merchantstore.FieldName, field.TypeString, value)
 	}
 	if value, ok := msu.mutation.About(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldAbout,
-		})
+		_spec.SetField(merchantstore.FieldAbout, field.TypeString, value)
 	}
 	if value, ok := msu.mutation.Slogan(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldSlogan,
-		})
+		_spec.SetField(merchantstore.FieldSlogan, field.TypeString, value)
 	}
 	if value, ok := msu.mutation.Description(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldDescription,
-		})
+		_spec.SetField(merchantstore.FieldDescription, field.TypeString, value)
 	}
 	if value, ok := msu.mutation.Logo(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldLogo,
-		})
+		_spec.SetField(merchantstore.FieldLogo, field.TypeString, value)
 	}
 	if value, ok := msu.mutation.Images(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: merchantstore.FieldImages,
+		_spec.SetField(merchantstore.FieldImages, field.TypeJSON, value)
+	}
+	if value, ok := msu.mutation.AppendedImages(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, merchantstore.FieldImages, value)
 		})
 	}
 	if msu.mutation.ImagesCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: merchantstore.FieldImages,
-		})
+		_spec.ClearField(merchantstore.FieldImages, field.TypeJSON)
 	}
 	if value, ok := msu.mutation.DefaultAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: merchantstore.FieldDefaultAccount,
-		})
+		_spec.SetField(merchantstore.FieldDefaultAccount, field.TypeEnum, value)
 	}
 	if msu.mutation.DefaultAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Column: merchantstore.FieldDefaultAccount,
-		})
+		_spec.ClearField(merchantstore.FieldDefaultAccount, field.TypeEnum)
 	}
 	if value, ok := msu.mutation.BankAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: merchantstore.FieldBankAccount,
-		})
+		_spec.SetField(merchantstore.FieldBankAccount, field.TypeJSON, value)
 	}
 	if msu.mutation.BankAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: merchantstore.FieldBankAccount,
-		})
+		_spec.ClearField(merchantstore.FieldBankAccount, field.TypeJSON)
 	}
 	if value, ok := msu.mutation.MomoAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: merchantstore.FieldMomoAccount,
-		})
+		_spec.SetField(merchantstore.FieldMomoAccount, field.TypeJSON, value)
 	}
 	if msu.mutation.MomoAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: merchantstore.FieldMomoAccount,
-		})
+		_spec.ClearField(merchantstore.FieldMomoAccount, field.TypeJSON)
 	}
 	if value, ok := msu.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: merchantstore.FieldAddress,
-		})
+		_spec.SetField(merchantstore.FieldAddress, field.TypeJSON, value)
 	}
 	if msu.mutation.AddressCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: merchantstore.FieldAddress,
-		})
+		_spec.ClearField(merchantstore.FieldAddress, field.TypeJSON)
 	}
 	if value, ok := msu.mutation.Coordinate(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: merchantstore.FieldCoordinate,
-		})
+		_spec.SetField(merchantstore.FieldCoordinate, field.TypeJSON, value)
 	}
 	if msu.mutation.CoordinateCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: merchantstore.FieldCoordinate,
-		})
+		_spec.ClearField(merchantstore.FieldCoordinate, field.TypeJSON)
 	}
 	if value, ok := msu.mutation.MerchantType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldMerchantType,
-		})
+		_spec.SetField(merchantstore.FieldMerchantType, field.TypeString, value)
 	}
 	if value, ok := msu.mutation.PermitAgent(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: merchantstore.FieldPermitAgent,
-		})
+		_spec.SetField(merchantstore.FieldPermitAgent, field.TypeBool, value)
 	}
 	if msu.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -640,10 +502,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{merchantstore.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -656,10 +515,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{merchantstore.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -675,10 +531,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{merchantstore.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -691,64 +544,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{merchantstore.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if msu.mutation.LogisticsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchantstore.LogisticsTable,
-			Columns: []string{merchantstore.LogisticsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := msu.mutation.RemovedLogisticsIDs(); len(nodes) > 0 && !msu.mutation.LogisticsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchantstore.LogisticsTable,
-			Columns: []string{merchantstore.LogisticsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := msu.mutation.LogisticsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchantstore.LogisticsTable,
-			Columns: []string{merchantstore.LogisticsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -764,10 +560,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{merchantstore.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -780,10 +573,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{merchantstore.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -799,10 +589,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{merchantstore.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -818,10 +605,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: merchantstore.OrdersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -834,10 +618,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: merchantstore.OrdersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -853,10 +634,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: merchantstore.OrdersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -872,10 +650,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{merchantstore.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -888,10 +663,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{merchantstore.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -907,10 +679,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{merchantstore.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -926,6 +695,7 @@ func (msu *MerchantStoreUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		return 0, err
 	}
+	msu.mutation.done = true
 	return n, nil
 }
 
@@ -976,6 +746,12 @@ func (msuo *MerchantStoreUpdateOne) SetLogo(s string) *MerchantStoreUpdateOne {
 // SetImages sets the "images" field.
 func (msuo *MerchantStoreUpdateOne) SetImages(s []string) *MerchantStoreUpdateOne {
 	msuo.mutation.SetImages(s)
+	return msuo
+}
+
+// AppendImages appends s to the "images" field.
+func (msuo *MerchantStoreUpdateOne) AppendImages(s []string) *MerchantStoreUpdateOne {
+	msuo.mutation.AppendImages(s)
 	return msuo
 }
 
@@ -1111,21 +887,6 @@ func (msuo *MerchantStoreUpdateOne) SetAgent(a *Agent) *MerchantStoreUpdateOne {
 	return msuo.SetAgentID(a.ID)
 }
 
-// AddLogisticIDs adds the "logistics" edge to the Logistic entity by IDs.
-func (msuo *MerchantStoreUpdateOne) AddLogisticIDs(ids ...int) *MerchantStoreUpdateOne {
-	msuo.mutation.AddLogisticIDs(ids...)
-	return msuo
-}
-
-// AddLogistics adds the "logistics" edges to the Logistic entity.
-func (msuo *MerchantStoreUpdateOne) AddLogistics(l ...*Logistic) *MerchantStoreUpdateOne {
-	ids := make([]int, len(l))
-	for i := range l {
-		ids[i] = l[i].ID
-	}
-	return msuo.AddLogisticIDs(ids...)
-}
-
 // AddRequestIDs adds the "requests" edge to the AgentRequest entity by IDs.
 func (msuo *MerchantStoreUpdateOne) AddRequestIDs(ids ...int) *MerchantStoreUpdateOne {
 	msuo.mutation.AddRequestIDs(ids...)
@@ -1186,27 +947,6 @@ func (msuo *MerchantStoreUpdateOne) ClearMerchant() *MerchantStoreUpdateOne {
 func (msuo *MerchantStoreUpdateOne) ClearAgent() *MerchantStoreUpdateOne {
 	msuo.mutation.ClearAgent()
 	return msuo
-}
-
-// ClearLogistics clears all "logistics" edges to the Logistic entity.
-func (msuo *MerchantStoreUpdateOne) ClearLogistics() *MerchantStoreUpdateOne {
-	msuo.mutation.ClearLogistics()
-	return msuo
-}
-
-// RemoveLogisticIDs removes the "logistics" edge to Logistic entities by IDs.
-func (msuo *MerchantStoreUpdateOne) RemoveLogisticIDs(ids ...int) *MerchantStoreUpdateOne {
-	msuo.mutation.RemoveLogisticIDs(ids...)
-	return msuo
-}
-
-// RemoveLogistics removes "logistics" edges to Logistic entities.
-func (msuo *MerchantStoreUpdateOne) RemoveLogistics(l ...*Logistic) *MerchantStoreUpdateOne {
-	ids := make([]int, len(l))
-	for i := range l {
-		ids[i] = l[i].ID
-	}
-	return msuo.RemoveLogisticIDs(ids...)
 }
 
 // ClearRequests clears all "requests" edges to the AgentRequest entity.
@@ -1272,6 +1012,12 @@ func (msuo *MerchantStoreUpdateOne) RemoveOrderDetails(o ...*OrderDetail) *Merch
 	return msuo.RemoveOrderDetailIDs(ids...)
 }
 
+// Where appends a list predicates to the MerchantStoreUpdate builder.
+func (msuo *MerchantStoreUpdateOne) Where(ps ...predicate.MerchantStore) *MerchantStoreUpdateOne {
+	msuo.mutation.Where(ps...)
+	return msuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (msuo *MerchantStoreUpdateOne) Select(field string, fields ...string) *MerchantStoreUpdateOne {
@@ -1281,47 +1027,8 @@ func (msuo *MerchantStoreUpdateOne) Select(field string, fields ...string) *Merc
 
 // Save executes the query and returns the updated MerchantStore entity.
 func (msuo *MerchantStoreUpdateOne) Save(ctx context.Context) (*MerchantStore, error) {
-	var (
-		err  error
-		node *MerchantStore
-	)
 	msuo.defaults()
-	if len(msuo.hooks) == 0 {
-		if err = msuo.check(); err != nil {
-			return nil, err
-		}
-		node, err = msuo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MerchantStoreMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = msuo.check(); err != nil {
-				return nil, err
-			}
-			msuo.mutation = mutation
-			node, err = msuo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(msuo.hooks) - 1; i >= 0; i-- {
-			if msuo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = msuo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, msuo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*MerchantStore)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from MerchantStoreMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, msuo.sqlSave, msuo.mutation, msuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -1395,16 +1102,10 @@ func (msuo *MerchantStoreUpdateOne) check() error {
 }
 
 func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *MerchantStore, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   merchantstore.Table,
-			Columns: merchantstore.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: merchantstore.FieldID,
-			},
-		},
+	if err := msuo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(merchantstore.Table, merchantstore.Columns, sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt))
 	id, ok := msuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "MerchantStore.id" for update`)}
@@ -1430,138 +1131,69 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 		}
 	}
 	if value, ok := msuo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: merchantstore.FieldUpdatedAt,
-		})
+		_spec.SetField(merchantstore.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := msuo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldName,
-		})
+		_spec.SetField(merchantstore.FieldName, field.TypeString, value)
 	}
 	if value, ok := msuo.mutation.About(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldAbout,
-		})
+		_spec.SetField(merchantstore.FieldAbout, field.TypeString, value)
 	}
 	if value, ok := msuo.mutation.Slogan(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldSlogan,
-		})
+		_spec.SetField(merchantstore.FieldSlogan, field.TypeString, value)
 	}
 	if value, ok := msuo.mutation.Description(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldDescription,
-		})
+		_spec.SetField(merchantstore.FieldDescription, field.TypeString, value)
 	}
 	if value, ok := msuo.mutation.Logo(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldLogo,
-		})
+		_spec.SetField(merchantstore.FieldLogo, field.TypeString, value)
 	}
 	if value, ok := msuo.mutation.Images(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: merchantstore.FieldImages,
+		_spec.SetField(merchantstore.FieldImages, field.TypeJSON, value)
+	}
+	if value, ok := msuo.mutation.AppendedImages(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, merchantstore.FieldImages, value)
 		})
 	}
 	if msuo.mutation.ImagesCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: merchantstore.FieldImages,
-		})
+		_spec.ClearField(merchantstore.FieldImages, field.TypeJSON)
 	}
 	if value, ok := msuo.mutation.DefaultAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: merchantstore.FieldDefaultAccount,
-		})
+		_spec.SetField(merchantstore.FieldDefaultAccount, field.TypeEnum, value)
 	}
 	if msuo.mutation.DefaultAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Column: merchantstore.FieldDefaultAccount,
-		})
+		_spec.ClearField(merchantstore.FieldDefaultAccount, field.TypeEnum)
 	}
 	if value, ok := msuo.mutation.BankAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: merchantstore.FieldBankAccount,
-		})
+		_spec.SetField(merchantstore.FieldBankAccount, field.TypeJSON, value)
 	}
 	if msuo.mutation.BankAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: merchantstore.FieldBankAccount,
-		})
+		_spec.ClearField(merchantstore.FieldBankAccount, field.TypeJSON)
 	}
 	if value, ok := msuo.mutation.MomoAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: merchantstore.FieldMomoAccount,
-		})
+		_spec.SetField(merchantstore.FieldMomoAccount, field.TypeJSON, value)
 	}
 	if msuo.mutation.MomoAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: merchantstore.FieldMomoAccount,
-		})
+		_spec.ClearField(merchantstore.FieldMomoAccount, field.TypeJSON)
 	}
 	if value, ok := msuo.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: merchantstore.FieldAddress,
-		})
+		_spec.SetField(merchantstore.FieldAddress, field.TypeJSON, value)
 	}
 	if msuo.mutation.AddressCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: merchantstore.FieldAddress,
-		})
+		_spec.ClearField(merchantstore.FieldAddress, field.TypeJSON)
 	}
 	if value, ok := msuo.mutation.Coordinate(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: merchantstore.FieldCoordinate,
-		})
+		_spec.SetField(merchantstore.FieldCoordinate, field.TypeJSON, value)
 	}
 	if msuo.mutation.CoordinateCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: merchantstore.FieldCoordinate,
-		})
+		_spec.ClearField(merchantstore.FieldCoordinate, field.TypeJSON)
 	}
 	if value, ok := msuo.mutation.MerchantType(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: merchantstore.FieldMerchantType,
-		})
+		_spec.SetField(merchantstore.FieldMerchantType, field.TypeString, value)
 	}
 	if value, ok := msuo.mutation.PermitAgent(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: merchantstore.FieldPermitAgent,
-		})
+		_spec.SetField(merchantstore.FieldPermitAgent, field.TypeBool, value)
 	}
 	if msuo.mutation.MerchantCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1571,10 +1203,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: []string{merchantstore.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1587,10 +1216,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: []string{merchantstore.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1606,10 +1232,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: []string{merchantstore.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1622,64 +1245,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: []string{merchantstore.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if msuo.mutation.LogisticsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchantstore.LogisticsTable,
-			Columns: []string{merchantstore.LogisticsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := msuo.mutation.RemovedLogisticsIDs(); len(nodes) > 0 && !msuo.mutation.LogisticsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchantstore.LogisticsTable,
-			Columns: []string{merchantstore.LogisticsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := msuo.mutation.LogisticsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   merchantstore.LogisticsTable,
-			Columns: []string{merchantstore.LogisticsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1695,10 +1261,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: []string{merchantstore.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1711,10 +1274,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: []string{merchantstore.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1730,10 +1290,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: []string{merchantstore.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1749,10 +1306,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: merchantstore.OrdersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1765,10 +1319,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: merchantstore.OrdersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1784,10 +1335,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: merchantstore.OrdersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1803,10 +1351,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: []string{merchantstore.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1819,10 +1364,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: []string{merchantstore.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1838,10 +1380,7 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 			Columns: []string{merchantstore.OrderDetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1860,5 +1399,6 @@ func (msuo *MerchantStoreUpdateOne) sqlSave(ctx context.Context) (_node *Merchan
 		}
 		return nil, err
 	}
+	msuo.mutation.done = true
 	return _node, nil
 }

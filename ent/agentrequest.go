@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/agentrequest"
 )
@@ -22,6 +23,7 @@ type AgentRequest struct {
 	UpdatedAt               time.Time `json:"updated_at,omitempty"`
 	agent_requests          *int
 	merchant_store_requests *int
+	selectValues            sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -38,7 +40,7 @@ func (*AgentRequest) scanValues(columns []string) ([]any, error) {
 		case agentrequest.ForeignKeys[1]: // merchant_store_requests
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type AgentRequest", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -84,16 +86,24 @@ func (ar *AgentRequest) assignValues(columns []string, values []any) error {
 				ar.merchant_store_requests = new(int)
 				*ar.merchant_store_requests = int(value.Int64)
 			}
+		default:
+			ar.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
+}
+
+// Value returns the ent.Value that was dynamically selected and assigned to the AgentRequest.
+// This includes values selected through modifiers, order, etc.
+func (ar *AgentRequest) Value(name string) (ent.Value, error) {
+	return ar.selectValues.Get(name)
 }
 
 // Update returns a builder for updating this AgentRequest.
 // Note that you need to call AgentRequest.Unwrap() before calling this method if this AgentRequest
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (ar *AgentRequest) Update() *AgentRequestUpdateOne {
-	return (&AgentRequestClient{config: ar.config}).UpdateOne(ar)
+	return NewAgentRequestClient(ar.config).UpdateOne(ar)
 }
 
 // Unwrap unwraps the AgentRequest entity that was returned from a transaction after it was closed,
@@ -123,9 +133,3 @@ func (ar *AgentRequest) String() string {
 
 // AgentRequests is a parsable slice of AgentRequest.
 type AgentRequests []*AgentRequest
-
-func (ar AgentRequests) config(cfg config) {
-	for _i := range ar {
-		ar[_i].config = cfg
-	}
-}

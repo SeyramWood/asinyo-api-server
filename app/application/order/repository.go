@@ -2,7 +2,6 @@ package order
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,13 +17,13 @@ import (
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
-	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/orderdetail"
 	"github.com/SeyramWood/ent/pickupstation"
 	"github.com/SeyramWood/ent/product"
+	"github.com/SeyramWood/ent/productcategoryminor"
 )
 
 type repository struct {
@@ -35,12 +34,12 @@ func NewOrderRepo(db *database.Adapter) gateways.OrderRepo {
 	return &repository{db.DB}
 }
 
-func (r repository) ReadByUser(userType string, id int) (*ent.Order, error) {
+func (r *repository) ReadByUser(userType string, id int) (*ent.Order, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (r repository) ReadAllByUser(userType string, id int) ([]*ent.Order, error) {
+func (r *repository) ReadAllByUser(userType string, id int) ([]*ent.Order, error) {
 	switch userType {
 	case "retailer", "supplier":
 		return r.readMerchantOrders(id)
@@ -51,12 +50,18 @@ func (r repository) ReadAllByUser(userType string, id int) ([]*ent.Order, error)
 	default:
 		return nil, nil
 	}
-
 }
-func (r repository) ReadAllByStore(merchantId int) ([]*ent.Order, error) {
+
+func (r *repository) ReadAllByStore(merchantId int) ([]*ent.Order, error) {
 	ctx := context.Background()
 	results, err := r.db.Merchant.Query().Where(merchant.ID(merchantId)).QueryStore().
 		QueryOrders().
+		Where(
+			order.Or(
+				order.CustomerApprovalIsNil(),
+				order.CustomerApprovalEQ(order.CustomerApprovalApproved),
+			),
+		).
 		Order(ent.Desc(order.FieldCreatedAt)).
 		WithDetails(
 			func(odq *ent.OrderDetailQuery) {
@@ -74,11 +79,18 @@ func (r repository) ReadAllByStore(merchantId int) ([]*ent.Order, error) {
 	}
 	return results, nil
 }
-func (r repository) ReadAllByAgentStore(agentId int) ([]*ent.Order, error) {
+
+func (r *repository) ReadAllByAgentStore(agentId int) ([]*ent.Order, error) {
 	ctx := context.Background()
 	results, err := r.db.Agent.Query().Where(agent.ID(agentId)).
 		QueryStore().
 		QueryOrders().
+		Where(
+			order.Or(
+				order.CustomerApprovalIsNil(),
+				order.CustomerApprovalEQ(order.CustomerApprovalApproved),
+			),
+		).
 		Order(ent.Desc(order.FieldCreatedAt)).
 		WithDetails(
 			func(odq *ent.OrderDetailQuery) {
@@ -94,13 +106,13 @@ func (r repository) ReadAllByAgentStore(agentId int) ([]*ent.Order, error) {
 			},
 		).
 		All(ctx)
-
 	if err != nil {
 		return nil, err
 	}
 	return results, nil
 }
-func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
+
+func (r *repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
 	ctx := context.Background()
 	result, err := r.db.Merchant.Query().Where(merchant.ID(merchantId)).QueryStore().
 		QueryOrders().
@@ -129,47 +141,25 @@ func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
 					func(pq *ent.ProductQuery) {
 						pq.Select(
 							product.FieldID, product.FieldName, product.FieldUnit, product.FieldImage,
-							product.FieldWeight,
+							product.FieldWeight, product.FieldQuantity,
+						)
+						pq.WithMinor(
+							func(mq *ent.ProductCategoryMinorQuery) {
+								mq.Select(productcategoryminor.FieldCategory)
+							},
 						)
 					},
 				)
 			},
 		).
-		WithAddress(
-			func(aq *ent.AddressQuery) {
-				aq.Select(
-					address.FieldID, address.FieldLastName,
-					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
-					address.FieldRegion, address.FieldCountry,
-					address.FieldPhone, address.FieldOtherPhone,
-				)
-			},
-		).
-		WithPickup(
-			func(pq *ent.PickupStationQuery) {
-				pq.Select(
-					pickupstation.FieldID, pickupstation.FieldName, pickupstation.FieldAddress,
-					pickupstation.FieldCity,
-					pickupstation.FieldRegion,
-				)
-			},
-		).
+		WithAddress().
+		WithPickup().
 		WithStores(
 			func(msq *ent.MerchantStoreQuery) {
 				msq.Select(merchantstore.FieldID, merchantstore.FieldName)
 			},
 		).
-		WithLogistic(
-			func(lg *ent.LogisticQuery) {
-				lg.Select(
-					logistic.FieldID, logistic.FieldTask,
-				).WithStore(
-					func(msq *ent.MerchantStoreQuery) {
-						msq.Select(merchantstore.FieldID, merchantstore.FieldName)
-					},
-				)
-			},
-		).
+		WithLogistic().
 		Only(ctx)
 	if err != nil {
 		return nil, err
@@ -177,12 +167,14 @@ func (r repository) ReadByStore(id, merchantId int) (*ent.Order, error) {
 	return result, nil
 }
 
-func (r repository) ReadByAgentStore(id, agentId int) (*ent.Order, error) {
+func (r *repository) ReadByAgentStore(id, agentId int) (*ent.Order, error) {
 	ctx := context.Background()
 	result, err := r.db.Agent.Query().Where(agent.ID(agentId)).QueryStore().
 		Select(merchantstore.FieldID, merchantstore.FieldName).
 		QueryOrders().
-		Where(order.ID(id)).
+		Where(
+			order.ID(id),
+		).
 		WithDetails(
 			func(odq *ent.OrderDetailQuery) {
 				odq.Where(
@@ -205,37 +197,25 @@ func (r repository) ReadByAgentStore(id, agentId int) (*ent.Order, error) {
 					func(pq *ent.ProductQuery) {
 						pq.Select(
 							product.FieldID, product.FieldName, product.FieldUnit, product.FieldImage,
-							product.FieldWeight,
+							product.FieldWeight, product.FieldQuantity,
+						)
+						pq.WithMinor(
+							func(mq *ent.ProductCategoryMinorQuery) {
+								mq.Select(productcategoryminor.FieldCategory)
+							},
 						)
 					},
 				)
-
 			},
 		).
-		WithAddress(
-			func(aq *ent.AddressQuery) {
-				aq.Select(
-					address.FieldID, address.FieldLastName,
-					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
-					address.FieldRegion, address.FieldCountry,
-					address.FieldPhone, address.FieldOtherPhone,
-				)
-			},
-		).
-		WithPickup(
-			func(pq *ent.PickupStationQuery) {
-				pq.Select(
-					pickupstation.FieldID, pickupstation.FieldName, pickupstation.FieldAddress,
-					pickupstation.FieldCity,
-					pickupstation.FieldRegion,
-				)
-			},
-		).
+		WithAddress().
+		WithPickup().
 		WithStores(
 			func(msq *ent.MerchantStoreQuery) {
 				msq.Select(merchantstore.FieldID, merchantstore.FieldName)
 			},
 		).
+		WithLogistic().
 		Only(ctx)
 	if err != nil {
 		return nil, err
@@ -243,7 +223,7 @@ func (r repository) ReadByAgentStore(id, agentId int) (*ent.Order, error) {
 	return result, nil
 }
 
-func (r repository) ReadByStoreOrderDetail(orderId int) ([]*ent.OrderDetail, error) {
+func (r *repository) ReadByStoreOrderDetail(orderId int) ([]*ent.OrderDetail, error) {
 	result, err := r.db.Order.Query().
 		Where(order.ID(orderId)).QueryDetails().Where(
 		orderdetail.HasStore(),
@@ -270,7 +250,6 @@ func (r repository) ReadByStoreOrderDetail(orderId int) ([]*ent.OrderDetail, err
 			},
 		).
 		All(context.Background())
-
 	if err != nil {
 		return nil, err
 	}
@@ -278,79 +257,129 @@ func (r repository) ReadByStoreOrderDetail(orderId int) ([]*ent.OrderDetail, err
 	return result, nil
 }
 
-func (r repository) Insert(res *models.OrderPayload) (*ent.Order, error) {
+func (r *repository) Insert(res *models.OrderPayload, params ...int) (*ent.Order, error) {
 	switch res.Metadata.UserType {
 	case "retailer", "supplier":
 		return r.insertMerchantOrder(res)
 	case "business", "individual":
-		return r.insertCustomerOrder(res)
+		return r.insertCustomerOrder(res, params...)
 	case "agent":
 		return r.insertAgentOrder(res)
 	default:
 		return nil, nil
 	}
 }
+func (r *repository) SaveOrderUpdate(id int, res *models.OrderPayload) (*ent.Order, error) {
+	ctx := context.Background()
+	detailIds, err := r.db.Order.Query().Where(order.ID(id)).QueryDetails().IDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	_, deleteErr := r.db.OrderDetail.Delete().Where(orderdetail.IDIn(detailIds...)).Exec(ctx)
+	if deleteErr != nil {
+		return nil, deleteErr
+	}
+	stores := r.getNewStores(res.Metadata.Products)
+	if res.Metadata.Address != 0 {
+		o, oErr := r.db.Order.UpdateOneID(id).
+			SetCustomerID(res.Metadata.User).
+			SetAddressID(res.Metadata.Address).
+			AddStoreIDs(stores...).
+			SetAmount(res.Amount / 100).
+			SetDeliveryFee(res.Metadata.DeliveryFee).
+			SetReference(res.Reference).
+			SetChannel(res.Channel).
+			SetCurrency(res.Currency).
+			SetPaidAt(res.PaidAt).
+			SetOrderNumber(res.Metadata.OrderNumber).
+			SetDeliveryMethod(order.DeliveryMethod(res.Metadata.DeliveryMethod)).
+			SetPaymentMethod(order.PaymentMethod(res.Metadata.PaymentMethod)).
+			Save(ctx)
+		if oErr != nil {
+			return nil, oErr
+		}
+		if err := r.insertOrderDetails(res.Metadata, o); err != nil {
+			return nil, err
+		}
+		return o, nil
+	}
+	if res.Metadata.Pickup != 0 {
+		o, oErr := r.db.Order.UpdateOneID(id).
+			SetCustomerID(res.Metadata.User).
+			SetPickupID(res.Metadata.Pickup).
+			AddStoreIDs(stores...).
+			SetAmount(res.Amount / 100).
+			SetDeliveryFee(res.Metadata.DeliveryFee).
+			SetReference(res.Reference).
+			SetChannel(res.Channel).
+			SetCurrency(res.Currency).
+			SetPaidAt(res.PaidAt).
+			SetOrderNumber(res.Metadata.OrderNumber).
+			SetDeliveryMethod(order.DeliveryMethod(res.Metadata.DeliveryMethod)).
+			SetPaymentMethod(order.PaymentMethod(res.Metadata.PaymentMethod)).
+			Save(ctx)
+		if oErr != nil {
+			return nil, oErr
+		}
+		if err := r.insertOrderDetails(res.Metadata, o); err != nil {
+			return nil, err
+		}
+		return o, nil
+	}
 
-func (r repository) Read(id int) (*ent.Order, error) {
-
+	return nil, nil
+}
+func (r *repository) Read(id int) (*ent.Order, error) {
 	result, err := r.db.Order.Query().
 		Where(order.ID(id)).
 		WithDetails(
 			func(odq *ent.OrderDetailQuery) {
 				odq.WithStore(
 					func(msq *ent.MerchantStoreQuery) {
-						msq.Select(merchantstore.FieldID, merchantstore.FieldName)
+						msq.Select(merchantstore.FieldID, merchantstore.FieldName, merchantstore.FieldCoordinate)
 					},
 				)
 				odq.WithProduct(
 					func(pq *ent.ProductQuery) {
 						pq.Select(
 							product.FieldID, product.FieldName, product.FieldUnit, product.FieldImage,
-							product.FieldWeight,
+							product.FieldWeight, product.FieldQuantity,
+						)
+						pq.WithMinor(
+							func(mq *ent.ProductCategoryMinorQuery) {
+								mq.Select(productcategoryminor.FieldCategory)
+							},
 						)
 					},
 				)
 			},
 		).
-		WithAddress(
-			func(aq *ent.AddressQuery) {
-				aq.Select(
-					address.FieldID, address.FieldLastName, address.FieldOtherName,
-					address.FieldCity, address.FieldStreetName, address.FieldStreetNumber, address.FieldDistrict,
-					address.FieldRegion, address.FieldCountry,
-					address.FieldPhone, address.FieldOtherPhone,
-				)
+		WithCustomer(
+			func(cq *ent.CustomerQuery) {
+				cq.Select(customer.FieldID)
 			},
 		).
-		WithPickup(
-			func(pq *ent.PickupStationQuery) {
-				pq.Select(
-					pickupstation.FieldID, pickupstation.FieldName, pickupstation.FieldAddress,
-					pickupstation.FieldCity,
-					pickupstation.FieldRegion,
-				)
+		WithAgent(
+			func(aq *ent.AgentQuery) {
+				aq.Select(agent.FieldID)
 			},
 		).
-		WithLogistic(
-			func(lg *ent.LogisticQuery) {
-				lg.Select(
-					logistic.FieldID, logistic.FieldTask,
-				).WithStore(
-					func(msq *ent.MerchantStoreQuery) {
-						msq.Select(merchantstore.FieldID, merchantstore.FieldName)
-					},
-				)
+		WithMerchant(
+			func(mq *ent.MerchantQuery) {
+				mq.Select(merchant.FieldID)
 			},
 		).
+		WithAddress().
+		WithPickup().
+		WithLogistic().
 		Only(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
-
 }
 
-func (r repository) ReadAll() ([]*ent.Order, error) {
+func (r *repository) ReadAll() ([]*ent.Order, error) {
 	ctx := context.Background()
 	results, err := r.db.Order.Query().
 		Order(ent.Desc(order.FieldCreatedAt)).
@@ -363,25 +392,23 @@ func (r repository) ReadAll() ([]*ent.Order, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(results)
 	return results, nil
 }
 
-func (r repository) Update(order *services.PaystackResponse) (*ent.Order, error) {
+func (r *repository) Update(order *services.PaystackResponse) (*ent.Order, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (r repository) Delete(id string) error {
+func (r *repository) Delete(id string) error {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (r repository) UpdateOrderDetailStatus(requests map[string]*gabs.Container) (*ent.Order, error) {
+func (r *repository) UpdateOrderDetailStatus(requests map[string]*gabs.Container) (*ent.Order, error) {
 	ctx := context.Background()
 	wg := sync.WaitGroup{}
 	statuses, _ := requests["status"].ChildrenMap()
-
 	for key, val := range statuses {
 		wg.Add(1)
 		id, _ := strconv.Atoi(key)
@@ -411,21 +438,31 @@ func (r repository) UpdateOrderDetailStatus(requests map[string]*gabs.Container)
 		Where(order.ID(oId)).QueryDetails().
 		Select(orderdetail.FieldStatus).
 		All(ctx)
-
 	if err != nil {
 		return nil, err
 	}
 	_ = r.db.Order.UpdateOneID(oId).SetStatus(r.checkOrderStatus(results)).SaveX(ctx)
+	if strings.Compare(requests["userType"].Data().(string), "asinyo") == 0 {
+		return r.Read(oId)
+	}
 	if strings.Compare(requests["userType"].Data().(string), "agent") == 0 {
 		return r.ReadByAgentStore(oId, mId)
 	}
 	return r.ReadByStore(oId, mId)
 }
 
-func (r repository) ReadOrderStoreMerchants(orderId int) (*ent.Order, error) {
+func (r *repository) UpdateOrderApprovalStatus(orderId int, status string) (*ent.Order, error) {
+	_, err := r.db.Order.UpdateOneID(orderId).SetCustomerApproval(order.CustomerApproval(status)).Save(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return r.Read(orderId)
+}
+func (r *repository) ReadOrderStoreMerchants(orderId int) (*ent.Order, error) {
 	result, err := r.db.Order.Query().Where(order.ID(orderId)).WithStores(
 		func(msq *ent.MerchantStoreQuery) {
 			msq.WithMerchant()
+			msq.WithAgent()
 		},
 	).
 		Only(context.Background())
@@ -435,7 +472,7 @@ func (r repository) ReadOrderStoreMerchants(orderId int) (*ent.Order, error) {
 	return result, nil
 }
 
-func (r repository) checkOrderStatus(data []*ent.OrderDetail) order.Status {
+func (r *repository) checkOrderStatus(data []*ent.OrderDetail) order.Status {
 	var status order.Status
 
 	delivered := lo.CountBy[*ent.OrderDetail](
@@ -466,7 +503,7 @@ func (r repository) checkOrderStatus(data []*ent.OrderDetail) order.Status {
 	return status
 }
 
-func (r repository) insertMerchantOrder(res *models.OrderPayload) (*ent.Order, error) {
+func (r *repository) insertMerchantOrder(res *models.OrderPayload) (*ent.Order, error) {
 	ctx := context.Background()
 	c := r.db.Merchant.Query().Where(merchant.ID(res.Metadata.User)).OnlyX(ctx)
 	stores := r.getNewStores(res.Metadata.Products)
@@ -475,7 +512,7 @@ func (r repository) insertMerchantOrder(res *models.OrderPayload) (*ent.Order, e
 		o, oErr := r.db.Order.Create().
 			SetMerchant(c).
 			SetAddress(addr).
-			AddStores(stores...).
+			AddStoreIDs(stores...).
 			SetAmount(res.Amount / 100).
 			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
@@ -500,7 +537,7 @@ func (r repository) insertMerchantOrder(res *models.OrderPayload) (*ent.Order, e
 		o, oErr := r.db.Order.Create().
 			SetMerchant(c).
 			SetPickup(psd).
-			AddStores(stores...).
+			AddStoreIDs(stores...).
 			SetAmount(res.Amount / 100).
 			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
@@ -522,18 +559,79 @@ func (r repository) insertMerchantOrder(res *models.OrderPayload) (*ent.Order, e
 	}
 
 	return nil, nil
-
 }
-func (r repository) insertCustomerOrder(res *models.OrderPayload) (*ent.Order, error) {
+
+func (r *repository) insertCustomerOrder(res *models.OrderPayload, params ...int) (*ent.Order, error) {
 	ctx := context.Background()
-	c := r.db.Customer.Query().Where(customer.ID(res.Metadata.User)).OnlyX(ctx)
 	stores := r.getNewStores(res.Metadata.Products)
+	if params != nil {
+		if res.Metadata.Address != 0 {
+			o, oErr := r.db.Order.Create().
+				SetCustomerID(res.Metadata.User).
+				SetAddressID(res.Metadata.Address).
+				AddStoreIDs(stores...).
+				SetPurchaseRequestID(params[0]).
+				SetCustomerApproval(order.CustomerApprovalPending).
+				SetAmount(res.Amount / 100).
+				SetDeliveryFee(res.Metadata.DeliveryFee).
+				SetReference(res.Reference).
+				SetChannel(res.Channel).
+				SetCurrency(res.Currency).
+				SetPaidAt(res.PaidAt).
+				SetOrderNumber(res.Metadata.OrderNumber).
+				SetDeliveryMethod(order.DeliveryMethod(res.Metadata.DeliveryMethod)).
+				SetPaymentMethod(order.PaymentMethod(res.Metadata.PaymentMethod)).
+				SetStatus("pending").
+				Save(ctx)
+			if oErr != nil {
+				return nil, oErr
+			}
+			if err := r.insertOrderDetails(res.Metadata, o); err != nil {
+				return nil, err
+			}
+			result, err := r.db.Order.Query().Where(order.ID(o.ID)).WithCustomer().Only(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return result, nil
+		}
+		if res.Metadata.Pickup != 0 {
+			o, oErr := r.db.Order.Create().
+				SetCustomerID(res.Metadata.User).
+				SetPickupID(res.Metadata.Pickup).
+				AddStoreIDs(stores...).
+				SetPurchaseRequestID(params[0]).
+				SetCustomerApproval(order.CustomerApprovalPending).
+				SetAmount(res.Amount / 100).
+				SetDeliveryFee(res.Metadata.DeliveryFee).
+				SetReference(res.Reference).
+				SetChannel(res.Channel).
+				SetCurrency(res.Currency).
+				SetPaidAt(res.PaidAt).
+				SetOrderNumber(res.Metadata.OrderNumber).
+				SetDeliveryMethod(order.DeliveryMethod(res.Metadata.DeliveryMethod)).
+				SetPaymentMethod(order.PaymentMethod(res.Metadata.PaymentMethod)).
+				SetStatus("pending").
+				Save(ctx)
+			if oErr != nil {
+				return nil, oErr
+			}
+			if err := r.insertOrderDetails(res.Metadata, o); err != nil {
+				return nil, err
+			}
+			result, err := r.db.Order.Query().Where(order.ID(o.ID)).WithCustomer().Only(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return result, nil
+		}
+		return nil, nil
+	}
 	if res.Metadata.Address != 0 {
-		addr := r.db.Address.Query().Where(address.ID(res.Metadata.Address)).OnlyX(ctx)
 		o, oErr := r.db.Order.Create().
-			SetCustomer(c).
-			SetAddress(addr).
-			AddStores(stores...).
+			SetCustomerID(res.Metadata.User).
+			SetAddressID(res.Metadata.Address).
+			AddStoreIDs(stores...).
 			SetAmount(res.Amount / 100).
 			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
@@ -551,14 +649,17 @@ func (r repository) insertCustomerOrder(res *models.OrderPayload) (*ent.Order, e
 		if err := r.insertOrderDetails(res.Metadata, o); err != nil {
 			return nil, err
 		}
-		return o, nil
+		result, err := r.db.Order.Query().Where(order.ID(o.ID)).WithCustomer().Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
 	}
 	if res.Metadata.Pickup != 0 {
-		psd := r.db.PickupStation.Query().Where(pickupstation.ID(res.Metadata.Pickup)).OnlyX(ctx)
 		o, oErr := r.db.Order.Create().
-			SetCustomer(c).
-			SetPickup(psd).
-			AddStores(stores...).
+			SetCustomerID(res.Metadata.User).
+			SetPickupID(res.Metadata.Pickup).
+			AddStoreIDs(stores...).
 			SetAmount(res.Amount / 100).
 			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
@@ -576,13 +677,17 @@ func (r repository) insertCustomerOrder(res *models.OrderPayload) (*ent.Order, e
 		if err := r.insertOrderDetails(res.Metadata, o); err != nil {
 			return nil, err
 		}
-		return o, nil
+		result, err := r.db.Order.Query().Where(order.ID(o.ID)).WithCustomer().Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
 	}
 
 	return nil, nil
-
 }
-func (r repository) insertAgentOrder(res *models.OrderPayload) (*ent.Order, error) {
+
+func (r *repository) insertAgentOrder(res *models.OrderPayload) (*ent.Order, error) {
 	ctx := context.Background()
 	c := r.db.Agent.Query().Where(agent.ID(res.Metadata.User)).OnlyX(ctx)
 	stores := r.getNewStores(res.Metadata.Products)
@@ -591,7 +696,7 @@ func (r repository) insertAgentOrder(res *models.OrderPayload) (*ent.Order, erro
 		o, oErr := r.db.Order.Create().
 			SetAgent(c).
 			SetAddress(addr).
-			AddStores(stores...).
+			AddStoreIDs(stores...).
 			SetAmount(res.Amount / 100).
 			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
@@ -616,7 +721,7 @@ func (r repository) insertAgentOrder(res *models.OrderPayload) (*ent.Order, erro
 		o, oErr := r.db.Order.Create().
 			SetAgent(c).
 			SetPickup(psd).
-			AddStores(stores...).
+			AddStoreIDs(stores...).
 			SetAmount(res.Amount / 100).
 			SetDeliveryFee(res.Metadata.DeliveryFee).
 			SetReference(res.Reference).
@@ -638,10 +743,9 @@ func (r repository) insertAgentOrder(res *models.OrderPayload) (*ent.Order, erro
 	}
 
 	return nil, nil
-
 }
 
-func (r repository) calculateAmount(product *services.ProductDetails) float64 {
+func (r *repository) calculateAmount(product *services.ProductDetails) float64 {
 	var amount float64
 	if product.PromoPrice > 0 {
 		amount = product.PromoPrice * float64(product.Quantity)
@@ -651,7 +755,7 @@ func (r repository) calculateAmount(product *services.ProductDetails) float64 {
 	return amount
 }
 
-func (r repository) readCustomerOrders(id int) ([]*ent.Order, error) {
+func (r *repository) readCustomerOrders(id int) ([]*ent.Order, error) {
 	results, err := r.db.Order.Query().
 		Where(order.HasCustomerWith(customer.ID(id))).
 		Order(ent.Desc(order.FieldCreatedAt)).
@@ -661,7 +765,8 @@ func (r repository) readCustomerOrders(id int) ([]*ent.Order, error) {
 	}
 	return results, nil
 }
-func (r repository) readAgentOrders(id int) ([]*ent.Order, error) {
+
+func (r *repository) readAgentOrders(id int) ([]*ent.Order, error) {
 	results, err := r.db.Order.Query().
 		Where(order.HasAgentWith(agent.ID(id))).
 		Order(ent.Desc(order.FieldCreatedAt)).
@@ -671,7 +776,8 @@ func (r repository) readAgentOrders(id int) ([]*ent.Order, error) {
 	}
 	return results, nil
 }
-func (r repository) readMerchantOrders(id int) ([]*ent.Order, error) {
+
+func (r *repository) readMerchantOrders(id int) ([]*ent.Order, error) {
 	results, err := r.db.Order.Query().
 		Where(order.HasMerchantWith(merchant.ID(id))).
 		Order(ent.Desc(order.FieldCreatedAt)).
@@ -682,7 +788,7 @@ func (r repository) readMerchantOrders(id int) ([]*ent.Order, error) {
 	return results, nil
 }
 
-func (r repository) insertOrderDetails(metadata *models.OrderPayloadMetadata, o *ent.Order) error {
+func (r *repository) insertOrderDetails(metadata *models.OrderPayloadMetadata, o *ent.Order) error {
 	ctx := context.Background()
 	bulk := make([]*ent.OrderDetailCreate, len(metadata.Products))
 	wg := sync.WaitGroup{}
@@ -714,19 +820,13 @@ func (r repository) insertOrderDetails(metadata *models.OrderPayloadMetadata, o 
 	return nil
 }
 
-func (r repository) getNewStores(products []*services.ProductDetails) []*ent.MerchantStore {
-	stores := map[string]interface{}{
-		"ids":       []int{},
-		"instances": []*ent.MerchantStore{},
-	}
+func (r *repository) getNewStores(products []*services.ProductDetails) []int {
+	stores := make([]int, 0)
 	for _, p := range products {
-		if !lo.Contains(stores["ids"].([]int), p.Store) {
-			stores["ids"] = append(stores["ids"].([]int), p.Store)
-			stores["instances"] = append(
-				stores["instances"].([]*ent.MerchantStore),
-				r.db.MerchantStore.Query().Where(merchantstore.ID(p.Store)).OnlyX(context.Background()),
-			)
+		if lo.Contains(stores, p.Store) {
+			continue
 		}
+		stores = append(stores, p.Store)
 	}
-	return stores["instances"].([]*ent.MerchantStore)
+	return stores
 }

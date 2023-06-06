@@ -161,50 +161,8 @@ func (odc *OrderDetailCreate) Mutation() *OrderDetailMutation {
 
 // Save creates the OrderDetail in the database.
 func (odc *OrderDetailCreate) Save(ctx context.Context) (*OrderDetail, error) {
-	var (
-		err  error
-		node *OrderDetail
-	)
 	odc.defaults()
-	if len(odc.hooks) == 0 {
-		if err = odc.check(); err != nil {
-			return nil, err
-		}
-		node, err = odc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*OrderDetailMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = odc.check(); err != nil {
-				return nil, err
-			}
-			odc.mutation = mutation
-			if node, err = odc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(odc.hooks) - 1; i >= 0; i-- {
-			if odc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = odc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, odc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*OrderDetail)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from OrderDetailMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, odc.sqlSave, odc.mutation, odc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -302,6 +260,9 @@ func (odc *OrderDetailCreate) check() error {
 }
 
 func (odc *OrderDetailCreate) sqlSave(ctx context.Context) (*OrderDetail, error) {
+	if err := odc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := odc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, odc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -311,74 +272,42 @@ func (odc *OrderDetailCreate) sqlSave(ctx context.Context) (*OrderDetail, error)
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	odc.mutation.id = &_node.ID
+	odc.mutation.done = true
 	return _node, nil
 }
 
 func (odc *OrderDetailCreate) createSpec() (*OrderDetail, *sqlgraph.CreateSpec) {
 	var (
 		_node = &OrderDetail{config: odc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: orderdetail.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: orderdetail.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(orderdetail.Table, sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt))
 	)
 	if value, ok := odc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: orderdetail.FieldCreatedAt,
-		})
+		_spec.SetField(orderdetail.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := odc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: orderdetail.FieldUpdatedAt,
-		})
+		_spec.SetField(orderdetail.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := odc.mutation.Price(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldPrice,
-		})
+		_spec.SetField(orderdetail.FieldPrice, field.TypeFloat64, value)
 		_node.Price = value
 	}
 	if value, ok := odc.mutation.PromoPrice(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldPromoPrice,
-		})
+		_spec.SetField(orderdetail.FieldPromoPrice, field.TypeFloat64, value)
 		_node.PromoPrice = value
 	}
 	if value, ok := odc.mutation.Amount(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldAmount,
-		})
+		_spec.SetField(orderdetail.FieldAmount, field.TypeFloat64, value)
 		_node.Amount = value
 	}
 	if value, ok := odc.mutation.Quantity(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: orderdetail.FieldQuantity,
-		})
+		_spec.SetField(orderdetail.FieldQuantity, field.TypeInt, value)
 		_node.Quantity = value
 	}
 	if value, ok := odc.mutation.Status(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: orderdetail.FieldStatus,
-		})
+		_spec.SetField(orderdetail.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
 	}
 	if nodes := odc.mutation.OrderIDs(); len(nodes) > 0 {
@@ -389,10 +318,7 @@ func (odc *OrderDetailCreate) createSpec() (*OrderDetail, *sqlgraph.CreateSpec) 
 			Columns: []string{orderdetail.OrderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -409,10 +335,7 @@ func (odc *OrderDetailCreate) createSpec() (*OrderDetail, *sqlgraph.CreateSpec) 
 			Columns: []string{orderdetail.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -429,10 +352,7 @@ func (odc *OrderDetailCreate) createSpec() (*OrderDetail, *sqlgraph.CreateSpec) 
 			Columns: []string{orderdetail.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -468,8 +388,8 @@ func (odcb *OrderDetailCreateBulk) Save(ctx context.Context) ([]*OrderDetail, er
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, odcb.builders[i+1].mutation)
 				} else {

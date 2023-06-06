@@ -16,6 +16,7 @@ import (
 	"github.com/SeyramWood/ent/agentrequest"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/notification"
 	"github.com/SeyramWood/ent/order"
 )
 
@@ -279,6 +280,21 @@ func (ac *AgentCreate) AddRequests(a ...*AgentRequest) *AgentCreate {
 	return ac.AddRequestIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (ac *AgentCreate) AddNotificationIDs(ids ...int) *AgentCreate {
+	ac.mutation.AddNotificationIDs(ids...)
+	return ac
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (ac *AgentCreate) AddNotifications(n ...*Notification) *AgentCreate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return ac.AddNotificationIDs(ids...)
+}
+
 // Mutation returns the AgentMutation object of the builder.
 func (ac *AgentCreate) Mutation() *AgentMutation {
 	return ac.mutation
@@ -286,50 +302,8 @@ func (ac *AgentCreate) Mutation() *AgentMutation {
 
 // Save creates the Agent in the database.
 func (ac *AgentCreate) Save(ctx context.Context) (*Agent, error) {
-	var (
-		err  error
-		node *Agent
-	)
 	ac.defaults()
-	if len(ac.hooks) == 0 {
-		if err = ac.check(); err != nil {
-			return nil, err
-		}
-		node, err = ac.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AgentMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = ac.check(); err != nil {
-				return nil, err
-			}
-			ac.mutation = mutation
-			if node, err = ac.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(ac.hooks) - 1; i >= 0; i-- {
-			if ac.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = ac.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, ac.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Agent)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AgentMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, ac.sqlSave, ac.mutation, ac.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -454,6 +428,9 @@ func (ac *AgentCreate) check() error {
 }
 
 func (ac *AgentCreate) sqlSave(ctx context.Context) (*Agent, error) {
+	if err := ac.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := ac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, ac.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -463,170 +440,90 @@ func (ac *AgentCreate) sqlSave(ctx context.Context) (*Agent, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	ac.mutation.id = &_node.ID
+	ac.mutation.done = true
 	return _node, nil
 }
 
 func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Agent{config: ac.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: agent.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: agent.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(agent.Table, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt))
 	)
 	if value, ok := ac.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: agent.FieldCreatedAt,
-		})
+		_spec.SetField(agent.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := ac.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: agent.FieldUpdatedAt,
-		})
+		_spec.SetField(agent.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := ac.mutation.Username(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldUsername,
-		})
+		_spec.SetField(agent.FieldUsername, field.TypeString, value)
 		_node.Username = value
 	}
 	if value, ok := ac.mutation.Password(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: agent.FieldPassword,
-		})
+		_spec.SetField(agent.FieldPassword, field.TypeBytes, value)
 		_node.Password = value
 	}
 	if value, ok := ac.mutation.GhanaCard(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldGhanaCard,
-		})
+		_spec.SetField(agent.FieldGhanaCard, field.TypeString, value)
 		_node.GhanaCard = value
 	}
 	if value, ok := ac.mutation.LastName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldLastName,
-		})
+		_spec.SetField(agent.FieldLastName, field.TypeString, value)
 		_node.LastName = value
 	}
 	if value, ok := ac.mutation.OtherName(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldOtherName,
-		})
+		_spec.SetField(agent.FieldOtherName, field.TypeString, value)
 		_node.OtherName = value
 	}
 	if value, ok := ac.mutation.Phone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldPhone,
-		})
+		_spec.SetField(agent.FieldPhone, field.TypeString, value)
 		_node.Phone = value
 	}
 	if value, ok := ac.mutation.OtherPhone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldOtherPhone,
-		})
-		_node.OtherPhone = &value
+		_spec.SetField(agent.FieldOtherPhone, field.TypeString, value)
+		_node.OtherPhone = value
 	}
 	if value, ok := ac.mutation.Address(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldAddress,
-		})
+		_spec.SetField(agent.FieldAddress, field.TypeString, value)
 		_node.Address = value
 	}
 	if value, ok := ac.mutation.DigitalAddress(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldDigitalAddress,
-		})
+		_spec.SetField(agent.FieldDigitalAddress, field.TypeString, value)
 		_node.DigitalAddress = value
 	}
 	if value, ok := ac.mutation.Region(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldRegion,
-		})
-		_node.Region = &value
+		_spec.SetField(agent.FieldRegion, field.TypeString, value)
+		_node.Region = value
 	}
 	if value, ok := ac.mutation.District(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldDistrict,
-		})
-		_node.District = &value
+		_spec.SetField(agent.FieldDistrict, field.TypeString, value)
+		_node.District = value
 	}
 	if value, ok := ac.mutation.City(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldCity,
-		})
-		_node.City = &value
+		_spec.SetField(agent.FieldCity, field.TypeString, value)
+		_node.City = value
 	}
 	if value, ok := ac.mutation.DefaultAccount(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: agent.FieldDefaultAccount,
-		})
+		_spec.SetField(agent.FieldDefaultAccount, field.TypeEnum, value)
 		_node.DefaultAccount = value
 	}
 	if value, ok := ac.mutation.BankAccount(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: agent.FieldBankAccount,
-		})
+		_spec.SetField(agent.FieldBankAccount, field.TypeJSON, value)
 		_node.BankAccount = value
 	}
 	if value, ok := ac.mutation.MomoAccount(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: agent.FieldMomoAccount,
-		})
+		_spec.SetField(agent.FieldMomoAccount, field.TypeJSON, value)
 		_node.MomoAccount = value
 	}
 	if value, ok := ac.mutation.Verified(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: agent.FieldVerified,
-		})
+		_spec.SetField(agent.FieldVerified, field.TypeBool, value)
 		_node.Verified = value
 	}
 	if value, ok := ac.mutation.Compliance(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: agent.FieldCompliance,
-		})
+		_spec.SetField(agent.FieldCompliance, field.TypeJSON, value)
 		_node.Compliance = value
 	}
 	if nodes := ac.mutation.AddressesIDs(); len(nodes) > 0 {
@@ -637,10 +534,7 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 			Columns: []string{agent.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -656,10 +550,7 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 			Columns: []string{agent.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -675,10 +566,7 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 			Columns: []string{agent.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -694,10 +582,7 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 			Columns: []string{agent.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -713,10 +598,23 @@ func (ac *AgentCreate) createSpec() (*Agent, *sqlgraph.CreateSpec) {
 			Columns: []string{agent.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   agent.NotificationsTable,
+			Columns: agent.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -751,8 +649,8 @@ func (acb *AgentCreateBulk) Save(ctx context.Context) ([]*Agent, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, acb.builders[i+1].mutation)
 				} else {

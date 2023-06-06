@@ -1,0 +1,30 @@
+{{define "body"}}
+    <!doctype html>
+    <html lang="en">
+
+    <head>
+        <meta name="viewport" content="width=device-width"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <title></title>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Handlee&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100&display=swap");
+            html {
+                font-family: "Poppins", sans-serif;
+            }
+        </style>
+    </head>
+
+    <body>
+
+    <main>
+        <section style="width: 60%; margin: 4rem auto;">
+            <h2>New Order Request!</h2>
+            <p  style="margin: 2rem 0;">{{.message.Message}}</p>
+            <a href="{{.message.URL}}" style="background-color: #284734; color:white; padding:1rem 2rem; border-radius: 5px; text-decoration: none">Sign in to Asinyo</a>
+        </section>
+    </main>
+
+    </body>
+
+    </html>
+{{end}}

@@ -5,6 +5,9 @@ package merchantstore
 import (
 	"fmt"
 	"time"
+
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -46,8 +49,6 @@ const (
 	EdgeMerchant = "merchant"
 	// EdgeAgent holds the string denoting the agent edge name in mutations.
 	EdgeAgent = "agent"
-	// EdgeLogistics holds the string denoting the logistics edge name in mutations.
-	EdgeLogistics = "logistics"
 	// EdgeRequests holds the string denoting the requests edge name in mutations.
 	EdgeRequests = "requests"
 	// EdgeOrders holds the string denoting the orders edge name in mutations.
@@ -70,13 +71,6 @@ const (
 	AgentInverseTable = "agents"
 	// AgentColumn is the table column denoting the agent relation/edge.
 	AgentColumn = "agent_store"
-	// LogisticsTable is the table that holds the logistics relation/edge.
-	LogisticsTable = "logistics"
-	// LogisticsInverseTable is the table name for the Logistic entity.
-	// It exists in this package in order to avoid circular dependency with the "logistic" package.
-	LogisticsInverseTable = "logistics"
-	// LogisticsColumn is the table column denoting the logistics relation/edge.
-	LogisticsColumn = "merchant_store_logistics"
 	// RequestsTable is the table that holds the requests relation/edge.
 	RequestsTable = "agent_requests"
 	// RequestsInverseTable is the table name for the AgentRequest entity.
@@ -190,4 +184,153 @@ func DefaultAccountValidator(da DefaultAccount) error {
 	default:
 		return fmt.Errorf("merchantstore: invalid enum value for default_account field: %q", da)
 	}
+}
+
+// OrderOption defines the ordering options for the MerchantStore queries.
+type OrderOption func(*sql.Selector)
+
+// ByID orders the results by the id field.
+func ByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByAbout orders the results by the about field.
+func ByAbout(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAbout, opts...).ToFunc()
+}
+
+// BySlogan orders the results by the slogan field.
+func BySlogan(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSlogan, opts...).ToFunc()
+}
+
+// ByDescription orders the results by the description field.
+func ByDescription(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDescription, opts...).ToFunc()
+}
+
+// ByLogo orders the results by the logo field.
+func ByLogo(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLogo, opts...).ToFunc()
+}
+
+// ByDefaultAccount orders the results by the default_account field.
+func ByDefaultAccount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDefaultAccount, opts...).ToFunc()
+}
+
+// ByMerchantType orders the results by the merchant_type field.
+func ByMerchantType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMerchantType, opts...).ToFunc()
+}
+
+// ByPermitAgent orders the results by the permit_agent field.
+func ByPermitAgent(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPermitAgent, opts...).ToFunc()
+}
+
+// ByMerchantField orders the results by merchant field.
+func ByMerchantField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMerchantStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByAgentField orders the results by agent field.
+func ByAgentField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAgentStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByRequestsCount orders the results by requests count.
+func ByRequestsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRequestsStep(), opts...)
+	}
+}
+
+// ByRequests orders the results by requests terms.
+func ByRequests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRequestsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByOrdersCount orders the results by orders count.
+func ByOrdersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOrdersStep(), opts...)
+	}
+}
+
+// ByOrders orders the results by orders terms.
+func ByOrders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOrdersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByOrderDetailsCount orders the results by order_details count.
+func ByOrderDetailsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOrderDetailsStep(), opts...)
+	}
+}
+
+// ByOrderDetails orders the results by order_details terms.
+func ByOrderDetails(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOrderDetailsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newMerchantStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MerchantInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, true, MerchantTable, MerchantColumn),
+	)
+}
+func newAgentStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AgentInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, AgentTable, AgentColumn),
+	)
+}
+func newRequestsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RequestsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RequestsTable, RequestsColumn),
+	)
+}
+func newOrdersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OrdersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, OrdersTable, OrdersPrimaryKey...),
+	)
+}
+func newOrderDetailsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OrderDetailsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OrderDetailsTable, OrderDetailsColumn),
+	)
 }

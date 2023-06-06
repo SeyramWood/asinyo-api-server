@@ -193,41 +193,8 @@ func (odu *OrderDetailUpdate) ClearStore() *OrderDetailUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (odu *OrderDetailUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	odu.defaults()
-	if len(odu.hooks) == 0 {
-		if err = odu.check(); err != nil {
-			return 0, err
-		}
-		affected, err = odu.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*OrderDetailMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = odu.check(); err != nil {
-				return 0, err
-			}
-			odu.mutation = mutation
-			affected, err = odu.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(odu.hooks) - 1; i >= 0; i-- {
-			if odu.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = odu.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, odu.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, odu.sqlSave, odu.mutation, odu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -280,16 +247,10 @@ func (odu *OrderDetailUpdate) check() error {
 }
 
 func (odu *OrderDetailUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   orderdetail.Table,
-			Columns: orderdetail.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: orderdetail.FieldID,
-			},
-		},
+	if err := odu.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(orderdetail.Table, orderdetail.Columns, sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt))
 	if ps := odu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -298,74 +259,34 @@ func (odu *OrderDetailUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := odu.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: orderdetail.FieldUpdatedAt,
-		})
+		_spec.SetField(orderdetail.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := odu.mutation.Price(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldPrice,
-		})
+		_spec.SetField(orderdetail.FieldPrice, field.TypeFloat64, value)
 	}
 	if value, ok := odu.mutation.AddedPrice(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldPrice,
-		})
+		_spec.AddField(orderdetail.FieldPrice, field.TypeFloat64, value)
 	}
 	if value, ok := odu.mutation.PromoPrice(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldPromoPrice,
-		})
+		_spec.SetField(orderdetail.FieldPromoPrice, field.TypeFloat64, value)
 	}
 	if value, ok := odu.mutation.AddedPromoPrice(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldPromoPrice,
-		})
+		_spec.AddField(orderdetail.FieldPromoPrice, field.TypeFloat64, value)
 	}
 	if value, ok := odu.mutation.Amount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldAmount,
-		})
+		_spec.SetField(orderdetail.FieldAmount, field.TypeFloat64, value)
 	}
 	if value, ok := odu.mutation.AddedAmount(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldAmount,
-		})
+		_spec.AddField(orderdetail.FieldAmount, field.TypeFloat64, value)
 	}
 	if value, ok := odu.mutation.Quantity(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: orderdetail.FieldQuantity,
-		})
+		_spec.SetField(orderdetail.FieldQuantity, field.TypeInt, value)
 	}
 	if value, ok := odu.mutation.AddedQuantity(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: orderdetail.FieldQuantity,
-		})
+		_spec.AddField(orderdetail.FieldQuantity, field.TypeInt, value)
 	}
 	if value, ok := odu.mutation.Status(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: orderdetail.FieldStatus,
-		})
+		_spec.SetField(orderdetail.FieldStatus, field.TypeEnum, value)
 	}
 	if odu.mutation.OrderCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -375,10 +296,7 @@ func (odu *OrderDetailUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{orderdetail.OrderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -391,10 +309,7 @@ func (odu *OrderDetailUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{orderdetail.OrderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -410,10 +325,7 @@ func (odu *OrderDetailUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{orderdetail.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -426,10 +338,7 @@ func (odu *OrderDetailUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{orderdetail.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -445,10 +354,7 @@ func (odu *OrderDetailUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{orderdetail.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -461,10 +367,7 @@ func (odu *OrderDetailUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{orderdetail.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -480,6 +383,7 @@ func (odu *OrderDetailUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	odu.mutation.done = true
 	return n, nil
 }
 
@@ -651,6 +555,12 @@ func (oduo *OrderDetailUpdateOne) ClearStore() *OrderDetailUpdateOne {
 	return oduo
 }
 
+// Where appends a list predicates to the OrderDetailUpdate builder.
+func (oduo *OrderDetailUpdateOne) Where(ps ...predicate.OrderDetail) *OrderDetailUpdateOne {
+	oduo.mutation.Where(ps...)
+	return oduo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (oduo *OrderDetailUpdateOne) Select(field string, fields ...string) *OrderDetailUpdateOne {
@@ -660,47 +570,8 @@ func (oduo *OrderDetailUpdateOne) Select(field string, fields ...string) *OrderD
 
 // Save executes the query and returns the updated OrderDetail entity.
 func (oduo *OrderDetailUpdateOne) Save(ctx context.Context) (*OrderDetail, error) {
-	var (
-		err  error
-		node *OrderDetail
-	)
 	oduo.defaults()
-	if len(oduo.hooks) == 0 {
-		if err = oduo.check(); err != nil {
-			return nil, err
-		}
-		node, err = oduo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*OrderDetailMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = oduo.check(); err != nil {
-				return nil, err
-			}
-			oduo.mutation = mutation
-			node, err = oduo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(oduo.hooks) - 1; i >= 0; i-- {
-			if oduo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = oduo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, oduo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*OrderDetail)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from OrderDetailMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, oduo.sqlSave, oduo.mutation, oduo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -753,16 +624,10 @@ func (oduo *OrderDetailUpdateOne) check() error {
 }
 
 func (oduo *OrderDetailUpdateOne) sqlSave(ctx context.Context) (_node *OrderDetail, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   orderdetail.Table,
-			Columns: orderdetail.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: orderdetail.FieldID,
-			},
-		},
+	if err := oduo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(orderdetail.Table, orderdetail.Columns, sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt))
 	id, ok := oduo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "OrderDetail.id" for update`)}
@@ -788,74 +653,34 @@ func (oduo *OrderDetailUpdateOne) sqlSave(ctx context.Context) (_node *OrderDeta
 		}
 	}
 	if value, ok := oduo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: orderdetail.FieldUpdatedAt,
-		})
+		_spec.SetField(orderdetail.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := oduo.mutation.Price(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldPrice,
-		})
+		_spec.SetField(orderdetail.FieldPrice, field.TypeFloat64, value)
 	}
 	if value, ok := oduo.mutation.AddedPrice(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldPrice,
-		})
+		_spec.AddField(orderdetail.FieldPrice, field.TypeFloat64, value)
 	}
 	if value, ok := oduo.mutation.PromoPrice(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldPromoPrice,
-		})
+		_spec.SetField(orderdetail.FieldPromoPrice, field.TypeFloat64, value)
 	}
 	if value, ok := oduo.mutation.AddedPromoPrice(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldPromoPrice,
-		})
+		_spec.AddField(orderdetail.FieldPromoPrice, field.TypeFloat64, value)
 	}
 	if value, ok := oduo.mutation.Amount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldAmount,
-		})
+		_spec.SetField(orderdetail.FieldAmount, field.TypeFloat64, value)
 	}
 	if value, ok := oduo.mutation.AddedAmount(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: orderdetail.FieldAmount,
-		})
+		_spec.AddField(orderdetail.FieldAmount, field.TypeFloat64, value)
 	}
 	if value, ok := oduo.mutation.Quantity(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: orderdetail.FieldQuantity,
-		})
+		_spec.SetField(orderdetail.FieldQuantity, field.TypeInt, value)
 	}
 	if value, ok := oduo.mutation.AddedQuantity(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: orderdetail.FieldQuantity,
-		})
+		_spec.AddField(orderdetail.FieldQuantity, field.TypeInt, value)
 	}
 	if value, ok := oduo.mutation.Status(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: orderdetail.FieldStatus,
-		})
+		_spec.SetField(orderdetail.FieldStatus, field.TypeEnum, value)
 	}
 	if oduo.mutation.OrderCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -865,10 +690,7 @@ func (oduo *OrderDetailUpdateOne) sqlSave(ctx context.Context) (_node *OrderDeta
 			Columns: []string{orderdetail.OrderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -881,10 +703,7 @@ func (oduo *OrderDetailUpdateOne) sqlSave(ctx context.Context) (_node *OrderDeta
 			Columns: []string{orderdetail.OrderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -900,10 +719,7 @@ func (oduo *OrderDetailUpdateOne) sqlSave(ctx context.Context) (_node *OrderDeta
 			Columns: []string{orderdetail.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -916,10 +732,7 @@ func (oduo *OrderDetailUpdateOne) sqlSave(ctx context.Context) (_node *OrderDeta
 			Columns: []string{orderdetail.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -935,10 +748,7 @@ func (oduo *OrderDetailUpdateOne) sqlSave(ctx context.Context) (_node *OrderDeta
 			Columns: []string{orderdetail.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -951,10 +761,7 @@ func (oduo *OrderDetailUpdateOne) sqlSave(ctx context.Context) (_node *OrderDeta
 			Columns: []string{orderdetail.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -973,5 +780,6 @@ func (oduo *OrderDetailUpdateOne) sqlSave(ctx context.Context) (_node *OrderDeta
 		}
 		return nil, err
 	}
+	oduo.mutation.done = true
 	return _node, nil
 }

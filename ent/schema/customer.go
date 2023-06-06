@@ -37,5 +37,8 @@ func (Customer) Edges() []ent.Edge {
 		edge.To("addresses", Address.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 		edge.To("orders", Order.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
 		edge.To("favourites", Favourite.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("notifications", Notification.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.To("purchase_request", PurchaseRequest.Type).Annotations(entsql.Annotation{OnDelete: entsql.Cascade}),
+		edge.From("admin", Admin.Type).Ref("customers").Unique(),
 	}
 }

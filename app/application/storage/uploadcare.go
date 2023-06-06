@@ -93,7 +93,10 @@ func (u *uploadcare) uploadFiles(dir string, files []*multipart.FileHeader) ([]s
 }
 
 func (u *uploadcare) deleteFile(path any) error {
-	fPath := path.(string)
+	fPath, ok := path.(string)
+	if !ok {
+		return nil
+	}
 	r, _ := regexp.Compile(`^(?:https://ucarecdn.com/)([0-9a-zA-Z]{8}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{12})(?:/)$`)
 	matches := r.FindAllStringSubmatch(fPath, -1)[0]
 	fileSvc := file.NewService(u.client)

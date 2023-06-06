@@ -10,6 +10,7 @@ import (
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
+	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/application/order"
 	"github.com/SeyramWood/app/application/payment"
 	"github.com/SeyramWood/app/domain/services"
@@ -22,10 +23,10 @@ type PaystackHandler struct {
 }
 
 func NewPaystackHandler(
-	db *database.Adapter, logis gateways.LogisticService, mail gateways.EmailService,
+	db *database.Adapter, logis gateways.LogisticService, noti notification.NotificationService,
 ) *PaystackHandler {
 	service := payment.NewPaymentService(payment.NewPaymentRepo(db))
-	serv := order.NewOrderService(order.NewOrderRepo(db), logis, mail)
+	serv := order.NewOrderService(order.NewOrderRepo(db), logis, noti)
 	return &PaystackHandler{
 		service:   service,
 		orderServ: serv,

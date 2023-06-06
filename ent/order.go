@@ -8,13 +8,16 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/address"
 	"github.com/SeyramWood/ent/agent"
 	"github.com/SeyramWood/ent/customer"
+	"github.com/SeyramWood/ent/logistic"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/pickupstation"
+	"github.com/SeyramWood/ent/purchaserequest"
 )
 
 // Order is the model entity for the Order schema.
@@ -46,24 +49,30 @@ type Order struct {
 	PaymentMethod order.PaymentMethod `json:"payment_method,omitempty"`
 	// Status holds the value of the "status" field.
 	Status order.Status `json:"status,omitempty"`
+	// CustomerApproval holds the value of the "customer_approval" field.
+	CustomerApproval order.CustomerApproval `json:"customer_approval,omitempty"`
 	// StoreTasksCreated holds the value of the "store_tasks_created" field.
 	StoreTasksCreated []int `json:"store_tasks_created,omitempty"`
 	// DeliveredAt holds the value of the "delivered_at" field.
 	DeliveredAt *time.Time `json:"delivered_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OrderQuery when eager-loading is set.
-	Edges                 OrderEdges `json:"edges"`
-	address_orders        *int
-	agent_orders          *int
-	customer_orders       *int
-	merchant_orders       *int
-	pickup_station_orders *int
+	Edges                  OrderEdges `json:"edges"`
+	address_orders         *int
+	agent_orders           *int
+	customer_orders        *int
+	merchant_orders        *int
+	pickup_station_orders  *int
+	purchase_request_order *int
+	selectValues           sql.SelectValues
 }
 
 // OrderEdges holds the relations/edges for other nodes in the graph.
 type OrderEdges struct {
 	// Details holds the value of the details edge.
 	Details []*OrderDetail `json:"details,omitempty"`
+	// Logistic holds the value of the logistic edge.
+	Logistic *Logistic `json:"logistic,omitempty"`
 	// Merchant holds the value of the merchant edge.
 	Merchant *Merchant `json:"merchant,omitempty"`
 	// Agent holds the value of the agent edge.
@@ -76,11 +85,11 @@ type OrderEdges struct {
 	Pickup *PickupStation `json:"pickup,omitempty"`
 	// Stores holds the value of the stores edge.
 	Stores []*MerchantStore `json:"stores,omitempty"`
-	// Logistic holds the value of the logistic edge.
-	Logistic []*Logistic `json:"logistic,omitempty"`
+	// PurchaseRequest holds the value of the purchase_request edge.
+	PurchaseRequest *PurchaseRequest `json:"purchase_request,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [8]bool
+	loadedTypes [9]bool
 }
 
 // DetailsOrErr returns the Details value or an error if the edge
@@ -92,10 +101,23 @@ func (e OrderEdges) DetailsOrErr() ([]*OrderDetail, error) {
 	return nil, &NotLoadedError{edge: "details"}
 }
 
+// LogisticOrErr returns the Logistic value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OrderEdges) LogisticOrErr() (*Logistic, error) {
+	if e.loadedTypes[1] {
+		if e.Logistic == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: logistic.Label}
+		}
+		return e.Logistic, nil
+	}
+	return nil, &NotLoadedError{edge: "logistic"}
+}
+
 // MerchantOrErr returns the Merchant value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OrderEdges) MerchantOrErr() (*Merchant, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		if e.Merchant == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: merchant.Label}
@@ -108,7 +130,7 @@ func (e OrderEdges) MerchantOrErr() (*Merchant, error) {
 // AgentOrErr returns the Agent value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OrderEdges) AgentOrErr() (*Agent, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		if e.Agent == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: agent.Label}
@@ -121,7 +143,7 @@ func (e OrderEdges) AgentOrErr() (*Agent, error) {
 // CustomerOrErr returns the Customer value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OrderEdges) CustomerOrErr() (*Customer, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		if e.Customer == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: customer.Label}
@@ -134,7 +156,7 @@ func (e OrderEdges) CustomerOrErr() (*Customer, error) {
 // AddressOrErr returns the Address value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OrderEdges) AddressOrErr() (*Address, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		if e.Address == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: address.Label}
@@ -147,7 +169,7 @@ func (e OrderEdges) AddressOrErr() (*Address, error) {
 // PickupOrErr returns the Pickup value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OrderEdges) PickupOrErr() (*PickupStation, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[6] {
 		if e.Pickup == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: pickupstation.Label}
@@ -160,19 +182,23 @@ func (e OrderEdges) PickupOrErr() (*PickupStation, error) {
 // StoresOrErr returns the Stores value or an error if the edge
 // was not loaded in eager-loading.
 func (e OrderEdges) StoresOrErr() ([]*MerchantStore, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[7] {
 		return e.Stores, nil
 	}
 	return nil, &NotLoadedError{edge: "stores"}
 }
 
-// LogisticOrErr returns the Logistic value or an error if the edge
-// was not loaded in eager-loading.
-func (e OrderEdges) LogisticOrErr() ([]*Logistic, error) {
-	if e.loadedTypes[7] {
-		return e.Logistic, nil
+// PurchaseRequestOrErr returns the PurchaseRequest value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OrderEdges) PurchaseRequestOrErr() (*PurchaseRequest, error) {
+	if e.loadedTypes[8] {
+		if e.PurchaseRequest == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: purchaserequest.Label}
+		}
+		return e.PurchaseRequest, nil
 	}
-	return nil, &NotLoadedError{edge: "logistic"}
+	return nil, &NotLoadedError{edge: "purchase_request"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -186,7 +212,7 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case order.FieldID:
 			values[i] = new(sql.NullInt64)
-		case order.FieldOrderNumber, order.FieldCurrency, order.FieldReference, order.FieldChannel, order.FieldPaidAt, order.FieldDeliveryMethod, order.FieldPaymentMethod, order.FieldStatus:
+		case order.FieldOrderNumber, order.FieldCurrency, order.FieldReference, order.FieldChannel, order.FieldPaidAt, order.FieldDeliveryMethod, order.FieldPaymentMethod, order.FieldStatus, order.FieldCustomerApproval:
 			values[i] = new(sql.NullString)
 		case order.FieldCreatedAt, order.FieldUpdatedAt, order.FieldDeliveredAt:
 			values[i] = new(sql.NullTime)
@@ -200,8 +226,10 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case order.ForeignKeys[4]: // pickup_station_orders
 			values[i] = new(sql.NullInt64)
+		case order.ForeignKeys[5]: // purchase_request_order
+			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Order", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -296,6 +324,12 @@ func (o *Order) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				o.Status = order.Status(value.String)
 			}
+		case order.FieldCustomerApproval:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field customer_approval", values[i])
+			} else if value.Valid {
+				o.CustomerApproval = order.CustomerApproval(value.String)
+			}
 		case order.FieldStoreTasksCreated:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field store_tasks_created", values[i])
@@ -346,56 +380,76 @@ func (o *Order) assignValues(columns []string, values []any) error {
 				o.pickup_station_orders = new(int)
 				*o.pickup_station_orders = int(value.Int64)
 			}
+		case order.ForeignKeys[5]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field purchase_request_order", value)
+			} else if value.Valid {
+				o.purchase_request_order = new(int)
+				*o.purchase_request_order = int(value.Int64)
+			}
+		default:
+			o.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Order.
+// This includes values selected through modifiers, order, etc.
+func (o *Order) Value(name string) (ent.Value, error) {
+	return o.selectValues.Get(name)
+}
+
 // QueryDetails queries the "details" edge of the Order entity.
 func (o *Order) QueryDetails() *OrderDetailQuery {
-	return (&OrderClient{config: o.config}).QueryDetails(o)
-}
-
-// QueryMerchant queries the "merchant" edge of the Order entity.
-func (o *Order) QueryMerchant() *MerchantQuery {
-	return (&OrderClient{config: o.config}).QueryMerchant(o)
-}
-
-// QueryAgent queries the "agent" edge of the Order entity.
-func (o *Order) QueryAgent() *AgentQuery {
-	return (&OrderClient{config: o.config}).QueryAgent(o)
-}
-
-// QueryCustomer queries the "customer" edge of the Order entity.
-func (o *Order) QueryCustomer() *CustomerQuery {
-	return (&OrderClient{config: o.config}).QueryCustomer(o)
-}
-
-// QueryAddress queries the "address" edge of the Order entity.
-func (o *Order) QueryAddress() *AddressQuery {
-	return (&OrderClient{config: o.config}).QueryAddress(o)
-}
-
-// QueryPickup queries the "pickup" edge of the Order entity.
-func (o *Order) QueryPickup() *PickupStationQuery {
-	return (&OrderClient{config: o.config}).QueryPickup(o)
-}
-
-// QueryStores queries the "stores" edge of the Order entity.
-func (o *Order) QueryStores() *MerchantStoreQuery {
-	return (&OrderClient{config: o.config}).QueryStores(o)
+	return NewOrderClient(o.config).QueryDetails(o)
 }
 
 // QueryLogistic queries the "logistic" edge of the Order entity.
 func (o *Order) QueryLogistic() *LogisticQuery {
-	return (&OrderClient{config: o.config}).QueryLogistic(o)
+	return NewOrderClient(o.config).QueryLogistic(o)
+}
+
+// QueryMerchant queries the "merchant" edge of the Order entity.
+func (o *Order) QueryMerchant() *MerchantQuery {
+	return NewOrderClient(o.config).QueryMerchant(o)
+}
+
+// QueryAgent queries the "agent" edge of the Order entity.
+func (o *Order) QueryAgent() *AgentQuery {
+	return NewOrderClient(o.config).QueryAgent(o)
+}
+
+// QueryCustomer queries the "customer" edge of the Order entity.
+func (o *Order) QueryCustomer() *CustomerQuery {
+	return NewOrderClient(o.config).QueryCustomer(o)
+}
+
+// QueryAddress queries the "address" edge of the Order entity.
+func (o *Order) QueryAddress() *AddressQuery {
+	return NewOrderClient(o.config).QueryAddress(o)
+}
+
+// QueryPickup queries the "pickup" edge of the Order entity.
+func (o *Order) QueryPickup() *PickupStationQuery {
+	return NewOrderClient(o.config).QueryPickup(o)
+}
+
+// QueryStores queries the "stores" edge of the Order entity.
+func (o *Order) QueryStores() *MerchantStoreQuery {
+	return NewOrderClient(o.config).QueryStores(o)
+}
+
+// QueryPurchaseRequest queries the "purchase_request" edge of the Order entity.
+func (o *Order) QueryPurchaseRequest() *PurchaseRequestQuery {
+	return NewOrderClient(o.config).QueryPurchaseRequest(o)
 }
 
 // Update returns a builder for updating this Order.
 // Note that you need to call Order.Unwrap() before calling this method if this Order
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (o *Order) Update() *OrderUpdateOne {
-	return (&OrderClient{config: o.config}).UpdateOne(o)
+	return NewOrderClient(o.config).UpdateOne(o)
 }
 
 // Unwrap unwraps the Order entity that was returned from a transaction after it was closed,
@@ -456,6 +510,9 @@ func (o *Order) String() string {
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", o.Status))
 	builder.WriteString(", ")
+	builder.WriteString("customer_approval=")
+	builder.WriteString(fmt.Sprintf("%v", o.CustomerApproval))
+	builder.WriteString(", ")
 	builder.WriteString("store_tasks_created=")
 	builder.WriteString(fmt.Sprintf("%v", o.StoreTasksCreated))
 	builder.WriteString(", ")
@@ -469,9 +526,3 @@ func (o *Order) String() string {
 
 // Orders is a parsable slice of Order.
 type Orders []*Order
-
-func (o Orders) config(cfg config) {
-	for _i := range o {
-		o[_i].config = cfg
-	}
-}

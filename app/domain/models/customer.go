@@ -39,4 +39,31 @@ type (
 		ContactPhone    string `json:"contactPhone" validate:"required|string|phone"`
 		ContactEmail    string `json:"ContactEmail" validate:"required|email"`
 	}
+	BusinessCustomerOnboardDetail struct {
+		BusinessName  string `json:"businessName" validate:"required"`
+		BusinessPhone string `json:"businessPhone" validate:"required|phone"`
+		OtherPhone    string `json:"otherPhone" validate:"phone"`
+		Username      string `json:"username" validate:"required|email_phone|unique:customers"`
+	}
+	BusinessCustomerOnboardRequest struct {
+		Detail  *BusinessCustomerOnboardDetail `json:"detail"`
+		Contact *BusinessCustomerContact       `json:"contact"`
+	}
+
+	PurchaseOrderForm struct {
+		Name        string `json:"name" validate:"required"`
+		Description string `json:"description" validate:"required"`
+		Signed      string `json:"signed" validate:"required|string"`
+	}
+	PurchaseOrderFile struct {
+		Name   string `json:"name" validate:"required"`
+		File   []byte `json:"file" validate:"required"`
+		Signed string `json:"signed" validate:"required|string"`
+	}
+	PurchaseOrderRequest struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		File        string `json:"file"`
+		Signed      string `json:"signed"`
+	}
 )

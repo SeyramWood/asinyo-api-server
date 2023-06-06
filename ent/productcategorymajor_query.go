@@ -20,11 +20,9 @@ import (
 // ProductCategoryMajorQuery is the builder for querying ProductCategoryMajor entities.
 type ProductCategoryMajorQuery struct {
 	config
-	limit        *int
-	offset       *int
-	unique       *bool
-	order        []OrderFunc
-	fields       []string
+	ctx          *QueryContext
+	order        []productcategorymajor.OrderOption
+	inters       []Interceptor
 	predicates   []predicate.ProductCategoryMajor
 	withMinors   *ProductCategoryMinorQuery
 	withProducts *ProductQuery
@@ -39,34 +37,34 @@ func (pcmq *ProductCategoryMajorQuery) Where(ps ...predicate.ProductCategoryMajo
 	return pcmq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (pcmq *ProductCategoryMajorQuery) Limit(limit int) *ProductCategoryMajorQuery {
-	pcmq.limit = &limit
+	pcmq.ctx.Limit = &limit
 	return pcmq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (pcmq *ProductCategoryMajorQuery) Offset(offset int) *ProductCategoryMajorQuery {
-	pcmq.offset = &offset
+	pcmq.ctx.Offset = &offset
 	return pcmq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (pcmq *ProductCategoryMajorQuery) Unique(unique bool) *ProductCategoryMajorQuery {
-	pcmq.unique = &unique
+	pcmq.ctx.Unique = &unique
 	return pcmq
 }
 
-// Order adds an order step to the query.
-func (pcmq *ProductCategoryMajorQuery) Order(o ...OrderFunc) *ProductCategoryMajorQuery {
+// Order specifies how the records should be ordered.
+func (pcmq *ProductCategoryMajorQuery) Order(o ...productcategorymajor.OrderOption) *ProductCategoryMajorQuery {
 	pcmq.order = append(pcmq.order, o...)
 	return pcmq
 }
 
 // QueryMinors chains the current query on the "minors" edge.
 func (pcmq *ProductCategoryMajorQuery) QueryMinors() *ProductCategoryMinorQuery {
-	query := &ProductCategoryMinorQuery{config: pcmq.config}
+	query := (&ProductCategoryMinorClient{config: pcmq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pcmq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -88,7 +86,7 @@ func (pcmq *ProductCategoryMajorQuery) QueryMinors() *ProductCategoryMinorQuery 
 
 // QueryProducts chains the current query on the "products" edge.
 func (pcmq *ProductCategoryMajorQuery) QueryProducts() *ProductQuery {
-	query := &ProductQuery{config: pcmq.config}
+	query := (&ProductClient{config: pcmq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pcmq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -111,7 +109,7 @@ func (pcmq *ProductCategoryMajorQuery) QueryProducts() *ProductQuery {
 // First returns the first ProductCategoryMajor entity from the query.
 // Returns a *NotFoundError when no ProductCategoryMajor was found.
 func (pcmq *ProductCategoryMajorQuery) First(ctx context.Context) (*ProductCategoryMajor, error) {
-	nodes, err := pcmq.Limit(1).All(ctx)
+	nodes, err := pcmq.Limit(1).All(setContextOp(ctx, pcmq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +132,7 @@ func (pcmq *ProductCategoryMajorQuery) FirstX(ctx context.Context) *ProductCateg
 // Returns a *NotFoundError when no ProductCategoryMajor ID was found.
 func (pcmq *ProductCategoryMajorQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = pcmq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = pcmq.Limit(1).IDs(setContextOp(ctx, pcmq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -157,7 +155,7 @@ func (pcmq *ProductCategoryMajorQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one ProductCategoryMajor entity is found.
 // Returns a *NotFoundError when no ProductCategoryMajor entities are found.
 func (pcmq *ProductCategoryMajorQuery) Only(ctx context.Context) (*ProductCategoryMajor, error) {
-	nodes, err := pcmq.Limit(2).All(ctx)
+	nodes, err := pcmq.Limit(2).All(setContextOp(ctx, pcmq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +183,7 @@ func (pcmq *ProductCategoryMajorQuery) OnlyX(ctx context.Context) *ProductCatego
 // Returns a *NotFoundError when no entities are found.
 func (pcmq *ProductCategoryMajorQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = pcmq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = pcmq.Limit(2).IDs(setContextOp(ctx, pcmq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -210,10 +208,12 @@ func (pcmq *ProductCategoryMajorQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of ProductCategoryMajors.
 func (pcmq *ProductCategoryMajorQuery) All(ctx context.Context) ([]*ProductCategoryMajor, error) {
+	ctx = setContextOp(ctx, pcmq.ctx, "All")
 	if err := pcmq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return pcmq.sqlAll(ctx)
+	qr := querierAll[[]*ProductCategoryMajor, *ProductCategoryMajorQuery]()
+	return withInterceptors[[]*ProductCategoryMajor](ctx, pcmq, qr, pcmq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -226,9 +226,12 @@ func (pcmq *ProductCategoryMajorQuery) AllX(ctx context.Context) []*ProductCateg
 }
 
 // IDs executes the query and returns a list of ProductCategoryMajor IDs.
-func (pcmq *ProductCategoryMajorQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := pcmq.Select(productcategorymajor.FieldID).Scan(ctx, &ids); err != nil {
+func (pcmq *ProductCategoryMajorQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if pcmq.ctx.Unique == nil && pcmq.path != nil {
+		pcmq.Unique(true)
+	}
+	ctx = setContextOp(ctx, pcmq.ctx, "IDs")
+	if err = pcmq.Select(productcategorymajor.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -245,10 +248,11 @@ func (pcmq *ProductCategoryMajorQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (pcmq *ProductCategoryMajorQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, pcmq.ctx, "Count")
 	if err := pcmq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return pcmq.sqlCount(ctx)
+	return withInterceptors[int](ctx, pcmq, querierCount[*ProductCategoryMajorQuery](), pcmq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -262,10 +266,15 @@ func (pcmq *ProductCategoryMajorQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (pcmq *ProductCategoryMajorQuery) Exist(ctx context.Context) (bool, error) {
-	if err := pcmq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, pcmq.ctx, "Exist")
+	switch _, err := pcmq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return pcmq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -285,23 +294,22 @@ func (pcmq *ProductCategoryMajorQuery) Clone() *ProductCategoryMajorQuery {
 	}
 	return &ProductCategoryMajorQuery{
 		config:       pcmq.config,
-		limit:        pcmq.limit,
-		offset:       pcmq.offset,
-		order:        append([]OrderFunc{}, pcmq.order...),
+		ctx:          pcmq.ctx.Clone(),
+		order:        append([]productcategorymajor.OrderOption{}, pcmq.order...),
+		inters:       append([]Interceptor{}, pcmq.inters...),
 		predicates:   append([]predicate.ProductCategoryMajor{}, pcmq.predicates...),
 		withMinors:   pcmq.withMinors.Clone(),
 		withProducts: pcmq.withProducts.Clone(),
 		// clone intermediate query.
-		sql:    pcmq.sql.Clone(),
-		path:   pcmq.path,
-		unique: pcmq.unique,
+		sql:  pcmq.sql.Clone(),
+		path: pcmq.path,
 	}
 }
 
 // WithMinors tells the query-builder to eager-load the nodes that are connected to
 // the "minors" edge. The optional arguments are used to configure the query builder of the edge.
 func (pcmq *ProductCategoryMajorQuery) WithMinors(opts ...func(*ProductCategoryMinorQuery)) *ProductCategoryMajorQuery {
-	query := &ProductCategoryMinorQuery{config: pcmq.config}
+	query := (&ProductCategoryMinorClient{config: pcmq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -312,7 +320,7 @@ func (pcmq *ProductCategoryMajorQuery) WithMinors(opts ...func(*ProductCategoryM
 // WithProducts tells the query-builder to eager-load the nodes that are connected to
 // the "products" edge. The optional arguments are used to configure the query builder of the edge.
 func (pcmq *ProductCategoryMajorQuery) WithProducts(opts ...func(*ProductQuery)) *ProductCategoryMajorQuery {
-	query := &ProductQuery{config: pcmq.config}
+	query := (&ProductClient{config: pcmq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -335,16 +343,11 @@ func (pcmq *ProductCategoryMajorQuery) WithProducts(opts ...func(*ProductQuery))
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (pcmq *ProductCategoryMajorQuery) GroupBy(field string, fields ...string) *ProductCategoryMajorGroupBy {
-	grbuild := &ProductCategoryMajorGroupBy{config: pcmq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := pcmq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return pcmq.sqlQuery(ctx), nil
-	}
+	pcmq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &ProductCategoryMajorGroupBy{build: pcmq}
+	grbuild.flds = &pcmq.ctx.Fields
 	grbuild.label = productcategorymajor.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -361,15 +364,30 @@ func (pcmq *ProductCategoryMajorQuery) GroupBy(field string, fields ...string) *
 //		Select(productcategorymajor.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (pcmq *ProductCategoryMajorQuery) Select(fields ...string) *ProductCategoryMajorSelect {
-	pcmq.fields = append(pcmq.fields, fields...)
-	selbuild := &ProductCategoryMajorSelect{ProductCategoryMajorQuery: pcmq}
-	selbuild.label = productcategorymajor.Label
-	selbuild.flds, selbuild.scan = &pcmq.fields, selbuild.Scan
-	return selbuild
+	pcmq.ctx.Fields = append(pcmq.ctx.Fields, fields...)
+	sbuild := &ProductCategoryMajorSelect{ProductCategoryMajorQuery: pcmq}
+	sbuild.label = productcategorymajor.Label
+	sbuild.flds, sbuild.scan = &pcmq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a ProductCategoryMajorSelect configured with the given aggregations.
+func (pcmq *ProductCategoryMajorQuery) Aggregate(fns ...AggregateFunc) *ProductCategoryMajorSelect {
+	return pcmq.Select().Aggregate(fns...)
 }
 
 func (pcmq *ProductCategoryMajorQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range pcmq.fields {
+	for _, inter := range pcmq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, pcmq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range pcmq.ctx.Fields {
 		if !productcategorymajor.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -440,7 +458,7 @@ func (pcmq *ProductCategoryMajorQuery) loadMinors(ctx context.Context, query *Pr
 	}
 	query.withFKs = true
 	query.Where(predicate.ProductCategoryMinor(func(s *sql.Selector) {
-		s.Where(sql.InValues(productcategorymajor.MinorsColumn, fks...))
+		s.Where(sql.InValues(s.C(productcategorymajor.MinorsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -453,7 +471,7 @@ func (pcmq *ProductCategoryMajorQuery) loadMinors(ctx context.Context, query *Pr
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "product_category_major_minors" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "product_category_major_minors" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -471,7 +489,7 @@ func (pcmq *ProductCategoryMajorQuery) loadProducts(ctx context.Context, query *
 	}
 	query.withFKs = true
 	query.Where(predicate.Product(func(s *sql.Selector) {
-		s.Where(sql.InValues(productcategorymajor.ProductsColumn, fks...))
+		s.Where(sql.InValues(s.C(productcategorymajor.ProductsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -484,7 +502,7 @@ func (pcmq *ProductCategoryMajorQuery) loadProducts(ctx context.Context, query *
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "product_category_major_products" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "product_category_major_products" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -493,41 +511,22 @@ func (pcmq *ProductCategoryMajorQuery) loadProducts(ctx context.Context, query *
 
 func (pcmq *ProductCategoryMajorQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := pcmq.querySpec()
-	_spec.Node.Columns = pcmq.fields
-	if len(pcmq.fields) > 0 {
-		_spec.Unique = pcmq.unique != nil && *pcmq.unique
+	_spec.Node.Columns = pcmq.ctx.Fields
+	if len(pcmq.ctx.Fields) > 0 {
+		_spec.Unique = pcmq.ctx.Unique != nil && *pcmq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, pcmq.driver, _spec)
 }
 
-func (pcmq *ProductCategoryMajorQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := pcmq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (pcmq *ProductCategoryMajorQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   productcategorymajor.Table,
-			Columns: productcategorymajor.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: productcategorymajor.FieldID,
-			},
-		},
-		From:   pcmq.sql,
-		Unique: true,
-	}
-	if unique := pcmq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(productcategorymajor.Table, productcategorymajor.Columns, sqlgraph.NewFieldSpec(productcategorymajor.FieldID, field.TypeInt))
+	_spec.From = pcmq.sql
+	if unique := pcmq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if pcmq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := pcmq.fields; len(fields) > 0 {
+	if fields := pcmq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, productcategorymajor.FieldID)
 		for i := range fields {
@@ -543,10 +542,10 @@ func (pcmq *ProductCategoryMajorQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := pcmq.limit; limit != nil {
+	if limit := pcmq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := pcmq.offset; offset != nil {
+	if offset := pcmq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := pcmq.order; len(ps) > 0 {
@@ -562,7 +561,7 @@ func (pcmq *ProductCategoryMajorQuery) querySpec() *sqlgraph.QuerySpec {
 func (pcmq *ProductCategoryMajorQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(pcmq.driver.Dialect())
 	t1 := builder.Table(productcategorymajor.Table)
-	columns := pcmq.fields
+	columns := pcmq.ctx.Fields
 	if len(columns) == 0 {
 		columns = productcategorymajor.Columns
 	}
@@ -571,7 +570,7 @@ func (pcmq *ProductCategoryMajorQuery) sqlQuery(ctx context.Context) *sql.Select
 		selector = pcmq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if pcmq.unique != nil && *pcmq.unique {
+	if pcmq.ctx.Unique != nil && *pcmq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range pcmq.predicates {
@@ -580,12 +579,12 @@ func (pcmq *ProductCategoryMajorQuery) sqlQuery(ctx context.Context) *sql.Select
 	for _, p := range pcmq.order {
 		p(selector)
 	}
-	if offset := pcmq.offset; offset != nil {
+	if offset := pcmq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := pcmq.limit; limit != nil {
+	if limit := pcmq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -593,13 +592,8 @@ func (pcmq *ProductCategoryMajorQuery) sqlQuery(ctx context.Context) *sql.Select
 
 // ProductCategoryMajorGroupBy is the group-by builder for ProductCategoryMajor entities.
 type ProductCategoryMajorGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *ProductCategoryMajorQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -608,74 +602,77 @@ func (pcmgb *ProductCategoryMajorGroupBy) Aggregate(fns ...AggregateFunc) *Produ
 	return pcmgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (pcmgb *ProductCategoryMajorGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := pcmgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, pcmgb.build.ctx, "GroupBy")
+	if err := pcmgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pcmgb.sql = query
-	return pcmgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*ProductCategoryMajorQuery, *ProductCategoryMajorGroupBy](ctx, pcmgb.build, pcmgb, pcmgb.build.inters, v)
 }
 
-func (pcmgb *ProductCategoryMajorGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range pcmgb.fields {
-		if !productcategorymajor.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (pcmgb *ProductCategoryMajorGroupBy) sqlScan(ctx context.Context, root *ProductCategoryMajorQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(pcmgb.fns))
+	for _, fn := range pcmgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := pcmgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*pcmgb.flds)+len(pcmgb.fns))
+		for _, f := range *pcmgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*pcmgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := pcmgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := pcmgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (pcmgb *ProductCategoryMajorGroupBy) sqlQuery() *sql.Selector {
-	selector := pcmgb.sql.Select()
-	aggregation := make([]string, 0, len(pcmgb.fns))
-	for _, fn := range pcmgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(pcmgb.fields)+len(pcmgb.fns))
-		for _, f := range pcmgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(pcmgb.fields...)...)
-}
-
 // ProductCategoryMajorSelect is the builder for selecting fields of ProductCategoryMajor entities.
 type ProductCategoryMajorSelect struct {
 	*ProductCategoryMajorQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (pcms *ProductCategoryMajorSelect) Aggregate(fns ...AggregateFunc) *ProductCategoryMajorSelect {
+	pcms.fns = append(pcms.fns, fns...)
+	return pcms
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (pcms *ProductCategoryMajorSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, pcms.ctx, "Select")
 	if err := pcms.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pcms.sql = pcms.ProductCategoryMajorQuery.sqlQuery(ctx)
-	return pcms.sqlScan(ctx, v)
+	return scanWithInterceptors[*ProductCategoryMajorQuery, *ProductCategoryMajorSelect](ctx, pcms.ProductCategoryMajorQuery, pcms, pcms.inters, v)
 }
 
-func (pcms *ProductCategoryMajorSelect) sqlScan(ctx context.Context, v any) error {
+func (pcms *ProductCategoryMajorSelect) sqlScan(ctx context.Context, root *ProductCategoryMajorQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(pcms.fns))
+	for _, fn := range pcms.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*pcms.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := pcms.sql.Query()
+	query, args := selector.Query()
 	if err := pcms.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/ent/address"
@@ -33,8 +34,6 @@ type Address struct {
 	Phone string `json:"phone,omitempty"`
 	// OtherPhone holds the value of the "other_phone" field.
 	OtherPhone string `json:"other_phone,omitempty"`
-	// DigitalAddress holds the value of the "digital_address" field.
-	DigitalAddress string `json:"digital_address,omitempty"`
 	// StreetName holds the value of the "street_name" field.
 	StreetName string `json:"street_name,omitempty"`
 	// StreetNumber holds the value of the "street_number" field.
@@ -57,6 +56,7 @@ type Address struct {
 	agent_addresses    *int
 	customer_addresses *int
 	merchant_addresses *int
+	selectValues       sql.SelectValues
 }
 
 // AddressEdges holds the relations/edges for other nodes in the graph.
@@ -133,7 +133,7 @@ func (*Address) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case address.FieldID:
 			values[i] = new(sql.NullInt64)
-		case address.FieldLastName, address.FieldOtherName, address.FieldPhone, address.FieldOtherPhone, address.FieldDigitalAddress, address.FieldStreetName, address.FieldStreetNumber, address.FieldCity, address.FieldDistrict, address.FieldRegion, address.FieldCountry:
+		case address.FieldLastName, address.FieldOtherName, address.FieldPhone, address.FieldOtherPhone, address.FieldStreetName, address.FieldStreetNumber, address.FieldCity, address.FieldDistrict, address.FieldRegion, address.FieldCountry:
 			values[i] = new(sql.NullString)
 		case address.FieldCreatedAt, address.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -144,7 +144,7 @@ func (*Address) scanValues(columns []string) ([]any, error) {
 		case address.ForeignKeys[2]: // merchant_addresses
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Address", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -199,12 +199,6 @@ func (a *Address) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field other_phone", values[i])
 			} else if value.Valid {
 				a.OtherPhone = value.String
-			}
-		case address.FieldDigitalAddress:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field digital_address", values[i])
-			} else if value.Valid {
-				a.DigitalAddress = value.String
 			}
 		case address.FieldStreetName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -277,36 +271,44 @@ func (a *Address) assignValues(columns []string, values []any) error {
 				a.merchant_addresses = new(int)
 				*a.merchant_addresses = int(value.Int64)
 			}
+		default:
+			a.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Address.
+// This includes values selected through modifiers, order, etc.
+func (a *Address) Value(name string) (ent.Value, error) {
+	return a.selectValues.Get(name)
+}
+
 // QueryMerchant queries the "merchant" edge of the Address entity.
 func (a *Address) QueryMerchant() *MerchantQuery {
-	return (&AddressClient{config: a.config}).QueryMerchant(a)
+	return NewAddressClient(a.config).QueryMerchant(a)
 }
 
 // QueryAgent queries the "agent" edge of the Address entity.
 func (a *Address) QueryAgent() *AgentQuery {
-	return (&AddressClient{config: a.config}).QueryAgent(a)
+	return NewAddressClient(a.config).QueryAgent(a)
 }
 
 // QueryCustomer queries the "customer" edge of the Address entity.
 func (a *Address) QueryCustomer() *CustomerQuery {
-	return (&AddressClient{config: a.config}).QueryCustomer(a)
+	return NewAddressClient(a.config).QueryCustomer(a)
 }
 
 // QueryOrders queries the "orders" edge of the Address entity.
 func (a *Address) QueryOrders() *OrderQuery {
-	return (&AddressClient{config: a.config}).QueryOrders(a)
+	return NewAddressClient(a.config).QueryOrders(a)
 }
 
 // Update returns a builder for updating this Address.
 // Note that you need to call Address.Unwrap() before calling this method if this Address
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (a *Address) Update() *AddressUpdateOne {
-	return (&AddressClient{config: a.config}).UpdateOne(a)
+	return NewAddressClient(a.config).UpdateOne(a)
 }
 
 // Unwrap unwraps the Address entity that was returned from a transaction after it was closed,
@@ -343,9 +345,6 @@ func (a *Address) String() string {
 	builder.WriteString("other_phone=")
 	builder.WriteString(a.OtherPhone)
 	builder.WriteString(", ")
-	builder.WriteString("digital_address=")
-	builder.WriteString(a.DigitalAddress)
-	builder.WriteString(", ")
 	builder.WriteString("street_name=")
 	builder.WriteString(a.StreetName)
 	builder.WriteString(", ")
@@ -375,9 +374,3 @@ func (a *Address) String() string {
 
 // Addresses is a parsable slice of Address.
 type Addresses []*Address
-
-func (a Addresses) config(cfg config) {
-	for _i := range a {
-		a[_i].config = cfg
-	}
-}

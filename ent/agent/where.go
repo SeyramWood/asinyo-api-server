@@ -12,1621 +12,1067 @@ import (
 
 // ID filters vertices based on their ID field.
 func ID(id int) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
 func IDEQ(id int) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldID), id))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
 func IDNEQ(id int) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldID), id))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
 func IDIn(ids ...int) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.In(s.C(FieldID), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
 func IDNotIn(ids ...int) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		v := make([]any, len(ids))
-		for i := range v {
-			v[i] = ids[i]
-		}
-		s.Where(sql.NotIn(s.C(FieldID), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
 func IDGT(id int) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldID), id))
-	})
+	return predicate.Agent(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
 func IDGTE(id int) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldID), id))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
 func IDLT(id int) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldID), id))
-	})
+	return predicate.Agent(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id int) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldID), id))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldID, id))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // Username applies equality check predicate on the "username" field. It's identical to UsernameEQ.
 func Username(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldUsername, v))
 }
 
 // Password applies equality check predicate on the "password" field. It's identical to PasswordEQ.
 func Password(v []byte) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPassword), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldPassword, v))
 }
 
 // GhanaCard applies equality check predicate on the "ghana_card" field. It's identical to GhanaCardEQ.
 func GhanaCard(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldGhanaCard, v))
 }
 
 // LastName applies equality check predicate on the "last_name" field. It's identical to LastNameEQ.
 func LastName(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldLastName, v))
 }
 
 // OtherName applies equality check predicate on the "other_name" field. It's identical to OtherNameEQ.
 func OtherName(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldOtherName, v))
 }
 
 // Phone applies equality check predicate on the "phone" field. It's identical to PhoneEQ.
 func Phone(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldPhone, v))
 }
 
 // OtherPhone applies equality check predicate on the "other_phone" field. It's identical to OtherPhoneEQ.
 func OtherPhone(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldOtherPhone, v))
 }
 
 // Address applies equality check predicate on the "address" field. It's identical to AddressEQ.
 func Address(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldAddress, v))
 }
 
 // DigitalAddress applies equality check predicate on the "digital_address" field. It's identical to DigitalAddressEQ.
 func DigitalAddress(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldDigitalAddress, v))
 }
 
 // Region applies equality check predicate on the "region" field. It's identical to RegionEQ.
 func Region(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldRegion, v))
 }
 
 // District applies equality check predicate on the "district" field. It's identical to DistrictEQ.
 func District(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldDistrict, v))
 }
 
 // City applies equality check predicate on the "city" field. It's identical to CityEQ.
 func City(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldCity, v))
 }
 
 // Verified applies equality check predicate on the "verified" field. It's identical to VerifiedEQ.
 func Verified(v bool) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldVerified), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldVerified, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
 func CreatedAtNEQ(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldCreatedAt, v))
 }
 
 // CreatedAtIn applies the In predicate on the "created_at" field.
 func CreatedAtIn(vs ...time.Time) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
 func CreatedAtNotIn(vs ...time.Time) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldCreatedAt, vs...))
 }
 
 // CreatedAtGT applies the GT predicate on the "created_at" field.
 func CreatedAtGT(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldCreatedAt, v))
 }
 
 // CreatedAtGTE applies the GTE predicate on the "created_at" field.
 func CreatedAtGTE(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldCreatedAt, v))
 }
 
 // CreatedAtLT applies the LT predicate on the "created_at" field.
 func CreatedAtLT(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldCreatedAt, v))
 }
 
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldCreatedAt, v))
 }
 
 // UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
 func UpdatedAtEQ(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
 func UpdatedAtNEQ(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldUpdatedAt, v))
 }
 
 // UpdatedAtIn applies the In predicate on the "updated_at" field.
 func UpdatedAtIn(vs ...time.Time) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldUpdatedAt), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldUpdatedAt, vs...))
 }
 
 // UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
 func UpdatedAtNotIn(vs ...time.Time) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldUpdatedAt), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldUpdatedAt, vs...))
 }
 
 // UpdatedAtGT applies the GT predicate on the "updated_at" field.
 func UpdatedAtGT(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldUpdatedAt, v))
 }
 
 // UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
 func UpdatedAtGTE(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldUpdatedAt, v))
 }
 
 // UpdatedAtLT applies the LT predicate on the "updated_at" field.
 func UpdatedAtLT(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldUpdatedAt, v))
 }
 
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
 // UsernameEQ applies the EQ predicate on the "username" field.
 func UsernameEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldUsername, v))
 }
 
 // UsernameNEQ applies the NEQ predicate on the "username" field.
 func UsernameNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldUsername, v))
 }
 
 // UsernameIn applies the In predicate on the "username" field.
 func UsernameIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldUsername), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldUsername, vs...))
 }
 
 // UsernameNotIn applies the NotIn predicate on the "username" field.
 func UsernameNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldUsername), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldUsername, vs...))
 }
 
 // UsernameGT applies the GT predicate on the "username" field.
 func UsernameGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldUsername, v))
 }
 
 // UsernameGTE applies the GTE predicate on the "username" field.
 func UsernameGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldUsername, v))
 }
 
 // UsernameLT applies the LT predicate on the "username" field.
 func UsernameLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldUsername, v))
 }
 
 // UsernameLTE applies the LTE predicate on the "username" field.
 func UsernameLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldUsername, v))
 }
 
 // UsernameContains applies the Contains predicate on the "username" field.
 func UsernameContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldUsername, v))
 }
 
 // UsernameHasPrefix applies the HasPrefix predicate on the "username" field.
 func UsernameHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldUsername, v))
 }
 
 // UsernameHasSuffix applies the HasSuffix predicate on the "username" field.
 func UsernameHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldUsername, v))
 }
 
 // UsernameEqualFold applies the EqualFold predicate on the "username" field.
 func UsernameEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldUsername, v))
 }
 
 // UsernameContainsFold applies the ContainsFold predicate on the "username" field.
 func UsernameContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldUsername), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldUsername, v))
 }
 
 // PasswordEQ applies the EQ predicate on the "password" field.
 func PasswordEQ(v []byte) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPassword), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldPassword, v))
 }
 
 // PasswordNEQ applies the NEQ predicate on the "password" field.
 func PasswordNEQ(v []byte) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldPassword), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldPassword, v))
 }
 
 // PasswordIn applies the In predicate on the "password" field.
 func PasswordIn(vs ...[]byte) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldPassword), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldPassword, vs...))
 }
 
 // PasswordNotIn applies the NotIn predicate on the "password" field.
 func PasswordNotIn(vs ...[]byte) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldPassword), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldPassword, vs...))
 }
 
 // PasswordGT applies the GT predicate on the "password" field.
 func PasswordGT(v []byte) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldPassword), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldPassword, v))
 }
 
 // PasswordGTE applies the GTE predicate on the "password" field.
 func PasswordGTE(v []byte) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldPassword), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldPassword, v))
 }
 
 // PasswordLT applies the LT predicate on the "password" field.
 func PasswordLT(v []byte) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldPassword), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldPassword, v))
 }
 
 // PasswordLTE applies the LTE predicate on the "password" field.
 func PasswordLTE(v []byte) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldPassword), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldPassword, v))
 }
 
 // GhanaCardEQ applies the EQ predicate on the "ghana_card" field.
 func GhanaCardEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldGhanaCard, v))
 }
 
 // GhanaCardNEQ applies the NEQ predicate on the "ghana_card" field.
 func GhanaCardNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldGhanaCard, v))
 }
 
 // GhanaCardIn applies the In predicate on the "ghana_card" field.
 func GhanaCardIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldGhanaCard), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldGhanaCard, vs...))
 }
 
 // GhanaCardNotIn applies the NotIn predicate on the "ghana_card" field.
 func GhanaCardNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldGhanaCard), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldGhanaCard, vs...))
 }
 
 // GhanaCardGT applies the GT predicate on the "ghana_card" field.
 func GhanaCardGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldGhanaCard, v))
 }
 
 // GhanaCardGTE applies the GTE predicate on the "ghana_card" field.
 func GhanaCardGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldGhanaCard, v))
 }
 
 // GhanaCardLT applies the LT predicate on the "ghana_card" field.
 func GhanaCardLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldGhanaCard, v))
 }
 
 // GhanaCardLTE applies the LTE predicate on the "ghana_card" field.
 func GhanaCardLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldGhanaCard, v))
 }
 
 // GhanaCardContains applies the Contains predicate on the "ghana_card" field.
 func GhanaCardContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldGhanaCard, v))
 }
 
 // GhanaCardHasPrefix applies the HasPrefix predicate on the "ghana_card" field.
 func GhanaCardHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldGhanaCard, v))
 }
 
 // GhanaCardHasSuffix applies the HasSuffix predicate on the "ghana_card" field.
 func GhanaCardHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldGhanaCard, v))
 }
 
 // GhanaCardEqualFold applies the EqualFold predicate on the "ghana_card" field.
 func GhanaCardEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldGhanaCard, v))
 }
 
 // GhanaCardContainsFold applies the ContainsFold predicate on the "ghana_card" field.
 func GhanaCardContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldGhanaCard), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldGhanaCard, v))
 }
 
 // LastNameEQ applies the EQ predicate on the "last_name" field.
 func LastNameEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldLastName, v))
 }
 
 // LastNameNEQ applies the NEQ predicate on the "last_name" field.
 func LastNameNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldLastName, v))
 }
 
 // LastNameIn applies the In predicate on the "last_name" field.
 func LastNameIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldLastName), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldLastName, vs...))
 }
 
 // LastNameNotIn applies the NotIn predicate on the "last_name" field.
 func LastNameNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldLastName), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldLastName, vs...))
 }
 
 // LastNameGT applies the GT predicate on the "last_name" field.
 func LastNameGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldLastName, v))
 }
 
 // LastNameGTE applies the GTE predicate on the "last_name" field.
 func LastNameGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldLastName, v))
 }
 
 // LastNameLT applies the LT predicate on the "last_name" field.
 func LastNameLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldLastName, v))
 }
 
 // LastNameLTE applies the LTE predicate on the "last_name" field.
 func LastNameLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldLastName, v))
 }
 
 // LastNameContains applies the Contains predicate on the "last_name" field.
 func LastNameContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldLastName, v))
 }
 
 // LastNameHasPrefix applies the HasPrefix predicate on the "last_name" field.
 func LastNameHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldLastName, v))
 }
 
 // LastNameHasSuffix applies the HasSuffix predicate on the "last_name" field.
 func LastNameHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldLastName, v))
 }
 
 // LastNameEqualFold applies the EqualFold predicate on the "last_name" field.
 func LastNameEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldLastName, v))
 }
 
 // LastNameContainsFold applies the ContainsFold predicate on the "last_name" field.
 func LastNameContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldLastName), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldLastName, v))
 }
 
 // OtherNameEQ applies the EQ predicate on the "other_name" field.
 func OtherNameEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldOtherName, v))
 }
 
 // OtherNameNEQ applies the NEQ predicate on the "other_name" field.
 func OtherNameNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldOtherName, v))
 }
 
 // OtherNameIn applies the In predicate on the "other_name" field.
 func OtherNameIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldOtherName), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldOtherName, vs...))
 }
 
 // OtherNameNotIn applies the NotIn predicate on the "other_name" field.
 func OtherNameNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldOtherName), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldOtherName, vs...))
 }
 
 // OtherNameGT applies the GT predicate on the "other_name" field.
 func OtherNameGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldOtherName, v))
 }
 
 // OtherNameGTE applies the GTE predicate on the "other_name" field.
 func OtherNameGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldOtherName, v))
 }
 
 // OtherNameLT applies the LT predicate on the "other_name" field.
 func OtherNameLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldOtherName, v))
 }
 
 // OtherNameLTE applies the LTE predicate on the "other_name" field.
 func OtherNameLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldOtherName, v))
 }
 
 // OtherNameContains applies the Contains predicate on the "other_name" field.
 func OtherNameContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldOtherName, v))
 }
 
 // OtherNameHasPrefix applies the HasPrefix predicate on the "other_name" field.
 func OtherNameHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldOtherName, v))
 }
 
 // OtherNameHasSuffix applies the HasSuffix predicate on the "other_name" field.
 func OtherNameHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldOtherName, v))
 }
 
 // OtherNameEqualFold applies the EqualFold predicate on the "other_name" field.
 func OtherNameEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldOtherName, v))
 }
 
 // OtherNameContainsFold applies the ContainsFold predicate on the "other_name" field.
 func OtherNameContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldOtherName), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldOtherName, v))
 }
 
 // PhoneEQ applies the EQ predicate on the "phone" field.
 func PhoneEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldPhone, v))
 }
 
 // PhoneNEQ applies the NEQ predicate on the "phone" field.
 func PhoneNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldPhone, v))
 }
 
 // PhoneIn applies the In predicate on the "phone" field.
 func PhoneIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldPhone), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldPhone, vs...))
 }
 
 // PhoneNotIn applies the NotIn predicate on the "phone" field.
 func PhoneNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldPhone), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldPhone, vs...))
 }
 
 // PhoneGT applies the GT predicate on the "phone" field.
 func PhoneGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldPhone, v))
 }
 
 // PhoneGTE applies the GTE predicate on the "phone" field.
 func PhoneGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldPhone, v))
 }
 
 // PhoneLT applies the LT predicate on the "phone" field.
 func PhoneLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldPhone, v))
 }
 
 // PhoneLTE applies the LTE predicate on the "phone" field.
 func PhoneLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldPhone, v))
 }
 
 // PhoneContains applies the Contains predicate on the "phone" field.
 func PhoneContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldPhone, v))
 }
 
 // PhoneHasPrefix applies the HasPrefix predicate on the "phone" field.
 func PhoneHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldPhone, v))
 }
 
 // PhoneHasSuffix applies the HasSuffix predicate on the "phone" field.
 func PhoneHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldPhone, v))
 }
 
 // PhoneEqualFold applies the EqualFold predicate on the "phone" field.
 func PhoneEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldPhone, v))
 }
 
 // PhoneContainsFold applies the ContainsFold predicate on the "phone" field.
 func PhoneContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldPhone), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldPhone, v))
 }
 
 // OtherPhoneEQ applies the EQ predicate on the "other_phone" field.
 func OtherPhoneEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldOtherPhone, v))
 }
 
 // OtherPhoneNEQ applies the NEQ predicate on the "other_phone" field.
 func OtherPhoneNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldOtherPhone, v))
 }
 
 // OtherPhoneIn applies the In predicate on the "other_phone" field.
 func OtherPhoneIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldOtherPhone), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldOtherPhone, vs...))
 }
 
 // OtherPhoneNotIn applies the NotIn predicate on the "other_phone" field.
 func OtherPhoneNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldOtherPhone), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldOtherPhone, vs...))
 }
 
 // OtherPhoneGT applies the GT predicate on the "other_phone" field.
 func OtherPhoneGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldOtherPhone, v))
 }
 
 // OtherPhoneGTE applies the GTE predicate on the "other_phone" field.
 func OtherPhoneGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldOtherPhone, v))
 }
 
 // OtherPhoneLT applies the LT predicate on the "other_phone" field.
 func OtherPhoneLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldOtherPhone, v))
 }
 
 // OtherPhoneLTE applies the LTE predicate on the "other_phone" field.
 func OtherPhoneLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldOtherPhone, v))
 }
 
 // OtherPhoneContains applies the Contains predicate on the "other_phone" field.
 func OtherPhoneContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldOtherPhone, v))
 }
 
 // OtherPhoneHasPrefix applies the HasPrefix predicate on the "other_phone" field.
 func OtherPhoneHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldOtherPhone, v))
 }
 
 // OtherPhoneHasSuffix applies the HasSuffix predicate on the "other_phone" field.
 func OtherPhoneHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldOtherPhone, v))
 }
 
 // OtherPhoneIsNil applies the IsNil predicate on the "other_phone" field.
 func OtherPhoneIsNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldOtherPhone)))
-	})
+	return predicate.Agent(sql.FieldIsNull(FieldOtherPhone))
 }
 
 // OtherPhoneNotNil applies the NotNil predicate on the "other_phone" field.
 func OtherPhoneNotNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldOtherPhone)))
-	})
+	return predicate.Agent(sql.FieldNotNull(FieldOtherPhone))
 }
 
 // OtherPhoneEqualFold applies the EqualFold predicate on the "other_phone" field.
 func OtherPhoneEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldOtherPhone, v))
 }
 
 // OtherPhoneContainsFold applies the ContainsFold predicate on the "other_phone" field.
 func OtherPhoneContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldOtherPhone), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldOtherPhone, v))
 }
 
 // AddressEQ applies the EQ predicate on the "address" field.
 func AddressEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldAddress, v))
 }
 
 // AddressNEQ applies the NEQ predicate on the "address" field.
 func AddressNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldAddress, v))
 }
 
 // AddressIn applies the In predicate on the "address" field.
 func AddressIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldAddress), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldAddress, vs...))
 }
 
 // AddressNotIn applies the NotIn predicate on the "address" field.
 func AddressNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldAddress), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldAddress, vs...))
 }
 
 // AddressGT applies the GT predicate on the "address" field.
 func AddressGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldAddress, v))
 }
 
 // AddressGTE applies the GTE predicate on the "address" field.
 func AddressGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldAddress, v))
 }
 
 // AddressLT applies the LT predicate on the "address" field.
 func AddressLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldAddress, v))
 }
 
 // AddressLTE applies the LTE predicate on the "address" field.
 func AddressLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldAddress, v))
 }
 
 // AddressContains applies the Contains predicate on the "address" field.
 func AddressContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldAddress, v))
 }
 
 // AddressHasPrefix applies the HasPrefix predicate on the "address" field.
 func AddressHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldAddress, v))
 }
 
 // AddressHasSuffix applies the HasSuffix predicate on the "address" field.
 func AddressHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldAddress, v))
 }
 
 // AddressEqualFold applies the EqualFold predicate on the "address" field.
 func AddressEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldAddress, v))
 }
 
 // AddressContainsFold applies the ContainsFold predicate on the "address" field.
 func AddressContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldAddress), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldAddress, v))
 }
 
 // DigitalAddressEQ applies the EQ predicate on the "digital_address" field.
 func DigitalAddressEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldDigitalAddress, v))
 }
 
 // DigitalAddressNEQ applies the NEQ predicate on the "digital_address" field.
 func DigitalAddressNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldDigitalAddress, v))
 }
 
 // DigitalAddressIn applies the In predicate on the "digital_address" field.
 func DigitalAddressIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldDigitalAddress), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldDigitalAddress, vs...))
 }
 
 // DigitalAddressNotIn applies the NotIn predicate on the "digital_address" field.
 func DigitalAddressNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldDigitalAddress), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldDigitalAddress, vs...))
 }
 
 // DigitalAddressGT applies the GT predicate on the "digital_address" field.
 func DigitalAddressGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldDigitalAddress, v))
 }
 
 // DigitalAddressGTE applies the GTE predicate on the "digital_address" field.
 func DigitalAddressGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldDigitalAddress, v))
 }
 
 // DigitalAddressLT applies the LT predicate on the "digital_address" field.
 func DigitalAddressLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldDigitalAddress, v))
 }
 
 // DigitalAddressLTE applies the LTE predicate on the "digital_address" field.
 func DigitalAddressLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldDigitalAddress, v))
 }
 
 // DigitalAddressContains applies the Contains predicate on the "digital_address" field.
 func DigitalAddressContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldDigitalAddress, v))
 }
 
 // DigitalAddressHasPrefix applies the HasPrefix predicate on the "digital_address" field.
 func DigitalAddressHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldDigitalAddress, v))
 }
 
 // DigitalAddressHasSuffix applies the HasSuffix predicate on the "digital_address" field.
 func DigitalAddressHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldDigitalAddress, v))
 }
 
 // DigitalAddressEqualFold applies the EqualFold predicate on the "digital_address" field.
 func DigitalAddressEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldDigitalAddress, v))
 }
 
 // DigitalAddressContainsFold applies the ContainsFold predicate on the "digital_address" field.
 func DigitalAddressContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldDigitalAddress), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldDigitalAddress, v))
 }
 
 // RegionEQ applies the EQ predicate on the "region" field.
 func RegionEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldRegion, v))
 }
 
 // RegionNEQ applies the NEQ predicate on the "region" field.
 func RegionNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldRegion, v))
 }
 
 // RegionIn applies the In predicate on the "region" field.
 func RegionIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldRegion), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldRegion, vs...))
 }
 
 // RegionNotIn applies the NotIn predicate on the "region" field.
 func RegionNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldRegion), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldRegion, vs...))
 }
 
 // RegionGT applies the GT predicate on the "region" field.
 func RegionGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldRegion, v))
 }
 
 // RegionGTE applies the GTE predicate on the "region" field.
 func RegionGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldRegion, v))
 }
 
 // RegionLT applies the LT predicate on the "region" field.
 func RegionLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldRegion, v))
 }
 
 // RegionLTE applies the LTE predicate on the "region" field.
 func RegionLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldRegion, v))
 }
 
 // RegionContains applies the Contains predicate on the "region" field.
 func RegionContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldRegion, v))
 }
 
 // RegionHasPrefix applies the HasPrefix predicate on the "region" field.
 func RegionHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldRegion, v))
 }
 
 // RegionHasSuffix applies the HasSuffix predicate on the "region" field.
 func RegionHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldRegion, v))
 }
 
 // RegionIsNil applies the IsNil predicate on the "region" field.
 func RegionIsNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldRegion)))
-	})
+	return predicate.Agent(sql.FieldIsNull(FieldRegion))
 }
 
 // RegionNotNil applies the NotNil predicate on the "region" field.
 func RegionNotNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldRegion)))
-	})
+	return predicate.Agent(sql.FieldNotNull(FieldRegion))
 }
 
 // RegionEqualFold applies the EqualFold predicate on the "region" field.
 func RegionEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldRegion, v))
 }
 
 // RegionContainsFold applies the ContainsFold predicate on the "region" field.
 func RegionContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldRegion), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldRegion, v))
 }
 
 // DistrictEQ applies the EQ predicate on the "district" field.
 func DistrictEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldDistrict, v))
 }
 
 // DistrictNEQ applies the NEQ predicate on the "district" field.
 func DistrictNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldDistrict, v))
 }
 
 // DistrictIn applies the In predicate on the "district" field.
 func DistrictIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldDistrict), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldDistrict, vs...))
 }
 
 // DistrictNotIn applies the NotIn predicate on the "district" field.
 func DistrictNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldDistrict), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldDistrict, vs...))
 }
 
 // DistrictGT applies the GT predicate on the "district" field.
 func DistrictGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldDistrict, v))
 }
 
 // DistrictGTE applies the GTE predicate on the "district" field.
 func DistrictGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldDistrict, v))
 }
 
 // DistrictLT applies the LT predicate on the "district" field.
 func DistrictLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldDistrict, v))
 }
 
 // DistrictLTE applies the LTE predicate on the "district" field.
 func DistrictLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldDistrict, v))
 }
 
 // DistrictContains applies the Contains predicate on the "district" field.
 func DistrictContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldDistrict, v))
 }
 
 // DistrictHasPrefix applies the HasPrefix predicate on the "district" field.
 func DistrictHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldDistrict, v))
 }
 
 // DistrictHasSuffix applies the HasSuffix predicate on the "district" field.
 func DistrictHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldDistrict, v))
 }
 
 // DistrictIsNil applies the IsNil predicate on the "district" field.
 func DistrictIsNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldDistrict)))
-	})
+	return predicate.Agent(sql.FieldIsNull(FieldDistrict))
 }
 
 // DistrictNotNil applies the NotNil predicate on the "district" field.
 func DistrictNotNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldDistrict)))
-	})
+	return predicate.Agent(sql.FieldNotNull(FieldDistrict))
 }
 
 // DistrictEqualFold applies the EqualFold predicate on the "district" field.
 func DistrictEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldDistrict, v))
 }
 
 // DistrictContainsFold applies the ContainsFold predicate on the "district" field.
 func DistrictContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldDistrict), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldDistrict, v))
 }
 
 // CityEQ applies the EQ predicate on the "city" field.
 func CityEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldCity, v))
 }
 
 // CityNEQ applies the NEQ predicate on the "city" field.
 func CityNEQ(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldCity, v))
 }
 
 // CityIn applies the In predicate on the "city" field.
 func CityIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldCity), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldCity, vs...))
 }
 
 // CityNotIn applies the NotIn predicate on the "city" field.
 func CityNotIn(vs ...string) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldCity), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldCity, vs...))
 }
 
 // CityGT applies the GT predicate on the "city" field.
 func CityGT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldGT(FieldCity, v))
 }
 
 // CityGTE applies the GTE predicate on the "city" field.
 func CityGTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldGTE(FieldCity, v))
 }
 
 // CityLT applies the LT predicate on the "city" field.
 func CityLT(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldLT(FieldCity, v))
 }
 
 // CityLTE applies the LTE predicate on the "city" field.
 func CityLTE(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldLTE(FieldCity, v))
 }
 
 // CityContains applies the Contains predicate on the "city" field.
 func CityContains(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldContains(FieldCity, v))
 }
 
 // CityHasPrefix applies the HasPrefix predicate on the "city" field.
 func CityHasPrefix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldHasPrefix(FieldCity, v))
 }
 
 // CityHasSuffix applies the HasSuffix predicate on the "city" field.
 func CityHasSuffix(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldHasSuffix(FieldCity, v))
 }
 
 // CityIsNil applies the IsNil predicate on the "city" field.
 func CityIsNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldCity)))
-	})
+	return predicate.Agent(sql.FieldIsNull(FieldCity))
 }
 
 // CityNotNil applies the NotNil predicate on the "city" field.
 func CityNotNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldCity)))
-	})
+	return predicate.Agent(sql.FieldNotNull(FieldCity))
 }
 
 // CityEqualFold applies the EqualFold predicate on the "city" field.
 func CityEqualFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldEqualFold(FieldCity, v))
 }
 
 // CityContainsFold applies the ContainsFold predicate on the "city" field.
 func CityContainsFold(v string) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldCity), v))
-	})
+	return predicate.Agent(sql.FieldContainsFold(FieldCity, v))
 }
 
 // DefaultAccountEQ applies the EQ predicate on the "default_account" field.
 func DefaultAccountEQ(v DefaultAccount) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDefaultAccount), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldDefaultAccount, v))
 }
 
 // DefaultAccountNEQ applies the NEQ predicate on the "default_account" field.
 func DefaultAccountNEQ(v DefaultAccount) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldDefaultAccount), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldDefaultAccount, v))
 }
 
 // DefaultAccountIn applies the In predicate on the "default_account" field.
 func DefaultAccountIn(vs ...DefaultAccount) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldDefaultAccount), v...))
-	})
+	return predicate.Agent(sql.FieldIn(FieldDefaultAccount, vs...))
 }
 
 // DefaultAccountNotIn applies the NotIn predicate on the "default_account" field.
 func DefaultAccountNotIn(vs ...DefaultAccount) predicate.Agent {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldDefaultAccount), v...))
-	})
+	return predicate.Agent(sql.FieldNotIn(FieldDefaultAccount, vs...))
 }
 
 // DefaultAccountIsNil applies the IsNil predicate on the "default_account" field.
 func DefaultAccountIsNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldDefaultAccount)))
-	})
+	return predicate.Agent(sql.FieldIsNull(FieldDefaultAccount))
 }
 
 // DefaultAccountNotNil applies the NotNil predicate on the "default_account" field.
 func DefaultAccountNotNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldDefaultAccount)))
-	})
+	return predicate.Agent(sql.FieldNotNull(FieldDefaultAccount))
 }
 
 // BankAccountIsNil applies the IsNil predicate on the "bank_account" field.
 func BankAccountIsNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldBankAccount)))
-	})
+	return predicate.Agent(sql.FieldIsNull(FieldBankAccount))
 }
 
 // BankAccountNotNil applies the NotNil predicate on the "bank_account" field.
 func BankAccountNotNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldBankAccount)))
-	})
+	return predicate.Agent(sql.FieldNotNull(FieldBankAccount))
 }
 
 // MomoAccountIsNil applies the IsNil predicate on the "momo_account" field.
 func MomoAccountIsNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldMomoAccount)))
-	})
+	return predicate.Agent(sql.FieldIsNull(FieldMomoAccount))
 }
 
 // MomoAccountNotNil applies the NotNil predicate on the "momo_account" field.
 func MomoAccountNotNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldMomoAccount)))
-	})
+	return predicate.Agent(sql.FieldNotNull(FieldMomoAccount))
 }
 
 // VerifiedEQ applies the EQ predicate on the "verified" field.
 func VerifiedEQ(v bool) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldVerified), v))
-	})
+	return predicate.Agent(sql.FieldEQ(FieldVerified, v))
 }
 
 // VerifiedNEQ applies the NEQ predicate on the "verified" field.
 func VerifiedNEQ(v bool) predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldVerified), v))
-	})
+	return predicate.Agent(sql.FieldNEQ(FieldVerified, v))
 }
 
 // ComplianceIsNil applies the IsNil predicate on the "compliance" field.
 func ComplianceIsNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldCompliance)))
-	})
+	return predicate.Agent(sql.FieldIsNull(FieldCompliance))
 }
 
 // ComplianceNotNil applies the NotNil predicate on the "compliance" field.
 func ComplianceNotNil() predicate.Agent {
-	return predicate.Agent(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldCompliance)))
-	})
+	return predicate.Agent(sql.FieldNotNull(FieldCompliance))
 }
 
 // HasAddresses applies the HasEdge predicate on the "addresses" edge.
@@ -1634,7 +1080,6 @@ func HasAddresses() predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AddressesTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, AddressesTable, AddressesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -1644,11 +1089,7 @@ func HasAddresses() predicate.Agent {
 // HasAddressesWith applies the HasEdge predicate on the "addresses" edge with a given conditions (other predicates).
 func HasAddressesWith(preds ...predicate.Address) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(AddressesInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, AddressesTable, AddressesColumn),
-		)
+		step := newAddressesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -1662,7 +1103,6 @@ func HasOrders() predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(OrdersTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -1672,11 +1112,7 @@ func HasOrders() predicate.Agent {
 // HasOrdersWith applies the HasEdge predicate on the "orders" edge with a given conditions (other predicates).
 func HasOrdersWith(preds ...predicate.Order) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(OrdersInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
-		)
+		step := newOrdersStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -1690,7 +1126,6 @@ func HasFavourites() predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(FavouritesTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -1700,11 +1135,7 @@ func HasFavourites() predicate.Agent {
 // HasFavouritesWith applies the HasEdge predicate on the "favourites" edge with a given conditions (other predicates).
 func HasFavouritesWith(preds ...predicate.Favourite) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(FavouritesInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, FavouritesTable, FavouritesColumn),
-		)
+		step := newFavouritesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -1718,7 +1149,6 @@ func HasStore() predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(StoreTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, StoreTable, StoreColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -1728,11 +1158,7 @@ func HasStore() predicate.Agent {
 // HasStoreWith applies the HasEdge predicate on the "store" edge with a given conditions (other predicates).
 func HasStoreWith(preds ...predicate.MerchantStore) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(StoreInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, StoreTable, StoreColumn),
-		)
+		step := newStoreStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -1746,7 +1172,6 @@ func HasRequests() predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(RequestsTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, RequestsTable, RequestsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
@@ -1756,11 +1181,30 @@ func HasRequests() predicate.Agent {
 // HasRequestsWith applies the HasEdge predicate on the "requests" edge with a given conditions (other predicates).
 func HasRequestsWith(preds ...predicate.AgentRequest) predicate.Agent {
 	return predicate.Agent(func(s *sql.Selector) {
+		step := newRequestsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasNotifications applies the HasEdge predicate on the "notifications" edge.
+func HasNotifications() predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(RequestsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, RequestsTable, RequestsColumn),
+			sqlgraph.Edge(sqlgraph.M2M, false, NotificationsTable, NotificationsPrimaryKey...),
 		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasNotificationsWith applies the HasEdge predicate on the "notifications" edge with a given conditions (other predicates).
+func HasNotificationsWith(preds ...predicate.Notification) predicate.Agent {
+	return predicate.Agent(func(s *sql.Selector) {
+		step := newNotificationsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

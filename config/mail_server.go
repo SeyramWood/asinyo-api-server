@@ -11,11 +11,12 @@ import (
 )
 
 type MailServer struct {
-	SMTP       *mail.SMTPServer
-	WG         *sync.WaitGroup
-	MailerChan chan *services.Message
-	DoneChan   chan bool
-	ErrorChan  chan error
+	SMTP           *mail.SMTPServer
+	WG             *sync.WaitGroup
+	MailerChan     chan *services.MailerMessage
+	FailedDataChan chan *services.MailerMessage
+	DoneChan       chan bool
+	ErrorChan      chan error
 }
 
 func SMTPServer() *mail.SMTPServer {

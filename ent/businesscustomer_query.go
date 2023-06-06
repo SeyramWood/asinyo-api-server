@@ -18,11 +18,9 @@ import (
 // BusinessCustomerQuery is the builder for querying BusinessCustomer entities.
 type BusinessCustomerQuery struct {
 	config
-	limit        *int
-	offset       *int
-	unique       *bool
-	order        []OrderFunc
-	fields       []string
+	ctx          *QueryContext
+	order        []businesscustomer.OrderOption
+	inters       []Interceptor
 	predicates   []predicate.BusinessCustomer
 	withCustomer *CustomerQuery
 	withFKs      bool
@@ -37,34 +35,34 @@ func (bcq *BusinessCustomerQuery) Where(ps ...predicate.BusinessCustomer) *Busin
 	return bcq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (bcq *BusinessCustomerQuery) Limit(limit int) *BusinessCustomerQuery {
-	bcq.limit = &limit
+	bcq.ctx.Limit = &limit
 	return bcq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (bcq *BusinessCustomerQuery) Offset(offset int) *BusinessCustomerQuery {
-	bcq.offset = &offset
+	bcq.ctx.Offset = &offset
 	return bcq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (bcq *BusinessCustomerQuery) Unique(unique bool) *BusinessCustomerQuery {
-	bcq.unique = &unique
+	bcq.ctx.Unique = &unique
 	return bcq
 }
 
-// Order adds an order step to the query.
-func (bcq *BusinessCustomerQuery) Order(o ...OrderFunc) *BusinessCustomerQuery {
+// Order specifies how the records should be ordered.
+func (bcq *BusinessCustomerQuery) Order(o ...businesscustomer.OrderOption) *BusinessCustomerQuery {
 	bcq.order = append(bcq.order, o...)
 	return bcq
 }
 
 // QueryCustomer chains the current query on the "customer" edge.
 func (bcq *BusinessCustomerQuery) QueryCustomer() *CustomerQuery {
-	query := &CustomerQuery{config: bcq.config}
+	query := (&CustomerClient{config: bcq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := bcq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -87,7 +85,7 @@ func (bcq *BusinessCustomerQuery) QueryCustomer() *CustomerQuery {
 // First returns the first BusinessCustomer entity from the query.
 // Returns a *NotFoundError when no BusinessCustomer was found.
 func (bcq *BusinessCustomerQuery) First(ctx context.Context) (*BusinessCustomer, error) {
-	nodes, err := bcq.Limit(1).All(ctx)
+	nodes, err := bcq.Limit(1).All(setContextOp(ctx, bcq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +108,7 @@ func (bcq *BusinessCustomerQuery) FirstX(ctx context.Context) *BusinessCustomer 
 // Returns a *NotFoundError when no BusinessCustomer ID was found.
 func (bcq *BusinessCustomerQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = bcq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = bcq.Limit(1).IDs(setContextOp(ctx, bcq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -133,7 +131,7 @@ func (bcq *BusinessCustomerQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one BusinessCustomer entity is found.
 // Returns a *NotFoundError when no BusinessCustomer entities are found.
 func (bcq *BusinessCustomerQuery) Only(ctx context.Context) (*BusinessCustomer, error) {
-	nodes, err := bcq.Limit(2).All(ctx)
+	nodes, err := bcq.Limit(2).All(setContextOp(ctx, bcq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +159,7 @@ func (bcq *BusinessCustomerQuery) OnlyX(ctx context.Context) *BusinessCustomer {
 // Returns a *NotFoundError when no entities are found.
 func (bcq *BusinessCustomerQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = bcq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = bcq.Limit(2).IDs(setContextOp(ctx, bcq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -186,10 +184,12 @@ func (bcq *BusinessCustomerQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of BusinessCustomers.
 func (bcq *BusinessCustomerQuery) All(ctx context.Context) ([]*BusinessCustomer, error) {
+	ctx = setContextOp(ctx, bcq.ctx, "All")
 	if err := bcq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return bcq.sqlAll(ctx)
+	qr := querierAll[[]*BusinessCustomer, *BusinessCustomerQuery]()
+	return withInterceptors[[]*BusinessCustomer](ctx, bcq, qr, bcq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -202,9 +202,12 @@ func (bcq *BusinessCustomerQuery) AllX(ctx context.Context) []*BusinessCustomer 
 }
 
 // IDs executes the query and returns a list of BusinessCustomer IDs.
-func (bcq *BusinessCustomerQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := bcq.Select(businesscustomer.FieldID).Scan(ctx, &ids); err != nil {
+func (bcq *BusinessCustomerQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if bcq.ctx.Unique == nil && bcq.path != nil {
+		bcq.Unique(true)
+	}
+	ctx = setContextOp(ctx, bcq.ctx, "IDs")
+	if err = bcq.Select(businesscustomer.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -221,10 +224,11 @@ func (bcq *BusinessCustomerQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (bcq *BusinessCustomerQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, bcq.ctx, "Count")
 	if err := bcq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return bcq.sqlCount(ctx)
+	return withInterceptors[int](ctx, bcq, querierCount[*BusinessCustomerQuery](), bcq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -238,10 +242,15 @@ func (bcq *BusinessCustomerQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (bcq *BusinessCustomerQuery) Exist(ctx context.Context) (bool, error) {
-	if err := bcq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, bcq.ctx, "Exist")
+	switch _, err := bcq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return bcq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -261,22 +270,21 @@ func (bcq *BusinessCustomerQuery) Clone() *BusinessCustomerQuery {
 	}
 	return &BusinessCustomerQuery{
 		config:       bcq.config,
-		limit:        bcq.limit,
-		offset:       bcq.offset,
-		order:        append([]OrderFunc{}, bcq.order...),
+		ctx:          bcq.ctx.Clone(),
+		order:        append([]businesscustomer.OrderOption{}, bcq.order...),
+		inters:       append([]Interceptor{}, bcq.inters...),
 		predicates:   append([]predicate.BusinessCustomer{}, bcq.predicates...),
 		withCustomer: bcq.withCustomer.Clone(),
 		// clone intermediate query.
-		sql:    bcq.sql.Clone(),
-		path:   bcq.path,
-		unique: bcq.unique,
+		sql:  bcq.sql.Clone(),
+		path: bcq.path,
 	}
 }
 
 // WithCustomer tells the query-builder to eager-load the nodes that are connected to
 // the "customer" edge. The optional arguments are used to configure the query builder of the edge.
 func (bcq *BusinessCustomerQuery) WithCustomer(opts ...func(*CustomerQuery)) *BusinessCustomerQuery {
-	query := &CustomerQuery{config: bcq.config}
+	query := (&CustomerClient{config: bcq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -299,16 +307,11 @@ func (bcq *BusinessCustomerQuery) WithCustomer(opts ...func(*CustomerQuery)) *Bu
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (bcq *BusinessCustomerQuery) GroupBy(field string, fields ...string) *BusinessCustomerGroupBy {
-	grbuild := &BusinessCustomerGroupBy{config: bcq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := bcq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return bcq.sqlQuery(ctx), nil
-	}
+	bcq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &BusinessCustomerGroupBy{build: bcq}
+	grbuild.flds = &bcq.ctx.Fields
 	grbuild.label = businesscustomer.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -325,15 +328,30 @@ func (bcq *BusinessCustomerQuery) GroupBy(field string, fields ...string) *Busin
 //		Select(businesscustomer.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (bcq *BusinessCustomerQuery) Select(fields ...string) *BusinessCustomerSelect {
-	bcq.fields = append(bcq.fields, fields...)
-	selbuild := &BusinessCustomerSelect{BusinessCustomerQuery: bcq}
-	selbuild.label = businesscustomer.Label
-	selbuild.flds, selbuild.scan = &bcq.fields, selbuild.Scan
-	return selbuild
+	bcq.ctx.Fields = append(bcq.ctx.Fields, fields...)
+	sbuild := &BusinessCustomerSelect{BusinessCustomerQuery: bcq}
+	sbuild.label = businesscustomer.Label
+	sbuild.flds, sbuild.scan = &bcq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a BusinessCustomerSelect configured with the given aggregations.
+func (bcq *BusinessCustomerQuery) Aggregate(fns ...AggregateFunc) *BusinessCustomerSelect {
+	return bcq.Select().Aggregate(fns...)
 }
 
 func (bcq *BusinessCustomerQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range bcq.fields {
+	for _, inter := range bcq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, bcq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range bcq.ctx.Fields {
 		if !businesscustomer.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -403,6 +421,9 @@ func (bcq *BusinessCustomerQuery) loadCustomer(ctx context.Context, query *Custo
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
+	if len(ids) == 0 {
+		return nil
+	}
 	query.Where(customer.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -422,41 +443,22 @@ func (bcq *BusinessCustomerQuery) loadCustomer(ctx context.Context, query *Custo
 
 func (bcq *BusinessCustomerQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := bcq.querySpec()
-	_spec.Node.Columns = bcq.fields
-	if len(bcq.fields) > 0 {
-		_spec.Unique = bcq.unique != nil && *bcq.unique
+	_spec.Node.Columns = bcq.ctx.Fields
+	if len(bcq.ctx.Fields) > 0 {
+		_spec.Unique = bcq.ctx.Unique != nil && *bcq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, bcq.driver, _spec)
 }
 
-func (bcq *BusinessCustomerQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := bcq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (bcq *BusinessCustomerQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   businesscustomer.Table,
-			Columns: businesscustomer.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: businesscustomer.FieldID,
-			},
-		},
-		From:   bcq.sql,
-		Unique: true,
-	}
-	if unique := bcq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(businesscustomer.Table, businesscustomer.Columns, sqlgraph.NewFieldSpec(businesscustomer.FieldID, field.TypeInt))
+	_spec.From = bcq.sql
+	if unique := bcq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if bcq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := bcq.fields; len(fields) > 0 {
+	if fields := bcq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, businesscustomer.FieldID)
 		for i := range fields {
@@ -472,10 +474,10 @@ func (bcq *BusinessCustomerQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := bcq.limit; limit != nil {
+	if limit := bcq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := bcq.offset; offset != nil {
+	if offset := bcq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := bcq.order; len(ps) > 0 {
@@ -491,7 +493,7 @@ func (bcq *BusinessCustomerQuery) querySpec() *sqlgraph.QuerySpec {
 func (bcq *BusinessCustomerQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(bcq.driver.Dialect())
 	t1 := builder.Table(businesscustomer.Table)
-	columns := bcq.fields
+	columns := bcq.ctx.Fields
 	if len(columns) == 0 {
 		columns = businesscustomer.Columns
 	}
@@ -500,7 +502,7 @@ func (bcq *BusinessCustomerQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = bcq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if bcq.unique != nil && *bcq.unique {
+	if bcq.ctx.Unique != nil && *bcq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range bcq.predicates {
@@ -509,12 +511,12 @@ func (bcq *BusinessCustomerQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range bcq.order {
 		p(selector)
 	}
-	if offset := bcq.offset; offset != nil {
+	if offset := bcq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := bcq.limit; limit != nil {
+	if limit := bcq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -522,13 +524,8 @@ func (bcq *BusinessCustomerQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // BusinessCustomerGroupBy is the group-by builder for BusinessCustomer entities.
 type BusinessCustomerGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *BusinessCustomerQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -537,74 +534,77 @@ func (bcgb *BusinessCustomerGroupBy) Aggregate(fns ...AggregateFunc) *BusinessCu
 	return bcgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (bcgb *BusinessCustomerGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := bcgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, bcgb.build.ctx, "GroupBy")
+	if err := bcgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	bcgb.sql = query
-	return bcgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*BusinessCustomerQuery, *BusinessCustomerGroupBy](ctx, bcgb.build, bcgb, bcgb.build.inters, v)
 }
 
-func (bcgb *BusinessCustomerGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range bcgb.fields {
-		if !businesscustomer.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (bcgb *BusinessCustomerGroupBy) sqlScan(ctx context.Context, root *BusinessCustomerQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(bcgb.fns))
+	for _, fn := range bcgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := bcgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*bcgb.flds)+len(bcgb.fns))
+		for _, f := range *bcgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*bcgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := bcgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := bcgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (bcgb *BusinessCustomerGroupBy) sqlQuery() *sql.Selector {
-	selector := bcgb.sql.Select()
-	aggregation := make([]string, 0, len(bcgb.fns))
-	for _, fn := range bcgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(bcgb.fields)+len(bcgb.fns))
-		for _, f := range bcgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(bcgb.fields...)...)
-}
-
 // BusinessCustomerSelect is the builder for selecting fields of BusinessCustomer entities.
 type BusinessCustomerSelect struct {
 	*BusinessCustomerQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (bcs *BusinessCustomerSelect) Aggregate(fns ...AggregateFunc) *BusinessCustomerSelect {
+	bcs.fns = append(bcs.fns, fns...)
+	return bcs
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (bcs *BusinessCustomerSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, bcs.ctx, "Select")
 	if err := bcs.prepareQuery(ctx); err != nil {
 		return err
 	}
-	bcs.sql = bcs.BusinessCustomerQuery.sqlQuery(ctx)
-	return bcs.sqlScan(ctx, v)
+	return scanWithInterceptors[*BusinessCustomerQuery, *BusinessCustomerSelect](ctx, bcs.BusinessCustomerQuery, bcs, bcs.inters, v)
 }
 
-func (bcs *BusinessCustomerSelect) sqlScan(ctx context.Context, v any) error {
+func (bcs *BusinessCustomerSelect) sqlScan(ctx context.Context, root *BusinessCustomerQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(bcs.fns))
+	for _, fn := range bcs.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*bcs.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := bcs.sql.Query()
+	query, args := selector.Query()
 	if err := bcs.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/product"
@@ -47,6 +48,7 @@ type Product struct {
 	merchant_products               *int
 	product_category_major_products *int
 	product_category_minor_products *int
+	selectValues                    sql.SelectValues
 }
 
 // ProductEdges holds the relations/edges for other nodes in the graph.
@@ -143,7 +145,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 		case product.ForeignKeys[2]: // product_category_minor_products
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Product", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -250,41 +252,49 @@ func (pr *Product) assignValues(columns []string, values []any) error {
 				pr.product_category_minor_products = new(int)
 				*pr.product_category_minor_products = int(value.Int64)
 			}
+		default:
+			pr.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the Product.
+// This includes values selected through modifiers, order, etc.
+func (pr *Product) Value(name string) (ent.Value, error) {
+	return pr.selectValues.Get(name)
+}
+
 // QueryOrderDetails queries the "order_details" edge of the Product entity.
 func (pr *Product) QueryOrderDetails() *OrderDetailQuery {
-	return (&ProductClient{config: pr.config}).QueryOrderDetails(pr)
+	return NewProductClient(pr.config).QueryOrderDetails(pr)
 }
 
 // QueryFavourites queries the "favourites" edge of the Product entity.
 func (pr *Product) QueryFavourites() *FavouriteQuery {
-	return (&ProductClient{config: pr.config}).QueryFavourites(pr)
+	return NewProductClient(pr.config).QueryFavourites(pr)
 }
 
 // QueryMerchant queries the "merchant" edge of the Product entity.
 func (pr *Product) QueryMerchant() *MerchantQuery {
-	return (&ProductClient{config: pr.config}).QueryMerchant(pr)
+	return NewProductClient(pr.config).QueryMerchant(pr)
 }
 
 // QueryMajor queries the "major" edge of the Product entity.
 func (pr *Product) QueryMajor() *ProductCategoryMajorQuery {
-	return (&ProductClient{config: pr.config}).QueryMajor(pr)
+	return NewProductClient(pr.config).QueryMajor(pr)
 }
 
 // QueryMinor queries the "minor" edge of the Product entity.
 func (pr *Product) QueryMinor() *ProductCategoryMinorQuery {
-	return (&ProductClient{config: pr.config}).QueryMinor(pr)
+	return NewProductClient(pr.config).QueryMinor(pr)
 }
 
 // Update returns a builder for updating this Product.
 // Note that you need to call Product.Unwrap() before calling this method if this Product
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (pr *Product) Update() *ProductUpdateOne {
-	return (&ProductClient{config: pr.config}).UpdateOne(pr)
+	return NewProductClient(pr.config).UpdateOne(pr)
 }
 
 // Unwrap unwraps the Product entity that was returned from a transaction after it was closed,
@@ -341,9 +351,3 @@ func (pr *Product) String() string {
 
 // Products is a parsable slice of Product.
 type Products []*Product
-
-func (pr Products) config(cfg config) {
-	for _i := range pr {
-		pr[_i].config = cfg
-	}
-}

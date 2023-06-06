@@ -40,9 +40,9 @@ func RoleSuccessResponse(data *ent.Role) *fiber.Map {
 	)
 }
 
-func RoleSuccessResponses(data *ResponseWithTotalRecords) *fiber.Map {
+func RoleSuccessResponses(data *PaginationResponse) *fiber.Map {
 	var response []*RoleResponse
-	for _, v := range data.Records.([]*ent.Role) {
+	for _, v := range data.Data.([]*ent.Role) {
 		response = append(
 			response, &RoleResponse{
 				ID:          v.ID,
@@ -54,9 +54,9 @@ func RoleSuccessResponses(data *ResponseWithTotalRecords) *fiber.Map {
 		)
 	}
 	return successResponse(
-		&RolesWithTotalRecordsResponse{
-			TotalRecords: data.TotalRecords,
-			Roles:        response,
+		&PaginationResponse{
+			Count: data.Count,
+			Data:  response,
 		},
 	)
 }

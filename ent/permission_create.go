@@ -63,6 +63,20 @@ func (pc *PermissionCreate) SetNillablePermission(s *string) *PermissionCreate {
 	return pc
 }
 
+// SetSlug sets the "slug" field.
+func (pc *PermissionCreate) SetSlug(s string) *PermissionCreate {
+	pc.mutation.SetSlug(s)
+	return pc
+}
+
+// SetNillableSlug sets the "slug" field if the given value is not nil.
+func (pc *PermissionCreate) SetNillableSlug(s *string) *PermissionCreate {
+	if s != nil {
+		pc.SetSlug(*s)
+	}
+	return pc
+}
+
 // AddRoleIDs adds the "role" edge to the Role entity by IDs.
 func (pc *PermissionCreate) AddRoleIDs(ids ...int) *PermissionCreate {
 	pc.mutation.AddRoleIDs(ids...)
@@ -85,50 +99,8 @@ func (pc *PermissionCreate) Mutation() *PermissionMutation {
 
 // Save creates the Permission in the database.
 func (pc *PermissionCreate) Save(ctx context.Context) (*Permission, error) {
-	var (
-		err  error
-		node *Permission
-	)
 	pc.defaults()
-	if len(pc.hooks) == 0 {
-		if err = pc.check(); err != nil {
-			return nil, err
-		}
-		node, err = pc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*PermissionMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = pc.check(); err != nil {
-				return nil, err
-			}
-			pc.mutation = mutation
-			if node, err = pc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(pc.hooks) - 1; i >= 0; i-- {
-			if pc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = pc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, pc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Permission)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from PermissionMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, pc.sqlSave, pc.mutation, pc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -167,6 +139,10 @@ func (pc *PermissionCreate) defaults() {
 		v := permission.DefaultPermission
 		pc.mutation.SetPermission(v)
 	}
+	if _, ok := pc.mutation.Slug(); !ok {
+		v := permission.DefaultSlug
+		pc.mutation.SetSlug(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -180,10 +156,16 @@ func (pc *PermissionCreate) check() error {
 	if _, ok := pc.mutation.Permission(); !ok {
 		return &ValidationError{Name: "permission", err: errors.New(`ent: missing required field "Permission.permission"`)}
 	}
+	if _, ok := pc.mutation.Slug(); !ok {
+		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "Permission.slug"`)}
+	}
 	return nil
 }
 
 func (pc *PermissionCreate) sqlSave(ctx context.Context) (*Permission, error) {
+	if err := pc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := pc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -193,43 +175,31 @@ func (pc *PermissionCreate) sqlSave(ctx context.Context) (*Permission, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	pc.mutation.id = &_node.ID
+	pc.mutation.done = true
 	return _node, nil
 }
 
 func (pc *PermissionCreate) createSpec() (*Permission, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Permission{config: pc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: permission.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: permission.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(permission.Table, sqlgraph.NewFieldSpec(permission.FieldID, field.TypeInt))
 	)
 	if value, ok := pc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: permission.FieldCreatedAt,
-		})
+		_spec.SetField(permission.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := pc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: permission.FieldUpdatedAt,
-		})
+		_spec.SetField(permission.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := pc.mutation.Permission(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: permission.FieldPermission,
-		})
+		_spec.SetField(permission.FieldPermission, field.TypeString, value)
 		_node.Permission = value
+	}
+	if value, ok := pc.mutation.Slug(); ok {
+		_spec.SetField(permission.FieldSlug, field.TypeString, value)
+		_node.Slug = value
 	}
 	if nodes := pc.mutation.RoleIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -239,10 +209,7 @@ func (pc *PermissionCreate) createSpec() (*Permission, *sqlgraph.CreateSpec) {
 			Columns: permission.RolePrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: role.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(role.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -277,8 +244,8 @@ func (pcb *PermissionCreateBulk) Save(ctx context.Context) ([]*Permission, error
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, pcb.builders[i+1].mutation)
 				} else {

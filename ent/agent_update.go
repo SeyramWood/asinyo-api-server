@@ -17,6 +17,7 @@ import (
 	"github.com/SeyramWood/ent/agentrequest"
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/notification"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
@@ -313,6 +314,21 @@ func (au *AgentUpdate) AddRequests(a ...*AgentRequest) *AgentUpdate {
 	return au.AddRequestIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (au *AgentUpdate) AddNotificationIDs(ids ...int) *AgentUpdate {
+	au.mutation.AddNotificationIDs(ids...)
+	return au
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (au *AgentUpdate) AddNotifications(n ...*Notification) *AgentUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return au.AddNotificationIDs(ids...)
+}
+
 // Mutation returns the AgentMutation object of the builder.
 func (au *AgentUpdate) Mutation() *AgentMutation {
 	return au.mutation
@@ -423,43 +439,31 @@ func (au *AgentUpdate) RemoveRequests(a ...*AgentRequest) *AgentUpdate {
 	return au.RemoveRequestIDs(ids...)
 }
 
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (au *AgentUpdate) ClearNotifications() *AgentUpdate {
+	au.mutation.ClearNotifications()
+	return au
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (au *AgentUpdate) RemoveNotificationIDs(ids ...int) *AgentUpdate {
+	au.mutation.RemoveNotificationIDs(ids...)
+	return au
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (au *AgentUpdate) RemoveNotifications(n ...*Notification) *AgentUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return au.RemoveNotificationIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (au *AgentUpdate) Save(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
 	au.defaults()
-	if len(au.hooks) == 0 {
-		if err = au.check(); err != nil {
-			return 0, err
-		}
-		affected, err = au.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AgentMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = au.check(); err != nil {
-				return 0, err
-			}
-			au.mutation = mutation
-			affected, err = au.sqlSave(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(au.hooks) - 1; i >= 0; i-- {
-			if au.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = au.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, au.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, au.sqlSave, au.mutation, au.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -543,16 +547,10 @@ func (au *AgentUpdate) check() error {
 }
 
 func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   agent.Table,
-			Columns: agent.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: agent.FieldID,
-			},
-		},
+	if err := au.check(); err != nil {
+		return n, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt))
 	if ps := au.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -561,178 +559,82 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 	}
 	if value, ok := au.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: agent.FieldUpdatedAt,
-		})
+		_spec.SetField(agent.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := au.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldUsername,
-		})
+		_spec.SetField(agent.FieldUsername, field.TypeString, value)
 	}
 	if value, ok := au.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: agent.FieldPassword,
-		})
+		_spec.SetField(agent.FieldPassword, field.TypeBytes, value)
 	}
 	if value, ok := au.mutation.GhanaCard(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldGhanaCard,
-		})
+		_spec.SetField(agent.FieldGhanaCard, field.TypeString, value)
 	}
 	if value, ok := au.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldLastName,
-		})
+		_spec.SetField(agent.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := au.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldOtherName,
-		})
+		_spec.SetField(agent.FieldOtherName, field.TypeString, value)
 	}
 	if value, ok := au.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldPhone,
-		})
+		_spec.SetField(agent.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := au.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldOtherPhone,
-		})
+		_spec.SetField(agent.FieldOtherPhone, field.TypeString, value)
 	}
 	if au.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: agent.FieldOtherPhone,
-		})
+		_spec.ClearField(agent.FieldOtherPhone, field.TypeString)
 	}
 	if value, ok := au.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldAddress,
-		})
+		_spec.SetField(agent.FieldAddress, field.TypeString, value)
 	}
 	if value, ok := au.mutation.DigitalAddress(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldDigitalAddress,
-		})
+		_spec.SetField(agent.FieldDigitalAddress, field.TypeString, value)
 	}
 	if value, ok := au.mutation.Region(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldRegion,
-		})
+		_spec.SetField(agent.FieldRegion, field.TypeString, value)
 	}
 	if au.mutation.RegionCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: agent.FieldRegion,
-		})
+		_spec.ClearField(agent.FieldRegion, field.TypeString)
 	}
 	if value, ok := au.mutation.District(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldDistrict,
-		})
+		_spec.SetField(agent.FieldDistrict, field.TypeString, value)
 	}
 	if au.mutation.DistrictCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: agent.FieldDistrict,
-		})
+		_spec.ClearField(agent.FieldDistrict, field.TypeString)
 	}
 	if value, ok := au.mutation.City(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldCity,
-		})
+		_spec.SetField(agent.FieldCity, field.TypeString, value)
 	}
 	if au.mutation.CityCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: agent.FieldCity,
-		})
+		_spec.ClearField(agent.FieldCity, field.TypeString)
 	}
 	if value, ok := au.mutation.DefaultAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: agent.FieldDefaultAccount,
-		})
+		_spec.SetField(agent.FieldDefaultAccount, field.TypeEnum, value)
 	}
 	if au.mutation.DefaultAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Column: agent.FieldDefaultAccount,
-		})
+		_spec.ClearField(agent.FieldDefaultAccount, field.TypeEnum)
 	}
 	if value, ok := au.mutation.BankAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: agent.FieldBankAccount,
-		})
+		_spec.SetField(agent.FieldBankAccount, field.TypeJSON, value)
 	}
 	if au.mutation.BankAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: agent.FieldBankAccount,
-		})
+		_spec.ClearField(agent.FieldBankAccount, field.TypeJSON)
 	}
 	if value, ok := au.mutation.MomoAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: agent.FieldMomoAccount,
-		})
+		_spec.SetField(agent.FieldMomoAccount, field.TypeJSON, value)
 	}
 	if au.mutation.MomoAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: agent.FieldMomoAccount,
-		})
+		_spec.ClearField(agent.FieldMomoAccount, field.TypeJSON)
 	}
 	if value, ok := au.mutation.Verified(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: agent.FieldVerified,
-		})
+		_spec.SetField(agent.FieldVerified, field.TypeBool, value)
 	}
 	if value, ok := au.mutation.Compliance(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: agent.FieldCompliance,
-		})
+		_spec.SetField(agent.FieldCompliance, field.TypeJSON, value)
 	}
 	if au.mutation.ComplianceCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: agent.FieldCompliance,
-		})
+		_spec.ClearField(agent.FieldCompliance, field.TypeJSON)
 	}
 	if au.mutation.AddressesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -742,10 +644,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -758,10 +657,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -777,10 +673,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -796,10 +689,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -812,10 +702,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -831,10 +718,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -850,10 +734,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -866,10 +747,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -885,10 +763,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -904,10 +779,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -920,10 +792,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -939,10 +808,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -958,10 +824,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -974,10 +837,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -993,10 +853,52 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{agent.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if au.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   agent.NotificationsTable,
+			Columns: agent.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !au.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   agent.NotificationsTable,
+			Columns: agent.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   agent.NotificationsTable,
+			Columns: agent.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1012,6 +914,7 @@ func (au *AgentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
+	au.mutation.done = true
 	return n, nil
 }
 
@@ -1302,6 +1205,21 @@ func (auo *AgentUpdateOne) AddRequests(a ...*AgentRequest) *AgentUpdateOne {
 	return auo.AddRequestIDs(ids...)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (auo *AgentUpdateOne) AddNotificationIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.AddNotificationIDs(ids...)
+	return auo
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (auo *AgentUpdateOne) AddNotifications(n ...*Notification) *AgentUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return auo.AddNotificationIDs(ids...)
+}
+
 // Mutation returns the AgentMutation object of the builder.
 func (auo *AgentUpdateOne) Mutation() *AgentMutation {
 	return auo.mutation
@@ -1412,6 +1330,33 @@ func (auo *AgentUpdateOne) RemoveRequests(a ...*AgentRequest) *AgentUpdateOne {
 	return auo.RemoveRequestIDs(ids...)
 }
 
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (auo *AgentUpdateOne) ClearNotifications() *AgentUpdateOne {
+	auo.mutation.ClearNotifications()
+	return auo
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (auo *AgentUpdateOne) RemoveNotificationIDs(ids ...int) *AgentUpdateOne {
+	auo.mutation.RemoveNotificationIDs(ids...)
+	return auo
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (auo *AgentUpdateOne) RemoveNotifications(n ...*Notification) *AgentUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return auo.RemoveNotificationIDs(ids...)
+}
+
+// Where appends a list predicates to the AgentUpdate builder.
+func (auo *AgentUpdateOne) Where(ps ...predicate.Agent) *AgentUpdateOne {
+	auo.mutation.Where(ps...)
+	return auo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (auo *AgentUpdateOne) Select(field string, fields ...string) *AgentUpdateOne {
@@ -1421,47 +1366,8 @@ func (auo *AgentUpdateOne) Select(field string, fields ...string) *AgentUpdateOn
 
 // Save executes the query and returns the updated Agent entity.
 func (auo *AgentUpdateOne) Save(ctx context.Context) (*Agent, error) {
-	var (
-		err  error
-		node *Agent
-	)
 	auo.defaults()
-	if len(auo.hooks) == 0 {
-		if err = auo.check(); err != nil {
-			return nil, err
-		}
-		node, err = auo.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*AgentMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = auo.check(); err != nil {
-				return nil, err
-			}
-			auo.mutation = mutation
-			node, err = auo.sqlSave(ctx)
-			mutation.done = true
-			return node, err
-		})
-		for i := len(auo.hooks) - 1; i >= 0; i-- {
-			if auo.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = auo.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, auo.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Agent)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from AgentMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, auo.sqlSave, auo.mutation, auo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
@@ -1545,16 +1451,10 @@ func (auo *AgentUpdateOne) check() error {
 }
 
 func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   agent.Table,
-			Columns: agent.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: agent.FieldID,
-			},
-		},
+	if err := auo.check(); err != nil {
+		return _node, err
 	}
+	_spec := sqlgraph.NewUpdateSpec(agent.Table, agent.Columns, sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt))
 	id, ok := auo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Agent.id" for update`)}
@@ -1580,178 +1480,82 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 		}
 	}
 	if value, ok := auo.mutation.UpdatedAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: agent.FieldUpdatedAt,
-		})
+		_spec.SetField(agent.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := auo.mutation.Username(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldUsername,
-		})
+		_spec.SetField(agent.FieldUsername, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.Password(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
-			Value:  value,
-			Column: agent.FieldPassword,
-		})
+		_spec.SetField(agent.FieldPassword, field.TypeBytes, value)
 	}
 	if value, ok := auo.mutation.GhanaCard(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldGhanaCard,
-		})
+		_spec.SetField(agent.FieldGhanaCard, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.LastName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldLastName,
-		})
+		_spec.SetField(agent.FieldLastName, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.OtherName(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldOtherName,
-		})
+		_spec.SetField(agent.FieldOtherName, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.Phone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldPhone,
-		})
+		_spec.SetField(agent.FieldPhone, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.OtherPhone(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldOtherPhone,
-		})
+		_spec.SetField(agent.FieldOtherPhone, field.TypeString, value)
 	}
 	if auo.mutation.OtherPhoneCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: agent.FieldOtherPhone,
-		})
+		_spec.ClearField(agent.FieldOtherPhone, field.TypeString)
 	}
 	if value, ok := auo.mutation.Address(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldAddress,
-		})
+		_spec.SetField(agent.FieldAddress, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.DigitalAddress(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldDigitalAddress,
-		})
+		_spec.SetField(agent.FieldDigitalAddress, field.TypeString, value)
 	}
 	if value, ok := auo.mutation.Region(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldRegion,
-		})
+		_spec.SetField(agent.FieldRegion, field.TypeString, value)
 	}
 	if auo.mutation.RegionCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: agent.FieldRegion,
-		})
+		_spec.ClearField(agent.FieldRegion, field.TypeString)
 	}
 	if value, ok := auo.mutation.District(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldDistrict,
-		})
+		_spec.SetField(agent.FieldDistrict, field.TypeString, value)
 	}
 	if auo.mutation.DistrictCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: agent.FieldDistrict,
-		})
+		_spec.ClearField(agent.FieldDistrict, field.TypeString)
 	}
 	if value, ok := auo.mutation.City(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: agent.FieldCity,
-		})
+		_spec.SetField(agent.FieldCity, field.TypeString, value)
 	}
 	if auo.mutation.CityCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: agent.FieldCity,
-		})
+		_spec.ClearField(agent.FieldCity, field.TypeString)
 	}
 	if value, ok := auo.mutation.DefaultAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: agent.FieldDefaultAccount,
-		})
+		_spec.SetField(agent.FieldDefaultAccount, field.TypeEnum, value)
 	}
 	if auo.mutation.DefaultAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Column: agent.FieldDefaultAccount,
-		})
+		_spec.ClearField(agent.FieldDefaultAccount, field.TypeEnum)
 	}
 	if value, ok := auo.mutation.BankAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: agent.FieldBankAccount,
-		})
+		_spec.SetField(agent.FieldBankAccount, field.TypeJSON, value)
 	}
 	if auo.mutation.BankAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: agent.FieldBankAccount,
-		})
+		_spec.ClearField(agent.FieldBankAccount, field.TypeJSON)
 	}
 	if value, ok := auo.mutation.MomoAccount(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: agent.FieldMomoAccount,
-		})
+		_spec.SetField(agent.FieldMomoAccount, field.TypeJSON, value)
 	}
 	if auo.mutation.MomoAccountCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: agent.FieldMomoAccount,
-		})
+		_spec.ClearField(agent.FieldMomoAccount, field.TypeJSON)
 	}
 	if value, ok := auo.mutation.Verified(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: agent.FieldVerified,
-		})
+		_spec.SetField(agent.FieldVerified, field.TypeBool, value)
 	}
 	if value, ok := auo.mutation.Compliance(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: agent.FieldCompliance,
-		})
+		_spec.SetField(agent.FieldCompliance, field.TypeJSON, value)
 	}
 	if auo.mutation.ComplianceCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Column: agent.FieldCompliance,
-		})
+		_spec.ClearField(agent.FieldCompliance, field.TypeJSON)
 	}
 	if auo.mutation.AddressesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1761,10 +1565,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1777,10 +1578,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1796,10 +1594,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.AddressesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1815,10 +1610,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1831,10 +1623,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1850,10 +1639,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1869,10 +1655,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1885,10 +1668,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1904,10 +1684,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.FavouritesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: favourite.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1923,10 +1700,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1939,10 +1713,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1958,10 +1729,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.StoreColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -1977,10 +1745,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1993,10 +1758,7 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -2012,10 +1774,52 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 			Columns: []string{agent.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agentrequest.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agentrequest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   agent.NotificationsTable,
+			Columns: agent.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !auo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   agent.NotificationsTable,
+			Columns: agent.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   agent.NotificationsTable,
+			Columns: agent.NotificationsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -2034,5 +1838,6 @@ func (auo *AgentUpdateOne) sqlSave(ctx context.Context) (_node *Agent, err error
 		}
 		return nil, err
 	}
+	auo.mutation.done = true
 	return _node, nil
 }

@@ -19,4 +19,17 @@ type (
 		CustomerAddress     string                           `json:"customer_address"`
 		GeofenceDetails     []services.TookanGeofenceDetails `json:"geofence"`
 	}
+
+	AsinyoDispatchInfo struct {
+		Id                 string `json:"id"`
+		Driver             string `json:"driver"`
+		Phone              string `json:"phone"`
+		RegistrationNumber string `json:"registrationNumber"`
+		OtherInfo          string `json:"otherInfo"`
+		Stores             []int  `json:"stores"`
+	}
+	AsinyoDispatch struct {
+		DispatchIds []int                 `json:"dispatchIds"`
+		Dispatches  []*AsinyoDispatchInfo `json:"dispatches"`
+	}
 )

@@ -114,50 +114,8 @@ func (bcc *BusinessCustomerCreate) Mutation() *BusinessCustomerMutation {
 
 // Save creates the BusinessCustomer in the database.
 func (bcc *BusinessCustomerCreate) Save(ctx context.Context) (*BusinessCustomer, error) {
-	var (
-		err  error
-		node *BusinessCustomer
-	)
 	bcc.defaults()
-	if len(bcc.hooks) == 0 {
-		if err = bcc.check(); err != nil {
-			return nil, err
-		}
-		node, err = bcc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*BusinessCustomerMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = bcc.check(); err != nil {
-				return nil, err
-			}
-			bcc.mutation = mutation
-			if node, err = bcc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(bcc.hooks) - 1; i >= 0; i-- {
-			if bcc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = bcc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, bcc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*BusinessCustomer)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from BusinessCustomerMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, bcc.sqlSave, bcc.mutation, bcc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -225,6 +183,9 @@ func (bcc *BusinessCustomerCreate) check() error {
 }
 
 func (bcc *BusinessCustomerCreate) sqlSave(ctx context.Context) (*BusinessCustomer, error) {
+	if err := bcc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := bcc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, bcc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -234,74 +195,42 @@ func (bcc *BusinessCustomerCreate) sqlSave(ctx context.Context) (*BusinessCustom
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	bcc.mutation.id = &_node.ID
+	bcc.mutation.done = true
 	return _node, nil
 }
 
 func (bcc *BusinessCustomerCreate) createSpec() (*BusinessCustomer, *sqlgraph.CreateSpec) {
 	var (
 		_node = &BusinessCustomer{config: bcc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: businesscustomer.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: businesscustomer.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(businesscustomer.Table, sqlgraph.NewFieldSpec(businesscustomer.FieldID, field.TypeInt))
 	)
 	if value, ok := bcc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: businesscustomer.FieldCreatedAt,
-		})
+		_spec.SetField(businesscustomer.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := bcc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: businesscustomer.FieldUpdatedAt,
-		})
+		_spec.SetField(businesscustomer.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := bcc.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldName,
-		})
+		_spec.SetField(businesscustomer.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if value, ok := bcc.mutation.Phone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldPhone,
-		})
+		_spec.SetField(businesscustomer.FieldPhone, field.TypeString, value)
 		_node.Phone = value
 	}
 	if value, ok := bcc.mutation.OtherPhone(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldOtherPhone,
-		})
+		_spec.SetField(businesscustomer.FieldOtherPhone, field.TypeString, value)
 		_node.OtherPhone = value
 	}
 	if value, ok := bcc.mutation.Logo(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: businesscustomer.FieldLogo,
-		})
+		_spec.SetField(businesscustomer.FieldLogo, field.TypeString, value)
 		_node.Logo = value
 	}
 	if value, ok := bcc.mutation.Contact(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: businesscustomer.FieldContact,
-		})
+		_spec.SetField(businesscustomer.FieldContact, field.TypeJSON, value)
 		_node.Contact = value
 	}
 	if nodes := bcc.mutation.CustomerIDs(); len(nodes) > 0 {
@@ -312,10 +241,7 @@ func (bcc *BusinessCustomerCreate) createSpec() (*BusinessCustomer, *sqlgraph.Cr
 			Columns: []string{businesscustomer.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -351,8 +277,8 @@ func (bccb *BusinessCustomerCreateBulk) Save(ctx context.Context) ([]*BusinessCu
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, bccb.builders[i+1].mutation)
 				} else {

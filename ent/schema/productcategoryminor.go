@@ -24,6 +24,7 @@ func (ProductCategoryMinor) Fields() []ent.Field {
 		field.String("category").NotEmpty().Unique(),
 		field.String("image").NotEmpty(),
 		field.String("slug").NotEmpty(),
+		field.Int("percentage").Optional(),
 	}
 }
 

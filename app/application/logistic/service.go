@@ -1,11 +1,11 @@
 package logistic
 
 import (
+	"log"
 	"sync"
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/SeyramWood/config"
 	"github.com/SeyramWood/ent"
 )
 
@@ -32,11 +32,27 @@ func NewLogistic(wg *sync.WaitGroup, adapter *database.Adapter) gateways.Logisti
 	}
 
 	repo := NewLogisticRepo(adapter)
-
-	switch config.Logistic().Gateway {
-	case "tookan":
-		return newTookanService(conf, repo)
-	default:
+	gateway, err := getGateway(repo)
+	if err != nil {
+		log.Panicln("Could not fetch logistic gateway")
 		return nil
 	}
+	switch gateway {
+	case "Tookan":
+		return newTookanService(conf, repo)
+	case "Asinyo":
+		return newAsinyoService(conf, repo)
+	default:
+		log.Panicln("Failed to instantiate a logistic service")
+		return nil
+	}
+}
+
+func getGateway(repo gateways.LogisticRepo) (string, error) {
+	gateway, err := repo.ReadLogistic()
+	if err != nil {
+		return "", err
+	}
+	gatewayData := gateway.Data.Data.(map[string]any)
+	return gatewayData["current"].(string), nil
 }

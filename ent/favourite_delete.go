@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,34 +27,7 @@ func (fd *FavouriteDelete) Where(ps ...predicate.Favourite) *FavouriteDelete {
 
 // Exec executes the deletion query and returns how many vertices were deleted.
 func (fd *FavouriteDelete) Exec(ctx context.Context) (int, error) {
-	var (
-		err      error
-		affected int
-	)
-	if len(fd.hooks) == 0 {
-		affected, err = fd.sqlExec(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*FavouriteMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			fd.mutation = mutation
-			affected, err = fd.sqlExec(ctx)
-			mutation.done = true
-			return affected, err
-		})
-		for i := len(fd.hooks) - 1; i >= 0; i-- {
-			if fd.hooks[i] == nil {
-				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = fd.hooks[i](mut)
-		}
-		if _, err := mut.Mutate(ctx, fd.mutation); err != nil {
-			return 0, err
-		}
-	}
-	return affected, err
+	return withHooks(ctx, fd.sqlExec, fd.mutation, fd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
@@ -68,15 +40,7 @@ func (fd *FavouriteDelete) ExecX(ctx context.Context) int {
 }
 
 func (fd *FavouriteDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: favourite.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: favourite.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(favourite.Table, sqlgraph.NewFieldSpec(favourite.FieldID, field.TypeInt))
 	if ps := fd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -88,12 +52,19 @@ func (fd *FavouriteDelete) sqlExec(ctx context.Context) (int, error) {
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
+	fd.mutation.done = true
 	return affected, err
 }
 
 // FavouriteDeleteOne is the builder for deleting a single Favourite entity.
 type FavouriteDeleteOne struct {
 	fd *FavouriteDelete
+}
+
+// Where appends a list predicates to the FavouriteDelete builder.
+func (fdo *FavouriteDeleteOne) Where(ps ...predicate.Favourite) *FavouriteDeleteOne {
+	fdo.fd.mutation.Where(ps...)
+	return fdo
 }
 
 // Exec executes the deletion query.
@@ -111,5 +82,7 @@ func (fdo *FavouriteDeleteOne) Exec(ctx context.Context) error {
 
 // ExecX is like Exec, but panics if an error occurs.
 func (fdo *FavouriteDeleteOne) ExecX(ctx context.Context) {
-	fdo.fd.ExecX(ctx)
+	if err := fdo.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

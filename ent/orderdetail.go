@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
@@ -39,6 +40,7 @@ type OrderDetail struct {
 	merchant_store_order_details *int
 	order_details                *int
 	product_order_details        *int
+	selectValues                 sql.SelectValues
 }
 
 // OrderDetailEdges holds the relations/edges for other nodes in the graph.
@@ -113,7 +115,7 @@ func (*OrderDetail) scanValues(columns []string) ([]any, error) {
 		case orderdetail.ForeignKeys[2]: // product_order_details
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type OrderDetail", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -196,31 +198,39 @@ func (od *OrderDetail) assignValues(columns []string, values []any) error {
 				od.product_order_details = new(int)
 				*od.product_order_details = int(value.Int64)
 			}
+		default:
+			od.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the OrderDetail.
+// This includes values selected through modifiers, order, etc.
+func (od *OrderDetail) Value(name string) (ent.Value, error) {
+	return od.selectValues.Get(name)
+}
+
 // QueryOrder queries the "Order" edge of the OrderDetail entity.
 func (od *OrderDetail) QueryOrder() *OrderQuery {
-	return (&OrderDetailClient{config: od.config}).QueryOrder(od)
+	return NewOrderDetailClient(od.config).QueryOrder(od)
 }
 
 // QueryProduct queries the "product" edge of the OrderDetail entity.
 func (od *OrderDetail) QueryProduct() *ProductQuery {
-	return (&OrderDetailClient{config: od.config}).QueryProduct(od)
+	return NewOrderDetailClient(od.config).QueryProduct(od)
 }
 
 // QueryStore queries the "store" edge of the OrderDetail entity.
 func (od *OrderDetail) QueryStore() *MerchantStoreQuery {
-	return (&OrderDetailClient{config: od.config}).QueryStore(od)
+	return NewOrderDetailClient(od.config).QueryStore(od)
 }
 
 // Update returns a builder for updating this OrderDetail.
 // Note that you need to call OrderDetail.Unwrap() before calling this method if this OrderDetail
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (od *OrderDetail) Update() *OrderDetailUpdateOne {
-	return (&OrderDetailClient{config: od.config}).UpdateOne(od)
+	return NewOrderDetailClient(od.config).UpdateOne(od)
 }
 
 // Unwrap unwraps the OrderDetail entity that was returned from a transaction after it was closed,
@@ -265,9 +275,3 @@ func (od *OrderDetail) String() string {
 
 // OrderDetails is a parsable slice of OrderDetail.
 type OrderDetails []*OrderDetail
-
-func (od OrderDetails) config(cfg config) {
-	for _i := range od {
-		od[_i].config = cfg
-	}
-}

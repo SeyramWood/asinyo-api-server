@@ -17,7 +17,6 @@ var (
 		{Name: "other_name", Type: field.TypeString},
 		{Name: "phone", Type: field.TypeString},
 		{Name: "other_phone", Type: field.TypeString, Nullable: true},
-		{Name: "digital_address", Type: field.TypeString, Nullable: true},
 		{Name: "street_name", Type: field.TypeString, Nullable: true},
 		{Name: "street_number", Type: field.TypeString, Nullable: true},
 		{Name: "city", Type: field.TypeString},
@@ -38,19 +37,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "addresses_agents_addresses",
-				Columns:    []*schema.Column{AddressesColumns[16]},
+				Columns:    []*schema.Column{AddressesColumns[15]},
 				RefColumns: []*schema.Column{AgentsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "addresses_customers_addresses",
-				Columns:    []*schema.Column{AddressesColumns[17]},
+				Columns:    []*schema.Column{AddressesColumns[16]},
 				RefColumns: []*schema.Column{CustomersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "addresses_merchants_addresses",
-				Columns:    []*schema.Column{AddressesColumns[18]},
+				Columns:    []*schema.Column{AddressesColumns[17]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -65,6 +64,8 @@ var (
 		{Name: "password", Type: field.TypeBytes},
 		{Name: "last_name", Type: field.TypeString},
 		{Name: "other_name", Type: field.TypeString},
+		{Name: "phone", Type: field.TypeString, Nullable: true},
+		{Name: "other_phone", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"offline", "online"}, Default: "offline"},
 		{Name: "last_active", Type: field.TypeString, Nullable: true},
 	}
@@ -157,6 +158,20 @@ var (
 			},
 		},
 	}
+	// ConfigurationsColumns holds the columns for the "configurations" table.
+	ConfigurationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "data", Type: field.TypeJSON},
+	}
+	// ConfigurationsTable holds the schema information for the "configurations" table.
+	ConfigurationsTable = &schema.Table{
+		Name:       "configurations",
+		Columns:    ConfigurationsColumns,
+		PrimaryKey: []*schema.Column{ConfigurationsColumns[0]},
+	}
 	// CustomersColumns holds the columns for the "customers" table.
 	CustomersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -165,12 +180,21 @@ var (
 		{Name: "username", Type: field.TypeString, Unique: true},
 		{Name: "password", Type: field.TypeBytes},
 		{Name: "type", Type: field.TypeString},
+		{Name: "admin_customers", Type: field.TypeInt, Nullable: true},
 	}
 	// CustomersTable holds the schema information for the "customers" table.
 	CustomersTable = &schema.Table{
 		Name:       "customers",
 		Columns:    CustomersColumns,
 		PrimaryKey: []*schema.Column{CustomersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "customers_admins_customers",
+				Columns:    []*schema.Column{CustomersColumns[6]},
+				RefColumns: []*schema.Column{AdminsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// FavouritesColumns holds the columns for the "favourites" table.
 	FavouritesColumns = []*schema.Column{
@@ -244,8 +268,9 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "type", Type: field.TypeString, Default: "Asinyo"},
 		{Name: "task", Type: field.TypeJSON, Nullable: true},
-		{Name: "merchant_store_logistics", Type: field.TypeInt, Nullable: true},
+		{Name: "order_logistic", Type: field.TypeInt, Unique: true, Nullable: true},
 	}
 	// LogisticsTable holds the schema information for the "logistics" table.
 	LogisticsTable = &schema.Table{
@@ -254,9 +279,9 @@ var (
 		PrimaryKey: []*schema.Column{LogisticsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "logistics_merchant_stores_logistics",
-				Columns:    []*schema.Column{LogisticsColumns[4]},
-				RefColumns: []*schema.Column{MerchantStoresColumns[0]},
+				Symbol:     "logistics_orders_logistic",
+				Columns:    []*schema.Column{LogisticsColumns[5]},
+				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
@@ -308,7 +333,7 @@ var (
 				Symbol:     "merchant_stores_agents_store",
 				Columns:    []*schema.Column{MerchantStoresColumns[16]},
 				RefColumns: []*schema.Column{AgentsColumns[0]},
-				OnDelete:   schema.Cascade,
+				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "merchant_stores_merchants_store",
@@ -317,6 +342,30 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 		},
+	}
+	// NotificationsColumns holds the columns for the "notifications" table.
+	NotificationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "event", Type: field.TypeString},
+		{Name: "activity", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString},
+		{Name: "subject_type", Type: field.TypeString},
+		{Name: "subject_id", Type: field.TypeInt, Nullable: true},
+		{Name: "creator_type", Type: field.TypeString},
+		{Name: "creator_id", Type: field.TypeInt, Nullable: true},
+		{Name: "customer_read_at", Type: field.TypeString, Nullable: true},
+		{Name: "agent_read_at", Type: field.TypeString, Nullable: true},
+		{Name: "merchant_read_at", Type: field.TypeString, Nullable: true},
+		{Name: "admin_read_at", Type: field.TypeJSON, Nullable: true},
+		{Name: "data", Type: field.TypeJSON, Nullable: true},
+	}
+	// NotificationsTable holds the schema information for the "notifications" table.
+	NotificationsTable = &schema.Table{
+		Name:       "notifications",
+		Columns:    NotificationsColumns,
+		PrimaryKey: []*schema.Column{NotificationsColumns[0]},
 	}
 	// OrdersColumns holds the columns for the "orders" table.
 	OrdersColumns = []*schema.Column{
@@ -333,6 +382,7 @@ var (
 		{Name: "delivery_method", Type: field.TypeEnum, Enums: []string{"HOD", "PSD"}},
 		{Name: "payment_method", Type: field.TypeEnum, Enums: []string{"ONLINE", "POD"}, Default: "ONLINE"},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "in_progress", "fulfilled", "canceled"}, Default: "pending"},
+		{Name: "customer_approval", Type: field.TypeEnum, Nullable: true, Enums: []string{"pending", "approved"}},
 		{Name: "store_tasks_created", Type: field.TypeJSON, Nullable: true},
 		{Name: "delivered_at", Type: field.TypeTime, Nullable: true},
 		{Name: "address_orders", Type: field.TypeInt, Nullable: true},
@@ -340,6 +390,7 @@ var (
 		{Name: "customer_orders", Type: field.TypeInt, Nullable: true},
 		{Name: "merchant_orders", Type: field.TypeInt, Nullable: true},
 		{Name: "pickup_station_orders", Type: field.TypeInt, Nullable: true},
+		{Name: "purchase_request_order", Type: field.TypeInt, Nullable: true},
 	}
 	// OrdersTable holds the schema information for the "orders" table.
 	OrdersTable = &schema.Table{
@@ -349,33 +400,39 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "orders_addresses_orders",
-				Columns:    []*schema.Column{OrdersColumns[15]},
+				Columns:    []*schema.Column{OrdersColumns[16]},
 				RefColumns: []*schema.Column{AddressesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "orders_agents_orders",
-				Columns:    []*schema.Column{OrdersColumns[16]},
+				Columns:    []*schema.Column{OrdersColumns[17]},
 				RefColumns: []*schema.Column{AgentsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "orders_customers_orders",
-				Columns:    []*schema.Column{OrdersColumns[17]},
+				Columns:    []*schema.Column{OrdersColumns[18]},
 				RefColumns: []*schema.Column{CustomersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "orders_merchants_orders",
-				Columns:    []*schema.Column{OrdersColumns[18]},
+				Columns:    []*schema.Column{OrdersColumns[19]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "orders_pickup_stations_orders",
-				Columns:    []*schema.Column{OrdersColumns[19]},
+				Columns:    []*schema.Column{OrdersColumns[20]},
 				RefColumns: []*schema.Column{PickupStationsColumns[0]},
 				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "orders_purchase_requests_order",
+				Columns:    []*schema.Column{OrdersColumns[21]},
+				RefColumns: []*schema.Column{PurchaseRequestsColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -425,6 +482,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "permission", Type: field.TypeString, Default: "Read"},
+		{Name: "slug", Type: field.TypeString, Default: "read"},
 	}
 	// PermissionsTable holds the schema information for the "permissions" table.
 	PermissionsTable = &schema.Table{
@@ -447,6 +505,22 @@ var (
 		Name:       "pickup_stations",
 		Columns:    PickupStationsColumns,
 		PrimaryKey: []*schema.Column{PickupStationsColumns[0]},
+	}
+	// PriceModelsColumns holds the columns for the "price_models" table.
+	PriceModelsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "initials", Type: field.TypeString},
+		{Name: "formula", Type: field.TypeString},
+		{Name: "asinyo_formula", Type: field.TypeString, Nullable: true, Default: "(percentage/100) * cp"},
+	}
+	// PriceModelsTable holds the schema information for the "price_models" table.
+	PriceModelsTable = &schema.Table{
+		Name:       "price_models",
+		Columns:    PriceModelsColumns,
+		PrimaryKey: []*schema.Column{PriceModelsColumns[0]},
 	}
 	// ProductsColumns holds the columns for the "products" table.
 	ProductsColumns = []*schema.Column{
@@ -514,6 +588,7 @@ var (
 		{Name: "category", Type: field.TypeString, Unique: true},
 		{Name: "image", Type: field.TypeString},
 		{Name: "slug", Type: field.TypeString},
+		{Name: "percentage", Type: field.TypeInt, Nullable: true},
 		{Name: "product_category_major_minors", Type: field.TypeInt},
 	}
 	// ProductCategoryMinorsTable holds the schema information for the "product_category_minors" table.
@@ -524,8 +599,33 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "product_category_minors_product_category_majors_minors",
-				Columns:    []*schema.Column{ProductCategoryMinorsColumns[6]},
+				Columns:    []*schema.Column{ProductCategoryMinorsColumns[7]},
 				RefColumns: []*schema.Column{ProductCategoryMajorsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// PurchaseRequestsColumns holds the columns for the "purchase_requests" table.
+	PurchaseRequestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "signed", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "file", Type: field.TypeString, Nullable: true},
+		{Name: "customer_purchase_request", Type: field.TypeInt},
+	}
+	// PurchaseRequestsTable holds the schema information for the "purchase_requests" table.
+	PurchaseRequestsTable = &schema.Table{
+		Name:       "purchase_requests",
+		Columns:    PurchaseRequestsColumns,
+		PrimaryKey: []*schema.Column{PurchaseRequestsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "purchase_requests_customers_purchase_request",
+				Columns:    []*schema.Column{PurchaseRequestsColumns[7]},
+				RefColumns: []*schema.Column{CustomersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
@@ -620,27 +720,102 @@ var (
 			},
 		},
 	}
-	// LogisticOrderColumns holds the columns for the "logistic_order" table.
-	LogisticOrderColumns = []*schema.Column{
-		{Name: "logistic_id", Type: field.TypeInt},
-		{Name: "order_id", Type: field.TypeInt},
+	// AdminNotificationsColumns holds the columns for the "admin_notifications" table.
+	AdminNotificationsColumns = []*schema.Column{
+		{Name: "admin_id", Type: field.TypeInt},
+		{Name: "notification_id", Type: field.TypeInt},
 	}
-	// LogisticOrderTable holds the schema information for the "logistic_order" table.
-	LogisticOrderTable = &schema.Table{
-		Name:       "logistic_order",
-		Columns:    LogisticOrderColumns,
-		PrimaryKey: []*schema.Column{LogisticOrderColumns[0], LogisticOrderColumns[1]},
+	// AdminNotificationsTable holds the schema information for the "admin_notifications" table.
+	AdminNotificationsTable = &schema.Table{
+		Name:       "admin_notifications",
+		Columns:    AdminNotificationsColumns,
+		PrimaryKey: []*schema.Column{AdminNotificationsColumns[0], AdminNotificationsColumns[1]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "logistic_order_logistic_id",
-				Columns:    []*schema.Column{LogisticOrderColumns[0]},
-				RefColumns: []*schema.Column{LogisticsColumns[0]},
+				Symbol:     "admin_notifications_admin_id",
+				Columns:    []*schema.Column{AdminNotificationsColumns[0]},
+				RefColumns: []*schema.Column{AdminsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "logistic_order_order_id",
-				Columns:    []*schema.Column{LogisticOrderColumns[1]},
-				RefColumns: []*schema.Column{OrdersColumns[0]},
+				Symbol:     "admin_notifications_notification_id",
+				Columns:    []*schema.Column{AdminNotificationsColumns[1]},
+				RefColumns: []*schema.Column{NotificationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// AgentNotificationsColumns holds the columns for the "agent_notifications" table.
+	AgentNotificationsColumns = []*schema.Column{
+		{Name: "agent_id", Type: field.TypeInt},
+		{Name: "notification_id", Type: field.TypeInt},
+	}
+	// AgentNotificationsTable holds the schema information for the "agent_notifications" table.
+	AgentNotificationsTable = &schema.Table{
+		Name:       "agent_notifications",
+		Columns:    AgentNotificationsColumns,
+		PrimaryKey: []*schema.Column{AgentNotificationsColumns[0], AgentNotificationsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "agent_notifications_agent_id",
+				Columns:    []*schema.Column{AgentNotificationsColumns[0]},
+				RefColumns: []*schema.Column{AgentsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "agent_notifications_notification_id",
+				Columns:    []*schema.Column{AgentNotificationsColumns[1]},
+				RefColumns: []*schema.Column{NotificationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// CustomerNotificationsColumns holds the columns for the "customer_notifications" table.
+	CustomerNotificationsColumns = []*schema.Column{
+		{Name: "customer_id", Type: field.TypeInt},
+		{Name: "notification_id", Type: field.TypeInt},
+	}
+	// CustomerNotificationsTable holds the schema information for the "customer_notifications" table.
+	CustomerNotificationsTable = &schema.Table{
+		Name:       "customer_notifications",
+		Columns:    CustomerNotificationsColumns,
+		PrimaryKey: []*schema.Column{CustomerNotificationsColumns[0], CustomerNotificationsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "customer_notifications_customer_id",
+				Columns:    []*schema.Column{CustomerNotificationsColumns[0]},
+				RefColumns: []*schema.Column{CustomersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "customer_notifications_notification_id",
+				Columns:    []*schema.Column{CustomerNotificationsColumns[1]},
+				RefColumns: []*schema.Column{NotificationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// MerchantNotificationsColumns holds the columns for the "merchant_notifications" table.
+	MerchantNotificationsColumns = []*schema.Column{
+		{Name: "merchant_id", Type: field.TypeInt},
+		{Name: "notification_id", Type: field.TypeInt},
+	}
+	// MerchantNotificationsTable holds the schema information for the "merchant_notifications" table.
+	MerchantNotificationsTable = &schema.Table{
+		Name:       "merchant_notifications",
+		Columns:    MerchantNotificationsColumns,
+		PrimaryKey: []*schema.Column{MerchantNotificationsColumns[0], MerchantNotificationsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "merchant_notifications_merchant_id",
+				Columns:    []*schema.Column{MerchantNotificationsColumns[0]},
+				RefColumns: []*schema.Column{MerchantsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "merchant_notifications_notification_id",
+				Columns:    []*schema.Column{MerchantNotificationsColumns[1]},
+				RefColumns: []*schema.Column{NotificationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
@@ -702,24 +877,31 @@ var (
 		AgentsTable,
 		AgentRequestsTable,
 		BusinessCustomersTable,
+		ConfigurationsTable,
 		CustomersTable,
 		FavouritesTable,
 		IndividualCustomersTable,
 		LogisticsTable,
 		MerchantsTable,
 		MerchantStoresTable,
+		NotificationsTable,
 		OrdersTable,
 		OrderDetailsTable,
 		PermissionsTable,
 		PickupStationsTable,
+		PriceModelsTable,
 		ProductsTable,
 		ProductCategoryMajorsTable,
 		ProductCategoryMinorsTable,
+		PurchaseRequestsTable,
 		RetailMerchantsTable,
 		RolesTable,
 		SupplierMerchantsTable,
 		AdminRolesTable,
-		LogisticOrderTable,
+		AdminNotificationsTable,
+		AgentNotificationsTable,
+		CustomerNotificationsTable,
+		MerchantNotificationsTable,
 		MerchantStoreOrdersTable,
 		RolePermissionsTable,
 	}
@@ -732,12 +914,13 @@ func init() {
 	AgentRequestsTable.ForeignKeys[0].RefTable = AgentsTable
 	AgentRequestsTable.ForeignKeys[1].RefTable = MerchantStoresTable
 	BusinessCustomersTable.ForeignKeys[0].RefTable = CustomersTable
+	CustomersTable.ForeignKeys[0].RefTable = AdminsTable
 	FavouritesTable.ForeignKeys[0].RefTable = AgentsTable
 	FavouritesTable.ForeignKeys[1].RefTable = CustomersTable
 	FavouritesTable.ForeignKeys[2].RefTable = MerchantsTable
 	FavouritesTable.ForeignKeys[3].RefTable = ProductsTable
 	IndividualCustomersTable.ForeignKeys[0].RefTable = CustomersTable
-	LogisticsTable.ForeignKeys[0].RefTable = MerchantStoresTable
+	LogisticsTable.ForeignKeys[0].RefTable = OrdersTable
 	MerchantStoresTable.ForeignKeys[0].RefTable = AgentsTable
 	MerchantStoresTable.ForeignKeys[1].RefTable = MerchantsTable
 	OrdersTable.ForeignKeys[0].RefTable = AddressesTable
@@ -745,6 +928,7 @@ func init() {
 	OrdersTable.ForeignKeys[2].RefTable = CustomersTable
 	OrdersTable.ForeignKeys[3].RefTable = MerchantsTable
 	OrdersTable.ForeignKeys[4].RefTable = PickupStationsTable
+	OrdersTable.ForeignKeys[5].RefTable = PurchaseRequestsTable
 	OrderDetailsTable.ForeignKeys[0].RefTable = MerchantStoresTable
 	OrderDetailsTable.ForeignKeys[1].RefTable = OrdersTable
 	OrderDetailsTable.ForeignKeys[2].RefTable = ProductsTable
@@ -752,12 +936,19 @@ func init() {
 	ProductsTable.ForeignKeys[1].RefTable = ProductCategoryMajorsTable
 	ProductsTable.ForeignKeys[2].RefTable = ProductCategoryMinorsTable
 	ProductCategoryMinorsTable.ForeignKeys[0].RefTable = ProductCategoryMajorsTable
+	PurchaseRequestsTable.ForeignKeys[0].RefTable = CustomersTable
 	RetailMerchantsTable.ForeignKeys[0].RefTable = MerchantsTable
 	SupplierMerchantsTable.ForeignKeys[0].RefTable = MerchantsTable
 	AdminRolesTable.ForeignKeys[0].RefTable = AdminsTable
 	AdminRolesTable.ForeignKeys[1].RefTable = RolesTable
-	LogisticOrderTable.ForeignKeys[0].RefTable = LogisticsTable
-	LogisticOrderTable.ForeignKeys[1].RefTable = OrdersTable
+	AdminNotificationsTable.ForeignKeys[0].RefTable = AdminsTable
+	AdminNotificationsTable.ForeignKeys[1].RefTable = NotificationsTable
+	AgentNotificationsTable.ForeignKeys[0].RefTable = AgentsTable
+	AgentNotificationsTable.ForeignKeys[1].RefTable = NotificationsTable
+	CustomerNotificationsTable.ForeignKeys[0].RefTable = CustomersTable
+	CustomerNotificationsTable.ForeignKeys[1].RefTable = NotificationsTable
+	MerchantNotificationsTable.ForeignKeys[0].RefTable = MerchantsTable
+	MerchantNotificationsTable.ForeignKeys[1].RefTable = NotificationsTable
 	MerchantStoreOrdersTable.ForeignKeys[0].RefTable = MerchantStoresTable
 	MerchantStoreOrdersTable.ForeignKeys[1].RefTable = OrdersTable
 	RolePermissionsTable.ForeignKeys[0].RefTable = RolesTable

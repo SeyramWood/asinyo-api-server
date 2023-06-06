@@ -21,6 +21,7 @@ func (Permission) Mixin() []ent.Mixin {
 func (Permission) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("permission").Default("Read"),
+		field.String("slug").Default("read"),
 	}
 }
 

@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -12,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/logistic"
-	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/predicate"
 )
@@ -20,14 +18,11 @@ import (
 // LogisticQuery is the builder for querying Logistic entities.
 type LogisticQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
+	ctx        *QueryContext
+	order      []logistic.OrderOption
+	inters     []Interceptor
 	predicates []predicate.Logistic
 	withOrder  *OrderQuery
-	withStore  *MerchantStoreQuery
 	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -40,34 +35,34 @@ func (lq *LogisticQuery) Where(ps ...predicate.Logistic) *LogisticQuery {
 	return lq
 }
 
-// Limit adds a limit step to the query.
+// Limit the number of records to be returned by this query.
 func (lq *LogisticQuery) Limit(limit int) *LogisticQuery {
-	lq.limit = &limit
+	lq.ctx.Limit = &limit
 	return lq
 }
 
-// Offset adds an offset step to the query.
+// Offset to start from.
 func (lq *LogisticQuery) Offset(offset int) *LogisticQuery {
-	lq.offset = &offset
+	lq.ctx.Offset = &offset
 	return lq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
 func (lq *LogisticQuery) Unique(unique bool) *LogisticQuery {
-	lq.unique = &unique
+	lq.ctx.Unique = &unique
 	return lq
 }
 
-// Order adds an order step to the query.
-func (lq *LogisticQuery) Order(o ...OrderFunc) *LogisticQuery {
+// Order specifies how the records should be ordered.
+func (lq *LogisticQuery) Order(o ...logistic.OrderOption) *LogisticQuery {
 	lq.order = append(lq.order, o...)
 	return lq
 }
 
 // QueryOrder chains the current query on the "order" edge.
 func (lq *LogisticQuery) QueryOrder() *OrderQuery {
-	query := &OrderQuery{config: lq.config}
+	query := (&OrderClient{config: lq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := lq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -79,29 +74,7 @@ func (lq *LogisticQuery) QueryOrder() *OrderQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(logistic.Table, logistic.FieldID, selector),
 			sqlgraph.To(order.Table, order.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, logistic.OrderTable, logistic.OrderPrimaryKey...),
-		)
-		fromU = sqlgraph.SetNeighbors(lq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryStore chains the current query on the "store" edge.
-func (lq *LogisticQuery) QueryStore() *MerchantStoreQuery {
-	query := &MerchantStoreQuery{config: lq.config}
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := lq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := lq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(logistic.Table, logistic.FieldID, selector),
-			sqlgraph.To(merchantstore.Table, merchantstore.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, logistic.StoreTable, logistic.StoreColumn),
+			sqlgraph.Edge(sqlgraph.O2O, true, logistic.OrderTable, logistic.OrderColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(lq.driver.Dialect(), step)
 		return fromU, nil
@@ -112,7 +85,7 @@ func (lq *LogisticQuery) QueryStore() *MerchantStoreQuery {
 // First returns the first Logistic entity from the query.
 // Returns a *NotFoundError when no Logistic was found.
 func (lq *LogisticQuery) First(ctx context.Context) (*Logistic, error) {
-	nodes, err := lq.Limit(1).All(ctx)
+	nodes, err := lq.Limit(1).All(setContextOp(ctx, lq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +108,7 @@ func (lq *LogisticQuery) FirstX(ctx context.Context) *Logistic {
 // Returns a *NotFoundError when no Logistic ID was found.
 func (lq *LogisticQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = lq.Limit(1).IDs(ctx); err != nil {
+	if ids, err = lq.Limit(1).IDs(setContextOp(ctx, lq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -158,7 +131,7 @@ func (lq *LogisticQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Logistic entity is found.
 // Returns a *NotFoundError when no Logistic entities are found.
 func (lq *LogisticQuery) Only(ctx context.Context) (*Logistic, error) {
-	nodes, err := lq.Limit(2).All(ctx)
+	nodes, err := lq.Limit(2).All(setContextOp(ctx, lq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +159,7 @@ func (lq *LogisticQuery) OnlyX(ctx context.Context) *Logistic {
 // Returns a *NotFoundError when no entities are found.
 func (lq *LogisticQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = lq.Limit(2).IDs(ctx); err != nil {
+	if ids, err = lq.Limit(2).IDs(setContextOp(ctx, lq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -211,10 +184,12 @@ func (lq *LogisticQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Logistics.
 func (lq *LogisticQuery) All(ctx context.Context) ([]*Logistic, error) {
+	ctx = setContextOp(ctx, lq.ctx, "All")
 	if err := lq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	return lq.sqlAll(ctx)
+	qr := querierAll[[]*Logistic, *LogisticQuery]()
+	return withInterceptors[[]*Logistic](ctx, lq, qr, lq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
@@ -227,9 +202,12 @@ func (lq *LogisticQuery) AllX(ctx context.Context) []*Logistic {
 }
 
 // IDs executes the query and returns a list of Logistic IDs.
-func (lq *LogisticQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	if err := lq.Select(logistic.FieldID).Scan(ctx, &ids); err != nil {
+func (lq *LogisticQuery) IDs(ctx context.Context) (ids []int, err error) {
+	if lq.ctx.Unique == nil && lq.path != nil {
+		lq.Unique(true)
+	}
+	ctx = setContextOp(ctx, lq.ctx, "IDs")
+	if err = lq.Select(logistic.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -246,10 +224,11 @@ func (lq *LogisticQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (lq *LogisticQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, lq.ctx, "Count")
 	if err := lq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return lq.sqlCount(ctx)
+	return withInterceptors[int](ctx, lq, querierCount[*LogisticQuery](), lq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
@@ -263,10 +242,15 @@ func (lq *LogisticQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (lq *LogisticQuery) Exist(ctx context.Context) (bool, error) {
-	if err := lq.prepareQuery(ctx); err != nil {
-		return false, err
+	ctx = setContextOp(ctx, lq.ctx, "Exist")
+	switch _, err := lq.FirstID(ctx); {
+	case IsNotFound(err):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("ent: check existence: %w", err)
+	default:
+		return true, nil
 	}
-	return lq.sqlExist(ctx)
 }
 
 // ExistX is like Exist, but panics if an error occurs.
@@ -286,38 +270,25 @@ func (lq *LogisticQuery) Clone() *LogisticQuery {
 	}
 	return &LogisticQuery{
 		config:     lq.config,
-		limit:      lq.limit,
-		offset:     lq.offset,
-		order:      append([]OrderFunc{}, lq.order...),
+		ctx:        lq.ctx.Clone(),
+		order:      append([]logistic.OrderOption{}, lq.order...),
+		inters:     append([]Interceptor{}, lq.inters...),
 		predicates: append([]predicate.Logistic{}, lq.predicates...),
 		withOrder:  lq.withOrder.Clone(),
-		withStore:  lq.withStore.Clone(),
 		// clone intermediate query.
-		sql:    lq.sql.Clone(),
-		path:   lq.path,
-		unique: lq.unique,
+		sql:  lq.sql.Clone(),
+		path: lq.path,
 	}
 }
 
 // WithOrder tells the query-builder to eager-load the nodes that are connected to
 // the "order" edge. The optional arguments are used to configure the query builder of the edge.
 func (lq *LogisticQuery) WithOrder(opts ...func(*OrderQuery)) *LogisticQuery {
-	query := &OrderQuery{config: lq.config}
+	query := (&OrderClient{config: lq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
 	lq.withOrder = query
-	return lq
-}
-
-// WithStore tells the query-builder to eager-load the nodes that are connected to
-// the "store" edge. The optional arguments are used to configure the query builder of the edge.
-func (lq *LogisticQuery) WithStore(opts ...func(*MerchantStoreQuery)) *LogisticQuery {
-	query := &MerchantStoreQuery{config: lq.config}
-	for _, opt := range opts {
-		opt(query)
-	}
-	lq.withStore = query
 	return lq
 }
 
@@ -336,16 +307,11 @@ func (lq *LogisticQuery) WithStore(opts ...func(*MerchantStoreQuery)) *LogisticQ
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (lq *LogisticQuery) GroupBy(field string, fields ...string) *LogisticGroupBy {
-	grbuild := &LogisticGroupBy{config: lq.config}
-	grbuild.fields = append([]string{field}, fields...)
-	grbuild.path = func(ctx context.Context) (prev *sql.Selector, err error) {
-		if err := lq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		return lq.sqlQuery(ctx), nil
-	}
+	lq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &LogisticGroupBy{build: lq}
+	grbuild.flds = &lq.ctx.Fields
 	grbuild.label = logistic.Label
-	grbuild.flds, grbuild.scan = &grbuild.fields, grbuild.Scan
+	grbuild.scan = grbuild.Scan
 	return grbuild
 }
 
@@ -362,15 +328,30 @@ func (lq *LogisticQuery) GroupBy(field string, fields ...string) *LogisticGroupB
 //		Select(logistic.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (lq *LogisticQuery) Select(fields ...string) *LogisticSelect {
-	lq.fields = append(lq.fields, fields...)
-	selbuild := &LogisticSelect{LogisticQuery: lq}
-	selbuild.label = logistic.Label
-	selbuild.flds, selbuild.scan = &lq.fields, selbuild.Scan
-	return selbuild
+	lq.ctx.Fields = append(lq.ctx.Fields, fields...)
+	sbuild := &LogisticSelect{LogisticQuery: lq}
+	sbuild.label = logistic.Label
+	sbuild.flds, sbuild.scan = &lq.ctx.Fields, sbuild.Scan
+	return sbuild
+}
+
+// Aggregate returns a LogisticSelect configured with the given aggregations.
+func (lq *LogisticQuery) Aggregate(fns ...AggregateFunc) *LogisticSelect {
+	return lq.Select().Aggregate(fns...)
 }
 
 func (lq *LogisticQuery) prepareQuery(ctx context.Context) error {
-	for _, f := range lq.fields {
+	for _, inter := range lq.inters {
+		if inter == nil {
+			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
+		}
+		if trv, ok := inter.(Traverser); ok {
+			if err := trv.Traverse(ctx, lq); err != nil {
+				return err
+			}
+		}
+	}
+	for _, f := range lq.ctx.Fields {
 		if !logistic.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
@@ -390,12 +371,11 @@ func (lq *LogisticQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Log
 		nodes       = []*Logistic{}
 		withFKs     = lq.withFKs
 		_spec       = lq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [1]bool{
 			lq.withOrder != nil,
-			lq.withStore != nil,
 		}
 	)
-	if lq.withStore != nil {
+	if lq.withOrder != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -420,15 +400,8 @@ func (lq *LogisticQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Log
 		return nodes, nil
 	}
 	if query := lq.withOrder; query != nil {
-		if err := lq.loadOrder(ctx, query, nodes,
-			func(n *Logistic) { n.Edges.Order = []*Order{} },
-			func(n *Logistic, e *Order) { n.Edges.Order = append(n.Edges.Order, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := lq.withStore; query != nil {
-		if err := lq.loadStore(ctx, query, nodes, nil,
-			func(n *Logistic, e *MerchantStore) { n.Edges.Store = e }); err != nil {
+		if err := lq.loadOrder(ctx, query, nodes, nil,
+			func(n *Logistic, e *Order) { n.Edges.Order = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -436,77 +409,22 @@ func (lq *LogisticQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Log
 }
 
 func (lq *LogisticQuery) loadOrder(ctx context.Context, query *OrderQuery, nodes []*Logistic, init func(*Logistic), assign func(*Logistic, *Order)) error {
-	edgeIDs := make([]driver.Value, len(nodes))
-	byID := make(map[int]*Logistic)
-	nids := make(map[int]map[*Logistic]struct{})
-	for i, node := range nodes {
-		edgeIDs[i] = node.ID
-		byID[node.ID] = node
-		if init != nil {
-			init(node)
-		}
-	}
-	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(logistic.OrderTable)
-		s.Join(joinT).On(s.C(order.FieldID), joinT.C(logistic.OrderPrimaryKey[1]))
-		s.Where(sql.InValues(joinT.C(logistic.OrderPrimaryKey[0]), edgeIDs...))
-		columns := s.SelectedColumns()
-		s.Select(joinT.C(logistic.OrderPrimaryKey[0]))
-		s.AppendSelect(columns...)
-		s.SetDistinct(false)
-	})
-	if err := query.prepareQuery(ctx); err != nil {
-		return err
-	}
-	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-		assign := spec.Assign
-		values := spec.ScanValues
-		spec.ScanValues = func(columns []string) ([]any, error) {
-			values, err := values(columns[1:])
-			if err != nil {
-				return nil, err
-			}
-			return append([]any{new(sql.NullInt64)}, values...), nil
-		}
-		spec.Assign = func(columns []string, values []any) error {
-			outValue := int(values[0].(*sql.NullInt64).Int64)
-			inValue := int(values[1].(*sql.NullInt64).Int64)
-			if nids[inValue] == nil {
-				nids[inValue] = map[*Logistic]struct{}{byID[outValue]: struct{}{}}
-				return assign(columns[1:], values[1:])
-			}
-			nids[inValue][byID[outValue]] = struct{}{}
-			return nil
-		}
-	})
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected "order" node returned %v`, n.ID)
-		}
-		for kn := range nodes {
-			assign(kn, n)
-		}
-	}
-	return nil
-}
-func (lq *LogisticQuery) loadStore(ctx context.Context, query *MerchantStoreQuery, nodes []*Logistic, init func(*Logistic), assign func(*Logistic, *MerchantStore)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Logistic)
 	for i := range nodes {
-		if nodes[i].merchant_store_logistics == nil {
+		if nodes[i].order_logistic == nil {
 			continue
 		}
-		fk := *nodes[i].merchant_store_logistics
+		fk := *nodes[i].order_logistic
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
 		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(merchantstore.IDIn(ids...))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(order.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -514,7 +432,7 @@ func (lq *LogisticQuery) loadStore(ctx context.Context, query *MerchantStoreQuer
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_store_logistics" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "order_logistic" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -525,41 +443,22 @@ func (lq *LogisticQuery) loadStore(ctx context.Context, query *MerchantStoreQuer
 
 func (lq *LogisticQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := lq.querySpec()
-	_spec.Node.Columns = lq.fields
-	if len(lq.fields) > 0 {
-		_spec.Unique = lq.unique != nil && *lq.unique
+	_spec.Node.Columns = lq.ctx.Fields
+	if len(lq.ctx.Fields) > 0 {
+		_spec.Unique = lq.ctx.Unique != nil && *lq.ctx.Unique
 	}
 	return sqlgraph.CountNodes(ctx, lq.driver, _spec)
 }
 
-func (lq *LogisticQuery) sqlExist(ctx context.Context) (bool, error) {
-	switch _, err := lq.FirstID(ctx); {
-	case IsNotFound(err):
-		return false, nil
-	case err != nil:
-		return false, fmt.Errorf("ent: check existence: %w", err)
-	default:
-		return true, nil
-	}
-}
-
 func (lq *LogisticQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   logistic.Table,
-			Columns: logistic.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: logistic.FieldID,
-			},
-		},
-		From:   lq.sql,
-		Unique: true,
-	}
-	if unique := lq.unique; unique != nil {
+	_spec := sqlgraph.NewQuerySpec(logistic.Table, logistic.Columns, sqlgraph.NewFieldSpec(logistic.FieldID, field.TypeInt))
+	_spec.From = lq.sql
+	if unique := lq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if lq.path != nil {
+		_spec.Unique = true
 	}
-	if fields := lq.fields; len(fields) > 0 {
+	if fields := lq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, logistic.FieldID)
 		for i := range fields {
@@ -575,10 +474,10 @@ func (lq *LogisticQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if limit := lq.limit; limit != nil {
+	if limit := lq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := lq.offset; offset != nil {
+	if offset := lq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
 	if ps := lq.order; len(ps) > 0 {
@@ -594,7 +493,7 @@ func (lq *LogisticQuery) querySpec() *sqlgraph.QuerySpec {
 func (lq *LogisticQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(lq.driver.Dialect())
 	t1 := builder.Table(logistic.Table)
-	columns := lq.fields
+	columns := lq.ctx.Fields
 	if len(columns) == 0 {
 		columns = logistic.Columns
 	}
@@ -603,7 +502,7 @@ func (lq *LogisticQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector = lq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if lq.unique != nil && *lq.unique {
+	if lq.ctx.Unique != nil && *lq.ctx.Unique {
 		selector.Distinct()
 	}
 	for _, p := range lq.predicates {
@@ -612,12 +511,12 @@ func (lq *LogisticQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	for _, p := range lq.order {
 		p(selector)
 	}
-	if offset := lq.offset; offset != nil {
+	if offset := lq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := lq.limit; limit != nil {
+	if limit := lq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -625,13 +524,8 @@ func (lq *LogisticQuery) sqlQuery(ctx context.Context) *sql.Selector {
 
 // LogisticGroupBy is the group-by builder for Logistic entities.
 type LogisticGroupBy struct {
-	config
 	selector
-	fields []string
-	fns    []AggregateFunc
-	// intermediate query (i.e. traversal path).
-	sql  *sql.Selector
-	path func(context.Context) (*sql.Selector, error)
+	build *LogisticQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
@@ -640,74 +534,77 @@ func (lgb *LogisticGroupBy) Aggregate(fns ...AggregateFunc) *LogisticGroupBy {
 	return lgb
 }
 
-// Scan applies the group-by query and scans the result into the given value.
+// Scan applies the selector query and scans the result into the given value.
 func (lgb *LogisticGroupBy) Scan(ctx context.Context, v any) error {
-	query, err := lgb.path(ctx)
-	if err != nil {
+	ctx = setContextOp(ctx, lgb.build.ctx, "GroupBy")
+	if err := lgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	lgb.sql = query
-	return lgb.sqlScan(ctx, v)
+	return scanWithInterceptors[*LogisticQuery, *LogisticGroupBy](ctx, lgb.build, lgb, lgb.build.inters, v)
 }
 
-func (lgb *LogisticGroupBy) sqlScan(ctx context.Context, v any) error {
-	for _, f := range lgb.fields {
-		if !logistic.ValidColumn(f) {
-			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
-		}
+func (lgb *LogisticGroupBy) sqlScan(ctx context.Context, root *LogisticQuery, v any) error {
+	selector := root.sqlQuery(ctx).Select()
+	aggregation := make([]string, 0, len(lgb.fns))
+	for _, fn := range lgb.fns {
+		aggregation = append(aggregation, fn(selector))
 	}
-	selector := lgb.sqlQuery()
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(*lgb.flds)+len(lgb.fns))
+		for _, f := range *lgb.flds {
+			columns = append(columns, selector.C(f))
+		}
+		columns = append(columns, aggregation...)
+		selector.Select(columns...)
+	}
+	selector.GroupBy(selector.Columns(*lgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := lgb.driver.Query(ctx, query, args, rows); err != nil {
+	if err := lgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
 }
 
-func (lgb *LogisticGroupBy) sqlQuery() *sql.Selector {
-	selector := lgb.sql.Select()
-	aggregation := make([]string, 0, len(lgb.fns))
-	for _, fn := range lgb.fns {
-		aggregation = append(aggregation, fn(selector))
-	}
-	// If no columns were selected in a custom aggregation function, the default
-	// selection is the fields used for "group-by", and the aggregation functions.
-	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(lgb.fields)+len(lgb.fns))
-		for _, f := range lgb.fields {
-			columns = append(columns, selector.C(f))
-		}
-		columns = append(columns, aggregation...)
-		selector.Select(columns...)
-	}
-	return selector.GroupBy(selector.Columns(lgb.fields...)...)
-}
-
 // LogisticSelect is the builder for selecting fields of Logistic entities.
 type LogisticSelect struct {
 	*LogisticQuery
 	selector
-	// intermediate query (i.e. traversal path).
-	sql *sql.Selector
+}
+
+// Aggregate adds the given aggregation functions to the selector query.
+func (ls *LogisticSelect) Aggregate(fns ...AggregateFunc) *LogisticSelect {
+	ls.fns = append(ls.fns, fns...)
+	return ls
 }
 
 // Scan applies the selector query and scans the result into the given value.
 func (ls *LogisticSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, ls.ctx, "Select")
 	if err := ls.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ls.sql = ls.LogisticQuery.sqlQuery(ctx)
-	return ls.sqlScan(ctx, v)
+	return scanWithInterceptors[*LogisticQuery, *LogisticSelect](ctx, ls.LogisticQuery, ls, ls.inters, v)
 }
 
-func (ls *LogisticSelect) sqlScan(ctx context.Context, v any) error {
+func (ls *LogisticSelect) sqlScan(ctx context.Context, root *LogisticQuery, v any) error {
+	selector := root.sqlQuery(ctx)
+	aggregation := make([]string, 0, len(ls.fns))
+	for _, fn := range ls.fns {
+		aggregation = append(aggregation, fn(selector))
+	}
+	switch n := len(*ls.selector.flds); {
+	case n == 0 && len(aggregation) > 0:
+		selector.Select(aggregation...)
+	case n != 0 && len(aggregation) > 0:
+		selector.AppendSelect(aggregation...)
+	}
 	rows := &sql.Rows{}
-	query, args := ls.sql.Query()
+	query, args := selector.Query()
 	if err := ls.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}

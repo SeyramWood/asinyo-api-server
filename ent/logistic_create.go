@@ -10,9 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/logistic"
-	"github.com/SeyramWood/ent/merchantstore"
 	"github.com/SeyramWood/ent/order"
 )
 
@@ -51,44 +49,45 @@ func (lc *LogisticCreate) SetNillableUpdatedAt(t *time.Time) *LogisticCreate {
 	return lc
 }
 
+// SetType sets the "type" field.
+func (lc *LogisticCreate) SetType(s string) *LogisticCreate {
+	lc.mutation.SetType(s)
+	return lc
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (lc *LogisticCreate) SetNillableType(s *string) *LogisticCreate {
+	if s != nil {
+		lc.SetType(*s)
+	}
+	return lc
+}
+
 // SetTask sets the "task" field.
-func (lc *LogisticCreate) SetTask(mpadtr *models.TookanPickupAndDeliveryTaskResponse) *LogisticCreate {
-	lc.mutation.SetTask(mpadtr)
+func (lc *LogisticCreate) SetTask(s *struct {
+	Data interface{} "json:\"data\""
+}) *LogisticCreate {
+	lc.mutation.SetTask(s)
 	return lc
 }
 
-// AddOrderIDs adds the "order" edge to the Order entity by IDs.
-func (lc *LogisticCreate) AddOrderIDs(ids ...int) *LogisticCreate {
-	lc.mutation.AddOrderIDs(ids...)
+// SetOrderID sets the "order" edge to the Order entity by ID.
+func (lc *LogisticCreate) SetOrderID(id int) *LogisticCreate {
+	lc.mutation.SetOrderID(id)
 	return lc
 }
 
-// AddOrder adds the "order" edges to the Order entity.
-func (lc *LogisticCreate) AddOrder(o ...*Order) *LogisticCreate {
-	ids := make([]int, len(o))
-	for i := range o {
-		ids[i] = o[i].ID
-	}
-	return lc.AddOrderIDs(ids...)
-}
-
-// SetStoreID sets the "store" edge to the MerchantStore entity by ID.
-func (lc *LogisticCreate) SetStoreID(id int) *LogisticCreate {
-	lc.mutation.SetStoreID(id)
-	return lc
-}
-
-// SetNillableStoreID sets the "store" edge to the MerchantStore entity by ID if the given value is not nil.
-func (lc *LogisticCreate) SetNillableStoreID(id *int) *LogisticCreate {
+// SetNillableOrderID sets the "order" edge to the Order entity by ID if the given value is not nil.
+func (lc *LogisticCreate) SetNillableOrderID(id *int) *LogisticCreate {
 	if id != nil {
-		lc = lc.SetStoreID(*id)
+		lc = lc.SetOrderID(*id)
 	}
 	return lc
 }
 
-// SetStore sets the "store" edge to the MerchantStore entity.
-func (lc *LogisticCreate) SetStore(m *MerchantStore) *LogisticCreate {
-	return lc.SetStoreID(m.ID)
+// SetOrder sets the "order" edge to the Order entity.
+func (lc *LogisticCreate) SetOrder(o *Order) *LogisticCreate {
+	return lc.SetOrderID(o.ID)
 }
 
 // Mutation returns the LogisticMutation object of the builder.
@@ -98,50 +97,8 @@ func (lc *LogisticCreate) Mutation() *LogisticMutation {
 
 // Save creates the Logistic in the database.
 func (lc *LogisticCreate) Save(ctx context.Context) (*Logistic, error) {
-	var (
-		err  error
-		node *Logistic
-	)
 	lc.defaults()
-	if len(lc.hooks) == 0 {
-		if err = lc.check(); err != nil {
-			return nil, err
-		}
-		node, err = lc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*LogisticMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = lc.check(); err != nil {
-				return nil, err
-			}
-			lc.mutation = mutation
-			if node, err = lc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(lc.hooks) - 1; i >= 0; i-- {
-			if lc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = lc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, lc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Logistic)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from LogisticMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, lc.sqlSave, lc.mutation, lc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -176,6 +133,10 @@ func (lc *LogisticCreate) defaults() {
 		v := logistic.DefaultUpdatedAt()
 		lc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := lc.mutation.GetType(); !ok {
+		v := logistic.DefaultType
+		lc.mutation.SetType(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -186,10 +147,21 @@ func (lc *LogisticCreate) check() error {
 	if _, ok := lc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Logistic.updated_at"`)}
 	}
+	if _, ok := lc.mutation.GetType(); !ok {
+		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Logistic.type"`)}
+	}
+	if v, ok := lc.mutation.GetType(); ok {
+		if err := logistic.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Logistic.type": %w`, err)}
+		}
+	}
 	return nil
 }
 
 func (lc *LogisticCreate) sqlSave(ctx context.Context) (*Logistic, error) {
+	if err := lc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := lc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, lc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -199,81 +171,47 @@ func (lc *LogisticCreate) sqlSave(ctx context.Context) (*Logistic, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	lc.mutation.id = &_node.ID
+	lc.mutation.done = true
 	return _node, nil
 }
 
 func (lc *LogisticCreate) createSpec() (*Logistic, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Logistic{config: lc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: logistic.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: logistic.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(logistic.Table, sqlgraph.NewFieldSpec(logistic.FieldID, field.TypeInt))
 	)
 	if value, ok := lc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: logistic.FieldCreatedAt,
-		})
+		_spec.SetField(logistic.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := lc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: logistic.FieldUpdatedAt,
-		})
+		_spec.SetField(logistic.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
+	if value, ok := lc.mutation.GetType(); ok {
+		_spec.SetField(logistic.FieldType, field.TypeString, value)
+		_node.Type = value
+	}
 	if value, ok := lc.mutation.Task(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: logistic.FieldTask,
-		})
+		_spec.SetField(logistic.FieldTask, field.TypeJSON, value)
 		_node.Task = value
 	}
 	if nodes := lc.mutation.OrderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   logistic.OrderTable,
-			Columns: logistic.OrderPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: order.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := lc.mutation.StoreIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   logistic.StoreTable,
-			Columns: []string{logistic.StoreColumn},
+			Table:   logistic.OrderTable,
+			Columns: []string{logistic.OrderColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.merchant_store_logistics = &nodes[0]
+		_node.order_logistic = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -303,8 +241,8 @@ func (lcb *LogisticCreateBulk) Save(ctx context.Context) ([]*Logistic, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, lcb.builders[i+1].mutation)
 				} else {

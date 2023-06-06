@@ -19,6 +19,7 @@ import (
 	"github.com/SeyramWood/ent/order"
 	"github.com/SeyramWood/ent/orderdetail"
 	"github.com/SeyramWood/ent/pickupstation"
+	"github.com/SeyramWood/ent/purchaserequest"
 )
 
 // OrderCreate is the builder for creating a Order entity.
@@ -172,6 +173,20 @@ func (oc *OrderCreate) SetNillableStatus(o *order.Status) *OrderCreate {
 	return oc
 }
 
+// SetCustomerApproval sets the "customer_approval" field.
+func (oc *OrderCreate) SetCustomerApproval(oa order.CustomerApproval) *OrderCreate {
+	oc.mutation.SetCustomerApproval(oa)
+	return oc
+}
+
+// SetNillableCustomerApproval sets the "customer_approval" field if the given value is not nil.
+func (oc *OrderCreate) SetNillableCustomerApproval(oa *order.CustomerApproval) *OrderCreate {
+	if oa != nil {
+		oc.SetCustomerApproval(*oa)
+	}
+	return oc
+}
+
 // SetStoreTasksCreated sets the "store_tasks_created" field.
 func (oc *OrderCreate) SetStoreTasksCreated(i []int) *OrderCreate {
 	oc.mutation.SetStoreTasksCreated(i)
@@ -205,6 +220,25 @@ func (oc *OrderCreate) AddDetails(o ...*OrderDetail) *OrderCreate {
 		ids[i] = o[i].ID
 	}
 	return oc.AddDetailIDs(ids...)
+}
+
+// SetLogisticID sets the "logistic" edge to the Logistic entity by ID.
+func (oc *OrderCreate) SetLogisticID(id int) *OrderCreate {
+	oc.mutation.SetLogisticID(id)
+	return oc
+}
+
+// SetNillableLogisticID sets the "logistic" edge to the Logistic entity by ID if the given value is not nil.
+func (oc *OrderCreate) SetNillableLogisticID(id *int) *OrderCreate {
+	if id != nil {
+		oc = oc.SetLogisticID(*id)
+	}
+	return oc
+}
+
+// SetLogistic sets the "logistic" edge to the Logistic entity.
+func (oc *OrderCreate) SetLogistic(l *Logistic) *OrderCreate {
+	return oc.SetLogisticID(l.ID)
 }
 
 // SetMerchantID sets the "merchant" edge to the Merchant entity by ID.
@@ -317,19 +351,23 @@ func (oc *OrderCreate) AddStores(m ...*MerchantStore) *OrderCreate {
 	return oc.AddStoreIDs(ids...)
 }
 
-// AddLogisticIDs adds the "logistic" edge to the Logistic entity by IDs.
-func (oc *OrderCreate) AddLogisticIDs(ids ...int) *OrderCreate {
-	oc.mutation.AddLogisticIDs(ids...)
+// SetPurchaseRequestID sets the "purchase_request" edge to the PurchaseRequest entity by ID.
+func (oc *OrderCreate) SetPurchaseRequestID(id int) *OrderCreate {
+	oc.mutation.SetPurchaseRequestID(id)
 	return oc
 }
 
-// AddLogistic adds the "logistic" edges to the Logistic entity.
-func (oc *OrderCreate) AddLogistic(l ...*Logistic) *OrderCreate {
-	ids := make([]int, len(l))
-	for i := range l {
-		ids[i] = l[i].ID
+// SetNillablePurchaseRequestID sets the "purchase_request" edge to the PurchaseRequest entity by ID if the given value is not nil.
+func (oc *OrderCreate) SetNillablePurchaseRequestID(id *int) *OrderCreate {
+	if id != nil {
+		oc = oc.SetPurchaseRequestID(*id)
 	}
-	return oc.AddLogisticIDs(ids...)
+	return oc
+}
+
+// SetPurchaseRequest sets the "purchase_request" edge to the PurchaseRequest entity.
+func (oc *OrderCreate) SetPurchaseRequest(p *PurchaseRequest) *OrderCreate {
+	return oc.SetPurchaseRequestID(p.ID)
 }
 
 // Mutation returns the OrderMutation object of the builder.
@@ -339,50 +377,8 @@ func (oc *OrderCreate) Mutation() *OrderMutation {
 
 // Save creates the Order in the database.
 func (oc *OrderCreate) Save(ctx context.Context) (*Order, error) {
-	var (
-		err  error
-		node *Order
-	)
 	oc.defaults()
-	if len(oc.hooks) == 0 {
-		if err = oc.check(); err != nil {
-			return nil, err
-		}
-		node, err = oc.sqlSave(ctx)
-	} else {
-		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*OrderMutation)
-			if !ok {
-				return nil, fmt.Errorf("unexpected mutation type %T", m)
-			}
-			if err = oc.check(); err != nil {
-				return nil, err
-			}
-			oc.mutation = mutation
-			if node, err = oc.sqlSave(ctx); err != nil {
-				return nil, err
-			}
-			mutation.id = &node.ID
-			mutation.done = true
-			return node, err
-		})
-		for i := len(oc.hooks) - 1; i >= 0; i-- {
-			if oc.hooks[i] == nil {
-				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
-			}
-			mut = oc.hooks[i](mut)
-		}
-		v, err := mut.Mutate(ctx, oc.mutation)
-		if err != nil {
-			return nil, err
-		}
-		nv, ok := v.(*Order)
-		if !ok {
-			return nil, fmt.Errorf("unexpected node type %T returned from OrderMutation", v)
-		}
-		node = nv
-	}
-	return node, err
+	return withHooks(ctx, oc.sqlSave, oc.mutation, oc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
@@ -489,10 +485,18 @@ func (oc *OrderCreate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Order.status": %w`, err)}
 		}
 	}
+	if v, ok := oc.mutation.CustomerApproval(); ok {
+		if err := order.CustomerApprovalValidator(v); err != nil {
+			return &ValidationError{Name: "customer_approval", err: fmt.Errorf(`ent: validator failed for field "Order.customer_approval": %w`, err)}
+		}
+	}
 	return nil
 }
 
 func (oc *OrderCreate) sqlSave(ctx context.Context) (*Order, error) {
+	if err := oc.check(); err != nil {
+		return nil, err
+	}
 	_node, _spec := oc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, oc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
@@ -502,130 +506,74 @@ func (oc *OrderCreate) sqlSave(ctx context.Context) (*Order, error) {
 	}
 	id := _spec.ID.Value.(int64)
 	_node.ID = int(id)
+	oc.mutation.id = &_node.ID
+	oc.mutation.done = true
 	return _node, nil
 }
 
 func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Order{config: oc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: order.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: order.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(order.Table, sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt))
 	)
 	if value, ok := oc.mutation.CreatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: order.FieldCreatedAt,
-		})
+		_spec.SetField(order.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := oc.mutation.UpdatedAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: order.FieldUpdatedAt,
-		})
+		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := oc.mutation.OrderNumber(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldOrderNumber,
-		})
+		_spec.SetField(order.FieldOrderNumber, field.TypeString, value)
 		_node.OrderNumber = value
 	}
 	if value, ok := oc.mutation.Currency(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldCurrency,
-		})
+		_spec.SetField(order.FieldCurrency, field.TypeString, value)
 		_node.Currency = value
 	}
 	if value, ok := oc.mutation.Amount(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldAmount,
-		})
+		_spec.SetField(order.FieldAmount, field.TypeFloat64, value)
 		_node.Amount = value
 	}
 	if value, ok := oc.mutation.DeliveryFee(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldDeliveryFee,
-		})
+		_spec.SetField(order.FieldDeliveryFee, field.TypeFloat64, value)
 		_node.DeliveryFee = value
 	}
 	if value, ok := oc.mutation.Reference(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldReference,
-		})
+		_spec.SetField(order.FieldReference, field.TypeString, value)
 		_node.Reference = &value
 	}
 	if value, ok := oc.mutation.Channel(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldChannel,
-		})
+		_spec.SetField(order.FieldChannel, field.TypeString, value)
 		_node.Channel = &value
 	}
 	if value, ok := oc.mutation.PaidAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: order.FieldPaidAt,
-		})
+		_spec.SetField(order.FieldPaidAt, field.TypeString, value)
 		_node.PaidAt = &value
 	}
 	if value, ok := oc.mutation.DeliveryMethod(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: order.FieldDeliveryMethod,
-		})
+		_spec.SetField(order.FieldDeliveryMethod, field.TypeEnum, value)
 		_node.DeliveryMethod = value
 	}
 	if value, ok := oc.mutation.PaymentMethod(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: order.FieldPaymentMethod,
-		})
+		_spec.SetField(order.FieldPaymentMethod, field.TypeEnum, value)
 		_node.PaymentMethod = value
 	}
 	if value, ok := oc.mutation.Status(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeEnum,
-			Value:  value,
-			Column: order.FieldStatus,
-		})
+		_spec.SetField(order.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
 	}
+	if value, ok := oc.mutation.CustomerApproval(); ok {
+		_spec.SetField(order.FieldCustomerApproval, field.TypeEnum, value)
+		_node.CustomerApproval = value
+	}
 	if value, ok := oc.mutation.StoreTasksCreated(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeJSON,
-			Value:  value,
-			Column: order.FieldStoreTasksCreated,
-		})
+		_spec.SetField(order.FieldStoreTasksCreated, field.TypeJSON, value)
 		_node.StoreTasksCreated = value
 	}
 	if value, ok := oc.mutation.DeliveredAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: order.FieldDeliveredAt,
-		})
+		_spec.SetField(order.FieldDeliveredAt, field.TypeTime, value)
 		_node.DeliveredAt = &value
 	}
 	if nodes := oc.mutation.DetailsIDs(); len(nodes) > 0 {
@@ -636,10 +584,23 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			Columns: []string{order.DetailsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: orderdetail.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(orderdetail.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := oc.mutation.LogisticIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   order.LogisticTable,
+			Columns: []string{order.LogisticColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(logistic.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -655,10 +616,7 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			Columns: []string{order.MerchantColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchant.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -675,10 +633,7 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			Columns: []string{order.AgentColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: agent.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(agent.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -695,10 +650,7 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			Columns: []string{order.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -715,10 +667,7 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			Columns: []string{order.AddressColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: address.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(address.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -735,10 +684,7 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			Columns: []string{order.PickupColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: pickupstation.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(pickupstation.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -755,10 +701,7 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			Columns: order.StoresPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: merchantstore.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(merchantstore.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -766,23 +709,21 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := oc.mutation.LogisticIDs(); len(nodes) > 0 {
+	if nodes := oc.mutation.PurchaseRequestIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.LogisticTable,
-			Columns: order.LogisticPrimaryKey,
+			Table:   order.PurchaseRequestTable,
+			Columns: []string{order.PurchaseRequestColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: logistic.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(purchaserequest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.purchase_request_order = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -812,8 +753,8 @@ func (ocb *OrderCreateBulk) Save(ctx context.Context) ([]*Order, error) {
 					return nil, err
 				}
 				builder.mutation = mutation
-				nodes[i], specs[i] = builder.createSpec()
 				var err error
+				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, ocb.builders[i+1].mutation)
 				} else {

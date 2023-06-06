@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/pickupstation"
 )
@@ -30,7 +31,8 @@ type PickupStation struct {
 	Address string `json:"address,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PickupStationQuery when eager-loading is set.
-	Edges PickupStationEdges `json:"edges"`
+	Edges        PickupStationEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // PickupStationEdges holds the relations/edges for other nodes in the graph.
@@ -63,7 +65,7 @@ func (*PickupStation) scanValues(columns []string) ([]any, error) {
 		case pickupstation.FieldCreatedAt, pickupstation.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type PickupStation", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -119,21 +121,29 @@ func (ps *PickupStation) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				ps.Address = value.String
 			}
+		default:
+			ps.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
+// Value returns the ent.Value that was dynamically selected and assigned to the PickupStation.
+// This includes values selected through modifiers, order, etc.
+func (ps *PickupStation) Value(name string) (ent.Value, error) {
+	return ps.selectValues.Get(name)
+}
+
 // QueryOrders queries the "orders" edge of the PickupStation entity.
 func (ps *PickupStation) QueryOrders() *OrderQuery {
-	return (&PickupStationClient{config: ps.config}).QueryOrders(ps)
+	return NewPickupStationClient(ps.config).QueryOrders(ps)
 }
 
 // Update returns a builder for updating this PickupStation.
 // Note that you need to call PickupStation.Unwrap() before calling this method if this PickupStation
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (ps *PickupStation) Update() *PickupStationUpdateOne {
-	return (&PickupStationClient{config: ps.config}).UpdateOne(ps)
+	return NewPickupStationClient(ps.config).UpdateOne(ps)
 }
 
 // Unwrap unwraps the PickupStation entity that was returned from a transaction after it was closed,
@@ -175,9 +185,3 @@ func (ps *PickupStation) String() string {
 
 // PickupStations is a parsable slice of PickupStation.
 type PickupStations []*PickupStation
-
-func (ps PickupStations) config(cfg config) {
-	for _i := range ps {
-		ps[_i].config = cfg
-	}
-}

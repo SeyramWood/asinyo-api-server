@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent/logistic"
-	"github.com/SeyramWood/ent/merchantstore"
+	"github.com/SeyramWood/ent/order"
 )
 
 // Logistic is the model entity for the Logistic schema.
@@ -23,45 +23,39 @@ type Logistic struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// Type holds the value of the "type" field.
+	Type string `json:"type,omitempty"`
 	// Task holds the value of the "task" field.
-	Task *models.TookanPickupAndDeliveryTaskResponse `json:"task,omitempty"`
+	Task *struct {
+		Data interface{} "json:\"data\""
+	} `json:"task,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the LogisticQuery when eager-loading is set.
-	Edges                    LogisticEdges `json:"edges"`
-	merchant_store_logistics *int
+	Edges          LogisticEdges `json:"edges"`
+	order_logistic *int
+	selectValues   sql.SelectValues
 }
 
 // LogisticEdges holds the relations/edges for other nodes in the graph.
 type LogisticEdges struct {
 	// Order holds the value of the order edge.
-	Order []*Order `json:"order,omitempty"`
-	// Store holds the value of the store edge.
-	Store *MerchantStore `json:"store,omitempty"`
+	Order *Order `json:"order,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [1]bool
 }
 
 // OrderOrErr returns the Order value or an error if the edge
-// was not loaded in eager-loading.
-func (e LogisticEdges) OrderOrErr() ([]*Order, error) {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e LogisticEdges) OrderOrErr() (*Order, error) {
 	if e.loadedTypes[0] {
+		if e.Order == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: order.Label}
+		}
 		return e.Order, nil
 	}
 	return nil, &NotLoadedError{edge: "order"}
-}
-
-// StoreOrErr returns the Store value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e LogisticEdges) StoreOrErr() (*MerchantStore, error) {
-	if e.loadedTypes[1] {
-		if e.Store == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: merchantstore.Label}
-		}
-		return e.Store, nil
-	}
-	return nil, &NotLoadedError{edge: "store"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -73,12 +67,14 @@ func (*Logistic) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case logistic.FieldID:
 			values[i] = new(sql.NullInt64)
+		case logistic.FieldType:
+			values[i] = new(sql.NullString)
 		case logistic.FieldCreatedAt, logistic.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case logistic.ForeignKeys[0]: // merchant_store_logistics
+		case logistic.ForeignKeys[0]: // order_logistic
 			values[i] = new(sql.NullInt64)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Logistic", columns[i])
+			values[i] = new(sql.UnknownType)
 		}
 	}
 	return values, nil
@@ -110,6 +106,12 @@ func (l *Logistic) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				l.UpdatedAt = value.Time
 			}
+		case logistic.FieldType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field type", values[i])
+			} else if value.Valid {
+				l.Type = value.String
+			}
 		case logistic.FieldTask:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field task", values[i])
@@ -120,31 +122,34 @@ func (l *Logistic) assignValues(columns []string, values []any) error {
 			}
 		case logistic.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field merchant_store_logistics", value)
+				return fmt.Errorf("unexpected type %T for edge-field order_logistic", value)
 			} else if value.Valid {
-				l.merchant_store_logistics = new(int)
-				*l.merchant_store_logistics = int(value.Int64)
+				l.order_logistic = new(int)
+				*l.order_logistic = int(value.Int64)
 			}
+		default:
+			l.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
 }
 
-// QueryOrder queries the "order" edge of the Logistic entity.
-func (l *Logistic) QueryOrder() *OrderQuery {
-	return (&LogisticClient{config: l.config}).QueryOrder(l)
+// Value returns the ent.Value that was dynamically selected and assigned to the Logistic.
+// This includes values selected through modifiers, order, etc.
+func (l *Logistic) Value(name string) (ent.Value, error) {
+	return l.selectValues.Get(name)
 }
 
-// QueryStore queries the "store" edge of the Logistic entity.
-func (l *Logistic) QueryStore() *MerchantStoreQuery {
-	return (&LogisticClient{config: l.config}).QueryStore(l)
+// QueryOrder queries the "order" edge of the Logistic entity.
+func (l *Logistic) QueryOrder() *OrderQuery {
+	return NewLogisticClient(l.config).QueryOrder(l)
 }
 
 // Update returns a builder for updating this Logistic.
 // Note that you need to call Logistic.Unwrap() before calling this method if this Logistic
 // was returned from a transaction, and the transaction was committed or rolled back.
 func (l *Logistic) Update() *LogisticUpdateOne {
-	return (&LogisticClient{config: l.config}).UpdateOne(l)
+	return NewLogisticClient(l.config).UpdateOne(l)
 }
 
 // Unwrap unwraps the Logistic entity that was returned from a transaction after it was closed,
@@ -169,6 +174,9 @@ func (l *Logistic) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(l.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
+	builder.WriteString("type=")
+	builder.WriteString(l.Type)
+	builder.WriteString(", ")
 	builder.WriteString("task=")
 	builder.WriteString(fmt.Sprintf("%v", l.Task))
 	builder.WriteByte(')')
@@ -177,9 +185,3 @@ func (l *Logistic) String() string {
 
 // Logistics is a parsable slice of Logistic.
 type Logistics []*Logistic
-
-func (l Logistics) config(cfg config) {
-	for _i := range l {
-		l[_i].config = cfg
-	}
-}

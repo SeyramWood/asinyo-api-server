@@ -5,18 +5,21 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/samber/lo"
 
 	"github.com/SeyramWood/ent"
 )
 
 type (
 	AuthSession struct {
-		ID          int    `json:"id"`
-		Username    string `json:"username"`
-		SessionName string `json:"sessionName"`
-		DisplayName string `json:"displayName,omitempty"`
-		UserType    string `json:"userType,omitempty"`
-		OTP         any    `json:"otp,omitempty"`
+		ID          int      `json:"id"`
+		Username    string   `json:"username"`
+		SessionName string   `json:"sessionName"`
+		DisplayName string   `json:"displayName,omitempty"`
+		UserType    string   `json:"userType,omitempty"`
+		OTP         any      `json:"otp,omitempty"`
+		Storefront  int      `json:"storefront,omitempty"`
+		Permissions []string `json:"permissions,omitempty"`
 	}
 )
 
@@ -26,9 +29,30 @@ func AuthAdminResponse(data *ent.Admin) *fiber.Map {
 			ID:          data.ID,
 			Username:    data.Username,
 			SessionName: strings.Split(data.OtherName, " ")[0],
+			Permissions: func() []string {
+				roles, err := data.Edges.RolesOrErr()
+				if err != nil {
+					return nil
+				}
+				var permissions []string
+				for _, role := range roles {
+					perms, err := role.Edges.PermissionsOrErr()
+					if err != nil {
+						return nil
+					}
+					for _, perm := range perms {
+						if lo.Contains(permissions, perm.Slug) {
+							continue
+						}
+						permissions = append(permissions, perm.Slug)
+					}
+				}
+				return permissions
+			}(),
 		},
 	)
 }
+
 func AuthCustomerResponse(data *ent.Customer) *fiber.Map {
 	if c, err := data.Edges.IndividualOrErr(); err == nil {
 		return successResponse(
@@ -52,9 +76,9 @@ func AuthCustomerResponse(data *ent.Customer) *fiber.Map {
 			},
 		)
 	}
-
 	return successResponse(nil)
 }
+
 func AuthAgentResponse(data *ent.Agent) *fiber.Map {
 	return successResponse(
 		&AuthSession{
@@ -77,6 +101,7 @@ func AuthMerchantResponse(data *ent.Merchant) *fiber.Map {
 				DisplayName: fmt.Sprintf("%s %s", s.OtherName, s.LastName),
 				UserType:    data.Type,
 				OTP:         data.Otp,
+				Storefront:  data.Edges.Store.ID,
 			},
 		)
 	}
@@ -89,6 +114,7 @@ func AuthMerchantResponse(data *ent.Merchant) *fiber.Map {
 				DisplayName: fmt.Sprintf("%s %s", r.OtherName, r.LastName),
 				UserType:    data.Type,
 				OTP:         data.Otp,
+				Storefront:  data.Edges.Store.ID,
 			},
 		)
 	}
