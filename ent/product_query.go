@@ -15,6 +15,7 @@ import (
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/orderdetail"
 	"github.com/SeyramWood/ent/predicate"
+	"github.com/SeyramWood/ent/pricemodel"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -32,6 +33,7 @@ type ProductQuery struct {
 	withMerchant     *MerchantQuery
 	withMajor        *ProductCategoryMajorQuery
 	withMinor        *ProductCategoryMinorQuery
+	withPriceModel   *PriceModelQuery
 	withFKs          bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -172,6 +174,28 @@ func (pq *ProductQuery) QueryMinor() *ProductCategoryMinorQuery {
 			sqlgraph.From(product.Table, product.FieldID, selector),
 			sqlgraph.To(productcategoryminor.Table, productcategoryminor.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, product.MinorTable, product.MinorColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPriceModel chains the current query on the "price_model" edge.
+func (pq *ProductQuery) QueryPriceModel() *PriceModelQuery {
+	query := (&PriceModelClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, selector),
+			sqlgraph.To(pricemodel.Table, pricemodel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, product.PriceModelTable, product.PriceModelColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -376,6 +400,7 @@ func (pq *ProductQuery) Clone() *ProductQuery {
 		withMerchant:     pq.withMerchant.Clone(),
 		withMajor:        pq.withMajor.Clone(),
 		withMinor:        pq.withMinor.Clone(),
+		withPriceModel:   pq.withPriceModel.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
@@ -434,6 +459,17 @@ func (pq *ProductQuery) WithMinor(opts ...func(*ProductCategoryMinorQuery)) *Pro
 		opt(query)
 	}
 	pq.withMinor = query
+	return pq
+}
+
+// WithPriceModel tells the query-builder to eager-load the nodes that are connected to
+// the "price_model" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProductQuery) WithPriceModel(opts ...func(*PriceModelQuery)) *ProductQuery {
+	query := (&PriceModelClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withPriceModel = query
 	return pq
 }
 
@@ -516,15 +552,16 @@ func (pq *ProductQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Prod
 		nodes       = []*Product{}
 		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			pq.withOrderDetails != nil,
 			pq.withFavourites != nil,
 			pq.withMerchant != nil,
 			pq.withMajor != nil,
 			pq.withMinor != nil,
+			pq.withPriceModel != nil,
 		}
 	)
-	if pq.withMerchant != nil || pq.withMajor != nil || pq.withMinor != nil {
+	if pq.withMerchant != nil || pq.withMajor != nil || pq.withMinor != nil || pq.withPriceModel != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -577,6 +614,12 @@ func (pq *ProductQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Prod
 	if query := pq.withMinor; query != nil {
 		if err := pq.loadMinor(ctx, query, nodes, nil,
 			func(n *Product, e *ProductCategoryMinor) { n.Edges.Minor = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withPriceModel; query != nil {
+		if err := pq.loadPriceModel(ctx, query, nodes, nil,
+			func(n *Product, e *PriceModel) { n.Edges.PriceModel = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -734,6 +777,38 @@ func (pq *ProductQuery) loadMinor(ctx context.Context, query *ProductCategoryMin
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "product_category_minor_products" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (pq *ProductQuery) loadPriceModel(ctx context.Context, query *PriceModelQuery, nodes []*Product, init func(*Product), assign func(*Product, *PriceModel)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Product)
+	for i := range nodes {
+		if nodes[i].price_model_model == nil {
+			continue
+		}
+		fk := *nodes[i].price_model_model
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(pricemodel.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "price_model_model" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

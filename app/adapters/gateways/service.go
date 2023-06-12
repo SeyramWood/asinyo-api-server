@@ -75,8 +75,6 @@ type (
 		SaveAccount(store any, storeId int, accountType string) (*ent.MerchantStore, error)
 		SaveDefaultAccount(storeId int, accountType string) (*ent.MerchantStore, error)
 		SaveAgentPermission(request bool, storeId int) (*ent.MerchantStore, error)
-		SaveLogo(c *fiber.Ctx, field, directory string) (any, error)
-		SavePhotos(c *fiber.Ctx, field, directory string) (any, error)
 		FetchAll() ([]*ent.MerchantStore, error)
 		FetchAllByMerchant(merchantType string, limit, offset int) ([]*ent.MerchantStore, error)
 		Fetch(id int) (*ent.MerchantStore, error)
@@ -115,7 +113,6 @@ type (
 		UpdateImage(id int, imagePath string) (string, error)
 
 		Remove(id int) error
-		SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error)
 	}
 	ProductCatMajorService interface {
 		Create(request *models.ProductCategoryMajor) (*ent.ProductCategoryMajor, error)
@@ -126,7 +123,6 @@ type (
 	}
 	ProductCatMinorService interface {
 		Create(merchant *models.ProductCategoryMinor, image string) (*ent.ProductCategoryMinor, error)
-		SaveImage(c *fiber.Ctx, field, directory string) (map[string]string, error)
 		FetchAll(limit, offset int) ([]*ent.ProductCategoryMinor, error)
 		Fetch(id int) (*ent.ProductCategoryMinor, error)
 		Update(id int, request *models.ProductCategoryMinorUpdate) (*ent.ProductCategoryMinor, error)

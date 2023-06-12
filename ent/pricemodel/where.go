@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/SeyramWood/ent/predicate"
 )
 
@@ -432,6 +433,29 @@ func AsinyoFormulaEqualFold(v string) predicate.PriceModel {
 // AsinyoFormulaContainsFold applies the ContainsFold predicate on the "asinyo_formula" field.
 func AsinyoFormulaContainsFold(v string) predicate.PriceModel {
 	return predicate.PriceModel(sql.FieldContainsFold(FieldAsinyoFormula, v))
+}
+
+// HasModel applies the HasEdge predicate on the "model" edge.
+func HasModel() predicate.PriceModel {
+	return predicate.PriceModel(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ModelTable, ModelColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasModelWith applies the HasEdge predicate on the "model" edge with a given conditions (other predicates).
+func HasModelWith(preds ...predicate.Product) predicate.PriceModel {
+	return predicate.PriceModel(func(s *sql.Selector) {
+		step := newModelStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

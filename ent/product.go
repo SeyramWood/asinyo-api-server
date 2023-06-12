@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/SeyramWood/ent/merchant"
+	"github.com/SeyramWood/ent/pricemodel"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -46,6 +47,7 @@ type Product struct {
 	// The values are being populated by the ProductQuery when eager-loading is set.
 	Edges                           ProductEdges `json:"edges"`
 	merchant_products               *int
+	price_model_model               *int
 	product_category_major_products *int
 	product_category_minor_products *int
 	selectValues                    sql.SelectValues
@@ -63,9 +65,11 @@ type ProductEdges struct {
 	Major *ProductCategoryMajor `json:"major,omitempty"`
 	// Minor holds the value of the minor edge.
 	Minor *ProductCategoryMinor `json:"minor,omitempty"`
+	// PriceModel holds the value of the price_model edge.
+	PriceModel *PriceModel `json:"price_model,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // OrderDetailsOrErr returns the OrderDetails value or an error if the edge
@@ -125,6 +129,19 @@ func (e ProductEdges) MinorOrErr() (*ProductCategoryMinor, error) {
 	return nil, &NotLoadedError{edge: "minor"}
 }
 
+// PriceModelOrErr returns the PriceModel value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProductEdges) PriceModelOrErr() (*PriceModel, error) {
+	if e.loadedTypes[5] {
+		if e.PriceModel == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: pricemodel.Label}
+		}
+		return e.PriceModel, nil
+	}
+	return nil, &NotLoadedError{edge: "price_model"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Product) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -140,9 +157,11 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case product.ForeignKeys[0]: // merchant_products
 			values[i] = new(sql.NullInt64)
-		case product.ForeignKeys[1]: // product_category_major_products
+		case product.ForeignKeys[1]: // price_model_model
 			values[i] = new(sql.NullInt64)
-		case product.ForeignKeys[2]: // product_category_minor_products
+		case product.ForeignKeys[2]: // product_category_major_products
+			values[i] = new(sql.NullInt64)
+		case product.ForeignKeys[3]: // product_category_minor_products
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -240,12 +259,19 @@ func (pr *Product) assignValues(columns []string, values []any) error {
 			}
 		case product.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field price_model_model", value)
+			} else if value.Valid {
+				pr.price_model_model = new(int)
+				*pr.price_model_model = int(value.Int64)
+			}
+		case product.ForeignKeys[2]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field product_category_major_products", value)
 			} else if value.Valid {
 				pr.product_category_major_products = new(int)
 				*pr.product_category_major_products = int(value.Int64)
 			}
-		case product.ForeignKeys[2]:
+		case product.ForeignKeys[3]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field product_category_minor_products", value)
 			} else if value.Valid {
@@ -288,6 +314,11 @@ func (pr *Product) QueryMajor() *ProductCategoryMajorQuery {
 // QueryMinor queries the "minor" edge of the Product entity.
 func (pr *Product) QueryMinor() *ProductCategoryMinorQuery {
 	return NewProductClient(pr.config).QueryMinor(pr)
+}
+
+// QueryPriceModel queries the "price_model" edge of the Product entity.
+func (pr *Product) QueryPriceModel() *PriceModelQuery {
+	return NewProductClient(pr.config).QueryPriceModel(pr)
 }
 
 // Update returns a builder for updating this Product.

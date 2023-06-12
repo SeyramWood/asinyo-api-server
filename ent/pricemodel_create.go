@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/pricemodel"
+	"github.com/SeyramWood/ent/product"
 )
 
 // PriceModelCreate is the builder for creating a PriceModel entity.
@@ -78,6 +79,21 @@ func (pmc *PriceModelCreate) SetNillableAsinyoFormula(s *string) *PriceModelCrea
 		pmc.SetAsinyoFormula(*s)
 	}
 	return pmc
+}
+
+// AddModelIDs adds the "model" edge to the Product entity by IDs.
+func (pmc *PriceModelCreate) AddModelIDs(ids ...int) *PriceModelCreate {
+	pmc.mutation.AddModelIDs(ids...)
+	return pmc
+}
+
+// AddModel adds the "model" edges to the Product entity.
+func (pmc *PriceModelCreate) AddModel(p ...*Product) *PriceModelCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pmc.AddModelIDs(ids...)
 }
 
 // Mutation returns the PriceModelMutation object of the builder.
@@ -210,6 +226,22 @@ func (pmc *PriceModelCreate) createSpec() (*PriceModel, *sqlgraph.CreateSpec) {
 	if value, ok := pmc.mutation.AsinyoFormula(); ok {
 		_spec.SetField(pricemodel.FieldAsinyoFormula, field.TypeString, value)
 		_node.AsinyoFormula = value
+	}
+	if nodes := pmc.mutation.ModelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pricemodel.ModelTable,
+			Columns: []string{pricemodel.ModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

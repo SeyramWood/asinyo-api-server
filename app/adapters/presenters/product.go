@@ -35,8 +35,10 @@ type (
 		Image       string            `json:"image"`
 		Minor       string            `json:"categoryMinor"`
 		Major       string            `json:"categoryMajor"`
+		Percentage  int               `json:"percentage"`
 		CreatedAt   time.Time         `json:"created_at"`
 		UpdatedAt   time.Time         `json:"updated_at"`
+		PriceModel  *PriceModel       `json:"priceModel"`
 		Merchant    *MerchantResponse `json:"merchant"`
 	}
 
@@ -54,8 +56,10 @@ type (
 		Image       string        `json:"image"`
 		Minor       string        `json:"categoryMinor"`
 		Major       string        `json:"categoryMajor"`
+		Percentage  int           `json:"percentage"`
 		CreatedAt   time.Time     `json:"created_at"`
 		UpdatedAt   time.Time     `json:"updated_at"`
+		PriceModel  *PriceModel   `json:"priceModel"`
 		Store       *ProductStore `json:"store"`
 	}
 
@@ -212,8 +216,21 @@ func formatProductsWithMerchant(data []*ent.Product) []*ProductWithMerchant {
 				Image:       v.Image,
 				Major:       v.Edges.Major.Category,
 				Minor:       v.Edges.Minor.Category,
+				Percentage:  v.Edges.Minor.Percentage,
 				CreatedAt:   v.CreatedAt,
 				UpdatedAt:   v.UpdatedAt,
+				PriceModel: func() *PriceModel {
+					if m, err := v.Edges.PriceModelOrErr(); err == nil {
+						return &PriceModel{
+							ID:            m.ID,
+							Name:          m.Name,
+							Initials:      m.Initials,
+							Formula:       m.Formula,
+							AsinyoFormula: m.AsinyoFormula,
+						}
+					}
+					return nil
+				}(),
 				Merchant: func() *MerchantResponse {
 					if s, err := v.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
 						return &MerchantResponse{
@@ -273,8 +290,21 @@ func formatProductWithMerchant(data *ent.Product) *ProductWithMerchant {
 		Image:       data.Image,
 		Major:       data.Edges.Major.Category,
 		Minor:       data.Edges.Minor.Category,
+		Percentage:  data.Edges.Minor.Percentage,
 		CreatedAt:   data.CreatedAt,
 		UpdatedAt:   data.UpdatedAt,
+		PriceModel: func() *PriceModel {
+			if m, err := data.Edges.PriceModelOrErr(); err == nil {
+				return &PriceModel{
+					ID:            m.ID,
+					Name:          m.Name,
+					Initials:      m.Initials,
+					Formula:       m.Formula,
+					AsinyoFormula: m.AsinyoFormula,
+				}
+			}
+			return nil
+		}(),
 		Merchant: func() *MerchantResponse {
 			if s, err := data.Edges.Merchant.Edges.SupplierOrErr(); err == nil {
 				return &MerchantResponse{

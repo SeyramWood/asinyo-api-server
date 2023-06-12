@@ -17804,6 +17804,9 @@ type PriceModelMutation struct {
 	formula        *string
 	asinyo_formula *string
 	clearedFields  map[string]struct{}
+	model          map[int]struct{}
+	removedmodel   map[int]struct{}
+	clearedmodel   bool
 	done           bool
 	oldValue       func(context.Context) (*PriceModel, error)
 	predicates     []predicate.PriceModel
@@ -18136,6 +18139,60 @@ func (m *PriceModelMutation) ResetAsinyoFormula() {
 	delete(m.clearedFields, pricemodel.FieldAsinyoFormula)
 }
 
+// AddModelIDs adds the "model" edge to the Product entity by ids.
+func (m *PriceModelMutation) AddModelIDs(ids ...int) {
+	if m.model == nil {
+		m.model = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.model[ids[i]] = struct{}{}
+	}
+}
+
+// ClearModel clears the "model" edge to the Product entity.
+func (m *PriceModelMutation) ClearModel() {
+	m.clearedmodel = true
+}
+
+// ModelCleared reports if the "model" edge to the Product entity was cleared.
+func (m *PriceModelMutation) ModelCleared() bool {
+	return m.clearedmodel
+}
+
+// RemoveModelIDs removes the "model" edge to the Product entity by IDs.
+func (m *PriceModelMutation) RemoveModelIDs(ids ...int) {
+	if m.removedmodel == nil {
+		m.removedmodel = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.model, ids[i])
+		m.removedmodel[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedModel returns the removed IDs of the "model" edge to the Product entity.
+func (m *PriceModelMutation) RemovedModelIDs() (ids []int) {
+	for id := range m.removedmodel {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ModelIDs returns the "model" edge IDs in the mutation.
+func (m *PriceModelMutation) ModelIDs() (ids []int) {
+	for id := range m.model {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetModel resets all changes to the "model" edge.
+func (m *PriceModelMutation) ResetModel() {
+	m.model = nil
+	m.clearedmodel = false
+	m.removedmodel = nil
+}
+
 // Where appends a list predicates to the PriceModelMutation builder.
 func (m *PriceModelMutation) Where(ps ...predicate.PriceModel) {
 	m.predicates = append(m.predicates, ps...)
@@ -18363,49 +18420,85 @@ func (m *PriceModelMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PriceModelMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.model != nil {
+		edges = append(edges, pricemodel.EdgeModel)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *PriceModelMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case pricemodel.EdgeModel:
+		ids := make([]ent.Value, 0, len(m.model))
+		for id := range m.model {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PriceModelMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedmodel != nil {
+		edges = append(edges, pricemodel.EdgeModel)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *PriceModelMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case pricemodel.EdgeModel:
+		ids := make([]ent.Value, 0, len(m.removedmodel))
+		for id := range m.removedmodel {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PriceModelMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedmodel {
+		edges = append(edges, pricemodel.EdgeModel)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *PriceModelMutation) EdgeCleared(name string) bool {
+	switch name {
+	case pricemodel.EdgeModel:
+		return m.clearedmodel
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *PriceModelMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown PriceModel unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *PriceModelMutation) ResetEdge(name string) error {
+	switch name {
+	case pricemodel.EdgeModel:
+		m.ResetModel()
+		return nil
+	}
 	return fmt.Errorf("unknown PriceModel edge %s", name)
 }
 
@@ -18444,6 +18537,8 @@ type ProductMutation struct {
 	clearedmajor         bool
 	minor                *int
 	clearedminor         bool
+	price_model          *int
+	clearedprice_model   bool
 	done                 bool
 	oldValue             func(context.Context) (*Product, error)
 	predicates           []predicate.Product
@@ -19268,6 +19363,45 @@ func (m *ProductMutation) ResetMinor() {
 	m.clearedminor = false
 }
 
+// SetPriceModelID sets the "price_model" edge to the PriceModel entity by id.
+func (m *ProductMutation) SetPriceModelID(id int) {
+	m.price_model = &id
+}
+
+// ClearPriceModel clears the "price_model" edge to the PriceModel entity.
+func (m *ProductMutation) ClearPriceModel() {
+	m.clearedprice_model = true
+}
+
+// PriceModelCleared reports if the "price_model" edge to the PriceModel entity was cleared.
+func (m *ProductMutation) PriceModelCleared() bool {
+	return m.clearedprice_model
+}
+
+// PriceModelID returns the "price_model" edge ID in the mutation.
+func (m *ProductMutation) PriceModelID() (id int, exists bool) {
+	if m.price_model != nil {
+		return *m.price_model, true
+	}
+	return
+}
+
+// PriceModelIDs returns the "price_model" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PriceModelID instead. It exists only for internal usage by the builders.
+func (m *ProductMutation) PriceModelIDs() (ids []int) {
+	if id := m.price_model; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPriceModel resets all changes to the "price_model" edge.
+func (m *ProductMutation) ResetPriceModel() {
+	m.price_model = nil
+	m.clearedprice_model = false
+}
+
 // Where appends a list predicates to the ProductMutation builder.
 func (m *ProductMutation) Where(ps ...predicate.Product) {
 	m.predicates = append(m.predicates, ps...)
@@ -19634,7 +19768,7 @@ func (m *ProductMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ProductMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.order_details != nil {
 		edges = append(edges, product.EdgeOrderDetails)
 	}
@@ -19649,6 +19783,9 @@ func (m *ProductMutation) AddedEdges() []string {
 	}
 	if m.minor != nil {
 		edges = append(edges, product.EdgeMinor)
+	}
+	if m.price_model != nil {
+		edges = append(edges, product.EdgePriceModel)
 	}
 	return edges
 }
@@ -19681,13 +19818,17 @@ func (m *ProductMutation) AddedIDs(name string) []ent.Value {
 		if id := m.minor; id != nil {
 			return []ent.Value{*id}
 		}
+	case product.EdgePriceModel:
+		if id := m.price_model; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ProductMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedorder_details != nil {
 		edges = append(edges, product.EdgeOrderDetails)
 	}
@@ -19719,7 +19860,7 @@ func (m *ProductMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ProductMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedorder_details {
 		edges = append(edges, product.EdgeOrderDetails)
 	}
@@ -19734,6 +19875,9 @@ func (m *ProductMutation) ClearedEdges() []string {
 	}
 	if m.clearedminor {
 		edges = append(edges, product.EdgeMinor)
+	}
+	if m.clearedprice_model {
+		edges = append(edges, product.EdgePriceModel)
 	}
 	return edges
 }
@@ -19752,6 +19896,8 @@ func (m *ProductMutation) EdgeCleared(name string) bool {
 		return m.clearedmajor
 	case product.EdgeMinor:
 		return m.clearedminor
+	case product.EdgePriceModel:
+		return m.clearedprice_model
 	}
 	return false
 }
@@ -19768,6 +19914,9 @@ func (m *ProductMutation) ClearEdge(name string) error {
 		return nil
 	case product.EdgeMinor:
 		m.ClearMinor()
+		return nil
+	case product.EdgePriceModel:
+		m.ClearPriceModel()
 		return nil
 	}
 	return fmt.Errorf("unknown Product unique edge %s", name)
@@ -19791,6 +19940,9 @@ func (m *ProductMutation) ResetEdge(name string) error {
 		return nil
 	case product.EdgeMinor:
 		m.ResetMinor()
+		return nil
+	case product.EdgePriceModel:
+		m.ResetPriceModel()
 		return nil
 	}
 	return fmt.Errorf("unknown Product edge %s", name)

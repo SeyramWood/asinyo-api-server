@@ -765,6 +765,29 @@ func HasMinorWith(preds ...predicate.ProductCategoryMinor) predicate.Product {
 	})
 }
 
+// HasPriceModel applies the HasEdge predicate on the "price_model" edge.
+func HasPriceModel() predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, PriceModelTable, PriceModelColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPriceModelWith applies the HasEdge predicate on the "price_model" edge with a given conditions (other predicates).
+func HasPriceModelWith(preds ...predicate.PriceModel) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		step := newPriceModelStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Product) predicate.Product {
 	return predicate.Product(func(s *sql.Selector) {

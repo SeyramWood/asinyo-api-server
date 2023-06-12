@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -22,11 +23,13 @@ func (PriceModel) Fields() []ent.Field {
 		field.String("name").NotEmpty(),
 		field.String("initials").NotEmpty(),
 		field.String("formula").NotEmpty(),
-		field.String("asinyo_formula").Default("(percentage/100) * cp").Optional(),
+		field.String("asinyo_formula").Default("(percentage/100) * costPrice").Optional(),
 	}
 }
 
 // Edges of the PriceModel.
 func (PriceModel) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("model", Product.Type),
+	}
 }

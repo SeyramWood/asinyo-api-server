@@ -11,7 +11,6 @@ import (
 	"github.com/SeyramWood/app/application/product_cat_minor"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/SeyramWood/pkg/storage"
 )
 
 type ProductCatMinorHandler struct {
@@ -75,18 +74,19 @@ func (h *ProductCatMinorHandler) Create() fiber.Handler {
 				},
 			)
 		}
-		fPath, err := storage.NewUploadCare().Client().Upload(file, "category_minor")
 
+		filePath, err := h.storageSrv.Disk("uploadcare").UploadFile("category_minor", file)
 		if err != nil {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(filePath, "delete_file")
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
-					"msg": "Upload error.",
+					"msg": err,
 				},
 			)
 		}
-		cat, err := h.service.Create(&request, fPath)
+		cat, err := h.service.Create(&request, filePath)
 		if err != nil {
-			// Delete file from remote storage
+			h.storageSrv.Disk("uploadcare").ExecuteTask(filePath, "delete_file")
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductCatMinorErrorResponse(err))
 		}
 		return c.JSON(presenters.ProductCatMinorSuccessResponse(cat))

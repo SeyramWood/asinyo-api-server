@@ -2,10 +2,8 @@ package merchant_store
 
 import (
 	"fmt"
-	"log"
 	"mime/multipart"
 	"path/filepath"
-	"sync"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gofiber/fiber/v2"
@@ -14,7 +12,6 @@ import (
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/ent"
-	"github.com/SeyramWood/pkg/storage"
 )
 
 type service struct {
@@ -81,66 +78,6 @@ func (s service) AppendNewImages(storeId int, urls []string) ([]string, error) {
 func (s service) Remove(id string) error {
 	// TODO implement me
 	panic("implement me")
-}
-
-func (s service) SaveLogo(c *fiber.Ctx, field, directory string) (any, error) {
-	file, _ := c.FormFile(field)
-	pubDisk := storage.NewStorage().Disk("public")
-	if !pubDisk.Exist(directory) {
-		if err := pubDisk.MakeDirectory(directory); err != nil {
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	dir, err := pubDisk.GetPath(directory)
-	if err != nil {
-		return nil, err
-	}
-	filename, err := s.saveFile(c, file, dir)
-	if err != nil {
-		return nil, err
-	}
-	return fmt.Sprintf("%s/%s", c.BaseURL(), filepath.Join(directory, filename.(string))), nil
-}
-func (s service) SavePhotos(c *fiber.Ctx, field, directory string) (any, error) {
-	form, err := c.MultipartForm()
-	if err != nil {
-		return nil, err
-	}
-
-	files := form.File[field]
-
-	pubDisk := storage.NewStorage().Disk("public")
-	if !pubDisk.Exist(directory) {
-		if err := pubDisk.MakeDirectory(directory); err != nil {
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	dir, err := pubDisk.GetPath(directory)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var urls []string
-	wg := sync.WaitGroup{}
-	for _, file := range files {
-		wg.Add(1)
-		go func(f *multipart.FileHeader) {
-			defer wg.Done()
-			filename, err := s.saveFile(c, f, dir)
-			if err != nil {
-				log.Fatalln(fmt.Sprintf("error saving [%s]\n[error]: %s", filename, err))
-			}
-			urls = append(urls, fmt.Sprintf("%s/%s/%s", c.BaseURL(), directory, filename))
-		}(file)
-	}
-	wg.Wait()
-
-	return urls, nil
 }
 
 func (s service) saveFile(c *fiber.Ctx, file *multipart.FileHeader, directory string) (any, error) {

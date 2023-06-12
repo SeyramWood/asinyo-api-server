@@ -46,6 +46,8 @@ const (
 	EdgeMajor = "major"
 	// EdgeMinor holds the string denoting the minor edge name in mutations.
 	EdgeMinor = "minor"
+	// EdgePriceModel holds the string denoting the price_model edge name in mutations.
+	EdgePriceModel = "price_model"
 	// Table holds the table name of the product in the database.
 	Table = "products"
 	// OrderDetailsTable is the table that holds the order_details relation/edge.
@@ -83,6 +85,13 @@ const (
 	MinorInverseTable = "product_category_minors"
 	// MinorColumn is the table column denoting the minor relation/edge.
 	MinorColumn = "product_category_minor_products"
+	// PriceModelTable is the table that holds the price_model relation/edge.
+	PriceModelTable = "products"
+	// PriceModelInverseTable is the table name for the PriceModel entity.
+	// It exists in this package in order to avoid circular dependency with the "pricemodel" package.
+	PriceModelInverseTable = "price_models"
+	// PriceModelColumn is the table column denoting the price_model relation/edge.
+	PriceModelColumn = "price_model_model"
 )
 
 // Columns holds all SQL columns for product fields.
@@ -105,6 +114,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"merchant_products",
+	"price_model_model",
 	"product_category_major_products",
 	"product_category_minor_products",
 }
@@ -262,6 +272,13 @@ func ByMinorField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMinorStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByPriceModelField orders the results by price_model field.
+func ByPriceModelField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPriceModelStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newOrderDetailsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -295,5 +312,12 @@ func newMinorStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MinorInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, MinorTable, MinorColumn),
+	)
+}
+func newPriceModelStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PriceModelInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, PriceModelTable, PriceModelColumn),
 	)
 }

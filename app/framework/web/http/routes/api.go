@@ -142,7 +142,7 @@ func agentRouter(r fiber.Router, ar *ApiRouter) {
 
 func retailMerchantRouter(r fiber.Router, ar *ApiRouter) {
 	h := handler.NewRetailMerchantHandler(ar.db, ar.noti)
-	m := handler.NewMerchantHandler(ar.db, ar.noti, ar.ms)
+	m := handler.NewMerchantHandler(ar.db, ar.noti, ar.storageSrv, ar.ms)
 
 	router := r.Group("/auth/merchant/retailers")
 
@@ -169,7 +169,7 @@ func retailMerchantRouter(r fiber.Router, ar *ApiRouter) {
 
 func supplierMerchantRouter(r fiber.Router, ar *ApiRouter) {
 	h := handler.NewSupplierMerchantHandler(ar.db)
-	m := handler.NewMerchantHandler(ar.db, ar.noti, ar.ms)
+	m := handler.NewMerchantHandler(ar.db, ar.noti, ar.storageSrv, ar.ms)
 
 	router := r.Group("/auth/merchant/suppliers")
 
@@ -196,7 +196,7 @@ func supplierMerchantRouter(r fiber.Router, ar *ApiRouter) {
 }
 
 func merchantRouter(r fiber.Router, ar *ApiRouter) {
-	mHandler := handler.NewMerchantHandler(ar.db, ar.noti, ar.ms)
+	mHandler := handler.NewMerchantHandler(ar.db, ar.noti, ar.storageSrv, ar.ms)
 	msHandler := handler.NewMerchantStoreHandler(ar.db, ar.ms, ar.storageSrv)
 
 	mRouter := r.Group("/merchants")
@@ -461,9 +461,9 @@ func pricemodelRouter(router fiber.Router, ar *ApiRouter) {
 			r.Get("", h.FetchAll())
 			r.Get("/percentages", h.FetchAllPercentage())
 			r.Get("/:model", h.Fetch())
-			r.Post("/", h.Create())
+			r.Post("", request.ValidatePriceModel(), h.Create())
 			r.Put("/percentages/:category", request.ValidateCategoryPercentage(), h.CreatePercentage())
-			r.Put("/:model", h.Update())
+			r.Put("/:model", request.ValidatePriceModel(), h.Update())
 			r.Delete("/:model", h.Remove())
 			r.Delete("/percentages/:category", h.RemovePercentage())
 		}, "price-models.",

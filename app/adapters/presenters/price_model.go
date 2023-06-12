@@ -15,7 +15,7 @@ type (
 		Initials      string    `json:"initials,omitempty"`
 		Formula       string    `json:"formula,omitempty"`
 		AsinyoFormula string    `json:"asinyoFormula,omitempty"`
-		CreatedAt     time.Time `json:"created_at"`
+		CreatedAt     time.Time `json:"created_at,omitempty"`
 		UpdatedAt     time.Time `json:"updated_at,omitempty"`
 	}
 	PriceModelPercentage struct {

@@ -11,7 +11,6 @@ import (
 	"github.com/SeyramWood/app/application/agent"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/SeyramWood/pkg/storage"
 )
 
 type AgentHandler struct {
@@ -136,11 +135,33 @@ func (h *AgentHandler) CreateCompliance() fiber.Handler {
 				},
 			)
 		}
-		report, personal, guarantor, upErr := storage.NewUploadCare().Client().UploadAgentCompliance(file, form)
-		if upErr != nil {
+		report, err := h.storageSrv.Disk("uploadcare").UploadFile("agent_police_report", file)
+		if err != nil {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(report, "delete_file")
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
-					"msg": upErr,
+					"msg": err,
+				},
+			)
+		}
+		personal, err := h.storageSrv.Disk("uploadcare").UploadFiles("agent_id", form.File["ghanaCardPersonal"])
+		if err != nil {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(report, "delete_file")
+			h.storageSrv.Disk("uploadcare").ExecuteTask(personal, "delete_files")
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": err,
+				},
+			)
+		}
+		guarantor, err := h.storageSrv.Disk("uploadcare").UploadFiles("guarantor_id", form.File["ghanaCard"])
+		if err != nil {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(report, "delete_file")
+			h.storageSrv.Disk("uploadcare").ExecuteTask(personal, "delete_files")
+			h.storageSrv.Disk("uploadcare").ExecuteTask(guarantor, "delete_files")
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": err,
 				},
 			)
 		}
@@ -381,7 +402,6 @@ func (h *AgentHandler) SaveDefaultAccount() fiber.Handler {
 	}
 
 }
-
 
 func (h *AgentHandler) Delete() fiber.Handler {
 	return func(c *fiber.Ctx) error {

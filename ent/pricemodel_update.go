@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/predicate"
 	"github.com/SeyramWood/ent/pricemodel"
+	"github.com/SeyramWood/ent/product"
 )
 
 // PriceModelUpdate is the builder for updating PriceModel entities.
@@ -72,9 +73,45 @@ func (pmu *PriceModelUpdate) ClearAsinyoFormula() *PriceModelUpdate {
 	return pmu
 }
 
+// AddModelIDs adds the "model" edge to the Product entity by IDs.
+func (pmu *PriceModelUpdate) AddModelIDs(ids ...int) *PriceModelUpdate {
+	pmu.mutation.AddModelIDs(ids...)
+	return pmu
+}
+
+// AddModel adds the "model" edges to the Product entity.
+func (pmu *PriceModelUpdate) AddModel(p ...*Product) *PriceModelUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pmu.AddModelIDs(ids...)
+}
+
 // Mutation returns the PriceModelMutation object of the builder.
 func (pmu *PriceModelUpdate) Mutation() *PriceModelMutation {
 	return pmu.mutation
+}
+
+// ClearModel clears all "model" edges to the Product entity.
+func (pmu *PriceModelUpdate) ClearModel() *PriceModelUpdate {
+	pmu.mutation.ClearModel()
+	return pmu
+}
+
+// RemoveModelIDs removes the "model" edge to Product entities by IDs.
+func (pmu *PriceModelUpdate) RemoveModelIDs(ids ...int) *PriceModelUpdate {
+	pmu.mutation.RemoveModelIDs(ids...)
+	return pmu
+}
+
+// RemoveModel removes "model" edges to Product entities.
+func (pmu *PriceModelUpdate) RemoveModel(p ...*Product) *PriceModelUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pmu.RemoveModelIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -163,6 +200,51 @@ func (pmu *PriceModelUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if pmu.mutation.AsinyoFormulaCleared() {
 		_spec.ClearField(pricemodel.FieldAsinyoFormula, field.TypeString)
 	}
+	if pmu.mutation.ModelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pricemodel.ModelTable,
+			Columns: []string{pricemodel.ModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pmu.mutation.RemovedModelIDs(); len(nodes) > 0 && !pmu.mutation.ModelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pricemodel.ModelTable,
+			Columns: []string{pricemodel.ModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pmu.mutation.ModelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pricemodel.ModelTable,
+			Columns: []string{pricemodel.ModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pmu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{pricemodel.Label}
@@ -227,9 +309,45 @@ func (pmuo *PriceModelUpdateOne) ClearAsinyoFormula() *PriceModelUpdateOne {
 	return pmuo
 }
 
+// AddModelIDs adds the "model" edge to the Product entity by IDs.
+func (pmuo *PriceModelUpdateOne) AddModelIDs(ids ...int) *PriceModelUpdateOne {
+	pmuo.mutation.AddModelIDs(ids...)
+	return pmuo
+}
+
+// AddModel adds the "model" edges to the Product entity.
+func (pmuo *PriceModelUpdateOne) AddModel(p ...*Product) *PriceModelUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pmuo.AddModelIDs(ids...)
+}
+
 // Mutation returns the PriceModelMutation object of the builder.
 func (pmuo *PriceModelUpdateOne) Mutation() *PriceModelMutation {
 	return pmuo.mutation
+}
+
+// ClearModel clears all "model" edges to the Product entity.
+func (pmuo *PriceModelUpdateOne) ClearModel() *PriceModelUpdateOne {
+	pmuo.mutation.ClearModel()
+	return pmuo
+}
+
+// RemoveModelIDs removes the "model" edge to Product entities by IDs.
+func (pmuo *PriceModelUpdateOne) RemoveModelIDs(ids ...int) *PriceModelUpdateOne {
+	pmuo.mutation.RemoveModelIDs(ids...)
+	return pmuo
+}
+
+// RemoveModel removes "model" edges to Product entities.
+func (pmuo *PriceModelUpdateOne) RemoveModel(p ...*Product) *PriceModelUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pmuo.RemoveModelIDs(ids...)
 }
 
 // Where appends a list predicates to the PriceModelUpdate builder.
@@ -347,6 +465,51 @@ func (pmuo *PriceModelUpdateOne) sqlSave(ctx context.Context) (_node *PriceModel
 	}
 	if pmuo.mutation.AsinyoFormulaCleared() {
 		_spec.ClearField(pricemodel.FieldAsinyoFormula, field.TypeString)
+	}
+	if pmuo.mutation.ModelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pricemodel.ModelTable,
+			Columns: []string{pricemodel.ModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pmuo.mutation.RemovedModelIDs(); len(nodes) > 0 && !pmuo.mutation.ModelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pricemodel.ModelTable,
+			Columns: []string{pricemodel.ModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pmuo.mutation.ModelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   pricemodel.ModelTable,
+			Columns: []string{pricemodel.ModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &PriceModel{config: pmuo.config}
 	_spec.Assign = _node.assignValues

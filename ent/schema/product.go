@@ -52,5 +52,8 @@ func (Product) Edges() []ent.Edge {
 			Ref("products").
 			Unique().
 			Required(),
+		edge.From("price_model", PriceModel.Type).
+			Ref("model").
+			Unique(),
 	}
 }

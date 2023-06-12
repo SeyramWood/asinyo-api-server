@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -12,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/SeyramWood/ent/predicate"
 	"github.com/SeyramWood/ent/pricemodel"
+	"github.com/SeyramWood/ent/product"
 )
 
 // PriceModelQuery is the builder for querying PriceModel entities.
@@ -21,6 +23,7 @@ type PriceModelQuery struct {
 	order      []pricemodel.OrderOption
 	inters     []Interceptor
 	predicates []predicate.PriceModel
+	withModel  *ProductQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -55,6 +58,28 @@ func (pmq *PriceModelQuery) Unique(unique bool) *PriceModelQuery {
 func (pmq *PriceModelQuery) Order(o ...pricemodel.OrderOption) *PriceModelQuery {
 	pmq.order = append(pmq.order, o...)
 	return pmq
+}
+
+// QueryModel chains the current query on the "model" edge.
+func (pmq *PriceModelQuery) QueryModel() *ProductQuery {
+	query := (&ProductClient{config: pmq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pmq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pmq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pricemodel.Table, pricemodel.FieldID, selector),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, pricemodel.ModelTable, pricemodel.ModelColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pmq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first PriceModel entity from the query.
@@ -249,10 +274,22 @@ func (pmq *PriceModelQuery) Clone() *PriceModelQuery {
 		order:      append([]pricemodel.OrderOption{}, pmq.order...),
 		inters:     append([]Interceptor{}, pmq.inters...),
 		predicates: append([]predicate.PriceModel{}, pmq.predicates...),
+		withModel:  pmq.withModel.Clone(),
 		// clone intermediate query.
 		sql:  pmq.sql.Clone(),
 		path: pmq.path,
 	}
+}
+
+// WithModel tells the query-builder to eager-load the nodes that are connected to
+// the "model" edge. The optional arguments are used to configure the query builder of the edge.
+func (pmq *PriceModelQuery) WithModel(opts ...func(*ProductQuery)) *PriceModelQuery {
+	query := (&ProductClient{config: pmq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pmq.withModel = query
+	return pmq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -331,8 +368,11 @@ func (pmq *PriceModelQuery) prepareQuery(ctx context.Context) error {
 
 func (pmq *PriceModelQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*PriceModel, error) {
 	var (
-		nodes = []*PriceModel{}
-		_spec = pmq.querySpec()
+		nodes       = []*PriceModel{}
+		_spec       = pmq.querySpec()
+		loadedTypes = [1]bool{
+			pmq.withModel != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*PriceModel).scanValues(nil, columns)
@@ -340,6 +380,7 @@ func (pmq *PriceModelQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &PriceModel{config: pmq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -351,7 +392,46 @@ func (pmq *PriceModelQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := pmq.withModel; query != nil {
+		if err := pmq.loadModel(ctx, query, nodes,
+			func(n *PriceModel) { n.Edges.Model = []*Product{} },
+			func(n *PriceModel, e *Product) { n.Edges.Model = append(n.Edges.Model, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (pmq *PriceModelQuery) loadModel(ctx context.Context, query *ProductQuery, nodes []*PriceModel, init func(*PriceModel), assign func(*PriceModel, *Product)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*PriceModel)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Product(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(pricemodel.ModelColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.price_model_model
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "price_model_model" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "price_model_model" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (pmq *PriceModelQuery) sqlCount(ctx context.Context) (int, error) {

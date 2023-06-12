@@ -29,7 +29,28 @@ type PriceModel struct {
 	Formula string `json:"formula,omitempty"`
 	// AsinyoFormula holds the value of the "asinyo_formula" field.
 	AsinyoFormula string `json:"asinyo_formula,omitempty"`
-	selectValues  sql.SelectValues
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the PriceModelQuery when eager-loading is set.
+	Edges        PriceModelEdges `json:"edges"`
+	selectValues sql.SelectValues
+}
+
+// PriceModelEdges holds the relations/edges for other nodes in the graph.
+type PriceModelEdges struct {
+	// Model holds the value of the model edge.
+	Model []*Product `json:"model,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// ModelOrErr returns the Model value or an error if the edge
+// was not loaded in eager-loading.
+func (e PriceModelEdges) ModelOrErr() ([]*Product, error) {
+	if e.loadedTypes[0] {
+		return e.Model, nil
+	}
+	return nil, &NotLoadedError{edge: "model"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -111,6 +132,11 @@ func (pm *PriceModel) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (pm *PriceModel) Value(name string) (ent.Value, error) {
 	return pm.selectValues.Get(name)
+}
+
+// QueryModel queries the "model" edge of the PriceModel entity.
+func (pm *PriceModel) QueryModel() *ProductQuery {
+	return NewPriceModelClient(pm.config).QueryModel(pm)
 }
 
 // Update returns a builder for updating this PriceModel.

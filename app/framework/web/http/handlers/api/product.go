@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,7 +11,6 @@ import (
 	"github.com/SeyramWood/app/application/product"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/SeyramWood/pkg/storage"
 )
 
 type ProductHandler struct {
@@ -283,7 +281,7 @@ func (h *ProductHandler) Create() fiber.Handler {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.ProductErrorResponse(err))
 		}
 
-		file, err := c.FormFile("image")
+		image, err := c.FormFile("image")
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
@@ -291,8 +289,7 @@ func (h *ProductHandler) Create() fiber.Handler {
 				},
 			)
 		}
-
-		fPath, err := storage.NewUploadCare().Client().Upload(file, "product")
+		imagePath, err := h.storageSrv.Disk("uploadcare").UploadFile("product", image)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
@@ -300,14 +297,11 @@ func (h *ProductHandler) Create() fiber.Handler {
 				},
 			)
 		}
-
-		result, err := h.service.Create(&request, fPath)
-
+		result, err := h.service.Create(&request, imagePath)
 		if err != nil {
-			// Delete file from remote server
+			h.storageSrv.Disk("uploadcare").ExecuteTask(imagePath, "delete_file")
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.ProductErrorResponse(errors.New("error creating merchant")))
 		}
-
 		if c.Params("merchant") == "supplier" {
 			prod, err := h.service.FetchBySupplierMerchant(result.ID)
 			if err != nil {
@@ -347,11 +341,8 @@ func (h *ProductHandler) Update() fiber.Handler {
 		}
 
 		productId, _ := c.ParamsInt("id")
-
 		result, err := h.service.Update(productId, &request)
-		fmt.Println(result)
 		if err != nil {
-
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
 		return c.JSON(presenters.ProductWithMerchantResponse(result))
@@ -372,10 +363,8 @@ func (h *ProductHandler) UpdateImage() fiber.Handler {
 				},
 			)
 		}
-
 		productId, _ := strconv.Atoi(c.Query("id"))
 		prevUrl := c.Query("file", "")
-
 		result, err := h.service.UpdateImage(productId, imagePath)
 		if err != nil {
 			if prevUrl != "" {

@@ -19,12 +19,13 @@ type (
 		UpdatedAt time.Time `json:"updated_at"`
 	}
 	ProductCatMinors struct {
-		ID        int       `json:"id"`
-		Category  string    `json:"category"`
-		Slug      string    `json:"slug"`
-		Image     string    `json:"image"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
+		ID         int       `json:"id"`
+		Category   string    `json:"category"`
+		Slug       string    `json:"slug"`
+		Image      string    `json:"image"`
+		Percentage int       `json:"percentage"`
+		CreatedAt  time.Time `json:"created_at"`
+		UpdatedAt  time.Time `json:"updated_at"`
 	}
 	ProductCatMajorChildren struct {
 		Key  string           `json:"key"`
@@ -71,12 +72,13 @@ func ProductCatMajorsSuccessResponse(data []*ent.ProductCategoryMajor) *fiber.Ma
 						children, &ProductCatMajorChildren{
 							Key: fmt.Sprintf("%s-%s", strconv.Itoa(v.ID), strconv.Itoa(m.ID)),
 							Data: ProductCatMinors{
-								ID:        m.ID,
-								Category:  m.Category,
-								Slug:      m.Slug,
-								Image:     m.Image,
-								CreatedAt: m.CreatedAt,
-								UpdatedAt: m.UpdatedAt,
+								ID:         m.ID,
+								Category:   m.Category,
+								Slug:       m.Slug,
+								Image:      m.Image,
+								Percentage: m.Percentage,
+								CreatedAt:  m.CreatedAt,
+								UpdatedAt:  m.UpdatedAt,
 							},
 						},
 					)

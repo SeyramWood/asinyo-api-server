@@ -13,6 +13,7 @@ import (
 	"github.com/SeyramWood/ent/favourite"
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/orderdetail"
+	"github.com/SeyramWood/ent/pricemodel"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -208,6 +209,25 @@ func (pc *ProductCreate) SetMinorID(id int) *ProductCreate {
 // SetMinor sets the "minor" edge to the ProductCategoryMinor entity.
 func (pc *ProductCreate) SetMinor(p *ProductCategoryMinor) *ProductCreate {
 	return pc.SetMinorID(p.ID)
+}
+
+// SetPriceModelID sets the "price_model" edge to the PriceModel entity by ID.
+func (pc *ProductCreate) SetPriceModelID(id int) *ProductCreate {
+	pc.mutation.SetPriceModelID(id)
+	return pc
+}
+
+// SetNillablePriceModelID sets the "price_model" edge to the PriceModel entity by ID if the given value is not nil.
+func (pc *ProductCreate) SetNillablePriceModelID(id *int) *ProductCreate {
+	if id != nil {
+		pc = pc.SetPriceModelID(*id)
+	}
+	return pc
+}
+
+// SetPriceModel sets the "price_model" edge to the PriceModel entity.
+func (pc *ProductCreate) SetPriceModel(p *PriceModel) *ProductCreate {
+	return pc.SetPriceModelID(p.ID)
 }
 
 // Mutation returns the ProductMutation object of the builder.
@@ -490,6 +510,23 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.product_category_minor_products = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.PriceModelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.PriceModelTable,
+			Columns: []string{product.PriceModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pricemodel.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.price_model_model = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -3441,6 +3441,22 @@ func (c *PriceModelClient) GetX(ctx context.Context, id int) *PriceModel {
 	return obj
 }
 
+// QueryModel queries the model edge of a PriceModel.
+func (c *PriceModelClient) QueryModel(pm *PriceModel) *ProductQuery {
+	query := (&ProductClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pricemodel.Table, pricemodel.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, pricemodel.ModelTable, pricemodel.ModelColumn),
+		)
+		fromV = sqlgraph.Neighbors(pm.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *PriceModelClient) Hooks() []Hook {
 	return c.hooks.PriceModel
@@ -3632,6 +3648,22 @@ func (c *ProductClient) QueryMinor(pr *Product) *ProductCategoryMinorQuery {
 			sqlgraph.From(product.Table, product.FieldID, id),
 			sqlgraph.To(productcategoryminor.Table, productcategoryminor.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, product.MinorTable, product.MinorColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPriceModel queries the price_model edge of a Product.
+func (c *ProductClient) QueryPriceModel(pr *Product) *PriceModelQuery {
+	query := (&PriceModelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(pricemodel.Table, pricemodel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, product.PriceModelTable, product.PriceModelColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil

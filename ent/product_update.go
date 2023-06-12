@@ -15,6 +15,7 @@ import (
 	"github.com/SeyramWood/ent/merchant"
 	"github.com/SeyramWood/ent/orderdetail"
 	"github.com/SeyramWood/ent/predicate"
+	"github.com/SeyramWood/ent/pricemodel"
 	"github.com/SeyramWood/ent/product"
 	"github.com/SeyramWood/ent/productcategorymajor"
 	"github.com/SeyramWood/ent/productcategoryminor"
@@ -231,6 +232,25 @@ func (pu *ProductUpdate) SetMinor(p *ProductCategoryMinor) *ProductUpdate {
 	return pu.SetMinorID(p.ID)
 }
 
+// SetPriceModelID sets the "price_model" edge to the PriceModel entity by ID.
+func (pu *ProductUpdate) SetPriceModelID(id int) *ProductUpdate {
+	pu.mutation.SetPriceModelID(id)
+	return pu
+}
+
+// SetNillablePriceModelID sets the "price_model" edge to the PriceModel entity by ID if the given value is not nil.
+func (pu *ProductUpdate) SetNillablePriceModelID(id *int) *ProductUpdate {
+	if id != nil {
+		pu = pu.SetPriceModelID(*id)
+	}
+	return pu
+}
+
+// SetPriceModel sets the "price_model" edge to the PriceModel entity.
+func (pu *ProductUpdate) SetPriceModel(p *PriceModel) *ProductUpdate {
+	return pu.SetPriceModelID(p.ID)
+}
+
 // Mutation returns the ProductMutation object of the builder.
 func (pu *ProductUpdate) Mutation() *ProductMutation {
 	return pu.mutation
@@ -293,6 +313,12 @@ func (pu *ProductUpdate) ClearMajor() *ProductUpdate {
 // ClearMinor clears the "minor" edge to the ProductCategoryMinor entity.
 func (pu *ProductUpdate) ClearMinor() *ProductUpdate {
 	pu.mutation.ClearMinor()
+	return pu
+}
+
+// ClearPriceModel clears the "price_model" edge to the PriceModel entity.
+func (pu *ProductUpdate) ClearPriceModel() *ProductUpdate {
+	pu.mutation.ClearPriceModel()
 	return pu
 }
 
@@ -600,6 +626,35 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.PriceModelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.PriceModelTable,
+			Columns: []string{product.PriceModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pricemodel.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.PriceModelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.PriceModelTable,
+			Columns: []string{product.PriceModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pricemodel.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{product.Label}
@@ -818,6 +873,25 @@ func (puo *ProductUpdateOne) SetMinor(p *ProductCategoryMinor) *ProductUpdateOne
 	return puo.SetMinorID(p.ID)
 }
 
+// SetPriceModelID sets the "price_model" edge to the PriceModel entity by ID.
+func (puo *ProductUpdateOne) SetPriceModelID(id int) *ProductUpdateOne {
+	puo.mutation.SetPriceModelID(id)
+	return puo
+}
+
+// SetNillablePriceModelID sets the "price_model" edge to the PriceModel entity by ID if the given value is not nil.
+func (puo *ProductUpdateOne) SetNillablePriceModelID(id *int) *ProductUpdateOne {
+	if id != nil {
+		puo = puo.SetPriceModelID(*id)
+	}
+	return puo
+}
+
+// SetPriceModel sets the "price_model" edge to the PriceModel entity.
+func (puo *ProductUpdateOne) SetPriceModel(p *PriceModel) *ProductUpdateOne {
+	return puo.SetPriceModelID(p.ID)
+}
+
 // Mutation returns the ProductMutation object of the builder.
 func (puo *ProductUpdateOne) Mutation() *ProductMutation {
 	return puo.mutation
@@ -880,6 +954,12 @@ func (puo *ProductUpdateOne) ClearMajor() *ProductUpdateOne {
 // ClearMinor clears the "minor" edge to the ProductCategoryMinor entity.
 func (puo *ProductUpdateOne) ClearMinor() *ProductUpdateOne {
 	puo.mutation.ClearMinor()
+	return puo
+}
+
+// ClearPriceModel clears the "price_model" edge to the PriceModel entity.
+func (puo *ProductUpdateOne) ClearPriceModel() *ProductUpdateOne {
+	puo.mutation.ClearPriceModel()
 	return puo
 }
 
@@ -1210,6 +1290,35 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(productcategoryminor.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.PriceModelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.PriceModelTable,
+			Columns: []string{product.PriceModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pricemodel.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.PriceModelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   product.PriceModelTable,
+			Columns: []string{product.PriceModelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pricemodel.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

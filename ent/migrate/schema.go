@@ -514,7 +514,7 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "initials", Type: field.TypeString},
 		{Name: "formula", Type: field.TypeString},
-		{Name: "asinyo_formula", Type: field.TypeString, Nullable: true, Default: "(percentage/100) * cp"},
+		{Name: "asinyo_formula", Type: field.TypeString, Nullable: true, Default: "(percentage/100) * costPrice"},
 	}
 	// PriceModelsTable holds the schema information for the "price_models" table.
 	PriceModelsTable = &schema.Table{
@@ -537,6 +537,7 @@ var (
 		{Name: "image", Type: field.TypeString},
 		{Name: "best_deal", Type: field.TypeUint64, Default: 0},
 		{Name: "merchant_products", Type: field.TypeInt},
+		{Name: "price_model_model", Type: field.TypeInt, Nullable: true},
 		{Name: "product_category_major_products", Type: field.TypeInt},
 		{Name: "product_category_minor_products", Type: field.TypeInt},
 	}
@@ -553,14 +554,20 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "products_product_category_majors_products",
+				Symbol:     "products_price_models_model",
 				Columns:    []*schema.Column{ProductsColumns[13]},
+				RefColumns: []*schema.Column{PriceModelsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "products_product_category_majors_products",
+				Columns:    []*schema.Column{ProductsColumns[14]},
 				RefColumns: []*schema.Column{ProductCategoryMajorsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "products_product_category_minors_products",
-				Columns:    []*schema.Column{ProductsColumns[14]},
+				Columns:    []*schema.Column{ProductsColumns[15]},
 				RefColumns: []*schema.Column{ProductCategoryMinorsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -933,8 +940,9 @@ func init() {
 	OrderDetailsTable.ForeignKeys[1].RefTable = OrdersTable
 	OrderDetailsTable.ForeignKeys[2].RefTable = ProductsTable
 	ProductsTable.ForeignKeys[0].RefTable = MerchantsTable
-	ProductsTable.ForeignKeys[1].RefTable = ProductCategoryMajorsTable
-	ProductsTable.ForeignKeys[2].RefTable = ProductCategoryMinorsTable
+	ProductsTable.ForeignKeys[1].RefTable = PriceModelsTable
+	ProductsTable.ForeignKeys[2].RefTable = ProductCategoryMajorsTable
+	ProductsTable.ForeignKeys[3].RefTable = ProductCategoryMinorsTable
 	ProductCategoryMinorsTable.ForeignKeys[0].RefTable = ProductCategoryMajorsTable
 	PurchaseRequestsTable.ForeignKeys[0].RefTable = CustomersTable
 	RetailMerchantsTable.ForeignKeys[0].RefTable = MerchantsTable

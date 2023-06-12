@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -25,8 +26,17 @@ const (
 	FieldFormula = "formula"
 	// FieldAsinyoFormula holds the string denoting the asinyo_formula field in the database.
 	FieldAsinyoFormula = "asinyo_formula"
+	// EdgeModel holds the string denoting the model edge name in mutations.
+	EdgeModel = "model"
 	// Table holds the table name of the pricemodel in the database.
 	Table = "price_models"
+	// ModelTable is the table that holds the model relation/edge.
+	ModelTable = "products"
+	// ModelInverseTable is the table name for the Product entity.
+	// It exists in this package in order to avoid circular dependency with the "product" package.
+	ModelInverseTable = "products"
+	// ModelColumn is the table column denoting the model relation/edge.
+	ModelColumn = "price_model_model"
 )
 
 // Columns holds all SQL columns for pricemodel fields.
@@ -103,4 +113,25 @@ func ByFormula(opts ...sql.OrderTermOption) OrderOption {
 // ByAsinyoFormula orders the results by the asinyo_formula field.
 func ByAsinyoFormula(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAsinyoFormula, opts...).ToFunc()
+}
+
+// ByModelCount orders the results by model count.
+func ByModelCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newModelStep(), opts...)
+	}
+}
+
+// ByModel orders the results by model terms.
+func ByModel(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newModelStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newModelStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ModelInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ModelTable, ModelColumn),
+	)
 }

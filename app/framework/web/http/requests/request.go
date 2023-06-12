@@ -796,6 +796,19 @@ func ValidateRole() fiber.Handler {
 	}
 }
 
+func ValidatePriceModel() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var request models.PriceModelRequest
+		err := c.BodyParser(&request)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(presenters.AdminErrorResponse(err))
+		}
+		if er := validator.Validate(&request); er != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(er)
+		}
+		return c.Next()
+	}
+}
 func ValidateCategoryPercentage() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		percentage, _ := strconv.Atoi(c.Query("percentage", "0"))

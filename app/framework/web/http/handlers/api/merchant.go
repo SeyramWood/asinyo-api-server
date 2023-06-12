@@ -15,23 +15,25 @@ import (
 	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/SeyramWood/pkg/storage"
 )
 
 type MerchantHandler struct {
-	service gateways.MerchantService
-	maps    gateways.MapService
+	service    gateways.MerchantService
+	storageSrv gateways.StorageService
+	maps       gateways.MapService
 }
 
 func NewMerchantHandler(
-	db *database.Adapter, noti notification.NotificationService, maps gateways.MapService,
+	db *database.Adapter, noti notification.NotificationService, storageSrv gateways.StorageService,
+	maps gateways.MapService,
 ) *MerchantHandler {
 	repo := merchant.NewMerchantRepo(db)
 	service := merchant.NewMerchantService(repo, noti)
 	mapService := maps.SetMerchantRepo(repo)
 	return &MerchantHandler{
-		service: service,
-		maps:    mapService,
+		service:    service,
+		storageSrv: storageSrv,
+		maps:       mapService,
 	}
 }
 
@@ -97,7 +99,7 @@ func (h *MerchantHandler) OnboardMerchant() fiber.Handler {
 		}
 
 		agentId, _ := c.ParamsInt("agent")
-		file, err := c.FormFile("banner")
+		banner, err := c.FormFile("banner")
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
@@ -113,6 +115,7 @@ func (h *MerchantHandler) OnboardMerchant() fiber.Handler {
 				},
 			)
 		}
+
 		cache := cacheDriver.New("./mnt/cache/")
 		stepOne := fmt.Sprintf("step_one_%s", c.Params("agent"))
 		stepTwo := fmt.Sprintf("step_two_%s", c.Params("agent"))
@@ -141,28 +144,36 @@ func (h *MerchantHandler) OnboardMerchant() fiber.Handler {
 			Address:      &aInfo,
 			StoreInfo:    &request,
 		}
-
-		logo, images, upErr := storage.NewUploadCare().Client().UploadMerchantStore(file, form)
-		if upErr != nil {
+		bannerPath, err := h.storageSrv.Disk("uploadcare").UploadFile("merchant_logo", banner)
+		if err != nil {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(bannerPath, "delete_file")
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
-					"msg": upErr,
+					"msg": err,
+				},
+			)
+		}
+		imagePaths, err := h.storageSrv.Disk("uploadcare").UploadFiles("merchant_store", form.File["otherImages"])
+		if err != nil {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(bannerPath, "delete_file")
+			h.storageSrv.Disk("uploadcare").ExecuteTask(imagePaths, "delete_files")
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": err,
 				},
 			)
 		}
 
-		result, errr := h.service.Onboard(&requestData, agentId, logo, images)
+		result, errr := h.service.Onboard(&requestData, agentId, bannerPath, imagePaths)
 		if errr != nil {
-			// TODO Delete all files from remote server
+			h.storageSrv.Disk("uploadcare").ExecuteTask(bannerPath, "delete_file")
+			h.storageSrv.Disk("uploadcare").ExecuteTask(imagePaths, "delete_files")
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(err))
 		}
-
 		for key := range cachedData {
 			cache.Delete(key)
 		}
-
 		h.maps.ExecuteTask(result, "geocoding", "merchant")
-
 		return c.JSON(presenters.EmptySuccessResponse())
 	}
 }

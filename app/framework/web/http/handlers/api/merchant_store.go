@@ -14,7 +14,6 @@ import (
 	"github.com/SeyramWood/app/application/merchant_store"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
-	"github.com/SeyramWood/pkg/storage"
 )
 
 type MerchantStoreHandler struct {
@@ -113,7 +112,7 @@ func (h *MerchantStoreHandler) Create() fiber.Handler {
 			Info:    &infoRequest,
 			Address: &addressRequest,
 		}
-		file, err := c.FormFile("banner")
+		banner, err := c.FormFile("banner")
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
@@ -121,19 +120,31 @@ func (h *MerchantStoreHandler) Create() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
-		logo, images, upErr := storage.NewUploadCare().Client().UploadMerchantStore(file, form)
-		if upErr != nil {
+		bannerPath, err := h.storageSrv.Disk("uploadcare").UploadFile("merchant_logo", banner)
+		if err != nil {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(bannerPath, "delete_file")
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
-					"msg": upErr,
+					"msg": err,
+				},
+			)
+		}
+		imagePaths, err := h.storageSrv.Disk("uploadcare").UploadFiles("merchant_store", form.File["otherImages"])
+		if err != nil {
+			h.storageSrv.Disk("uploadcare").ExecuteTask(bannerPath, "delete_file")
+			h.storageSrv.Disk("uploadcare").ExecuteTask(imagePaths, "delete_files")
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				fiber.Map{
+					"msg": err,
 				},
 			)
 		}
 
 		merchantId, _ := c.ParamsInt("merchantId")
-		result, err := h.service.Create(&requestData, merchantId, logo, images)
+		result, err := h.service.Create(&requestData, merchantId, bannerPath, imagePaths)
 		if err != nil {
-			// TODO Delete all files from remote server
+			h.storageSrv.Disk("uploadcare").ExecuteTask(bannerPath, "delete_file")
+			h.storageSrv.Disk("uploadcare").ExecuteTask(imagePaths, "delete_files")
 			return c.Status(fiber.StatusInternalServerError).JSON(presenters.MerchantErrorResponse(errors.New("error creating merchant")))
 		}
 		cache.Delete(stepOne)

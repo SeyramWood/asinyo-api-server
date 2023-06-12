@@ -25,13 +25,11 @@ func NewProductRepo(db *database.Adapter) gateways.ProductRepo {
 }
 
 func (r *repository) Insert(prod *models.Product, imageUrl string) (*ent.Product, error) {
-	ctx := context.Background()
-
-	mq := r.db.Merchant.Query().Where(merchant.ID(prod.Merchant)).OnlyX(ctx)
-	major := r.db.ProductCategoryMajor.Query().Where(productcategorymajor.ID(prod.CategoryMajor)).OnlyX(ctx)
-	minor := r.db.ProductCategoryMinor.Query().Where(productcategoryminor.ID(prod.CategoryMinor)).OnlyX(ctx)
-
-	result, err := r.db.Product.Create().SetMerchant(mq).SetMajor(major).SetMinor(minor).
+	result, err := r.db.Product.Create().
+		SetMerchantID(prod.Merchant).
+		SetMajorID(prod.CategoryMajor).
+		SetMinorID(prod.CategoryMinor).
+		SetPriceModelID(prod.Model).
 		SetQuantity(uint32(prod.Quantity)).
 		SetWeight(uint32(prod.Weight)).
 		SetUnit(prod.Unit).
@@ -40,7 +38,7 @@ func (r *repository) Insert(prod *models.Product, imageUrl string) (*ent.Product
 		SetPromoPrice(prod.PromoPrice).
 		SetDescription(prod.Description).
 		SetImage(imageUrl).
-		Save(ctx)
+		Save(context.Background())
 
 	if err != nil {
 		return nil, fmt.Errorf("failed creating product: %w", err)
@@ -61,7 +59,9 @@ func (r *repository) Read(id int) (*ent.Product, error) {
 				)
 			},
 		).
-		WithMajor().WithMinor().
+		WithMajor().
+		WithMinor().
+		WithPriceModel().
 		Only(context.Background())
 
 	if err != nil {
@@ -86,6 +86,7 @@ func (r *repository) ReadBySupplierMerchant(id int) (*ent.Product, error) {
 		).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		Only(context.Background())
 
 	if err != nil {
@@ -110,6 +111,7 @@ func (r *repository) ReadByRetailMerchant(id int) (*ent.Product, error) {
 		).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		Only(context.Background())
 
 	if err != nil {
@@ -135,6 +137,7 @@ func (r *repository) ReadAll(limit, offset int) ([]*ent.Product, error) {
 		).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		All(context.Background())
 
 	if err != nil {
@@ -154,6 +157,7 @@ func (r *repository) ReadAllBySlugCategoryMajor(merchantType, slug string, limit
 		Order(ent.Desc(product.FieldCreatedAt)).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		WithMerchant(
 			func(mq *ent.MerchantQuery) {
 				mq.WithSupplier()
@@ -184,6 +188,7 @@ func (r *repository) ReadAllBySlugCategoryMinor(merchantType, slug string, limit
 		Order(ent.Desc(product.FieldCreatedAt)).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		WithMerchant(
 			func(mq *ent.MerchantQuery) {
 				mq.WithSupplier()
@@ -220,6 +225,7 @@ func (r *repository) ReadBySlugRetailMerchantCategoryMinor(slug string, limit, o
 					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
+					WithPriceModel().
 					WithMerchant(
 						func(mq *ent.MerchantQuery) {
 							mq.WithRetailer()
@@ -258,6 +264,7 @@ func (r *repository) ReadBySlugRetailMerchantCategoryMajor(slug string, limit, o
 					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
+					WithPriceModel().
 					WithMerchant(
 						func(mq *ent.MerchantQuery) {
 							mq.WithRetailer()
@@ -296,6 +303,7 @@ func (r *repository) ReadBySlugSupplierMerchantCategoryMinor(
 					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
+					WithPriceModel().
 					WithMerchant(
 						func(mq *ent.MerchantQuery) {
 							mq.WithSupplier()
@@ -334,6 +342,7 @@ func (r *repository) ReadBySlugSupplierMerchantCategoryMajor(
 					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
+					WithPriceModel().
 					WithMerchant(
 						func(mq *ent.MerchantQuery) {
 							mq.WithSupplier()
@@ -369,6 +378,7 @@ func (r *repository) ReadAllRetailMerchantCategoryMinor(limit, offset int) ([]*e
 					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
+					WithPriceModel().
 					WithMerchant(
 						func(mq *ent.MerchantQuery) {
 							mq.WithRetailer()
@@ -404,6 +414,7 @@ func (r *repository) ReadAllRetailMerchantCategoryMajor(limit, offset int) ([]*e
 					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
+					WithPriceModel().
 					WithMerchant(
 						func(mq *ent.MerchantQuery) {
 							mq.WithRetailer()
@@ -439,6 +450,7 @@ func (r *repository) ReadAllSupplierMerchantCategoryMinor(limit, offset int) ([]
 					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
+					WithPriceModel().
 					WithMerchant(
 						func(mq *ent.MerchantQuery) {
 							mq.WithSupplier()
@@ -474,6 +486,7 @@ func (r *repository) ReadAllSupplierMerchantCategoryMajor(limit, offset int) ([]
 					Order(ent.Desc(product.FieldCreatedAt)).
 					WithMajor().
 					WithMinor().
+					WithPriceModel().
 					WithMerchant(
 						func(mq *ent.MerchantQuery) {
 							mq.WithSupplier()
@@ -514,6 +527,7 @@ func (r *repository) ReadAllBySupplierMerchant(merchantId, limit, offset int) ([
 		).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		All(context.Background())
 
 	if err != nil {
@@ -543,6 +557,7 @@ func (r *repository) ReadAllByRetailMerchant(merchantId, limit, offset int) ([]*
 		).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		All(context.Background())
 
 	if err != nil {
@@ -576,6 +591,7 @@ func (r *repository) ReadBestSellerBySupplierMerchant(limit, offset int) ([]*ent
 		).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		All(context.Background())
 
 	if err != nil {
@@ -610,6 +626,7 @@ func (r *repository) ReadBestSellerRetailMerchant(limit, offset int) ([]*ent.Pro
 		).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		All(context.Background())
 	if err != nil {
 		return nil, err
@@ -642,6 +659,7 @@ func (r *repository) ReadBestSellerByMerchant(id, limit, offset int) ([]*ent.Pro
 		).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		All(context.Background())
 
 	if err != nil {
@@ -661,6 +679,7 @@ func (r *repository) Update(id int, request *models.ProductUpdate) (*ent.Product
 		SetDescription(request.Description).
 		SetMajorID(request.CategoryMajor).
 		SetMinorID(request.CategoryMinor).
+		SetPriceModelID(request.Model).
 		Save(context.Background())
 	if err != nil {
 		return nil, err

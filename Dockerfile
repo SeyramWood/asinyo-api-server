@@ -1,4 +1,4 @@
-FROM golang:1.19.0 as base
+FROM golang:1.20.5-alpine as base
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
@@ -14,4 +14,3 @@ FROM base as prod
 RUN go build -o /cmd/build ./cmd/
 EXPOSE 9000
 CMD ["sh", "-c", "/cmd/build"]
-
