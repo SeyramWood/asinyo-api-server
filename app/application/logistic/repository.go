@@ -52,6 +52,7 @@ func (r *repository) ReadLogistic() (*ent.Configuration, error) {
 	conf, err := r.db.Configuration.Query().Where(configuration.Name("Logistic")).Only(context.Background())
 	if err != nil {
 		return nil, err
+		
 	}
 	return conf, nil
 }

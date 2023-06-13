@@ -34,6 +34,7 @@ func NewLogistic(wg *sync.WaitGroup, adapter *database.Adapter) gateways.Logisti
 	repo := NewLogisticRepo(adapter)
 	gateway, err := getGateway(repo)
 	if err != nil {
+		log.Println(err)
 		log.Panicln("Could not fetch logistic gateway")
 		return nil
 	}
@@ -50,8 +51,11 @@ func NewLogistic(wg *sync.WaitGroup, adapter *database.Adapter) gateways.Logisti
 
 func getGateway(repo gateways.LogisticRepo) (string, error) {
 	gateway, err := repo.ReadLogistic()
-	if err != nil {
+	if !ent.IsNotFound(err) {
 		return "", err
+	}
+	if ent.IsNotFound(err) {
+		return "Asinyo", nil
 	}
 	gatewayData := gateway.Data.Data.(map[string]any)
 	return gatewayData["current"].(string), nil
