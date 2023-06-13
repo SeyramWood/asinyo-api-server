@@ -16,9 +16,9 @@ type AppCache struct {
 func New() *AppCache {
 	rdb := redis.NewClient(
 		&redis.Options{
-			Addr:     "redis-master:6379",
-			Password: "my_master_password", // no password set
-			DB:       0,                    // use default DB
+			Addr:     "redis:6379",
+			Password: "", // no password set
+			DB:       0,  // use default DB
 		},
 	)
 	_, e := rdb.Ping(context.Background()).Result()
