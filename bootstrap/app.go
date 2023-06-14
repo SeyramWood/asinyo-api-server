@@ -46,7 +46,7 @@ func App() {
 		cors.New(
 			cors.Config{
 				AllowCredentials: true,
-				AllowOrigins:     "http://localhost:3000, http://localhost:3001",
+				AllowOrigins:     "*",
 			},
 		),
 	)
