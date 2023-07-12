@@ -101,7 +101,7 @@ func customerRouter(r fiber.Router, ar *ApiRouter) {
 			r.Post("/:customer/purchase-request", request.ValidateCustomerPurchaseRequest(), h.CreatePurchaseRequest())
 			r.Put("/purchase-request/:id", request.ValidateCustomerPurchaseRequest(), h.UpdatePurchaseRequest())
 			r.Put("/update/:id", request.ValidateCustomerUpdate(), h.Update())
-			r.Delete("/:id", h.Delete())
+			r.Delete("/:id", ar.middleware.IsAuthorized(), h.Delete())
 		}, "customers.",
 	)
 }

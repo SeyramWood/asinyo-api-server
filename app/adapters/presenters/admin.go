@@ -219,6 +219,18 @@ func AdminProductsResponse(res *PaginationResponse) *fiber.Map {
 				Minor:       v.Edges.Minor.Category,
 				CreatedAt:   v.CreatedAt,
 				UpdatedAt:   v.UpdatedAt,
+				PriceModel: func() *PriceModel {
+					if m, err := v.Edges.PriceModelOrErr(); err == nil {
+						return &PriceModel{
+							ID:            m.ID,
+							Name:          m.Name,
+							Initials:      m.Initials,
+							Formula:       m.Formula,
+							AsinyoFormula: m.AsinyoFormula,
+						}
+					}
+					return nil
+				}(),
 				Store: func() *ProductStore {
 					if s, err := v.Edges.Merchant.Edges.StoreOrErr(); err == nil {
 						return &ProductStore{

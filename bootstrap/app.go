@@ -42,14 +42,7 @@ func App() {
 	}
 	appcache := app_cache.New()
 	newApp := app.New()
-	newApp.HTTP.Use(
-		cors.New(
-			cors.Config{
-				AllowCredentials: true,
-				AllowOrigins:     "*",
-			},
-		),
-	)
+	newApp.HTTP.Use(cors.New())
 
 	newApp.HTTP.Use(recover.New())
 

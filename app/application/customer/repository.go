@@ -243,8 +243,7 @@ func (r *repository) UpdatePurchaseRequest(id int, request *models.PurchaseOrder
 }
 
 func (r *repository) Delete(id int) error {
-	// TODO implement me
-	panic("implement me")
+	return r.db.Customer.DeleteOneID(id).Exec(context.Background())
 }
 
 func (r *repository) DeletePurchaseRequest(id int) error {

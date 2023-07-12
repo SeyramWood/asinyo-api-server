@@ -181,8 +181,8 @@ func (s *service) FetchAuthUser(c *fiber.Ctx) error {
 		log.Println("access token not found FetchAuthUser")
 		return c.Status(fiber.StatusUnauthorized).JSON(presenters.AuthErrorResponse("Unauthorized"))
 	}
-	data, err := s.cache.Get(token, &presenters.AuthSession{})
-	if err != nil {
+	var session presenters.AuthSession
+	if err := s.cache.Get(token, &session); err != nil {
 		refresh := c.Cookies("__refresh")
 		if refresh == "" {
 			log.Println("refresh token not found")
@@ -207,11 +207,10 @@ func (s *service) FetchAuthUser(c *fiber.Ctx) error {
 			},
 		)
 	}
-	sessionUser := data.(*presenters.AuthSession)
 	return c.Status(fiber.StatusOK).JSON(
 		fiber.Map{
 			"status": true,
-			"data":   sessionUser,
+			"data":   session,
 		},
 	)
 }
@@ -222,7 +221,7 @@ func (s *service) UpdatePassword(id string, request any, userType string, isOTP 
 	case "customer":
 		user, err := s.repo.ReadCustomer(id, "id")
 		if err != nil {
-			return false, fmt.Errorf("no record found for %d", user.ID)
+			return false, err
 		}
 		if !s.hashCheck(user.Password, data.CurrentPassword) {
 			return false, fmt.Errorf("current password do not match our records")
@@ -231,7 +230,7 @@ func (s *service) UpdatePassword(id string, request any, userType string, isOTP 
 	case "agent":
 		user, err := s.repo.ReadAgent(id, "id")
 		if err != nil {
-			return false, fmt.Errorf("no record found for %d", user.ID)
+			return false, err
 		}
 		if !s.hashCheck(user.Password, data.CurrentPassword) {
 			return false, fmt.Errorf("current password do not match our records")
@@ -240,7 +239,7 @@ func (s *service) UpdatePassword(id string, request any, userType string, isOTP 
 	case "merchant":
 		user, err := s.repo.ReadMerchant(id, "id")
 		if err != nil {
-			return false, fmt.Errorf("no record found for %d", user.ID)
+			return false, err
 		}
 		if !s.hashCheck(user.Password, data.CurrentPassword) {
 			return false, fmt.Errorf("current password do not match our records")
@@ -250,7 +249,7 @@ func (s *service) UpdatePassword(id string, request any, userType string, isOTP 
 	case "asinyo":
 		user, err := s.repo.ReadAdmin(id, "id")
 		if err != nil {
-			return false, fmt.Errorf("no record found for %d", user.ID)
+			return false, err
 		}
 		if !s.hashCheck(user.Password, data.CurrentPassword) {
 			return false, fmt.Errorf("current password do not match our records")
@@ -265,26 +264,25 @@ func (s *service) ResetPassword(request *models.ResetPassword, username, userTyp
 	switch userType {
 	case "customer":
 		if user, err := s.repo.ReadCustomer(username, "username"); err != nil {
-			return false, fmt.Errorf("no record found for %s", user.Username)
+			return false, err
 		} else {
 			return s.repo.ResetPassword(user.ID, request.NewPassword, userType)
 		}
-
 	case "agent":
 		if user, err := s.repo.ReadAgent(username, "username"); err != nil {
-			return false, fmt.Errorf("no record found for %s", user.Username)
+			return false, err
 		} else {
 			return s.repo.ResetPassword(user.ID, request.NewPassword, userType)
 		}
 	case "merchant":
 		if user, err := s.repo.ReadMerchant(username, "username"); err != nil {
-			return false, fmt.Errorf("no record found for %s", user.Username)
+			return false, err
 		} else {
 			return s.repo.ResetPassword(user.ID, request.NewPassword, userType)
 		}
 	case "asinyo":
 		if user, err := s.repo.ReadAdmin(username, "username"); err != nil {
-			return false, fmt.Errorf("no record found for %s", user.Username)
+			return false, err
 		} else {
 			return s.repo.ResetPassword(user.ID, request.NewPassword, userType)
 		}
@@ -422,11 +420,11 @@ func (s *service) GenerateNewTokens(__token string) (map[string]any, error) {
 	if ok := s.cache.Exist(__token); !ok {
 		return nil, fmt.Errorf("refresh token not found")
 	}
-	oldSession, err := s.cache.Get(__token, &presenters.AuthSession{})
-	if err != nil {
+	var oldSession presenters.AuthSession
+	if err := s.cache.Get(__token, &oldSession); err != nil {
 		return nil, err
 	}
-	newSession, err := s.newUserSession(oldSession.(*presenters.AuthSession))
+	newSession, err := s.newUserSession(&oldSession)
 	if err != nil {
 		return nil, err
 	}

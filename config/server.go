@@ -25,7 +25,7 @@ func Server() *server {
 		EnablePrintRoutes:       true,
 		EnableTrustedProxyCheck: true,
 		Concurrency:             256 * 2048,
-		ServerHeader:            "Asinyo Agro-Commerce LTD.",
-		AppName:                 env.Get("APP_NAME", "Asinyo Agro-Commerce"),
+		ServerHeader:            "Asinyo Agri-Commerce LTD.",
+		AppName:                 env.Get("APP_NAME", "Asinyo Agri-Commerce"),
 	}
 }

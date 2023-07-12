@@ -42,6 +42,7 @@ func (r *repository) ReadAdmin(username, field string) (*ent.Admin, error) {
 			query.WithPermissions()
 		},
 	).First(context.Background())
+
 	if err != nil {
 		return nil, err
 	}

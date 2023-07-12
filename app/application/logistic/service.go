@@ -51,10 +51,11 @@ func NewLogistic(wg *sync.WaitGroup, adapter *database.Adapter) gateways.Logisti
 
 func getGateway(repo gateways.LogisticRepo) (string, error) {
 	gateway, err := repo.ReadLogistic()
-	if !ent.IsNotFound(err) {
+
+	if err != nil && !ent.IsNotFound(err) {
 		return "", err
 	}
-	if ent.IsNotFound(err) {
+	if err != nil && ent.IsNotFound(err) {
 		return "Asinyo", nil
 	}
 	gatewayData := gateway.Data.Data.(map[string]any)

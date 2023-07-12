@@ -240,6 +240,7 @@ func (r *repository) ReadAdminProducts(limit, offset int) (*presenters.Paginatio
 		Order(ent.Desc(product.FieldCreatedAt)).
 		WithMajor().
 		WithMinor().
+		WithPriceModel().
 		WithMerchant(
 			func(mq *ent.MerchantQuery) {
 				mq.WithSupplier()

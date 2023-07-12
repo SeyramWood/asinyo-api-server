@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/faabiosr/cachego/file"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/SeyramWood/app/adapters/gateways"
@@ -14,11 +13,13 @@ import (
 	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/framework/database"
+	"github.com/SeyramWood/ent"
 	"github.com/SeyramWood/pkg/jwt"
 )
 
 type authHandler struct {
 	service gateways.AuthService
+	cache   app_cache.AppCache
 }
 
 func NewAuthHandler(
@@ -64,6 +65,9 @@ func (auth *authHandler) ChangePassword() fiber.Handler {
 		isOTP, _ := strconv.ParseBool(c.Get("OTP-Password-Change"))
 		_, err = auth.service.UpdatePassword(id, &request, userType, isOTP)
 		if err != nil {
+			if ent.IsNotFound(err) {
+				return c.Status(fiber.StatusNotFound).JSON(presenters.MerchantErrorResponse(err))
+			}
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
 		return c.Status(fiber.StatusOK).JSON(
@@ -85,6 +89,9 @@ func (auth *authHandler) ResetPassword() fiber.Handler {
 		userType := c.Params("userType")
 		_, err = auth.service.ResetPassword(&request, username, userType)
 		if err != nil {
+			if ent.IsNotFound(err) {
+				return c.Status(fiber.StatusNotFound).JSON(presenters.MerchantErrorResponse(err))
+			}
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
 		return c.Status(fiber.StatusOK).JSON(
@@ -104,20 +111,17 @@ func (auth *authHandler) SendVerificationCode() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
-
-		cache := file.New("./mnt/cache/otp/")
-		if cache.Contains(request.Username) {
-			userCode, err := cache.Fetch(request.Username)
-			if err != nil {
+		if auth.cache.Exist(request.Username) {
+			otp := make(map[string]string)
+			if err := auth.cache.Get(request.Username, &otp); err != nil {
 				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
-			} else {
-				return c.Status(fiber.StatusOK).JSON(
-					fiber.Map{
-						"status": true,
-						"code":   userCode,
-					},
-				)
 			}
+			return c.Status(fiber.StatusOK).JSON(
+				fiber.Map{
+					"status": true,
+					"code":   otp["otp"],
+				},
+			)
 		}
 		code, err := auth.service.SendUserVerificationCode(request.Username)
 		if err != nil {
@@ -128,7 +132,7 @@ func (auth *authHandler) SendVerificationCode() fiber.Handler {
 				},
 			)
 		}
-		if err := cache.Save(request.Username, code, 30*time.Second); err != nil {
+		if err := auth.cache.Set(request.Username, map[string]string{"otp": code}, 30*time.Second); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
 					"status": false,
@@ -154,21 +158,6 @@ func (auth *authHandler) SendPasswordResetCode() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
-
-		cache := file.New("./mnt/cache/otp/")
-		if cache.Contains(request.Username) {
-			userCode, err := cache.Fetch(request.Username)
-			if err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
-			} else {
-				return c.Status(fiber.StatusOK).JSON(
-					fiber.Map{
-						"status": true,
-						"code":   userCode,
-					},
-				)
-			}
-		}
 		code, err := auth.service.SendPasswordResetCode(request.Username, c.Get("userType"))
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
@@ -177,16 +166,6 @@ func (auth *authHandler) SendPasswordResetCode() fiber.Handler {
 					"msg":    "Could not send reset code",
 				},
 			)
-		}
-		if code != "" {
-			if err := cache.Save(request.Username, code, time.Hour); err != nil {
-				return c.Status(fiber.StatusInternalServerError).JSON(
-					fiber.Map{
-						"status": false,
-						"msg":    "Could not saved OTP in cache",
-					},
-				)
-			}
 		}
 		return c.Status(fiber.StatusOK).JSON(
 			fiber.Map{

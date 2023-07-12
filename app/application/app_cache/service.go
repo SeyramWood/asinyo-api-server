@@ -47,12 +47,11 @@ func (ac *AppCache) Set(key string, value any, ttl time.Duration) error {
 	}
 	return nil
 }
-func (ac *AppCache) Get(key string, obj any) (any, error) {
-	var object = obj
-	if err := ac.client.Get(context.Background(), key, object); err != nil {
-		return nil, err
+func (ac *AppCache) Get(key string, obj any) error {
+	if err := ac.client.Get(context.Background(), key, obj); err != nil {
+		return err
 	}
-	return object, nil
+	return nil
 }
 func (ac *AppCache) Exist(key string) bool {
 	return ac.client.Exists(context.Background(), key)
