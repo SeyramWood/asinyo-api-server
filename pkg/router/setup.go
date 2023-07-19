@@ -2,7 +2,6 @@ package router
 
 import (
 	"github.com/SeyramWood/app/adapters/gateways"
-	"github.com/SeyramWood/app/application/app_cache"
 	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/framework/database"
 	"github.com/SeyramWood/app/framework/web/http/routes"
@@ -17,11 +16,10 @@ func NewRouter(
 	storageSrv gateways.StorageService,
 	logis gateways.LogisticService,
 	ms gateways.MapService,
-	appcache *app_cache.AppCache,
 ) {
 	setup(
-		app, routes.NewApiRouter(app, db, noti, dbNoti, storageSrv, logis, ms, appcache),
-		routes.NewPageRouter(app, db, noti, dbNoti, storageSrv, logis, ms, appcache),
+		app, routes.NewApiRouter(app, db, noti, dbNoti, storageSrv, logis, ms),
+		routes.NewPageRouter(app, db, noti, dbNoti, storageSrv, logis, ms),
 	)
 }
 

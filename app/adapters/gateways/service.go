@@ -2,6 +2,7 @@ package gateways
 
 import (
 	"mime/multipart"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -274,5 +275,12 @@ type (
 		UpdatePercentage(category, percentage int) (*ent.ProductCategoryMinor, error)
 		Remove(id int) error
 		RemovePercentage(id int) error
+	}
+
+	CacheService interface {
+		Set(key string, value any, ttl time.Duration) error
+		Get(key string, obj any) error
+		Exist(key string) bool
+		Delete(key string) error
 	}
 )

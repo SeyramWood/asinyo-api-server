@@ -7,12 +7,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/helmet"
+	"github.com/gofiber/fiber/v2/middleware/idempotency"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 
-	"github.com/SeyramWood/app/application/app_cache"
 	"github.com/SeyramWood/app/application/db_notification"
 	"github.com/SeyramWood/app/application/logistic"
 	"github.com/SeyramWood/app/application/mailer"
@@ -40,9 +44,41 @@ func App() {
 	if err := db.DB.Schema.Create(ctx, migrate.WithGlobalUniqueID(true)); err != nil {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
-	appcache := app_cache.New()
+
 	newApp := app.New()
+
+	newApp.HTTP.Use(
+		limiter.New(
+			limiter.Config{
+				Max:               20,
+				Expiration:        30 * time.Second,
+				LimiterMiddleware: limiter.SlidingWindow{},
+			},
+		),
+	)
+	newApp.HTTP.Use(
+		helmet.New(
+			helmet.Config{
+				XSSProtection:             "1; mode=block",
+				ContentTypeNosniff:        "nosniff",
+				XFrameOptions:             "SAMEORIGIN",
+				ReferrerPolicy:            "no-referrer",
+				CrossOriginEmbedderPolicy: "require-corp",
+				CrossOriginOpenerPolicy:   "same-origin",
+				CrossOriginResourcePolicy: "same-origin",
+				OriginAgentCluster:        "?1",
+				XDNSPrefetchControl:       "off",
+				XDownloadOptions:          "noopen",
+				XPermittedCrossDomain:     "none",
+			},
+		),
+	)
+
 	newApp.HTTP.Use(cors.New())
+	newApp.HTTP.Use(idempotency.New())
+	newApp.HTTP.Use(compress.New())
+
+	// newApp.HTTP.Use(csrf.New())
 
 	newApp.HTTP.Use(recover.New())
 
@@ -62,7 +98,7 @@ func App() {
 	storageSrv := storage.NewStorageService(newApp.WG)
 
 	router.NewRouter(
-		newApp, db, noti, dbNoti, storageSrv, logis, ms, appcache,
+		newApp, db, noti, dbNoti, storageSrv, logis, ms,
 	)
 
 	// go appcache.CleanUp()

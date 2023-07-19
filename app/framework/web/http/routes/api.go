@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/SeyramWood/app/adapters/gateways"
-	"github.com/SeyramWood/app/application/app_cache"
 	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/framework/database"
 	handler "github.com/SeyramWood/app/framework/web/http/handlers/api"
@@ -22,7 +21,6 @@ type ApiRouter struct {
 	storageSrv gateways.StorageService
 	logis      gateways.LogisticService
 	ms         gateways.MapService
-	appcache   *app_cache.AppCache
 }
 
 func NewApiRouter(
@@ -33,9 +31,8 @@ func NewApiRouter(
 	storageSrv gateways.StorageService,
 	logis gateways.LogisticService,
 	ms gateways.MapService,
-	appcache *app_cache.AppCache,
 ) *ApiRouter {
-	newWare := ware.NewMiddleware(db, noti, app.JWT, appcache)
+	newWare := ware.NewMiddleware(db, noti, app.JWT, app.Cache)
 	return &ApiRouter{
 		app:        app,
 		middleware: newWare,
@@ -45,7 +42,6 @@ func NewApiRouter(
 		storageSrv: storageSrv,
 		logis:      logis,
 		ms:         ms,
-		appcache:   appcache,
 	}
 }
 
@@ -85,12 +81,11 @@ func customerRouter(r fiber.Router, ar *ApiRouter) {
 	router := r.Group("/auth/customers")
 	router.Route(
 		"/", func(r fiber.Router) {
-			r.Post("/sign-up", request.ValidateCustomer(), h.Create())
+			r.Post("/sign-up", ar.middleware.IsAuthorized(), request.ValidateCustomer(), h.Create())
 		}, "auth.customers.",
 	)
 
-	authRouter := r.Group("/customers") // middleware.IsAuthorized()
-	// authRouter.Use(ar.middleware.IsAuthorized())
+	authRouter := r.Group("/customers")
 	authRouter.Route(
 		"", func(r fiber.Router) {
 			r.Get("", h.Fetch())
@@ -101,8 +96,8 @@ func customerRouter(r fiber.Router, ar *ApiRouter) {
 			r.Post("/:customer/purchase-request", request.ValidateCustomerPurchaseRequest(), h.CreatePurchaseRequest())
 			r.Put("/purchase-request/:id", request.ValidateCustomerPurchaseRequest(), h.UpdatePurchaseRequest())
 			r.Put("/update/:id", request.ValidateCustomerUpdate(), h.Update())
-			r.Delete("/:id", ar.middleware.IsAuthorized(), h.Delete())
-		}, "customers.",
+			r.Delete("/:id", h.Delete())
+		},
 	)
 }
 
@@ -115,8 +110,8 @@ func agentRouter(r fiber.Router, ar *ApiRouter) {
 
 	router.Route(
 		"/", func(r fiber.Router) {
-			r.Post("/sign-up", request.ValidateAgent(), h.Create())
-		}, "auth.agents.",
+			r.Post("/sign-up", ar.middleware.IsAuthorized(), request.ValidateAgent(), h.Create())
+		},
 	)
 
 	authRouter.Route(
@@ -150,20 +145,20 @@ func retailMerchantRouter(r fiber.Router, ar *ApiRouter) {
 
 	router.Route(
 		"/", func(r fiber.Router) {
-			r.Post("/sign-up", request.ValidateMerchant(), m.Create())
-		}, "auth.merchant.retailers",
+			r.Post("/sign-up", ar.middleware.IsAuthorized(), request.ValidateMerchant(), m.Create())
+		},
 	)
 	router.Route(
 		"/", func(r fiber.Router) {
 			r.Post("/add-new-merchant/:agent", request.ValidateNewMerchant(), m.OnboardMerchant())
-		}, "auth.merchant.retailers",
+		},
 	)
 
 	authRouter.Route(
 		"/", func(r fiber.Router) {
 			r.Get("/", h.Fetch()).Name("fetch")
 			r.Delete("/:id", h.Delete()).Name("delete")
-		}, "merchant.retailers.",
+		},
 	)
 }
 
@@ -177,21 +172,21 @@ func supplierMerchantRouter(r fiber.Router, ar *ApiRouter) {
 
 	router.Route(
 		"/", func(r fiber.Router) {
-			r.Post("/sign-up", request.ValidateMerchant(), m.Create())
-		}, "auth.merchant.suppliers",
+			r.Post("/sign-up", ar.middleware.IsAuthorized(), request.ValidateMerchant(), m.Create())
+		},
 	)
 
 	router.Route(
 		"/", func(r fiber.Router) {
 			r.Post("/add-new-merchant/:agent", request.ValidateNewMerchant(), m.OnboardMerchant())
-		}, "auth.merchant.suppliers",
+		},
 	)
 
 	authRouter.Route(
 		"/", func(r fiber.Router) {
 			r.Get("/", h.Fetch()).Name("fetch")
 			r.Delete("/:id", h.Delete()).Name("delete")
-		}, "merchant.suppliers.",
+		},
 	)
 }
 
@@ -208,7 +203,7 @@ func merchantRouter(r fiber.Router, ar *ApiRouter) {
 			r.Get("/:id", mHandler.FetchByID())
 			r.Get("/:id/storefront", mHandler.FetchStorefrontByID())
 			r.Put("/update/:id/profile", request.ValidateMerchantProfileUpdate(), mHandler.Update())
-		}, "merchants.",
+		},
 	)
 
 	msRouter.Route(
@@ -232,7 +227,7 @@ func merchantRouter(r fiber.Router, ar *ApiRouter) {
 			r.Put("/:storeId/update-agent-permission/:permission", msHandler.SaveAgentPermission())
 
 			r.Put("/:storeId/default-account/:type", msHandler.SaveDefaultAccount())
-		}, "merchants.",
+		},
 	)
 }
 
@@ -243,7 +238,7 @@ func productRouter(r fiber.Router, ar *ApiRouter) {
 
 	router := r.Group("/products")
 
-	authRouter := r.Group("/product") // middleware.IsAuthorized()
+	authRouter := r.Group("/product")
 
 	router.Route(
 		"/", func(r fiber.Router) {
@@ -271,7 +266,7 @@ func productRouter(r fiber.Router, ar *ApiRouter) {
 			r.Post("/update/product-image", h.UpdateImage())
 			r.Put("/update/:id", request.ValidateProductUpdate(), h.Update())
 			r.Delete("/delete/:id", h.Delete())
-		}, "products.",
+		},
 	)
 
 	authRouter.Route(
@@ -351,20 +346,29 @@ func addressRouter(router fiber.Router, ar *ApiRouter) {
 }
 
 func authRouter(router fiber.Router, ar *ApiRouter) {
-	h := handler.NewAuthHandler(ar.db, ar.noti, ar.app.JWT, ar.appcache)
-	router.Use(ar.middleware.IsAuthorized())
+	h := handler.NewAuthHandler(ar.db, ar.noti, ar.app.JWT, ar.app.Cache)
 	router.Route(
 		"/auth", func(r fiber.Router) {
-			r.Get("/user", h.FetchAuthUser())
-			r.Get("/refresh-token", h.RefreshToken())
-			r.Post("/signout", h.Logout())
-			r.Post("/signin", request.ValidateUser(), h.Login())
-			r.Post("/send-user-verification-code", request.ValidateUserName(true), h.SendVerificationCode())
-			r.Post("/send-password-reset-code", request.ValidateUserName(false), h.SendPasswordResetCode())
-			r.Put(
-				"/change-password/:user/:userType", request.ValidateChangePassword("update"), h.ChangePassword(),
+			r.Get("/user", ar.middleware.IsAuthorized(), h.FetchAuthUser())
+			r.Get("/refresh-token", ar.middleware.IsAuthorized(), h.RefreshToken())
+			r.Post("/signout", ar.middleware.IsAuthorized(), h.Logout())
+			r.Post("/signin", ar.middleware.IsAuthorized(), request.ValidateUser(), h.Login())
+			r.Post(
+				"/send-user-verification-code", ar.middleware.IsAuthorized(), request.ValidateUserName(true),
+				h.SendVerificationCode(),
 			)
-			r.Put("/reset-password/:user/:userType", request.ValidateChangePassword("reset"), h.ResetPassword())
+			r.Post(
+				"/send-password-reset-code", ar.middleware.IsAuthorized(), request.ValidateUserName(false),
+				h.SendPasswordResetCode(),
+			)
+			r.Put(
+				"/change-password/:user/:userType", ar.middleware.IsAuthorized(),
+				request.ValidateChangePassword("update"), h.ChangePassword(),
+			)
+			r.Put(
+				"/reset-password/:user/:userType", ar.middleware.IsAuthorized(),
+				request.ValidateChangePassword("reset"), h.ResetPassword(),
+			)
 		},
 	)
 }

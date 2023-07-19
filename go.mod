@@ -10,7 +10,7 @@ require (
 	github.com/go-redis/cache/v8 v8.4.4
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.7.0
-	github.com/gofiber/fiber/v2 v2.45.0
+	github.com/gofiber/fiber/v2 v2.48.0
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/joho/godotenv v1.4.0
 	github.com/kelvins/geocoder v0.0.0-20200113010004-f579500e9e27
@@ -32,7 +32,7 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.18 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/philhofer/fwd v1.1.2 // indirect
@@ -66,12 +66,12 @@ require (
 	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.47.0 // indirect
+	github.com/valyala/fasthttp v1.48.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	github.com/zclconf/go-cty v1.8.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 )

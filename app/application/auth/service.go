@@ -13,7 +13,6 @@ import (
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
 	"github.com/SeyramWood/app/application"
-	"github.com/SeyramWood/app/application/app_cache"
 	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/domain/models"
 	"github.com/SeyramWood/app/domain/services"
@@ -31,19 +30,19 @@ type service struct {
 	repo     gateways.AuthRepo
 	noti     notification.NotificationService
 	JWT      *jwtUtil.JWT
-	cache    *app_cache.AppCache
+	cache    gateways.CacheService
 	userType map[string]string
 }
 
 func NewAuthService(
-	repo gateways.AuthRepo, noti notification.NotificationService, JWT *jwtUtil.JWT, appCache *app_cache.AppCache,
+	repo gateways.AuthRepo, noti notification.NotificationService, JWT *jwtUtil.JWT, cache gateways.CacheService,
 ) gateways.AuthService {
 
 	return &service{
 		repo:  repo,
 		noti:  noti,
 		JWT:   JWT,
-		cache: appCache,
+		cache: cache,
 		userType: map[string]string{
 			"business":   "customer",
 			"individual": "customer",
@@ -329,25 +328,25 @@ func (s *service) SendPasswordResetCode(username, userType string) (string, erro
 	if userType == "customer" {
 		_, err := s.repo.ReadCustomer(username, "username")
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 	}
 	if userType == "agent" {
 		_, err := s.repo.ReadAgent(username, "username")
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 	}
 	if userType == "merchant" {
 		_, err := s.repo.ReadMerchant(username, "username")
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 	}
 	if userType == "asinyo" {
 		_, err := s.repo.ReadAdmin(username, "username")
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 	}
 

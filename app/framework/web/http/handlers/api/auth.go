@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"strconv"
 	"time"
 
@@ -8,7 +9,6 @@ import (
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
-	"github.com/SeyramWood/app/application/app_cache"
 	"github.com/SeyramWood/app/application/auth"
 	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/domain/models"
@@ -19,16 +19,15 @@ import (
 
 type authHandler struct {
 	service gateways.AuthService
-	cache   app_cache.AppCache
+	cache   gateways.CacheService
 }
 
 func NewAuthHandler(
-	db *database.Adapter, noti notification.NotificationService, JWT *jwt.JWT, cache *app_cache.AppCache,
+	db *database.Adapter, noti notification.NotificationService, JWT *jwt.JWT, cache gateways.CacheService,
 ) *authHandler {
-	repo := auth.NewAuthRepo(db)
-	service := auth.NewAuthService(repo, noti, JWT, cache)
 	return &authHandler{
-		service: service,
+		service: auth.NewAuthService(auth.NewAuthRepo(db), noti, JWT, cache),
+		cache:   cache,
 	}
 
 }
@@ -111,18 +110,6 @@ func (auth *authHandler) SendVerificationCode() fiber.Handler {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
 		}
-		if auth.cache.Exist(request.Username) {
-			otp := make(map[string]string)
-			if err := auth.cache.Get(request.Username, &otp); err != nil {
-				return c.Status(fiber.StatusBadRequest).JSON(presenters.MerchantErrorResponse(err))
-			}
-			return c.Status(fiber.StatusOK).JSON(
-				fiber.Map{
-					"status": true,
-					"code":   otp["otp"],
-				},
-			)
-		}
 		code, err := auth.service.SendUserVerificationCode(request.Username)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
@@ -132,7 +119,7 @@ func (auth *authHandler) SendVerificationCode() fiber.Handler {
 				},
 			)
 		}
-		if err := auth.cache.Set(request.Username, map[string]string{"otp": code}, 30*time.Second); err != nil {
+		if err := auth.cache.Set(request.Username, code, time.Second*60*2); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
 					"status": false,
@@ -141,6 +128,7 @@ func (auth *authHandler) SendVerificationCode() fiber.Handler {
 			)
 
 		}
+		log.Println(request.Username)
 		return c.Status(fiber.StatusOK).JSON(
 			fiber.Map{
 				"status": true,
@@ -160,6 +148,14 @@ func (auth *authHandler) SendPasswordResetCode() fiber.Handler {
 		}
 		code, err := auth.service.SendPasswordResetCode(request.Username, c.Get("userType"))
 		if err != nil {
+			if ent.IsNotFound(err) {
+				return c.Status(fiber.StatusNotFound).JSON(
+					fiber.Map{
+						"status": false,
+						"msg":    "user not found",
+					},
+				)
+			}
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				fiber.Map{
 					"status": false,

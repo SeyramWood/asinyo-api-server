@@ -57,11 +57,9 @@ func ValidateChangePassword(changeType string) fiber.Handler {
 func ValidateUserName(checkUsernameExists bool) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userType := c.Get("userType")
-
 		verifyUsername := struct {
 			Username string `json:"username" validate:"required|email_phone"`
 		}{}
-
 		if userType == "merchant" {
 			if checkUsernameExists {
 				verifyUsernameExist := struct {

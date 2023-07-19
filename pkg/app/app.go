@@ -9,6 +9,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 
+	"github.com/SeyramWood/app/adapters/gateways"
+	"github.com/SeyramWood/app/application/cache"
 	"github.com/SeyramWood/app/domain/services"
 	"github.com/SeyramWood/config"
 	"github.com/SeyramWood/pkg/jwt"
@@ -20,6 +22,7 @@ type Server struct {
 	WG     *sync.WaitGroup
 	JWT    *jwt.JWT
 	Logger *zap.Logger
+	Cache  gateways.CacheService
 }
 
 func New() *Server {
@@ -29,6 +32,7 @@ func New() *Server {
 	}
 
 	jwtServ := jwt.NewJWT().Command()
+	appcache := cache.New()
 
 	var wg = sync.WaitGroup{}
 	errorChan := make(chan error)
@@ -62,6 +66,7 @@ func New() *Server {
 		WG:     &wg,
 		JWT:    jwtServ,
 		Logger: logger,
+		Cache:  appcache,
 	}
 
 }

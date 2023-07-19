@@ -12,7 +12,6 @@ import (
 
 	"github.com/SeyramWood/app/adapters/gateways"
 	"github.com/SeyramWood/app/adapters/presenters"
-	"github.com/SeyramWood/app/application/app_cache"
 	"github.com/SeyramWood/app/application/auth"
 	"github.com/SeyramWood/app/application/notification"
 	"github.com/SeyramWood/app/framework/database"
@@ -28,16 +27,18 @@ const (
 type Middleware struct {
 	authSrv  gateways.AuthService
 	JWT      *jwtConf.JWT
-	cache    *app_cache.AppCache
+	cache    gateways.CacheService
 	userType map[string]string
 }
 
-func NewMiddleware(db *database.Adapter, noti notification.NotificationService, jwtConf *jwtConf.JWT, appCache *app_cache.AppCache) *Middleware {
-	service := auth.NewAuthService(auth.NewAuthRepo(db), noti, jwtConf, appCache)
+func NewMiddleware(
+	db *database.Adapter, noti notification.NotificationService, jwtConf *jwtConf.JWT, cache gateways.CacheService,
+) *Middleware {
+	service := auth.NewAuthService(auth.NewAuthRepo(db), noti, jwtConf, cache)
 	return &Middleware{
 		authSrv: service,
 		JWT:     jwtConf,
-		cache:   appCache,
+		cache:   cache,
 		userType: map[string]string{
 			"business":   "customer",
 			"individual": "customer",
@@ -69,27 +70,33 @@ func (m *Middleware) IsAuthenticated() fiber.Handler {
 				log.Println(newTokens["token"].(string), newTokens["refresh"].(string), "cookies")
 			}
 
-			c.Cookie(&fiber.Cookie{
-				Name:     "userType",
-				Value:    m.userType[userSession.UserType],
-				Expires:  time.Now().Add(REFRESH_TOKEN_EXPIRY),
-				Secure:   true,
-				HTTPOnly: true,
-			})
-			c.Cookie(&fiber.Cookie{
-				Name:     "__token",
-				Value:    newTokens["token"].(string),
-				Expires:  time.Now().Add(ACCESS_TOKEN_EXPIRY),
-				Secure:   true,
-				HTTPOnly: true,
-			})
-			c.Cookie(&fiber.Cookie{
-				Name:     "__refresh",
-				Value:    newTokens["refresh"].(string),
-				Expires:  time.Now().Add(REFRESH_TOKEN_EXPIRY),
-				Secure:   true,
-				HTTPOnly: true,
-			})
+			c.Cookie(
+				&fiber.Cookie{
+					Name:     "userType",
+					Value:    m.userType[userSession.UserType],
+					Expires:  time.Now().Add(REFRESH_TOKEN_EXPIRY),
+					Secure:   true,
+					HTTPOnly: true,
+				},
+			)
+			c.Cookie(
+				&fiber.Cookie{
+					Name:     "__token",
+					Value:    newTokens["token"].(string),
+					Expires:  time.Now().Add(ACCESS_TOKEN_EXPIRY),
+					Secure:   true,
+					HTTPOnly: true,
+				},
+			)
+			c.Cookie(
+				&fiber.Cookie{
+					Name:     "__refresh",
+					Value:    newTokens["refresh"].(string),
+					Expires:  time.Now().Add(REFRESH_TOKEN_EXPIRY),
+					Secure:   true,
+					HTTPOnly: true,
+				},
+			)
 			return c.Next()
 
 		}

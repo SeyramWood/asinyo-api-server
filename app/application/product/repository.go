@@ -473,39 +473,44 @@ func (r *repository) ReadAllSupplierMerchantCategoryMinor(limit, offset int) ([]
 }
 
 func (r *repository) ReadAllSupplierMerchantCategoryMajor(limit, offset int) ([]*ent.ProductCategoryMajor, error) {
-	products, err := r.db.ProductCategoryMajor.Query().
-		WithProducts(
-			func(pq *ent.ProductQuery) {
-				pq.Where(
-					product.HasMerchantWith(
-						merchant.Type("supplier"),
-					),
-				).
-					Limit(limit).
-					Offset(offset).
-					Order(ent.Desc(product.FieldCreatedAt)).
-					WithMajor().
-					WithMinor().
-					WithPriceModel().
-					WithMerchant(
-						func(mq *ent.MerchantQuery) {
-							mq.WithSupplier()
-							mq.WithStore(
-								func(query *ent.MerchantStoreQuery) {
-									query.Select("id", "name", "coordinate")
-								},
-							)
-						},
-					)
-			},
-		).
-		All(context.Background())
 
-	if err != nil {
-		return nil, err
+	categories := r.db.ProductCategoryMajor.Query().AllX(context.Background())
+	responses := make([]*ent.ProductCategoryMajor, 0, len(categories))
+	for _, category := range categories {
+		prod, err := r.db.ProductCategoryMajor.Query().
+			Where(productcategorymajor.SlugContains(category.Slug)).
+			WithProducts(
+				func(pq *ent.ProductQuery) {
+					pq.Where(
+						product.HasMerchantWith(
+							merchant.Type("supplier"),
+						),
+					).
+						Limit(limit).
+						Offset(offset).
+						Order(ent.Desc(product.FieldCreatedAt)).
+						WithMajor().
+						WithMinor().
+						WithPriceModel().
+						WithMerchant(
+							func(mq *ent.MerchantQuery) {
+								mq.WithSupplier()
+								mq.WithStore(
+									func(query *ent.MerchantStoreQuery) {
+										query.Select("id", "name", "coordinate")
+									},
+								)
+							},
+						)
+				},
+			).
+			Only(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		responses = append(responses, prod)
 	}
-
-	return products, nil
+	return responses, nil
 }
 
 func (r *repository) ReadAllBySupplierMerchant(merchantId, limit, offset int) ([]*ent.Product, error) {
