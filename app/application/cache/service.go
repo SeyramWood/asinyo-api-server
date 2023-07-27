@@ -18,7 +18,6 @@ var (
 
 type cache struct {
 	client *rcache.Cache
-	ab     string
 }
 
 func New() gateways.CacheService {
@@ -39,11 +38,10 @@ func New() gateways.CacheService {
 			LocalCache: rcache.NewTinyLFU(1000, time.Minute),
 		},
 	)
-	return &cache{client: mycache, ab: "skljdhfklshd"}
+	return &cache{client: mycache}
 }
 
 func (c *cache) Set(key string, value any, ttl time.Duration) error {
-	log.Println(key, c.ab)
 	if err := c.client.Set(
 		&rcache.Item{
 			Ctx:   context.Background(),
@@ -68,19 +66,3 @@ func (c *cache) Exist(key string) bool {
 func (c *cache) Delete(key string) error {
 	return c.client.Delete(context.Background(), key)
 }
-
-// CleanUp periodically removes expired entries from the cache.
-// func (ac *AppCache) CleanUp() {
-// 	for {
-// 		time.Sleep(1 * time.Minute)
-// 		ac.cache.Range(
-// 			func(key, entry any) bool {
-// 				cacheEntry := entry.(cacheEntry)
-// 				if time.Now().UnixNano() > cacheEntry.expiration {
-// 					ac.cache.Delete(key)
-// 				}
-// 				return true
-// 			},
-// 		)
-// 	}
-// }

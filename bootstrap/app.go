@@ -25,6 +25,7 @@ import (
 	"github.com/SeyramWood/app/application/sms"
 	"github.com/SeyramWood/app/application/storage"
 	"github.com/SeyramWood/app/framework/database"
+	"github.com/SeyramWood/config"
 	"github.com/SeyramWood/ent/migrate"
 	"github.com/SeyramWood/pkg/app"
 	"github.com/SeyramWood/pkg/env"
@@ -74,12 +75,15 @@ func App() {
 		),
 	)
 
-	newApp.HTTP.Use(cors.New())
+	newApp.HTTP.Use(
+		cors.New(
+			cors.Config{
+				AllowOrigins: config.App().AllowOrigins,
+			},
+		),
+	)
 	newApp.HTTP.Use(idempotency.New())
 	newApp.HTTP.Use(compress.New())
-
-	// newApp.HTTP.Use(csrf.New())
-
 	newApp.HTTP.Use(recover.New())
 
 	newApp.HTTP.Use(logger.New())

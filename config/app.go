@@ -19,6 +19,8 @@ type app struct {
 	Key              string
 	TokenName        string
 	PORT             string
+	ENV              string
+	AllowOrigins     string
 	FilesystemDriver string
 }
 type payment struct {
@@ -86,6 +88,8 @@ func App() *app {
 			Key:              os.Getenv("APP_KEY"),
 			TokenName:        os.Getenv("API_TOKEN_NAME"),
 			PORT:             os.Getenv("SERVER_PORT"),
+			ENV:              os.Getenv("APP_ENV"),
+			AllowOrigins:     os.Getenv("ALLOW_ORIGINS"),
 			FilesystemDriver: os.Getenv("FILESYSTEM_DRIVER"),
 		}
 	}
@@ -99,6 +103,8 @@ func App() *app {
 		Key:              env.Get("APP_KEY", "secretKEY5465"),
 		TokenName:        env.Get("API_TOKEN_NAME", "asinyo_remember"),
 		PORT:             env.Get("SERVER_PORT", "9000"),
+		ENV:              env.Get("APP_ENV", ""),
+		AllowOrigins:     env.Get("ALLOW_ORIGINS", ""),
 		FilesystemDriver: env.Get("FILESYSTEM_DRIVER", "local"),
 	}
 }
