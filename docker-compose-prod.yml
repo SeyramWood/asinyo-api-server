@@ -1,19 +1,13 @@
 version: "3.9"
 
-#services describe the containers that will start
 services:
-  # api is the container name for our Go API
   api:
-    # It will look for a Dockerfile in the project root and build it
     build:
       context: .
       target: prod
-    # Exposes the port 8000 from a container and binds it to a random port
     ports:
       - "9000"
-    # If the container goes down, it will restart
     restart: "always"
-    # Connects the API to a common api.network bridge
     volumes:
       - .:/app
       - ./mnt/public:/app/public
@@ -43,7 +37,7 @@ services:
     image: phpmyadmin
     restart: always
     ports:
-      - 10000:80
+      - "80"
     environment:
       - PMA_ARBITRARY=1
     volumes:
@@ -54,17 +48,13 @@ services:
     networks:
       - "api.network"
   nginx:
-    # specifies the latest nginx image
     image: nginx:latest
-    # Connects the conf file of the container to the conf file in our folder
     volumes:
       - ./cmd/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    # It will start up the nginx only when all api containers have started
     depends_on:
       - api
-    # Connects the port 80 of the nginx container to localhost:80 or localhost
     ports:
-      - "8000:8000"
+      - "80:80"
     networks:
       - "api.network"
 networks:
