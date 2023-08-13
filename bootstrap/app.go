@@ -74,13 +74,9 @@ func App() {
 			},
 		),
 	)
-
+	log.Println("AllowOrigins", config.App().AllowOrigins)
 	newApp.HTTP.Use(
-		cors.New(
-			cors.Config{
-				AllowOrigins: config.App().AllowOrigins,
-			},
-		),
+		cors.New(),
 	)
 	newApp.HTTP.Use(idempotency.New())
 	newApp.HTTP.Use(compress.New())
