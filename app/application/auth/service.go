@@ -57,11 +57,9 @@ func NewAuthService(
 func (s *service) Login(c *fiber.Ctx) error {
 	authType := c.Get("Asinyo-Authorization-Type")
 	var request models.User
-	err := c.BodyParser(&request)
-	if err != nil {
+	if err := c.BodyParser(&request); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(presenters.AuthErrorResponse("Bad request"))
 	}
-
 	switch authType {
 	case "customer":
 		return s.signinCustomer(c, request)
