@@ -70,7 +70,7 @@ func App() {
 				OriginAgentCluster:        "?1",
 				XDNSPrefetchControl:       "off",
 				XDownloadOptions:          "noopen",
-				XPermittedCrossDomain:     "none",
+				// XPermittedCrossDomain:     "none",
 			},
 		),
 	)
