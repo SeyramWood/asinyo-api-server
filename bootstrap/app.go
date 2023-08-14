@@ -70,13 +70,16 @@ func App() {
 				OriginAgentCluster:        "?1",
 				XDNSPrefetchControl:       "off",
 				XDownloadOptions:          "noopen",
-				// XPermittedCrossDomain:     "none",
+				XPermittedCrossDomain:     "none",
 			},
 		),
 	)
-	log.Println("AllowOrigins", config.App().AllowOrigins)
 	newApp.HTTP.Use(
-		cors.New(),
+		cors.New(
+			cors.Config{
+				AllowOrigins: config.App().AllowOrigins,
+			},
+		),
 	)
 	newApp.HTTP.Use(idempotency.New())
 	newApp.HTTP.Use(compress.New())
